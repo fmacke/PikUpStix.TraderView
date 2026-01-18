@@ -8,7 +8,9 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using Microsoft.Data.SqlClient;
-using System.Xml.Linq;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 class Program
 {
@@ -19,19 +21,39 @@ class Program
     /// </summary>
     static async Task Main(string[] args)
     {
-        const string token = "15708765559534665636342";
-        const string queryId = "1371129";
-        const string baseUrl = "https://gdcdyn.interactivebrokers.com/Universal/servlet/FlexStatementService.SendRequest";
-        const string outputFilePath = @"C:\Users\finn\OneDrive\Desktop\TraderSyncAccess.xml";
-        const int maxRetries = 10; // 10 retries
-        const int delayInSeconds = 15; // 15 seconds
+        var host = Host.CreateDefaultBuilder(args)
+            .ConfigureAppConfiguration((context, config) =>
+            {
+                if (context.HostingEnvironment.IsDevelopment())
+                {
+                    config.AddUserSecrets<Program>();
+                }
+            })
+            .Build();
+
+        var config = host.Services.GetRequiredService<IConfiguration>();
+
+        // --- Configuration ---
+        // API credentials and identifiers for the IBKR Flex Query are now read from user secrets
+        var token = config["IBKR:Token"];
+        var queryId = config["IBKR:QueryId"];
+        var baseUrl = config["IBKR:BaseUrl"];
         
-        const string dbUser = "sa";
-        const string dbPassword = "Gogogo123!";
-        const string dbHost = "localhost";
-        const string dbName = "TradingBE";
+        // Local file path to save the downloaded report
+        var outputFilePath = config["IBKR:OutputFilePath"];
+        
+        // Retry logic parameters for polling the report generation status
+        const int maxRetries = 10; // The maximum number of times to retry fetching the report
+        const int delayInSeconds = 15; // The delay between each retry attempt
+        
+        // Database connection details are now read from user secrets
+        var dbUser = config["Database:User"];
+        var dbPassword = config["Database:Password"];
+        var dbHost = config["Database:Host"];
+        var dbName = config["Database:DbName"];
         string connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
 
+        // The initial URL to request the report generation
         string requestUrl = $"{baseUrl}?t={token}&q={queryId}&v=3";
 
         using HttpClient client = new HttpClient();
