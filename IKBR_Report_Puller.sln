@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36518.9 d17.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKBR_Report_Puller", "IKBR_Report_Puller\IKBR_Report_Puller.csproj", "{B1CAFCB1-BE51-470E-BB65-F78983C5EB53}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B1CAFCB1-BE51-470E-BB65-F78983C5EB53}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B1CAFCB1-BE51-470E-BB65-F78983C5EB53}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B1CAFCB1-BE51-470E-BB65-F78983C5EB53}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B1CAFCB1-BE51-470E-BB65-F78983C5EB53}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {53075232-3EF4-48A1-9E21-22875221684D}
+	EndGlobalSection
+EndGlobal
