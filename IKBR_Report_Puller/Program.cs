@@ -21,7 +21,7 @@ class Program
     /// </summary>
     static async Task Main(string[] args)
     {
-        var host = Host.CreateDefaultBuilder(args)
+        var host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
             {
                 if (context.HostingEnvironment.IsDevelopment())
