@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Globalization;
 using System.Linq;
+using ClosedXML.Excel;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +25,8 @@ class Program
         var host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((context, config) =>
             {
+                config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+
                 if (context.HostingEnvironment.IsDevelopment())
                 {
                     config.AddUserSecrets<Program>();
@@ -116,6 +119,7 @@ class Program
                         
                         InsertTradesIntoDatabase(reportXml, connectionString);
                         InsertOpenPositionsIntoDatabase(reportXml, connectionString);
+                        CreateExcelReportForOpenPositions(reportXml);
 
                         return; // Exit after success
                     }
@@ -264,6 +268,88 @@ class Program
         catch (Exception ex)
         {
             Console.WriteLine($"\nAn error occurred during the Open Positions database operation: {ex.Message}");
+        }
+    }
+
+    private static void CreateExcelReportForOpenPositions(XDocument reportXml)
+    {
+        try
+        {
+            var flexStatement = reportXml.Descendants("FlexStatement").FirstOrDefault();
+            if (flexStatement == null)
+            {
+                Console.WriteLine("No FlexStatement found in the report. Skipping Excel report creation.");
+                return;
+            }
+
+            string whenGeneratedStr = flexStatement.Attribute("whenGenerated")?.Value;
+            if (string.IsNullOrEmpty(whenGeneratedStr))
+            {
+                Console.WriteLine("whenGenerated attribute is missing from FlexStatement. Skipping Excel report creation.");
+                return;
+            }
+
+            var openPositions = reportXml.Descendants("OpenPosition").ToList();
+            if (!openPositions.Any())
+            {
+                Console.WriteLine("No open positions found in the report. Skipping Excel report creation.");
+                return;
+            }
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Open Positions");
+
+                // Add headers
+                worksheet.Cell(1, 1).Value = "Account";
+                worksheet.Cell(1, 2).Value = "Symbol";
+                worksheet.Cell(1, 3).Value = "Quantity";
+                worksheet.Cell(1, 4).Value = "Cost Price";
+                worksheet.Cell(1, 5).Value = "Close Price";
+                worksheet.Cell(1, 6).Value = "Value";
+                worksheet.Cell(1, 7).Value = "Unrealized P/L";
+                worksheet.Cell(1, 8).Value = "% Change";
+                worksheet.Cell(1, 9).Value = "Current Margin";
+
+                // Populate data
+                int currentRow = 2;
+                foreach (var position in openPositions)
+                {
+                    worksheet.Cell(currentRow, 1).Value = position.Attribute("accountId")?.Value;
+                    worksheet.Cell(currentRow, 2).Value = position.Attribute("symbol")?.Value;
+                    worksheet.Cell(currentRow, 3).Value = decimal.Parse(position.Attribute("position")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 4).Value = decimal.Parse(position.Attribute("costBasisPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 5).Value = decimal.Parse(position.Attribute("markPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 6).Value = decimal.Parse(position.Attribute("positionValue")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 7).Value = decimal.Parse(position.Attribute("fifoPnlUnrealized")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    
+                    var quantityCell = worksheet.Cell(currentRow, 3);
+                    var costPriceCell = worksheet.Cell(currentRow, 4);
+                    var closePriceCell = worksheet.Cell(currentRow, 5);
+                    var valueCell = worksheet.Cell(currentRow, 6);
+                    var percentChangeCell = worksheet.Cell(currentRow, 8);
+                    var marginCell = worksheet.Cell(currentRow, 9);
+
+                    percentChangeCell.FormulaA1 = $"IF({costPriceCell.Address.ToString()} <> 0, ({closePriceCell.Address.ToString()} - {costPriceCell.Address.ToString()}) / {costPriceCell.Address.ToString()}, 0)";
+                    percentChangeCell.Style.NumberFormat.Format = "0.00%";
+
+                    marginCell.FormulaA1 = $"{valueCell.Address.ToString()} - ({quantityCell.Address.ToString()} * {costPriceCell.Address.ToString()})";
+                    marginCell.Style.NumberFormat.Format = "#,##0.00";
+
+                    currentRow++;
+                }
+
+                string fileName = $"{whenGeneratedStr.Replace(";", "")}.xlsx";
+                string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                string filePath = Path.Combine(desktopPath, fileName);
+                
+                workbook.SaveAs(filePath);
+                Console.WriteLine($"Successfully created Excel report at {filePath}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\nAn error occurred during Excel report creation: {ex.Message}");
         }
     }
 
