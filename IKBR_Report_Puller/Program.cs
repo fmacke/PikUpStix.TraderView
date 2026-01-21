@@ -241,17 +241,21 @@ class Program
             {
                 var worksheet = workbook.Worksheets.Add("Open Positions");
 
+                // Add the new 'Trade History' worksheet
+                CreateTradeHistoryWorksheet(workbook, connectionString);
+
                 // Add headers
                 worksheet.Cell(1, 1).Value = "Account";
                 worksheet.Cell(1, 2).Value = "Symbol";
                 worksheet.Cell(1, 3).Value = "Date Opened";
-                worksheet.Cell(1, 4).Value = "Quantity";
-                worksheet.Cell(1, 5).Value = "Cost Price";
-                worksheet.Cell(1, 6).Value = "Close Price";
-                worksheet.Cell(1, 7).Value = "Value";
-                worksheet.Cell(1, 8).Value = "Unrealized P/L";
-                worksheet.Cell(1, 9).Value = "% Change";
-                worksheet.Cell(1, 10).Value = "Current Margin";
+                worksheet.Cell(1, 4).Value = "Days Opened";
+                worksheet.Cell(1, 5).Value = "Quantity";
+                worksheet.Cell(1, 6).Value = "Cost Price";
+                worksheet.Cell(1, 7).Value = "Average Price";
+                worksheet.Cell(1, 8).Value = "Value";
+                worksheet.Cell(1, 9).Value = "Unrealized P/L";
+                worksheet.Cell(1, 10).Value = "% Change";
+                worksheet.Cell(1, 11).Value = "Current Margin";
 
                 // Populate data
                 int currentRow = 2;
@@ -315,30 +319,37 @@ class Program
                         }
                     }
 
+                    var dateOpenedCell = worksheet.Cell(currentRow, 3);
+                    var daysOpenedCell = worksheet.Cell(currentRow, 4);
+
                     // The remaining trades in openTrades are the ones making up the current position.
                     // The last one is the most recent opening date based on FIFO.
                     if (openTrades.Any())
                     {
                         var (mostRecentOpenDate, _) = openTrades.Last();
-                        worksheet.Cell(currentRow, 3).Value = mostRecentOpenDate;
-                        worksheet.Cell(currentRow, 3).Style.DateFormat.Format = "yyyy-MM-dd";
+                        dateOpenedCell.Value = mostRecentOpenDate;
+                        dateOpenedCell.Style.DateFormat.Format = "yyyy-MM-dd";
+                        daysOpenedCell.FormulaA1 = $"TODAY() - {dateOpenedCell.Address}";
                     }
 
 
-                    worksheet.Cell(currentRow, 4).Value = currentPositionQuantity;
-                    worksheet.Cell(currentRow, 5).Value = decimal.Parse(position.Attribute("costBasisPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
-                    worksheet.Cell(currentRow, 6).Value = decimal.Parse(position.Attribute("markPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
-                    worksheet.Cell(currentRow, 7).Value = decimal.Parse(position.Attribute("positionValue")?.Value ?? "0", CultureInfo.InvariantCulture);
-                    worksheet.Cell(currentRow, 8).Value = decimal.Parse(position.Attribute("fifoPnlUnrealized")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 5).Value = currentPositionQuantity;
+                    worksheet.Cell(currentRow, 6).Value = decimal.Parse(position.Attribute("costBasisPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
                     
-                    var quantityCell = worksheet.Cell(currentRow, 4);
-                    var costPriceCell = worksheet.Cell(currentRow, 5);
-                    var closePriceCell = worksheet.Cell(currentRow, 6);
-                    var valueCell = worksheet.Cell(currentRow, 7);
-                    var percentChangeCell = worksheet.Cell(currentRow, 9);
-                    var marginCell = worksheet.Cell(currentRow, 10);
+                    var averagePriceCell = worksheet.Cell(currentRow, 7);
+                    worksheet.Cell(currentRow, 8).Value = decimal.Parse(position.Attribute("positionValue")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 9).Value = decimal.Parse(position.Attribute("fifoPnlUnrealized")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    
+                    var quantityCell = worksheet.Cell(currentRow, 5);
+                    var costPriceCell = worksheet.Cell(currentRow, 6);
+                    var valueCell = worksheet.Cell(currentRow, 8);
+                    var percentChangeCell = worksheet.Cell(currentRow, 10);
+                    var marginCell = worksheet.Cell(currentRow, 11);
 
-                    percentChangeCell.FormulaA1 = $"IF({costPriceCell.Address.ToString()} <> 0, ({closePriceCell.Address.ToString()} - {costPriceCell.Address.ToString()}) / {costPriceCell.Address.ToString()}, 0)";
+                    averagePriceCell.FormulaA1 = $"IF({quantityCell.Address} <> 0, {valueCell.Address} / {quantityCell.Address}, 0)";
+                    averagePriceCell.Style.NumberFormat.Format = "#,##0.00";
+
+                    percentChangeCell.FormulaA1 = $"IF({costPriceCell.Address.ToString()} <> 0, ({averagePriceCell.Address.ToString()} - {costPriceCell.Address.ToString()}) / {costPriceCell.Address.ToString()}, 0)";
                     percentChangeCell.Style.NumberFormat.Format = "0.00%";
 
                     marginCell.FormulaA1 = $"{valueCell.Address.ToString()} - ({quantityCell.Address.ToString()} * {costPriceCell.Address.ToString()})";
@@ -358,6 +369,120 @@ class Program
         catch (Exception ex)
         {
             Console.WriteLine($"\nAn error occurred during Excel report creation: {ex.Message}");
+        }
+    }
+
+    private static void CreateTradeHistoryWorksheet(XLWorkbook workbook, string connectionString)
+    {
+        var worksheet = workbook.Worksheets.Add("Trade History");
+
+        // Add headers
+        worksheet.Cell(1, 1).Value = "Symbol";
+        worksheet.Cell(1, 2).Value = "Date Opened";
+        worksheet.Cell(1, 3).Value = "Date Closed";
+        worksheet.Cell(1, 4).Value = "Days Open";
+        worksheet.Cell(1, 5).Value = "Quantity";
+        worksheet.Cell(1, 6).Value = "Cost Price";
+        worksheet.Cell(1, 7).Value = "Value Price";
+        worksheet.Cell(1, 8).Value = "Cost";
+        worksheet.Cell(1, 9).Value = "Value";
+        worksheet.Cell(1, 10).Value = "Margin";
+
+        using (var connection = new SqlConnection(connectionString))
+        {
+            connection.Open();
+            var tradesBySymbol = new Dictionary<string, List<(DateTime tradeDate, decimal quantity, decimal price, string openClose)>>();
+
+            using (var cmd = new SqlCommand("SELECT symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[Trades] ORDER BY tradeDate ASC, dateTime ASC", connection))
+            {
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        string symbol = reader.GetString(0);
+                        if (!tradesBySymbol.ContainsKey(symbol))
+                        {
+                            tradesBySymbol[symbol] = new List<(DateTime tradeDate, decimal quantity, decimal price, string openClose)>();
+                        }
+                        tradesBySymbol[symbol].Add((
+                            reader.GetDateTime(1),
+                            reader.GetDecimal(2),
+                            reader.GetDecimal(3),
+                            reader.IsDBNull(4) ? "" : reader.GetString(4)
+                        ));
+                    }
+                }
+            }
+
+            int currentRow = 2;
+            foreach (var symbol in tradesBySymbol.Keys)
+            {
+                var openTrades = new Queue<(DateTime tradeDate, decimal quantity, decimal price)>();
+                var trades = tradesBySymbol[symbol];
+
+                foreach (var trade in trades)
+                {
+                    if (trade.openClose.Contains("O")) // Opening trade
+                    {
+                        openTrades.Enqueue((trade.tradeDate, trade.quantity, trade.price));
+                    }
+                    else if (trade.openClose.Contains("C")) // Closing trade
+                    {
+                        decimal closingQuantity = Math.Abs(trade.quantity);
+                        decimal closingPrice = trade.price;
+                        DateTime closingDate = trade.tradeDate;
+
+                        while (closingQuantity > 0 && openTrades.Any())
+                        {
+                            var (openDate, openQuantity, openPrice) = openTrades.Dequeue();
+                            decimal quantityToClose = Math.Min(closingQuantity, openQuantity);
+
+                            worksheet.Cell(currentRow, 1).Value = symbol;
+                            var dateOpenedCell = worksheet.Cell(currentRow, 2);
+                            dateOpenedCell.Value = openDate;
+                            dateOpenedCell.Style.DateFormat.Format = "yyyy-MM-dd";
+                            
+                            var dateClosedCell = worksheet.Cell(currentRow, 3);
+                            dateClosedCell.Value = closingDate;
+                            dateClosedCell.Style.DateFormat.Format = "yyyy-MM-dd";
+
+                            var daysOpenCell = worksheet.Cell(currentRow, 4);
+                            daysOpenCell.FormulaA1 = $"{dateClosedCell.Address} - {dateOpenedCell.Address}";
+
+                            worksheet.Cell(currentRow, 5).Value = quantityToClose;
+                            worksheet.Cell(currentRow, 6).Value = openPrice;
+                            worksheet.Cell(currentRow, 7).Value = closingPrice;
+                            
+                            var costCell = worksheet.Cell(currentRow, 8);
+                            costCell.FormulaA1 = $"{worksheet.Cell(currentRow, 5).Address} * {worksheet.Cell(currentRow, 6).Address}";
+                            costCell.Style.NumberFormat.Format = "#,##0.00";
+
+                            var valueCell = worksheet.Cell(currentRow, 9);
+                            valueCell.FormulaA1 = $"{worksheet.Cell(currentRow, 5).Address} * {worksheet.Cell(currentRow, 7).Address}";
+                            valueCell.Style.NumberFormat.Format = "#,##0.00";
+
+                            var marginCell = worksheet.Cell(currentRow, 10);
+                            marginCell.FormulaA1 = $"{valueCell.Address} - {costCell.Address}";
+                            marginCell.Style.NumberFormat.Format = "#,##0.00";
+
+                            currentRow++;
+
+                            closingQuantity -= quantityToClose;
+                            if (openQuantity > quantityToClose)
+                            {
+                                // Re-enqueue the remaining part of the open trade
+                                var remainingOpenTrades = new Queue<(DateTime, decimal, decimal)>();
+                                remainingOpenTrades.Enqueue((openDate, openQuantity - quantityToClose, openPrice));
+                                while(openTrades.Any())
+                                {
+                                    remainingOpenTrades.Enqueue(openTrades.Dequeue());
+                                }
+                                openTrades = remainingOpenTrades;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
