@@ -56,99 +56,40 @@ class Program
         var dbName = config["Database:DbName"];
         string connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
 
-        // The initial URL to request the report generation
-        string requestUrl = $"{baseUrl}?t={token}&q={queryId}&v=3";
-
         using HttpClient client = new HttpClient();
         
-        Console.WriteLine("Pinging Flex Query API to request report...");
-
         try
         {
-            HttpResponseMessage initialResponse = await client.GetAsync(requestUrl);
-            initialResponse.EnsureSuccessStatusCode();
-            string initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+            // Fetch the main report
+            var mainReportService = new IKBRReportServiceBase(token, queryId, baseUrl, client);
+            Console.WriteLine("Fetching main report...");
+            XDocument mainReportXml = await mainReportService.FetchReportAsync(maxRetries, delayInSeconds);
             
-            Console.WriteLine("Initial API Response:");
-            Console.WriteLine(initialResponseBody);
+            string mainReportFilePath = outputFilePath.Replace(".xml", "_main.xml");
+            mainReportXml.Save(mainReportFilePath);
+            Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
+            
+            InsertTradesIntoDatabase(mainReportXml, connectionString);
+            InsertOpenPositionsIntoDatabase(mainReportXml, connectionString);
+            CreateExcelReportForOpenPositions(mainReportXml, connectionString);
 
-            XDocument initialXml = XDocument.Parse(initialResponseBody);
-            var responseElement = initialXml.Element("FlexStatementResponse");
-            string status = responseElement?.Element("Status")?.Value;
-            string referenceCode = responseElement?.Element("ReferenceCode")?.Value;
-            string statementUrl = responseElement?.Element("Url")?.Value;
+            //// Fetch the 'Today' report Query ID 1371134 Query Name Today_TraderSyncAccess
+            //var todayReportService = new IKBRReportServiceBase(token, baseUrl, client);
+            //Console.WriteLine("\nFetching 'Today' report...");
+            //XDocument todayReportXml = await todayReportService.FetchReportAsync(maxRetries, delayInSeconds);
 
-            if (status == "Success" && !string.IsNullOrEmpty(referenceCode) && !string.IsNullOrEmpty(statementUrl))
-            {
-                Console.WriteLine($"Report requested successfully. Reference code: {referenceCode}");
-                
-                for (int i = 0; i < maxRetries; i++)
-                {
-                    Console.WriteLine($"Attempt {i + 1} of {maxRetries}: Fetching the full report in {delayInSeconds} seconds...");
-                    await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
-
-                    string getStatementUrl = $"{statementUrl}?t={token}&q={referenceCode}&v=3";
-                    HttpResponseMessage reportResponse = await client.GetAsync(getStatementUrl);
-                    reportResponse.EnsureSuccessStatusCode();
-                    string reportBody = await reportResponse.Content.ReadAsStringAsync();
-
-                    XDocument reportXml;
-                    try
-                    {
-                        reportXml = XDocument.Parse(reportBody);
-                    }
-                    catch (Exception)
-                    {
-                        // If parsing fails, it's likely not the XML we expect.
-                        Console.WriteLine("Received non-XML response while waiting for the report. Retrying...");
-                        continue;
-                    }
-
-                    var flexStatementResponse = reportXml.Element("FlexStatementResponse");
-                    if (flexStatementResponse != null && flexStatementResponse.Element("ErrorCode")?.Value == "1019")
-                    {
-                        Console.WriteLine("Report generation in progress. Will try again.");
-                        continue;
-                    }
-
-                    if (reportXml.Element("FlexQueryResponse") != null)
-                    {
-                        Console.WriteLine("Full report received.");
-                        reportXml.Save(outputFilePath);
-                        Console.WriteLine($"Successfully saved report to {outputFilePath}");
-                        
-                        InsertTradesIntoDatabase(reportXml, connectionString);
-                        InsertOpenPositionsIntoDatabase(reportXml, connectionString);
-                        CreateExcelReportForOpenPositions(reportXml);
-
-                        return; // Exit after success
-                    }
-                    
-                    Console.WriteLine("Received an unexpected response format. Retrying...");
-                }
-                
-                Console.WriteLine("Failed to retrieve the report after multiple retries.");
-            }
-            else
-            {
-                Console.WriteLine("Failed to request report. The initial response did not indicate success or was missing data.");
-                string errorCode = responseElement?.Element("ErrorCode")?.Value;
-                string errorMessage = responseElement?.Element("ErrorMessage")?.Value;
-                if(!string.IsNullOrEmpty(errorCode) || !string.IsNullOrEmpty(errorMessage))
-                {
-                    Console.WriteLine($"Error Code: {errorCode}");
-                    Console.WriteLine($"Error Message: {errorMessage}");
-                }
-            }
-        }
-        catch (HttpRequestException e)
-        {
-            Console.WriteLine("\nException Caught!");
-            Console.WriteLine("Message :{0} ", e.Message);
+            //string todayReportFilePath = outputFilePath.Replace(".xml", "_today.xml");
+            //todayReportXml.Save(todayReportFilePath);
+            //Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
+            
+            //// Assuming the 'Today' report also contains trades and open positions that need to be processed.
+            //// If the structure is the same, we can reuse the existing methods.
+            //InsertTradesIntoDatabase(todayReportXml, connectionString);
+            //InsertOpenPositionsIntoDatabase(todayReportXml, connectionString);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"\nAn unexpected error occurred: {ex.Message}");
+            Console.WriteLine($"\nAn error occurred: {ex.Message}");
         }
     }
 
@@ -271,7 +212,7 @@ class Program
         }
     }
 
-    private static void CreateExcelReportForOpenPositions(XDocument reportXml)
+    private static void CreateExcelReportForOpenPositions(XDocument reportXml, string connectionString)
     {
         try
         {
@@ -303,32 +244,99 @@ class Program
                 // Add headers
                 worksheet.Cell(1, 1).Value = "Account";
                 worksheet.Cell(1, 2).Value = "Symbol";
-                worksheet.Cell(1, 3).Value = "Quantity";
-                worksheet.Cell(1, 4).Value = "Cost Price";
-                worksheet.Cell(1, 5).Value = "Close Price";
-                worksheet.Cell(1, 6).Value = "Value";
-                worksheet.Cell(1, 7).Value = "Unrealized P/L";
-                worksheet.Cell(1, 8).Value = "% Change";
-                worksheet.Cell(1, 9).Value = "Current Margin";
+                worksheet.Cell(1, 3).Value = "Date Opened";
+                worksheet.Cell(1, 4).Value = "Quantity";
+                worksheet.Cell(1, 5).Value = "Cost Price";
+                worksheet.Cell(1, 6).Value = "Close Price";
+                worksheet.Cell(1, 7).Value = "Value";
+                worksheet.Cell(1, 8).Value = "Unrealized P/L";
+                worksheet.Cell(1, 9).Value = "% Change";
+                worksheet.Cell(1, 10).Value = "Current Margin";
 
                 // Populate data
                 int currentRow = 2;
+                using SqlConnection connection = new SqlConnection(connectionString);
+                connection.Open();
+
                 foreach (var position in openPositions)
                 {
-                    worksheet.Cell(currentRow, 1).Value = position.Attribute("accountId")?.Value;
-                    worksheet.Cell(currentRow, 2).Value = position.Attribute("symbol")?.Value;
-                    worksheet.Cell(currentRow, 3).Value = decimal.Parse(position.Attribute("position")?.Value ?? "0", CultureInfo.InvariantCulture);
-                    worksheet.Cell(currentRow, 4).Value = decimal.Parse(position.Attribute("costBasisPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
-                    worksheet.Cell(currentRow, 5).Value = decimal.Parse(position.Attribute("markPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
-                    worksheet.Cell(currentRow, 6).Value = decimal.Parse(position.Attribute("positionValue")?.Value ?? "0", CultureInfo.InvariantCulture);
-                    worksheet.Cell(currentRow, 7).Value = decimal.Parse(position.Attribute("fifoPnlUnrealized")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    string accountId = position.Attribute("accountId")?.Value;
+                    string symbol = position.Attribute("symbol")?.Value;
+                    string conid = position.Attribute("conid")?.Value;
+                    decimal currentPositionQuantity = decimal.Parse(position.Attribute("position")?.Value ?? "0", CultureInfo.InvariantCulture);
+
+                    worksheet.Cell(currentRow, 1).Value = accountId;
+                    worksheet.Cell(currentRow, 2).Value = symbol;
+
+                    // Fetch all trades for the given conid and apply FIFO logic
+                    var trades = new List<(DateTime tradeDate, decimal quantity, string openClose)>();
+                    using (SqlCommand cmd = new SqlCommand("SELECT tradeDate, quantity, openCloseIndicator FROM [dbo].[Trades] WHERE [conid] = @conid AND [accountId] = @accountId ORDER BY tradeDate ASC, dateTime ASC", connection))
+                    {
+                        cmd.Parameters.AddWithValue("@conid", conid);
+                        cmd.Parameters.AddWithValue("@accountId", accountId);
+                        using (var reader = cmd.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                trades.Add((
+                                    reader.GetDateTime(0),
+                                    reader.GetDecimal(1),
+                                    reader.IsDBNull(2) ? "" : reader.GetString(2)
+                                ));
+                            }
+                        }
+                    }
+
+                    var openTrades = new Queue<(DateTime tradeDate, decimal quantity)>();
+                    foreach (var trade in trades)
+                    {
+                        if (trade.openClose.Contains("O")) // Opening trade
+                        {
+                            openTrades.Enqueue((trade.tradeDate, trade.quantity));
+                        }
+                        else if (trade.openClose.Contains("C")) // Closing trade
+                        {
+                            decimal closingQuantity = Math.Abs(trade.quantity);
+                            while (closingQuantity > 0 && openTrades.Any())
+                            {
+                                var (openDate, openQuantity) = openTrades.Dequeue();
+                                if (openQuantity > closingQuantity)
+                                {
+                                    // Partial close, put the remainder back
+                                    openTrades.Enqueue((openDate, openQuantity - closingQuantity));
+                                    closingQuantity = 0;
+                                }
+                                else
+                                {
+                                    // Full close of this opening trade
+                                    closingQuantity -= openQuantity;
+                                }
+                            }
+                        }
+                    }
+
+                    // The remaining trades in openTrades are the ones making up the current position.
+                    // The last one is the most recent opening date based on FIFO.
+                    if (openTrades.Any())
+                    {
+                        var (mostRecentOpenDate, _) = openTrades.Last();
+                        worksheet.Cell(currentRow, 3).Value = mostRecentOpenDate;
+                        worksheet.Cell(currentRow, 3).Style.DateFormat.Format = "yyyy-MM-dd";
+                    }
+
+
+                    worksheet.Cell(currentRow, 4).Value = currentPositionQuantity;
+                    worksheet.Cell(currentRow, 5).Value = decimal.Parse(position.Attribute("costBasisPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 6).Value = decimal.Parse(position.Attribute("markPrice")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 7).Value = decimal.Parse(position.Attribute("positionValue")?.Value ?? "0", CultureInfo.InvariantCulture);
+                    worksheet.Cell(currentRow, 8).Value = decimal.Parse(position.Attribute("fifoPnlUnrealized")?.Value ?? "0", CultureInfo.InvariantCulture);
                     
-                    var quantityCell = worksheet.Cell(currentRow, 3);
-                    var costPriceCell = worksheet.Cell(currentRow, 4);
-                    var closePriceCell = worksheet.Cell(currentRow, 5);
-                    var valueCell = worksheet.Cell(currentRow, 6);
-                    var percentChangeCell = worksheet.Cell(currentRow, 8);
-                    var marginCell = worksheet.Cell(currentRow, 9);
+                    var quantityCell = worksheet.Cell(currentRow, 4);
+                    var costPriceCell = worksheet.Cell(currentRow, 5);
+                    var closePriceCell = worksheet.Cell(currentRow, 6);
+                    var valueCell = worksheet.Cell(currentRow, 7);
+                    var percentChangeCell = worksheet.Cell(currentRow, 9);
+                    var marginCell = worksheet.Cell(currentRow, 10);
 
                     percentChangeCell.FormulaA1 = $"IF({costPriceCell.Address.ToString()} <> 0, ({closePriceCell.Address.ToString()} - {costPriceCell.Address.ToString()}) / {costPriceCell.Address.ToString()}, 0)";
                     percentChangeCell.Style.NumberFormat.Format = "0.00%";
