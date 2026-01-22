@@ -41,7 +41,8 @@ class Program
         var token = config["IBKR:Token"];
         var queryId = config["IBKR:QueryId"];
         var baseUrl = config["IBKR:BaseUrl"];
-        
+        var queryTodayExecutionsId = config["IBKR:QueryTodayExecutionsId"];
+
         // Local file path to save the downloaded report
         var outputFilePath = config["IBKR:OutputFilePath"];
         
@@ -74,18 +75,15 @@ class Program
             CreateExcelReportForOpenPositions(mainReportXml, connectionString);
 
             //// Fetch the 'Today' report Query ID 1371134 Query Name Today_TraderSyncAccess
-            //var todayReportService = new IKBRReportServiceBase(token, baseUrl, client);
-            //Console.WriteLine("\nFetching 'Today' report...");
-            //XDocument todayReportXml = await todayReportService.FetchReportAsync(maxRetries, delayInSeconds);
+            var todayReportService = new IKBRReportServiceBase(token, queryTodayExecutionsId, baseUrl, client);
+            Console.WriteLine("\nFetching 'Today' report...");
+            XDocument todayReportXml = await todayReportService.FetchReportAsync(maxRetries, delayInSeconds);
 
-            //string todayReportFilePath = outputFilePath.Replace(".xml", "_today.xml");
-            //todayReportXml.Save(todayReportFilePath);
-            //Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
-            
-            //// Assuming the 'Today' report also contains trades and open positions that need to be processed.
-            //// If the structure is the same, we can reuse the existing methods.
-            //InsertTradesIntoDatabase(todayReportXml, connectionString);
-            //InsertOpenPositionsIntoDatabase(todayReportXml, connectionString);
+            string todayReportFilePath = outputFilePath.Replace(".xml", "_today.xml");
+            todayReportXml.Save(todayReportFilePath);
+            Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
+
+            InsertTodayExecutionsIntoDatabase(todayReportXml, connectionString);
         }
         catch (Exception ex)
         {
@@ -483,6 +481,171 @@ class Program
                     }
                 }
             }
+        }
+    }
+
+    private static void InsertTodayExecutionsIntoDatabase(XDocument reportXml, string connectionString)
+    {
+        try
+        {
+            using SqlConnection connection = new SqlConnection(connectionString);
+            connection.Open();
+            Console.WriteLine("Successfully connected to the database for Today's Executions.");
+
+            var existingIbExecIDs = new HashSet<string>();
+            using (SqlCommand cmd = new SqlCommand("SELECT ibExecID FROM dbo.Trades", connection))
+            {
+                using (var reader = cmd.ExecuteReader())
+                {
+                    while (reader.Read())
+                    {
+                        existingIbExecIDs.Add(reader.GetString(0));
+                    }
+                }
+            }
+            Console.WriteLine($"Found {existingIbExecIDs.Count} existing trades in the database.");
+
+            var trades = reportXml.Descendants("TradeConfirm")
+                                .Where(t => t.Attribute("levelOfDetail")?.Value == "EXECUTION")
+                                .ToList();
+            int newTradesCount = 0;
+
+            foreach (var trade in trades)
+            {
+                string ibExecID = trade.Attribute("execID")?.Value;
+                if (string.IsNullOrEmpty(ibExecID) || existingIbExecIDs.Contains(ibExecID))
+                {
+                    continue; // Skip if ibExecID is missing or already exists
+                }
+
+                newTradesCount++;
+                using (SqlCommand cmd = new SqlCommand("INSERT INTO [dbo].[Trades] ([symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission], [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID], [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description], [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash], [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID], [ibOrderID], [openDateTime], [initialInvestment], [accountId], [acctAlias], [model], [fxRateToBase], [subCategory], [securityIDType], [cusip], [isin], [figi], [listingExchange], [underlyingConid], [underlyingSymbol], [underlyingSecurityID], [underlyingListingExchange], [issuer], [issuerCountryCode], [multiplier], [relatedTradeID], [strike], [reportDate], [putCall], [principalAdjustFactor], [settleDateTarget], [tradeMoney], [openCloseIndicator], [notes], [clearingFirmID], [relatedTransactionID], [rtn], [orderReference], [volatilityOrderLink], [orderTime], [holdingPeriodDateTime], [whenRealized], [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt], [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight]) VALUES (@symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission, @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID, @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description, @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash, @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID, @ibOrderID, @openDateTime, @initialInvestment, @accountId, @acctAlias, @model, @fxRateToBase, @subCategory, @securityIDType, @cusip, @isin, @figi, @listingExchange, @underlyingConid, @underlyingSymbol, @underlyingSecurityID, @underlyingListingExchange, @issuer, @issuerCountryCode, @multiplier, @relatedTradeID, @strike, @reportDate, @putCall, @principalAdjustFactor, @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID, @rtn, @orderReference, @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized, @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt, @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)", connection))
+                {
+                    AddParameter(cmd, "@symbol", trade.Attribute("symbol")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@securityID", trade.Attribute("securityID")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@tradeID", trade.Attribute("tradeID")?.Value, SqlDbType.BigInt);
+                    AddParameter(cmd, "@dateTime", trade.Attribute("dateTime")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@tradeDate", trade.Attribute("tradeDate")?.Value, SqlDbType.Date);
+                    AddParameter(cmd, "@quantity", trade.Attribute("quantity")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@tradePrice", trade.Attribute("price")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@ibCommission", trade.Attribute("commission")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@ibCommissionCurrency", trade.Attribute("commissionCurrency")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@closePrice", null, SqlDbType.Decimal); // Not in TradeConfirm
+                    AddParameter(cmd, "@cost", null, SqlDbType.Decimal); // Not in TradeConfirm
+                    AddParameter(cmd, "@fifoPnlRealized", null, SqlDbType.Decimal); // Not in TradeConfirm
+                    AddParameter(cmd, "@buySell", trade.Attribute("buySell")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@transactionID", null, SqlDbType.BigInt); // Not in TradeConfirm
+                    AddParameter(cmd, "@ibExecID", ibExecID, SqlDbType.VarChar);
+                    AddParameter(cmd, "@brokerageOrderID", trade.Attribute("brokerageOrderID")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@exchOrderId", null, SqlDbType.VarChar); // Not in TradeConfirm
+                    AddParameter(cmd, "@extExecID", trade.Attribute("extExecID")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@orderType", trade.Attribute("orderType")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@traderID", trade.Attribute("traderID")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@currency", trade.Attribute("currency")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@description", trade.Attribute("description")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@conid", trade.Attribute("conid")?.Value, SqlDbType.BigInt);
+                    AddParameter(cmd, "@taxes", trade.Attribute("tax")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@assetCategory", trade.Attribute("assetCategory")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@expiry", trade.Attribute("expiry")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@transactionType", trade.Attribute("transactionType")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@exchange", trade.Attribute("exchange")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@proceeds", trade.Attribute("proceeds")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@netCash", trade.Attribute("netCash")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@mtmPnl", null, SqlDbType.Decimal); // Not in TradeConfirm
+                    AddParameter(cmd, "@origTradePrice", trade.Attribute("origTradePrice")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@origTradeDate", trade.Attribute("origTradeDate")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@origTradeID", trade.Attribute("origTradeID")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@origOrderID", null, SqlDbType.BigInt); // Not in TradeConfirm
+                    AddParameter(cmd, "@origTransactionID", null, SqlDbType.BigInt); // Not in TradeConfirm
+                    AddParameter(cmd, "@ibOrderID", trade.Attribute("orderID")?.Value, SqlDbType.BigInt);
+                    AddParameter(cmd, "@openDateTime", null, SqlDbType.VarChar); // Not in TradeConfirm
+                    AddParameter(cmd, "@initialInvestment", null, SqlDbType.Decimal); // Not in TradeConfirm
+                    AddParameter(cmd, "@accountId", trade.Attribute("accountId")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@acctAlias", trade.Attribute("acctAlias")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@model", trade.Attribute("model")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@fxRateToBase", null, SqlDbType.Decimal); // Not in TradeConfirm
+                    AddParameter(cmd, "@subCategory", trade.Attribute("subCategory")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@securityIDType", trade.Attribute("securityIDType")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@cusip", trade.Attribute("cusip")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@isin", trade.Attribute("isin")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@figi", trade.Attribute("figi")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@listingExchange", trade.Attribute("listingExchange")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@underlyingConid", trade.Attribute("underlyingConid")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@underlyingSymbol", trade.Attribute("underlyingSymbol")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@underlyingSecurityID", trade.Attribute("underlyingSecurityID")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@underlyingListingExchange", trade.Attribute("underlyingListingExchange")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@issuer", trade.Attribute("issuer")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@issuerCountryCode", trade.Attribute("issuerCountryCode")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@multiplier", trade.Attribute("multiplier")?.Value, SqlDbType.Int);
+                    AddParameter(cmd, "@relatedTradeID", null, SqlDbType.VarChar); // Not in TradeConfirm
+                    AddParameter(cmd, "@strike", trade.Attribute("strike")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@reportDate", trade.Attribute("reportDate")?.Value, SqlDbType.Date);
+                    AddParameter(cmd, "@putCall", trade.Attribute("putCall")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@principalAdjustFactor", trade.Attribute("principalAdjustFactor")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@settleDateTarget", trade.Attribute("settleDate")?.Value, SqlDbType.Date);
+                    AddParameter(cmd, "@tradeMoney", trade.Attribute("amount")?.Value, SqlDbType.Decimal);
+                    
+                    string code = trade.Attribute("code")?.Value;
+                    string openCloseIndicator = "";
+                    string notes = "";
+                    if (!string.IsNullOrEmpty(code))
+                    {
+                        foreach (var part in code.Split(';'))
+                        {
+                            if (part.Trim().Equals("O", StringComparison.OrdinalIgnoreCase))
+                            {
+                                openCloseIndicator += "O";
+                            }
+                            else if (part.Trim().Equals("C", StringComparison.OrdinalIgnoreCase))
+                            {
+                                openCloseIndicator += "C";
+                            }
+                            else
+                            {
+                                if (!string.IsNullOrEmpty(notes))
+                                {
+                                    notes += ";";
+                                }
+                                notes += part.Trim();
+                            }
+                        }
+                    }
+                    AddParameter(cmd, "@openCloseIndicator", openCloseIndicator, SqlDbType.VarChar);
+
+                    AddParameter(cmd, "@notes", string.IsNullOrEmpty(notes) ? null : notes, SqlDbType.Text); // Not in TradeConfirm
+                    AddParameter(cmd, "@clearingFirmID", trade.Attribute("clearingFirmID")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@relatedTransactionID", null, SqlDbType.VarChar); // Not in TradeConfirm
+                    AddParameter(cmd, "@rtn", null, SqlDbType.VarChar); // Not in TradeConfirm
+                    AddParameter(cmd, "@orderReference", trade.Attribute("orderReference")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@volatilityOrderLink", trade.Attribute("volatilityOrderLink")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@orderTime", trade.Attribute("orderTime")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@holdingPeriodDateTime", null, SqlDbType.VarChar); // Not in TradeConfirm
+                    AddParameter(cmd, "@whenRealized", null, SqlDbType.VarChar); // Not in TradeConfirm
+                    AddParameter(cmd, "@whenReopened", null, SqlDbType.VarChar); // Not in TradeConfirm
+                    AddParameter(cmd, "@levelOfDetail", trade.Attribute("levelOfDetail")?.Value + "_TODAY", SqlDbType.VarChar);
+                    AddParameter(cmd, "@changeInPrice", null, SqlDbType.Decimal); // Not in TradeConfirm
+                    AddParameter(cmd, "@changeInQuantity", null, SqlDbType.Decimal); // Not in TradeConfirm
+                    AddParameter(cmd, "@isAPIOrder", trade.Attribute("isAPIOrder")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@accruedInt", trade.Attribute("accruedInt")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@positionActionID", trade.Attribute("positionActionID")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@serialNumber", trade.Attribute("serialNumber")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@deliveryType", trade.Attribute("deliveryType")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@commodityType", trade.Attribute("commodityType")?.Value, SqlDbType.VarChar);
+                    AddParameter(cmd, "@fineness", trade.Attribute("fineness")?.Value, SqlDbType.Decimal);
+                    AddParameter(cmd, "@weight", trade.Attribute("weight")?.Value, SqlDbType.Decimal);
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+            Console.WriteLine($"Successfully inserted {newTradesCount} new trades from Today's Executions into the database.");
+        }
+        catch (SqlException e)
+        {
+            Console.WriteLine($"\nDatabase error while inserting Today's Executions: {e.Message}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\nAn error occurred during the Today's Executions database operation: {ex.Message}");
         }
     }
 
