@@ -66,20 +66,20 @@ class Program
             Console.WriteLine("Fetching main report...");
             XDocument mainReportXml = await mainReportService.FetchReportAsync(maxRetries, delayInSeconds);
             
-            string mainReportFilePath = outputFilePath.Replace(".xml", "_main.xml");
+            string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", "TraderSyncAccess.xml");
             mainReportXml.Save(mainReportFilePath);
             Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
             
-            InsertTradesIntoDatabase(mainReportXml, connectionString);
+            InsertTradeExectuionsIntoDatabase(mainReportXml, connectionString);
             InsertOpenPositionsIntoDatabase(mainReportXml, connectionString);
-            CreateExcelReportForOpenPositions(mainReportXml, connectionString);
+            CreateExcelReportForOpenPositions(mainReportXml, connectionString, outputFilePath);
 
-            //// Fetch the 'Today' report Query ID 1371134 Query Name Today_TraderSyncAccess
+
             var todayReportService = new IKBRReportServiceBase(token, queryTodayExecutionsId, baseUrl, client);
             Console.WriteLine("\nFetching 'Today' report...");
             XDocument todayReportXml = await todayReportService.FetchReportAsync(maxRetries, delayInSeconds);
 
-            string todayReportFilePath = outputFilePath.Replace(".xml", "_today.xml");
+            string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", "TraderSyncAccess_today.xml");
             todayReportXml.Save(todayReportFilePath);
             Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
 
@@ -126,15 +126,6 @@ class Program
 
             using (var transaction = connection.BeginTransaction())
             {
-                // Delete existing snapshot for this account and timestamp
-                using (SqlCommand deleteCmd = new SqlCommand("DELETE FROM [dbo].[OpenPositions] WHERE [accountId] = @accountId AND [whenGenerated] = @whenGenerated", connection, transaction))
-                {
-                    deleteCmd.Parameters.AddWithValue("@accountId", accountId);
-                    deleteCmd.Parameters.AddWithValue("@whenGenerated", whenGenerated);
-                    int rowsDeleted = deleteCmd.ExecuteNonQuery();
-                    Console.WriteLine($"Deleted {rowsDeleted} old open position(s) for account {accountId} and timestamp {whenGenerated}.");
-                }
-
                 int newPositionsCount = 0;
                 foreach (var position in openPositions)
                 {
@@ -210,7 +201,7 @@ class Program
         }
     }
 
-    private static void CreateExcelReportForOpenPositions(XDocument reportXml, string connectionString)
+    private static void CreateExcelReportForOpenPositions(XDocument reportXml, string connectionString, string outputFilePath)
     {
         try
         {
@@ -272,7 +263,7 @@ class Program
 
                     // Fetch all trades for the given conid and apply FIFO logic
                     var trades = new List<(DateTime tradeDate, decimal quantity, string openClose)>();
-                    using (SqlCommand cmd = new SqlCommand("SELECT tradeDate, quantity, openCloseIndicator FROM [dbo].[Trades] WHERE [conid] = @conid AND [accountId] = @accountId ORDER BY tradeDate ASC, dateTime ASC", connection))
+                    using (SqlCommand cmd = new SqlCommand("SELECT tradeDate, quantity, openCloseIndicator FROM [dbo].[TradeExecutions] WHERE [conid] = @conid AND [accountId] = @accountId ORDER BY tradeDate ASC, dateTime ASC", connection))
                     {
                         cmd.Parameters.AddWithValue("@conid", conid);
                         cmd.Parameters.AddWithValue("@accountId", accountId);
@@ -356,7 +347,7 @@ class Program
                     currentRow++;
                 }
 
-                string fileName = $"{whenGeneratedStr.Replace(";", "")}.xlsx";
+                string fileName = outputFilePath.Replace("[FILE_NAME]", $"{whenGeneratedStr.Replace(";", "")}.xlsx");
                 string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                 string filePath = Path.Combine(desktopPath, fileName);
                 
@@ -391,7 +382,7 @@ class Program
             connection.Open();
             var tradesBySymbol = new Dictionary<string, List<(DateTime tradeDate, decimal quantity, decimal price, string openClose)>>();
 
-            using (var cmd = new SqlCommand("SELECT symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[Trades] ORDER BY tradeDate ASC, dateTime ASC", connection))
+            using (var cmd = new SqlCommand("SELECT symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[TradeExecutions] ORDER BY tradeDate ASC, dateTime ASC", connection))
             {
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -493,7 +484,7 @@ class Program
             Console.WriteLine("Successfully connected to the database for Today's Executions.");
 
             var existingIbExecIDs = new HashSet<string>();
-            using (SqlCommand cmd = new SqlCommand("SELECT ibExecID FROM dbo.Trades", connection))
+            using (SqlCommand cmd = new SqlCommand("SELECT ibExecID FROM dbo.TradeExecutions", connection))
             {
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -503,7 +494,7 @@ class Program
                     }
                 }
             }
-            Console.WriteLine($"Found {existingIbExecIDs.Count} existing trades in the database.");
+            Console.WriteLine($"Found {existingIbExecIDs.Count} existing trades executions in the database.");
 
             var trades = reportXml.Descendants("TradeConfirm")
                                 .Where(t => t.Attribute("levelOfDetail")?.Value == "EXECUTION")
@@ -519,7 +510,7 @@ class Program
                 }
 
                 newTradesCount++;
-                using (SqlCommand cmd = new SqlCommand("INSERT INTO [dbo].[Trades] ([symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission], [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID], [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description], [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash], [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID], [ibOrderID], [openDateTime], [initialInvestment], [accountId], [acctAlias], [model], [fxRateToBase], [subCategory], [securityIDType], [cusip], [isin], [figi], [listingExchange], [underlyingConid], [underlyingSymbol], [underlyingSecurityID], [underlyingListingExchange], [issuer], [issuerCountryCode], [multiplier], [relatedTradeID], [strike], [reportDate], [putCall], [principalAdjustFactor], [settleDateTarget], [tradeMoney], [openCloseIndicator], [notes], [clearingFirmID], [relatedTransactionID], [rtn], [orderReference], [volatilityOrderLink], [orderTime], [holdingPeriodDateTime], [whenRealized], [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt], [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight]) VALUES (@symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission, @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID, @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description, @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash, @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID, @ibOrderID, @openDateTime, @initialInvestment, @accountId, @acctAlias, @model, @fxRateToBase, @subCategory, @securityIDType, @cusip, @isin, @figi, @listingExchange, @underlyingConid, @underlyingSymbol, @underlyingSecurityID, @underlyingListingExchange, @issuer, @issuerCountryCode, @multiplier, @relatedTradeID, @strike, @reportDate, @putCall, @principalAdjustFactor, @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID, @rtn, @orderReference, @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized, @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt, @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)", connection))
+                using (SqlCommand cmd = new SqlCommand("INSERT INTO [dbo].[TradeExecutions] ([symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission], [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID], [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description], [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash], [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID], [ibOrderID], [openDateTime], [initialInvestment], [accountId], [acctAlias], [model], [fxRateToBase], [subCategory], [securityIDType], [cusip], [isin], [figi], [listingExchange], [underlyingConid], [underlyingSymbol], [underlyingSecurityID], [underlyingListingExchange], [issuer], [issuerCountryCode], [multiplier], [relatedTradeID], [strike], [reportDate], [putCall], [principalAdjustFactor], [settleDateTarget], [tradeMoney], [openCloseIndicator], [notes], [clearingFirmID], [relatedTransactionID], [rtn], [orderReference], [volatilityOrderLink], [orderTime], [holdingPeriodDateTime], [whenRealized], [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt], [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight]) VALUES (@symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission, @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID, @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description, @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash, @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID, @ibOrderID, @openDateTime, @initialInvestment, @accountId, @acctAlias, @model, @fxRateToBase, @subCategory, @securityIDType, @cusip, @isin, @figi, @listingExchange, @underlyingConid, @underlyingSymbol, @underlyingSecurityID, @underlyingListingExchange, @issuer, @issuerCountryCode, @multiplier, @relatedTradeID, @strike, @reportDate, @putCall, @principalAdjustFactor, @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID, @rtn, @orderReference, @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized, @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt, @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)", connection))
                 {
                     AddParameter(cmd, "@symbol", trade.Attribute("symbol")?.Value, SqlDbType.VarChar);
                     AddParameter(cmd, "@securityID", trade.Attribute("securityID")?.Value, SqlDbType.VarChar);
@@ -637,7 +628,7 @@ class Program
                     cmd.ExecuteNonQuery();
                 }
             }
-            Console.WriteLine($"Successfully inserted {newTradesCount} new trades from Today's Executions into the database.");
+            Console.WriteLine($"Successfully inserted {newTradesCount} new trades executions from Today's Executions into the database.");
         }
         catch (SqlException e)
         {
@@ -649,7 +640,7 @@ class Program
         }
     }
 
-    private static void InsertTradesIntoDatabase(XDocument reportXml, string connectionString)
+    private static void InsertTradeExectuionsIntoDatabase(XDocument reportXml, string connectionString)
     {
         try
         {
@@ -658,7 +649,7 @@ class Program
             Console.WriteLine("Successfully connected to the database.");
 
             var existingIbExecIDs = new HashSet<string>();
-            using (SqlCommand cmd = new SqlCommand("SELECT ibExecID FROM dbo.Trades", connection))
+            using (SqlCommand cmd = new SqlCommand("SELECT ibExecID FROM dbo.TradeExecutions", connection))
             {
                 using (var reader = cmd.ExecuteReader())
                 {
@@ -668,7 +659,7 @@ class Program
                     }
                 }
             }
-            Console.WriteLine($"Found {existingIbExecIDs.Count} existing trades in the database.");
+            Console.WriteLine($"Found {existingIbExecIDs.Count} existing trades executions in the database.");
 
             var trades = reportXml.Descendants("Trade").ToList();
             int newTradesCount = 0;
@@ -682,7 +673,7 @@ class Program
                 }
 
                 newTradesCount++;
-                using (SqlCommand cmd = new SqlCommand("INSERT INTO [dbo].[Trades] ([symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission], [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID], [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description], [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash], [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID], [ibOrderID], [openDateTime], [initialInvestment], [accountId], [acctAlias], [model], [fxRateToBase], [subCategory], [securityIDType], [cusip], [isin], [figi], [listingExchange], [underlyingConid], [underlyingSymbol], [underlyingSecurityID], [underlyingListingExchange], [issuer], [issuerCountryCode], [multiplier], [relatedTradeID], [strike], [reportDate], [putCall], [principalAdjustFactor], [settleDateTarget], [tradeMoney], [openCloseIndicator], [notes], [clearingFirmID], [relatedTransactionID], [rtn], [orderReference], [volatilityOrderLink], [orderTime], [holdingPeriodDateTime], [whenRealized], [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt], [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight]) VALUES (@symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission, @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID, @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description, @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash, @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID, @ibOrderID, @openDateTime, @initialInvestment, @accountId, @acctAlias, @model, @fxRateToBase, @subCategory, @securityIDType, @cusip, @isin, @figi, @listingExchange, @underlyingConid, @underlyingSymbol, @underlyingSecurityID, @underlyingListingExchange, @issuer, @issuerCountryCode, @multiplier, @relatedTradeID, @strike, @reportDate, @putCall, @principalAdjustFactor, @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID, @rtn, @orderReference, @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized, @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt, @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)", connection))
+                using (SqlCommand cmd = new SqlCommand("INSERT INTO [dbo].[TradeExecutions] ([symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission], [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID], [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description], [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash], [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID], [ibOrderID], [openDateTime], [initialInvestment], [accountId], [acctAlias], [model], [fxRateToBase], [subCategory], [securityIDType], [cusip], [isin], [figi], [listingExchange], [underlyingConid], [underlyingSymbol], [underlyingSecurityID], [underlyingListingExchange], [issuer], [issuerCountryCode], [multiplier], [relatedTradeID], [strike], [reportDate], [putCall], [principalAdjustFactor], [settleDateTarget], [tradeMoney], [openCloseIndicator], [notes], [clearingFirmID], [relatedTransactionID], [rtn], [orderReference], [volatilityOrderLink], [orderTime], [holdingPeriodDateTime], [whenRealized], [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt], [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight]) VALUES (@symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission, @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID, @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description, @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash, @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID, @ibOrderID, @openDateTime, @initialInvestment, @accountId, @acctAlias, @model, @fxRateToBase, @subCategory, @securityIDType, @cusip, @isin, @figi, @listingExchange, @underlyingConid, @underlyingSymbol, @underlyingSecurityID, @underlyingListingExchange, @issuer, @issuerCountryCode, @multiplier, @relatedTradeID, @strike, @reportDate, @putCall, @principalAdjustFactor, @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID, @rtn, @orderReference, @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized, @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt, @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)", connection))
                 {
                     AddParameter(cmd, "@symbol", trade.Attribute("symbol")?.Value, SqlDbType.VarChar);
                     AddParameter(cmd, "@securityID", trade.Attribute("securityID")?.Value, SqlDbType.VarChar);
@@ -773,7 +764,7 @@ class Program
                     cmd.ExecuteNonQuery();
                 }
             }
-            Console.WriteLine($"Successfully inserted {newTradesCount} new trades into the database.");
+            Console.WriteLine($"Successfully inserted {newTradesCount} new trades executions into the database.");
         }
         catch (SqlException e)
         {
