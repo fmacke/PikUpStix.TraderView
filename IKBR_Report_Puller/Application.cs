@@ -64,6 +64,38 @@ namespace IKBR_Report_Puller
                 string timeSeriesData = await _timeSeriesService.GetTimeSeriesDataAsync(ticker, startDate, endDate, period);
                 Console.WriteLine("Time Series Data for NYSE BAP:");
                 Console.WriteLine(timeSeriesData);
+
+                // Parse and save time series data
+                // Assuming timeSeriesData is JSON, parse it and save to the database
+                dynamic parsedData = Newtonsoft.Json.JsonConvert.DeserializeObject(timeSeriesData);
+                var timestamps = parsedData.chart.result[0].timestamp;
+                var quotes = parsedData.chart.result[0].indicators.quote[0];
+
+                for (int i = 0; i < timestamps.Count; i++)
+                {
+                    DateTime date = DateTimeOffset.FromUnixTimeSeconds((long)timestamps[i]).DateTime;
+                    double open = quotes.open[i];
+                    double close = quotes.close[i];
+                    double low = quotes.low[i];
+                    double high = quotes.high[i];
+                    double volume = quotes.volume[i];
+
+                    _dataService.UpsertTimeSeriesData(
+                        instrumentName: "BAP",
+                        provider: "YahooFinance",
+                        dataName: "TimeSeries",
+                        dataSource: "yfinance",
+                        format: "JSON",
+                        frequency: period,
+                        currency: "USD",
+                        date: date,
+                        openPrice: open,
+                        closePrice: close,
+                        lowPrice: low,
+                        highPrice: high,
+                        volume: volume
+                    );
+                }
             }
             catch (Exception ex)
             {

@@ -541,6 +541,74 @@ namespace IKBR_Report_Puller.Services
             }
         }
 
+        public void UpsertTimeSeriesData(string instrumentName, string provider, string dataName, string dataSource, string format, string frequency, string currency, DateTime date, double openPrice, double closePrice, double lowPrice, double highPrice, double volume)
+        {
+            using SqlConnection connection = new SqlConnection(ConnectionString);
+            connection.Open();
+
+            // Check if the instrument exists
+            string instrumentQuery = "SELECT Id FROM Instruments WHERE InstrumentName = @InstrumentName";
+            int? instrumentId;
+
+            using (SqlCommand cmd = new SqlCommand(instrumentQuery, connection))
+            {
+                cmd.Parameters.AddWithValue("@InstrumentName", instrumentName);
+                instrumentId = cmd.ExecuteScalar() as int?;
+            }
+
+            // Insert the instrument if it doesn't exist
+            if (!instrumentId.HasValue)
+            {
+                string insertInstrumentQuery = @"INSERT INTO Instruments (InstrumentName, Provider, DataName, DataSource, Format, Frequency, Currency)
+                                                OUTPUT INSERTED.Id
+                                                VALUES (@InstrumentName, @Provider, @DataName, @DataSource, @Format, @Frequency, @Currency)";
+
+                using (SqlCommand cmd = new SqlCommand(insertInstrumentQuery, connection))
+                {
+                    cmd.Parameters.AddWithValue("@InstrumentName", instrumentName);
+                    cmd.Parameters.AddWithValue("@Provider", provider);
+                    cmd.Parameters.AddWithValue("@DataName", dataName);
+                    cmd.Parameters.AddWithValue("@DataSource", dataSource);
+                    cmd.Parameters.AddWithValue("@Format", format);
+                    cmd.Parameters.AddWithValue("@Frequency", frequency);
+                    cmd.Parameters.AddWithValue("@Currency", currency);
+
+                    instrumentId = (int)cmd.ExecuteScalar();
+                }
+            }
+
+            // Check if the historical data exists
+            string historicalDataQuery = "SELECT COUNT(*) FROM HistoricalData WHERE InstrumentId = @InstrumentId AND Date = @Date";
+            int count;
+
+            using (SqlCommand cmd = new SqlCommand(historicalDataQuery, connection))
+            {
+                cmd.Parameters.AddWithValue("@InstrumentId", instrumentId);
+                cmd.Parameters.AddWithValue("@Date", date);
+                count = (int)cmd.ExecuteScalar();
+            }
+
+            // Insert the historical data if it doesn't exist
+            if (count == 0)
+            {
+                string insertHistoricalDataQuery = @"INSERT INTO HistoricalData (Date, OpenPrice, ClosePrice, LowPrice, HighPrice, Volume, InstrumentId)
+                                                    VALUES (@Date, @OpenPrice, @ClosePrice, @LowPrice, @HighPrice, @Volume, @InstrumentId)";
+
+                using (SqlCommand cmd = new SqlCommand(insertHistoricalDataQuery, connection))
+                {
+                    cmd.Parameters.AddWithValue("@Date", date);
+                    cmd.Parameters.AddWithValue("@OpenPrice", openPrice);
+                    cmd.Parameters.AddWithValue("@ClosePrice", closePrice);
+                    cmd.Parameters.AddWithValue("@LowPrice", lowPrice);
+                    cmd.Parameters.AddWithValue("@HighPrice", highPrice);
+                    cmd.Parameters.AddWithValue("@Volume", volume);
+                    cmd.Parameters.AddWithValue("@InstrumentId", instrumentId);
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
+        }
+
         private static void AddParameter(SqlCommand cmd, string paramName, string value, SqlDbType dbType)
         {
             var param = cmd.Parameters.Add(paramName, dbType);
