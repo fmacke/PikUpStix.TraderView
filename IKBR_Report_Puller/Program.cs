@@ -29,6 +29,7 @@ namespace IKBR_Report_Puller
                     services.AddSingleton<IDataService, DataService>();
                     services.AddSingleton<IExcelReportService, ExcelReportService>();
                     services.AddSingleton<IReportFetchingService, ReportFetchingService>();
+                    services.AddSingleton<ITimeSeriesService, TimeSeriesService>();
                     services.AddSingleton<Application>();
                 })
                 .Build();
