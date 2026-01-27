@@ -33,68 +33,74 @@ namespace IKBR_Report_Puller
         {
             try
             {
-                //var outputFilePath = _config["IBKR:OutputFilePath"];
-                //const int maxRetries = 10;
-                //const int delayInSeconds = 15;
+                var outputFilePath = _config["IBKR:OutputFilePath"];
+                const int maxRetries = 10;
+                const int delayInSeconds = 15;
 
                 //// Fetch and process main report
-                //XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
-                //string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", "TraderSyncAccess.xml");
-                //mainReportXml.Save(mainReportFilePath);
-                //Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
+                XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+                string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", "TraderSyncAccess.xml");
+                mainReportXml.Save(mainReportFilePath);
+                Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
 
-                //_dataService.InsertTradeExecutions(mainReportXml);
-                //_dataService.InsertOpenPositions(mainReportXml);
-                //_excelReportService.CreateOpenPositionsReport(mainReportXml, outputFilePath);
+                _dataService.InsertTradeExecutions(mainReportXml);
+                _dataService.InsertOpenPositions(mainReportXml);
+                _excelReportService.CreateOpenPositionsReport(mainReportXml, outputFilePath);
 
                 //// Fetch and process today's report
-                //XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                //string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", "TraderSyncAccess_today.xml");
-                //todayReportXml.Save(todayReportFilePath);
-                //Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
+                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+                string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", "TraderSyncAccess_today.xml");
+                todayReportXml.Save(todayReportFilePath);
+                Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
 
-                //_dataService.InsertTodayExecutions(todayReportXml);
+                _dataService.InsertTodayExecutions(todayReportXml);
 
-                // Fetch time series data for NYSE BAP instrument
-                string ticker = "BAP";
-                DateTime startDate = DateTime.UtcNow.AddMonths(-1);
-                DateTime endDate = DateTime.UtcNow;
-                string period = "1d";
+                // Fetch instrument data for all open positions
+                var instrumentNames = _dataService.GetOpenPositionInstrumentNames();
 
-                string timeSeriesData = await _timeSeriesService.GetTimeSeriesDataAsync(ticker, startDate, endDate, period);
-                Console.WriteLine("Time Series Data for NYSE BAP:");
-                Console.WriteLine(timeSeriesData);
-
-                // Parse and save time series data
-                // Assuming timeSeriesData is JSON, parse it and save to the database
-                dynamic parsedData = Newtonsoft.Json.JsonConvert.DeserializeObject(timeSeriesData);
-                var timestamps = parsedData.chart.result[0].timestamp;
-                var quotes = parsedData.chart.result[0].indicators.quote[0];
-
-                for (int i = 0; i < timestamps.Count; i++)
+                foreach (var instrument in instrumentNames)
                 {
-                    DateTime date = DateTimeOffset.FromUnixTimeSeconds((long)timestamps[i]).DateTime;
-                    double open = quotes.open[i];
-                    double close = quotes.close[i];
-                    double low = quotes.low[i];
-                    double high = quotes.high[i];
-                    double volume = quotes.volume[i];
+                    Console.WriteLine($"Fetching data for instrument: {instrument}");
 
-                    _dataService.UpsertTimeSeriesData(
-                        instrumentName: "BAP",
-                        provider: "YahooFinance",
-                        dataName: "TimeSeries",
-                        dataSource: "yfinance",
-                        format: "JSON",
-                        frequency: period,
-                        currency: "USD",
-                        date: date,
-                        openPrice: open,
-                        closePrice: close,
-                        lowPrice: low,
-                        highPrice: high,
-                        volume: volume
-                    );
+                    string instrumentTicker = instrument; // Assuming instrument matches the ticker
+                    DateTime instrumentStartDate = DateTime.UtcNow.AddMonths(-1);
+                    DateTime instrumentEndDate = DateTime.UtcNow;
+                    string instrumentPeriod = "1d";
+
+                    string instrumentTimeSeriesData = await _timeSeriesService.GetTimeSeriesDataAsync(instrumentTicker, instrumentStartDate, instrumentEndDate, instrumentPeriod);
+                    Console.WriteLine($"Time Series Data for {instrument}:");
+                    Console.WriteLine(instrumentTimeSeriesData);
+
+                    // Parse and save time series data
+                    dynamic instrumentParsedData = Newtonsoft.Json.JsonConvert.DeserializeObject(instrumentTimeSeriesData);
+                    var instrumentTimestamps = instrumentParsedData.chart.result[0].timestamp;
+                    var instrumentQuotes = instrumentParsedData.chart.result[0].indicators.quote[0];
+
+                    for (int i = 0; i < instrumentTimestamps.Count; i++)
+                    {
+                        DateTime date = DateTimeOffset.FromUnixTimeSeconds((long)instrumentTimestamps[i]).DateTime;
+                        double open = instrumentQuotes.open[i];
+                        double close = instrumentQuotes.close[i];
+                        double low = instrumentQuotes.low[i];
+                        double high = instrumentQuotes.high[i];
+                        double volume = instrumentQuotes.volume[i];
+
+                        _dataService.UpsertTimeSeriesData(
+                            instrumentName: instrument,
+                            provider: "YahooFinance",
+                            dataName: "TimeSeries",
+                            dataSource: "yfinance",
+                            format: "JSON",
+                            frequency: instrumentPeriod,
+                            currency: "USD",
+                            date: date,
+                            openPrice: open,
+                            closePrice: close,
+                            lowPrice: low,
+                            highPrice: high,
+                            volume: volume
+                        );
+                    }
                 }
             }
             catch (Exception ex)

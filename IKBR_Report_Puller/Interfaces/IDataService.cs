@@ -9,5 +9,6 @@ namespace IKBR_Report_Puller.Interfaces
         void InsertTodayExecutions(XDocument reportXml);
         void UpsertTimeSeriesData(string instrumentName, string provider, string dataName, string dataSource, string format, string frequency, string currency, DateTime date, double openPrice, double closePrice, double lowPrice, double highPrice, double volume);
         string ConnectionString { get; }
+        List<string> GetOpenPositionInstrumentNames();
     }
 }
