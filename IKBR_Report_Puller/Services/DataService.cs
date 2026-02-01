@@ -173,19 +173,126 @@ namespace IKBR_Report_Puller.Services
 
         public void InsertTodayExecutions(XDocument reportXml)
         {
-            throw new NotImplementedException();
+            ExecuteDatabaseOperation(connection =>
+            {
+                var tradeConfirms = reportXml.Descendants("TradeConfirm").ToList();
+                if (!tradeConfirms.Any())
+                {
+                    Console.WriteLine("No trade confirmations found in the report.");
+                    return;
+                }
+
+                using (var transaction = connection.BeginTransaction())
+                {
+                    foreach (var tradeConfirm in tradeConfirms)
+                    {
+                        string execID = tradeConfirm.Attribute("execID")?.Value;
+                        if (string.IsNullOrEmpty(execID))
+                        {
+                            Console.WriteLine("Trade confirmation missing execID. Skipping.");
+                            continue;
+                        }
+
+                        // Check if the execID already exists in the database
+                        using (var checkCmd = new SqlCommand("SELECT COUNT(*) FROM dbo.TradeExecutions WHERE execID = @execID", connection, transaction))
+                        {
+                            checkCmd.Parameters.AddWithValue("@execID", execID);
+                            int count = (int)checkCmd.ExecuteScalar();
+
+                            if (count > 0)
+                            {
+                                // Update existing row
+                                using (var updateCmd = new SqlCommand("UPDATE dbo.TradeExecutions SET symbol = @symbol, tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice WHERE execID = @execID", connection, transaction))
+                                {
+                                    updateCmd.Parameters.AddWithValue("@execID", execID);
+                                    updateCmd.Parameters.AddWithValue("@symbol", tradeConfirm.Attribute("symbol")?.Value);
+                                    updateCmd.Parameters.AddWithValue("@tradeDate", tradeConfirm.Attribute("tradeDate")?.Value);
+                                    updateCmd.Parameters.AddWithValue("@quantity", ConvertToDecimal(tradeConfirm.Attribute("quantity")?.Value));
+                                    updateCmd.Parameters.AddWithValue("@tradePrice", ConvertToDecimal(tradeConfirm.Attribute("price")?.Value));
+                                    updateCmd.ExecuteNonQuery();
+                                }
+                            }
+                            else
+                            {
+                                // Insert new row
+                                using (var insertCmd = new SqlCommand("INSERT INTO dbo.TradeExecutions (execID, symbol, tradeDate, quantity, tradePrice) VALUES (@execID, @symbol, @tradeDate, @quantity, @tradePrice)", connection, transaction))
+                                {
+                                    insertCmd.Parameters.AddWithValue("@execID", execID);
+                                    insertCmd.Parameters.AddWithValue("@symbol", tradeConfirm.Attribute("symbol")?.Value);
+                                    insertCmd.Parameters.AddWithValue("@tradeDate", tradeConfirm.Attribute("tradeDate")?.Value);
+                                    insertCmd.Parameters.AddWithValue("@quantity", ConvertToDecimal(tradeConfirm.Attribute("quantity")?.Value));
+                                    insertCmd.Parameters.AddWithValue("@tradePrice", ConvertToDecimal(tradeConfirm.Attribute("price")?.Value));
+                                    insertCmd.ExecuteNonQuery();
+                                }
+                            }
+                        }
+                    }
+
+                    transaction.Commit();
+                    Console.WriteLine("Successfully processed today's trade confirmations.");
+                }
+            });
         }
 
-        public void UpsertTimeSeriesData(string instrumentName, string provider, string dataName, string dataSource, string format, string frequency, string currency, DateTime date, double openPrice, double closePrice, double lowPrice, double highPrice, double volume)
+        public void UpsertTimeSeriesData(string instrumentName, string listingExchange, string securityIdentifier, string provider, string dataName, string dataSource, string format, string frequency, string currency, DateTime date, double openPrice, double closePrice, double lowPrice, double highPrice, double volume)
         {
-            throw new NotImplementedException();
+            ExecuteDatabaseOperation(connection =>
+            {
+                // Check if the instrument already exists in the Instruments table
+                using (var checkCmd = new SqlCommand("SELECT COUNT(*) FROM dbo.Instruments WHERE SecurityId = @securityId AND Frequency = @frequency AND Provider = @provider", connection))
+                {
+                    checkCmd.Parameters.AddWithValue("@securityId", securityIdentifier);
+                    checkCmd.Parameters.AddWithValue("@frequency", frequency);
+                    checkCmd.Parameters.AddWithValue("@provider", provider);
+
+                    int count = (int)checkCmd.ExecuteScalar();
+
+                    if (count == 0)
+                    {
+                        // Insert new instrument if it does not exist
+                        using (var insertCmd = new SqlCommand("INSERT INTO dbo.Instruments (InstrumentName, Provider, DataName, DataSource, Format, Frequency, ContractUnit, ContractUnitType, PriceQuotation, MinimumPriceFluctuation, Currency, ListingExchange, SecurityId) VALUES (@instrumentName, @provider, @dataName, @dataSource, @format, @frequency, @contractUnit, @contractUnitType, @priceQuotation, @minimumPriceFluctuation, @currency, @listingExchange, @securityId)", connection))
+                        {
+                            insertCmd.Parameters.AddWithValue("@instrumentName", instrumentName);
+                            insertCmd.Parameters.AddWithValue("@provider", provider);
+                            insertCmd.Parameters.AddWithValue("@dataName", dataName);
+                            insertCmd.Parameters.AddWithValue("@dataSource", dataSource);
+                            insertCmd.Parameters.AddWithValue("@format", format);
+                            insertCmd.Parameters.AddWithValue("@frequency", frequency);
+                            insertCmd.Parameters.AddWithValue("@contractUnit", DBNull.Value); // Assuming ContractUnit is not provided
+                            insertCmd.Parameters.AddWithValue("@contractUnitType", DBNull.Value); // Assuming ContractUnitType is not provided
+                            insertCmd.Parameters.AddWithValue("@priceQuotation", DBNull.Value); // Assuming PriceQuotation is not provided
+                            insertCmd.Parameters.AddWithValue("@minimumPriceFluctuation", DBNull.Value); // Assuming MinimumPriceFluctuation is not provided
+                            insertCmd.Parameters.AddWithValue("@currency", currency);
+                            insertCmd.Parameters.AddWithValue("@listingExchange", listingExchange);
+                            insertCmd.Parameters.AddWithValue("@securityId", securityIdentifier);
+
+                            insertCmd.ExecuteNonQuery();
+                        }
+                    }
+                }
+
+                // Additional logic for upserting time series data can be added here
+            });
         }
 
         public string ConnectionString => _connectionString;
 
-        public List<string> GetOpenPositionInstrumentNames()
+        public List<(string securityID, string listingExchange, string symbol)> GetOpenPositionInstrumentNames(XDocument xmlReport)
         {
-            throw new NotImplementedException();
+            // Extract 'securityID', 'listingExchange', and 'symbol' attributes from OpenPosition elements in the XML report
+            var instrumentDetails = xmlReport.Descendants("OpenPosition")
+                                      .Select(op => (
+                                          securityID: op.Attribute("securityID")?.Value,
+                                          listingExchange: op.Attribute("listingExchange")?.Value,
+                                          symbol: op.Attribute("symbol")?.Value
+                                      ))
+                                      .Where(details => !string.IsNullOrEmpty(details.securityID) &&
+                                                        !string.IsNullOrEmpty(details.listingExchange) &&
+                                                        !string.IsNullOrEmpty(details.symbol))
+                                      .Distinct()
+                                      .ToList();
+
+            return instrumentDetails;
         }
 
         private void ExecuteDatabaseOperation(Action<SqlConnection> operation)

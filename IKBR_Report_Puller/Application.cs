@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using IKBR_Report_Puller.Interfaces;
@@ -39,7 +40,8 @@ namespace IKBR_Report_Puller
 
                 //// Fetch and process main report
                 XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
-                string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", "TraderSyncAccess.xml");
+                var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";   
+                string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
                 mainReportXml.Save(mainReportFilePath);
                 Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
 
@@ -49,32 +51,50 @@ namespace IKBR_Report_Puller
 
                 //// Fetch and process today's report
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", "TraderSyncAccess_today.xml");
+                fileName = DateTime.UtcNow.ToString("yyyyMMdd") + "_TraderSyncAccess_today.xml";
+                string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
                 todayReportXml.Save(todayReportFilePath);
                 Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
 
                 _dataService.InsertTodayExecutions(todayReportXml);
 
                 // Fetch instrument data for all open positions
-                var instrumentNames = _dataService.GetOpenPositionInstrumentNames();
+                var positionDetails = _dataService.GetOpenPositionInstrumentNames(mainReportXml);
 
-                foreach (var instrument in instrumentNames)
+                foreach (var item in positionDetails)
                 {
-                    Console.WriteLine($"Fetching data for instrument: {instrument}");
+                    Console.WriteLine($"Fetching data for security: {item.listingExchange + ":" + item.symbol + "(" + item.securityID + ")"}");
 
-                    string instrumentTicker = instrument; // Assuming instrument matches the ticker
+                    string instrumentTicker = item.symbol; // Assuming instrument matches the ticker
                     DateTime instrumentStartDate = DateTime.UtcNow.AddMonths(-1);
                     DateTime instrumentEndDate = DateTime.UtcNow;
                     string instrumentPeriod = "1d";
 
-                    string instrumentTimeSeriesData = await _timeSeriesService.GetTimeSeriesDataAsync(instrumentTicker, instrumentStartDate, instrumentEndDate, instrumentPeriod);
-                    Console.WriteLine($"Time Series Data for {instrument}:");
+                    // Dynamically set currency from the XML report data
+                    string currency = mainReportXml.Descendants("OpenPosition")
+                                                   .FirstOrDefault(op => op.Attribute("securityID")?.Value == item.securityID)?.Attribute("currency")?.Value ?? "USD";
+
+                    string instrumentTimeSeriesData = await _timeSeriesService.GetTimeSeriesDataAsync(instrumentTicker, item.listingExchange, instrumentStartDate, instrumentEndDate, instrumentPeriod);
+                    Console.WriteLine($"Time Series Data for {item.symbol}:");
                     Console.WriteLine(instrumentTimeSeriesData);
 
-                    // Parse and save time series data
+                    // Parse and validate time series data
                     dynamic instrumentParsedData = Newtonsoft.Json.JsonConvert.DeserializeObject(instrumentTimeSeriesData);
-                    var instrumentTimestamps = instrumentParsedData.chart.result[0].timestamp;
-                    var instrumentQuotes = instrumentParsedData.chart.result[0].indicators.quote[0];
+                    var result = instrumentParsedData?.chart?.result?[0];
+                    if (result == null || result.indicators?.quote?[0] == null)
+                    {
+                        Console.WriteLine($"No valid time series data found for {item.symbol}.");
+                        continue;
+                    }
+
+                    var instrumentTimestamps = result.timestamp;
+                    var instrumentQuotes = result.indicators.quote[0];
+
+                    if (instrumentTimestamps == null || instrumentQuotes.open == null)
+                    {
+                        Console.WriteLine($"Incomplete time series data for {item.symbol}.");
+                        continue;
+                    }
 
                     for (int i = 0; i < instrumentTimestamps.Count; i++)
                     {
@@ -86,13 +106,15 @@ namespace IKBR_Report_Puller
                         double volume = instrumentQuotes.volume[i];
 
                         _dataService.UpsertTimeSeriesData(
-                            instrumentName: instrument,
+                            instrumentName: item.symbol,
+                            listingExchange: item.listingExchange,
+                            securityIdentifier: item.securityID,
                             provider: "YahooFinance",
                             dataName: "TimeSeries",
                             dataSource: "yfinance",
                             format: "JSON",
                             frequency: instrumentPeriod,
-                            currency: "USD",
+                            currency: currency,
                             date: date,
                             openPrice: open,
                             closePrice: close,

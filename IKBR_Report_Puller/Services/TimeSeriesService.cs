@@ -15,8 +15,9 @@ namespace IKBR_Report_Puller.Services
             _httpClient = httpClient;
         }
 
-        public async Task<string> GetTimeSeriesDataAsync(string ticker, DateTime startDate, DateTime endDate, string period)
+        public async Task<string> GetTimeSeriesDataAsync(string ticker, string listingExchange, DateTime startDate, DateTime endDate, string period)
         {
+            var adjustedTicker = string.IsNullOrEmpty(listingExchange) ? ticker : $"{ticker}{GetListingExchange(listingExchange)}";
             var url = $"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}?period1={new DateTimeOffset(startDate).ToUnixTimeSeconds()}&period2={new DateTimeOffset(endDate).ToUnixTimeSeconds()}&interval={period}";
 
             int maxRetries = 1;
@@ -55,6 +56,22 @@ namespace IKBR_Report_Puller.Services
             }
 
             throw new Exception("Failed to fetch time series data after multiple retries.");
+        }
+
+        private string? GetListingExchange(string listingExchange)
+        {
+            return listingExchange switch
+            {
+                "NASDAQ" => "",
+                "NYSE" => "",
+                "AMEX" => "",
+                "IBIS" => ".DE",
+                "IBIS2" => ".DE",
+                "LSEETF" => ".L",                
+                "LSE" => ".L",
+                "AEB" => ".AS",
+                _ => string.Empty,
+            };
         }
     }
 }
