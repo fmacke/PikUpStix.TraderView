@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using IKBR_Report_Puller.Interfaces;
+using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
 
 namespace IKBR_Report_Puller
@@ -15,6 +17,7 @@ namespace IKBR_Report_Puller
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
         private readonly ITimeSeriesService _timeSeriesService;
+        private readonly PositionProcessor _positionProcessor;
 
         public Application(
             IReportFetchingService reportFetchingService,
@@ -28,6 +31,7 @@ namespace IKBR_Report_Puller
             _excelReportService = excelReportService;
             _config = config;
             _timeSeriesService = timeSeriesService;
+            _positionProcessor = new PositionProcessor(_timeSeriesService, _dataService, _config);
         }
 
         public async Task RunAsync()
@@ -59,71 +63,9 @@ namespace IKBR_Report_Puller
                 _dataService.InsertTodayExecutions(todayReportXml);
 
                 // Fetch instrument data for all open positions
-                var positionDetails = _dataService.GetOpenPositionInstrumentNames(mainReportXml);
-
-                foreach (var item in positionDetails)
-                {
-                    Console.WriteLine($"Fetching data for security: {item.listingExchange + ":" + item.symbol + "(" + item.securityID + ")"}");
-
-                    string instrumentTicker = item.symbol; // Assuming instrument matches the ticker
-                    DateTime instrumentStartDate = DateTime.UtcNow.AddMonths(-1);
-                    DateTime instrumentEndDate = DateTime.UtcNow;
-                    string instrumentPeriod = "1d";
-
-                    // Dynamically set currency from the XML report data
-                    string currency = mainReportXml.Descendants("OpenPosition")
-                                                   .FirstOrDefault(op => op.Attribute("securityID")?.Value == item.securityID)?.Attribute("currency")?.Value ?? "USD";
-
-                    string instrumentTimeSeriesData = await _timeSeriesService.GetTimeSeriesDataAsync(instrumentTicker, item.listingExchange, instrumentStartDate, instrumentEndDate, instrumentPeriod);
-                    //Console.WriteLine($"Time Series Data for {item.symbol}:");
-                    //Console.WriteLine(instrumentTimeSeriesData);
-
-                    // Parse and validate time series data
-                    dynamic instrumentParsedData = Newtonsoft.Json.JsonConvert.DeserializeObject(instrumentTimeSeriesData);
-                    var result = instrumentParsedData?.chart?.result?[0];
-                    if (result == null || result.indicators?.quote?[0] == null)
-                    {
-                        Console.WriteLine($"No valid time series data found for {item.symbol}.");
-                        continue;
-                    }
-
-                    var instrumentTimestamps = result.timestamp;
-                    var instrumentQuotes = result.indicators.quote[0];
-
-                    if (instrumentTimestamps == null || instrumentQuotes.open == null)
-                    {
-                        Console.WriteLine($"Incomplete time series data for {item.symbol}.");
-                        continue;
-                    }
-
-                    for (int i = 0; i < instrumentTimestamps.Count; i++)
-                    {
-                        DateTime date = DateTimeOffset.FromUnixTimeSeconds((long)instrumentTimestamps[i]).DateTime;
-                        double open = instrumentQuotes.open[i];
-                        double close = instrumentQuotes.close[i];
-                        double low = instrumentQuotes.low[i];
-                        double high = instrumentQuotes.high[i];
-                        double volume = instrumentQuotes.volume[i];
-
-                        _dataService.UpsertTimeSeriesData(
-                            instrumentName: item.symbol,
-                            listingExchange: item.listingExchange,
-                            securityIdentifier: item.securityID,
-                            provider: "YahooFinance",
-                            dataName: "TimeSeries",
-                            dataSource: "yfinance",
-                            format: "JSON",
-                            frequency: instrumentPeriod,
-                            currency: currency,
-                            date: date,
-                            openPrice: open,
-                            closePrice: close,
-                            lowPrice: low,
-                            highPrice: high,
-                            volume: volume
-                        );
-                    }
-                }
+                var positionDetails = _dataService.GetOpenPositionInstrumentNames(mainReportXml)
+                    .Select(p => (p.listingExchange, p.symbol, p.securityID));
+                await _positionProcessor.ProcessPositionsAsync(positionDetails, mainReportXml);
             }
             catch (Exception ex)
             {
