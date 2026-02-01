@@ -75,8 +75,8 @@ namespace IKBR_Report_Puller
                                                    .FirstOrDefault(op => op.Attribute("securityID")?.Value == item.securityID)?.Attribute("currency")?.Value ?? "USD";
 
                     string instrumentTimeSeriesData = await _timeSeriesService.GetTimeSeriesDataAsync(instrumentTicker, item.listingExchange, instrumentStartDate, instrumentEndDate, instrumentPeriod);
-                    Console.WriteLine($"Time Series Data for {item.symbol}:");
-                    Console.WriteLine(instrumentTimeSeriesData);
+                    //Console.WriteLine($"Time Series Data for {item.symbol}:");
+                    //Console.WriteLine(instrumentTimeSeriesData);
 
                     // Parse and validate time series data
                     dynamic instrumentParsedData = Newtonsoft.Json.JsonConvert.DeserializeObject(instrumentTimeSeriesData);

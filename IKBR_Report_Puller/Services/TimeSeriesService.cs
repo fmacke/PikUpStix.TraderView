@@ -5,6 +5,8 @@ using System.Threading;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace IKBR_Report_Puller.Services
 {
@@ -81,16 +83,46 @@ namespace IKBR_Report_Puller.Services
                             return responseData;
                         }
 
+                        // Fetch all existing data for the date range in a single query
+                        var existingDates = new HashSet<DateTime>();
+                        using (var connection = new SqlConnection(_connectionString))
+                        {
+                            connection.Open();
+                            using (var command = new SqlCommand(
+                                "SELECT Date FROM dbo.HistoricalData WHERE InstrumentId = @instrumentId AND Date BETWEEN @startDate AND @endDate", connection))
+                            {
+                                command.Parameters.AddWithValue("@instrumentId", instrumentId);
+                                command.Parameters.AddWithValue("@startDate", DateTimeOffset.FromUnixTimeSeconds((long)timestamps.First()).DateTime);
+                                command.Parameters.AddWithValue("@endDate", DateTimeOffset.FromUnixTimeSeconds((long)timestamps.Last()).DateTime);
+
+                                using (var reader = command.ExecuteReader())
+                                {
+                                    while (reader.Read())
+                                    {
+                                        existingDates.Add(reader.GetDateTime(0));
+                                    }
+                                }
+                            }
+                        }
+
                         // Insert time series data into dbo.HistoricalData
                         using (var connection = new SqlConnection(_connectionString))
                         {
                             connection.Open();
                             foreach (var i in Enumerable.Range(0, timestamps.Count))
                             {
+                                var date = DateTimeOffset.FromUnixTimeSeconds((long)timestamps[i]).DateTime;
+
+                                // Skip insertion if data already exists
+                                if (existingDates.Contains(date))
+                                {
+                                    continue;
+                                }
+
                                 using (var command = new SqlCommand(
                                     "INSERT INTO dbo.HistoricalData (Date, OpenPrice, ClosePrice, LowPrice, HighPrice, Volume, Settle, OpenInterest, InstrumentId) VALUES (@date, @openPrice, @closePrice, @lowPrice, @highPrice, @volume, @settle, @openInterest, @instrumentId)", connection))
                                 {
-                                    command.Parameters.AddWithValue("@date", DateTimeOffset.FromUnixTimeSeconds((long)timestamps[i]).DateTime);
+                                    command.Parameters.AddWithValue("@date", date);
                                     command.Parameters.AddWithValue("@openPrice", (double?)quotes.open[i] ?? (object)DBNull.Value);
                                     command.Parameters.AddWithValue("@closePrice", (double?)quotes.close[i] ?? (object)DBNull.Value);
                                     command.Parameters.AddWithValue("@lowPrice", (double?)quotes.low[i] ?? (object)DBNull.Value);
