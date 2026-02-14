@@ -141,134 +141,339 @@ namespace IKBR_Report_Puller.Services
                     }
                 }
 
-                int newTradesCount = 0;
                 using (var transaction = connection.BeginTransaction())
                 {
                     foreach (var trade in trades)
                     {
                         string ibExecID = trade.Attribute("ibExecID")?.Value;
-                        if (string.IsNullOrEmpty(ibExecID) || existingTrades.Contains(ibExecID))
+                        if (string.IsNullOrEmpty(ibExecID))
                         {
                             continue;
                         }
 
-                        ExecuteInsertCommand(connection, transaction, @"INSERT INTO [dbo].[TradeExecutions]
-                            ([symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission], [ibCommissionCurrency],
-                             [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID], [brokerageOrderID], [exchOrderId], [extExecID],
-                             [orderType], [traderID], [currency], [description], [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange],
-                             [proceeds], [netCash], [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID], [ibOrderID],
-                             [openDateTime], [initialInvestment], [accountId], [acctAlias], [model], [fxRateToBase], [subCategory], [securityIDType], [cusip],
-                             [isin], [figi], [listingExchange], [underlyingConid], [underlyingSymbol], [underlyingSecurityID], [underlyingListingExchange],
-                             [issuer], [issuerCountryCode], [multiplier], [relatedTradeID], [strike], [reportDate], [putCall], [principalAdjustFactor],
-                             [settleDateTarget], [tradeMoney], [openCloseIndicator], [notes], [clearingFirmID], [relatedTransactionID], [rtn], [orderReference],
-                             [volatilityOrderLink], [orderTime], [holdingPeriodDateTime], [whenRealized], [whenReopened], [levelOfDetail], [changeInPrice],
-                             [changeInQuantity], [isAPIOrder], [accruedInt], [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight])
-                            VALUES
-                            (@symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission, @ibCommissionCurrency,
-                             @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID, @brokerageOrderID, @exchOrderId, @extExecID,
-                             @orderType, @traderID, @currency, @description, @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange,
-                             @proceeds, @netCash, @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID, @ibOrderID,
-                             @openDateTime, @initialInvestment, @accountId, @acctAlias, @model, @fxRateToBase, @subCategory, @securityIDType, @cusip,
-                             @isin, @figi, @listingExchange, @underlyingConid, @underlyingSymbol, @underlyingSecurityID, @underlyingListingExchange,
-                             @issuer, @issuerCountryCode, @multiplier, @relatedTradeID, @strike, @reportDate, @putCall, @principalAdjustFactor,
-                             @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID, @rtn, @orderReference,
-                             @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized, @whenReopened, @levelOfDetail, @changeInPrice,
-                             @changeInQuantity, @isAPIOrder, @accruedInt, @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)",
-                            new Dictionary<string, object>
-                            {
-                                { "@symbol", trade.Attribute("symbol")?.Value },
-                                { "@securityID", trade.Attribute("securityID")?.Value },
-                                { "@tradeID", ConvertToLong(trade.Attribute("tradeID")?.Value) },
-                                { "@dateTime", trade.Attribute("dateTime")?.Value },
-                                { "@tradeDate", trade.Attribute("tradeDate")?.Value },
-                                { "@quantity", ConvertToDecimal(trade.Attribute("quantity")?.Value) },
-                                { "@tradePrice", ConvertToDecimal(trade.Attribute("tradePrice")?.Value) },
-                                { "@ibCommission", ConvertToDecimal(trade.Attribute("ibCommission")?.Value) },
-                                { "@ibCommissionCurrency", trade.Attribute("ibCommissionCurrency")?.Value },
-                                { "@closePrice", ConvertToDecimal(trade.Attribute("closePrice")?.Value) },
-                                { "@cost", ConvertToDecimal(trade.Attribute("cost")?.Value) },
-                                { "@fifoPnlRealized", ConvertToDecimal(trade.Attribute("fifoPnlRealized")?.Value) },
-                                { "@buySell", trade.Attribute("buySell")?.Value },
-                                { "@transactionID", ConvertToLong(trade.Attribute("transactionID")?.Value) },
-                                { "@ibExecID", trade.Attribute("ibExecID")?.Value },
-                                { "@brokerageOrderID", trade.Attribute("brokerageOrderID")?.Value },
-                                { "@exchOrderId", trade.Attribute("exchOrderId")?.Value },
-                                { "@extExecID", trade.Attribute("extExecID")?.Value },
-                                { "@orderType", trade.Attribute("orderType")?.Value },
-                                { "@traderID", trade.Attribute("traderID")?.Value },
-                                { "@currency", trade.Attribute("currency")?.Value },
-                                { "@description", trade.Attribute("description")?.Value },
-                                { "@conid", ConvertToLong(trade.Attribute("conid")?.Value) },
-                                { "@taxes", ConvertToDecimal(trade.Attribute("taxes")?.Value) },
-                                { "@assetCategory", trade.Attribute("assetCategory")?.Value },
-                                { "@expiry", trade.Attribute("expiry")?.Value },
-                                { "@transactionType", trade.Attribute("transactionType")?.Value },
-                                { "@exchange", trade.Attribute("exchange")?.Value },
-                                { "@proceeds", ConvertToDecimal(trade.Attribute("proceeds")?.Value) },
-                                { "@netCash", ConvertToDecimal(trade.Attribute("netCash")?.Value) },
-                                { "@mtmPnl", ConvertToDecimal(trade.Attribute("mtmPnl")?.Value) },
-                                { "@origTradePrice", ConvertToDecimal(trade.Attribute("origTradePrice")?.Value) },
-                                { "@origTradeDate", trade.Attribute("origTradeDate")?.Value },
-                                { "@origTradeID", trade.Attribute("origTradeID")?.Value },
-                                { "@origOrderID", ConvertToLong(trade.Attribute("origOrderID")?.Value) },
-                                { "@origTransactionID", ConvertToLong(trade.Attribute("origTransactionID")?.Value) },
-                                { "@ibOrderID", ConvertToLong(trade.Attribute("ibOrderID")?.Value) },
-                                { "@openDateTime", trade.Attribute("openDateTime")?.Value },
-                                { "@initialInvestment", ConvertToDecimal(trade.Attribute("initialInvestment")?.Value) },
-                                { "@accountId", trade.Attribute("accountId")?.Value },
-                                { "@acctAlias", trade.Attribute("acctAlias")?.Value },
-                                { "@model", trade.Attribute("model")?.Value },
-                                { "@fxRateToBase", ConvertToDecimal(trade.Attribute("fxRateToBase")?.Value) },
-                                { "@subCategory", trade.Attribute("subCategory")?.Value },
-                                { "@securityIDType", trade.Attribute("securityIDType")?.Value },
-                                { "@cusip", trade.Attribute("cusip")?.Value },
-                                { "@isin", trade.Attribute("isin")?.Value },
-                                { "@figi", trade.Attribute("figi")?.Value },
-                                { "@listingExchange", trade.Attribute("listingExchange")?.Value },
-                                { "@underlyingConid", trade.Attribute("underlyingConid")?.Value },
-                                { "@underlyingSymbol", trade.Attribute("underlyingSymbol")?.Value },
-                                { "@underlyingSecurityID", trade.Attribute("underlyingSecurityID")?.Value },
-                                { "@underlyingListingExchange", trade.Attribute("underlyingListingExchange")?.Value },
-                                { "@issuer", trade.Attribute("issuer")?.Value },
-                                { "@issuerCountryCode", trade.Attribute("issuerCountryCode")?.Value },
-                                { "@multiplier", ConvertToInt(trade.Attribute("multiplier")?.Value) },
-                                { "@relatedTradeID", trade.Attribute("relatedTradeID")?.Value },
-                                { "@strike", ConvertToDecimal(trade.Attribute("strike")?.Value) },
-                                { "@reportDate", trade.Attribute("reportDate")?.Value },
-                                { "@putCall", trade.Attribute("putCall")?.Value },
-                                { "@principalAdjustFactor", ConvertToDecimal(trade.Attribute("principalAdjustFactor")?.Value) },
-                                { "@settleDateTarget", trade.Attribute("settleDateTarget")?.Value },
-                                { "@tradeMoney", ConvertToDecimal(trade.Attribute("tradeMoney")?.Value) },
-                                { "@openCloseIndicator", trade.Attribute("openCloseIndicator")?.Value },
-                                { "@notes", trade.Attribute("notes")?.Value },
-                                { "@clearingFirmID", trade.Attribute("clearingFirmID")?.Value },
-                                { "@relatedTransactionID", trade.Attribute("relatedTransactionID")?.Value },
-                                { "@rtn", trade.Attribute("rtn")?.Value },
-                                { "@orderReference", trade.Attribute("orderReference")?.Value },
-                                { "@volatilityOrderLink", trade.Attribute("volatilityOrderLink")?.Value },
-                                { "@orderTime", trade.Attribute("orderTime")?.Value },
-                                { "@holdingPeriodDateTime", trade.Attribute("holdingPeriodDateTime")?.Value },
-                                { "@whenRealized", trade.Attribute("whenRealized")?.Value },
-                                { "@whenReopened", trade.Attribute("whenReopened")?.Value },
-                                { "@levelOfDetail", trade.Attribute("levelOfDetail")?.Value },
-                                { "@changeInPrice", ConvertToDecimal(trade.Attribute("changeInPrice")?.Value) },
-                                { "@changeInQuantity", ConvertToDecimal(trade.Attribute("changeInQuantity")?.Value) },
-                                { "@isAPIOrder", trade.Attribute("isAPIOrder")?.Value },
-                                { "@accruedInt", ConvertToDecimal(trade.Attribute("accruedInt")?.Value) },
-                                { "@positionActionID", trade.Attribute("positionActionID")?.Value },
-                                { "@serialNumber", trade.Attribute("serialNumber")?.Value },
-                                { "@deliveryType", trade.Attribute("deliveryType")?.Value },
-                                { "@commodityType", trade.Attribute("commodityType")?.Value },
-                                { "@fineness", ConvertToDecimal(trade.Attribute("fineness")?.Value) },
-                                { "@weight", ConvertToDecimal(trade.Attribute("weight")?.Value) }
-                            });
+                        // Check if the execID already exists in the database
+                        using (var checkCmd = new SqlCommand("SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID", connection, transaction))
+                        {
+                            checkCmd.Parameters.AddWithValue("@ibExecID", ibExecID);
+                            int count = (int)checkCmd.ExecuteScalar();
 
-                        newTradesCount++;
+                            if (count > 0)
+                            {
+                                // Check if securityID, tradeID, and dateTime are null
+                                using (var selectCmd = new SqlCommand("SELECT securityID, tradeID, dateTime FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID", connection, transaction))
+                                {
+                                    selectCmd.Parameters.AddWithValue("@ibExecID", ibExecID);
+                                    using (var reader = selectCmd.ExecuteReader())
+                                    {
+                                        if (reader.Read())
+                                        {
+                                            var securityID = reader["securityID"] as string;
+                                            var tradeID = reader["tradeID"] as long?;
+                                            var dateTime = reader["dateTime"] as string;
+
+                                            if (string.IsNullOrEmpty(securityID) && tradeID == null && string.IsNullOrEmpty(dateTime))
+                                            {
+                                                // Update existing row
+                                                using (var updateCmd = new SqlCommand(@"
+                                    UPDATE dbo.TradeExecutions
+                                    SET symbol = @symbol,
+                                        securityID = @securityID,
+                                        tradeID = @tradeID,
+                                        dateTime = @dateTime,
+                                        tradeDate = @tradeDate,
+                                        quantity = @quantity,
+                                        tradePrice = @tradePrice,
+                                        ibCommission = @ibCommission,
+                                        ibCommissionCurrency = @ibCommissionCurrency,
+                                        closePrice = @closePrice,
+                                        cost = @cost,
+                                        fifoPnlRealized = @fifoPnlRealized,
+                                        buySell = @buySell,
+                                        transactionID = @transactionID,
+                                        brokerageOrderID = @brokerageOrderID,
+                                        exchOrderId = @exchOrderId,
+                                        extExecID = @extExecID,
+                                        orderType = @orderType,
+                                        traderID = @traderID,
+                                        currency = @currency,
+                                        description = @description,
+                                        conid = @conid,
+                                        taxes = @taxes,
+                                        assetCategory = @assetCategory,
+                                        expiry = @expiry,
+                                        transactionType = @transactionType,
+                                        exchange = @exchange,
+                                        proceeds = @proceeds,
+                                        netCash = @netCash,
+                                        mtmPnl = @mtmPnl,
+                                        origTradePrice = @origTradePrice,
+                                        origTradeDate = @origTradeDate,
+                                        origTradeID = @origTradeID,
+                                        origOrderID = @origOrderID,
+                                        origTransactionID = @origTransactionID,
+                                        ibOrderID = @ibOrderID,
+                                        openDateTime = @openDateTime,
+                                        initialInvestment = @initialInvestment,
+                                        accountId = @accountId,
+                                        acctAlias = @acctAlias,
+                                        model = @model,
+                                        fxRateToBase = @fxRateToBase,
+                                        subCategory = @subCategory,
+                                        securityIDType = @securityIDType,
+                                        cusip = @cusip,
+                                        isin = @isin,
+                                        figi = @figi,
+                                        listingExchange = @listingExchange,
+                                        underlyingConid = @underlyingConid,
+                                        underlyingSymbol = @underlyingSymbol,
+                                        underlyingSecurityID = @underlyingSecurityID,
+                                        underlyingListingExchange = @underlyingListingExchange,
+                                        issuer = @issuer,
+                                        issuerCountryCode = @issuerCountryCode,
+                                        multiplier = @multiplier,
+                                        relatedTradeID = @relatedTradeID,
+                                        strike = @strike,
+                                        reportDate = @reportDate,
+                                        putCall = @putCall,
+                                        principalAdjustFactor = @principalAdjustFactor,
+                                        settleDateTarget = @settleDateTarget,
+                                        tradeMoney = @tradeMoney,
+                                        openCloseIndicator = @openCloseIndicator,
+                                        notes = @notes,
+                                        clearingFirmID = @clearingFirmID,
+                                        relatedTransactionID = @relatedTransactionID,
+                                        rtn = @rtn,
+                                        orderReference = @orderReference,
+                                        volatilityOrderLink = @volatilityOrderLink,
+                                        orderTime = @orderTime,
+                                        holdingPeriodDateTime = @holdingPeriodDateTime,
+                                        whenRealized = @whenRealized,
+                                        whenReopened = @whenReopened,
+                                        levelOfDetail = @levelOfDetail,
+                                        changeInPrice = @changeInPrice,
+                                        changeInQuantity = @changeInQuantity,
+                                        isAPIOrder = @isAPIOrder,
+                                        accruedInt = @accruedInt,
+                                        positionActionID = @positionActionID,
+                                        serialNumber = @serialNumber,
+                                        deliveryType = @deliveryType,
+                                        commodityType = @commodityType,
+                                        fineness = @fineness,
+                                        weight = @weight
+                                    WHERE ibExecID = @ibExecID", connection, transaction))
+                                                {
+                                                    updateCmd.Parameters.AddWithValue("@ibExecID", ibExecID);
+                                                    updateCmd.Parameters.AddWithValue("@symbol", trade.Attribute("symbol")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@securityID", trade.Attribute("securityID")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@tradeID", ConvertToLong(trade.Attribute("tradeID")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@dateTime", trade.Attribute("dateTime")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@tradeDate", trade.Attribute("tradeDate")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@quantity", ConvertToDecimal(trade.Attribute("quantity")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@tradePrice", ConvertToDecimal(trade.Attribute("tradePrice")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@ibCommission", ConvertToDecimal(trade.Attribute("ibCommission")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@ibCommissionCurrency", trade.Attribute("ibCommissionCurrency")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@closePrice", ConvertToDecimal(trade.Attribute("closePrice")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@cost", ConvertToDecimal(trade.Attribute("cost")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@fifoPnlRealized", ConvertToDecimal(trade.Attribute("fifoPnlRealized")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@buySell", trade.Attribute("buySell")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@transactionID", ConvertToLong(trade.Attribute("transactionID")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@brokerageOrderID", trade.Attribute("brokerageOrderID")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@exchOrderId", trade.Attribute("exchOrderId")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@extExecID", trade.Attribute("extExecID")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@orderType", trade.Attribute("orderType")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@traderID", trade.Attribute("traderID")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@currency", trade.Attribute("currency")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@description", trade.Attribute("description")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@conid", ConvertToLong(trade.Attribute("conid")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@taxes", ConvertToDecimal(trade.Attribute("taxes")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@assetCategory", trade.Attribute("assetCategory")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@expiry", trade.Attribute("expiry")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@transactionType", trade.Attribute("transactionType")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@exchange", trade.Attribute("exchange")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@proceeds", ConvertToDecimal(trade.Attribute("proceeds")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@netCash", ConvertToDecimal(trade.Attribute("netCash")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@mtmPnl", ConvertToDecimal(trade.Attribute("mtmPnl")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@origTradePrice", ConvertToDecimal(trade.Attribute("origTradePrice")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@origTradeDate", trade.Attribute("origTradeDate")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@origTradeID", trade.Attribute("origTradeID")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@origOrderID", ConvertToLong(trade.Attribute("origOrderID")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@origTransactionID", ConvertToLong(trade.Attribute("origTransactionID")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@ibOrderID", ConvertToLong(trade.Attribute("ibOrderID")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@openDateTime", trade.Attribute("openDateTime")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@initialInvestment", ConvertToDecimal(trade.Attribute("initialInvestment")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@accountId", trade.Attribute("accountId")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@acctAlias", trade.Attribute("acctAlias")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@model", trade.Attribute("model")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@fxRateToBase", ConvertToDecimal(trade.Attribute("fxRateToBase")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@subCategory", trade.Attribute("subCategory")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@securityIDType", trade.Attribute("securityIDType")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@cusip", trade.Attribute("cusip")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@isin", trade.Attribute("isin")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@figi", trade.Attribute("figi")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@listingExchange", trade.Attribute("listingExchange")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@underlyingConid", trade.Attribute("underlyingConid")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@underlyingSymbol", trade.Attribute("underlyingSymbol")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@underlyingSecurityID", trade.Attribute("underlyingSecurityID")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@underlyingListingExchange", trade.Attribute("underlyingListingExchange")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@issuer", trade.Attribute("issuer")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@issuerCountryCode", trade.Attribute("issuerCountryCode")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@multiplier", ConvertToInt(trade.Attribute("multiplier")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@relatedTradeID", trade.Attribute("relatedTradeID")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@strike", ConvertToDecimal(trade.Attribute("strike")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@reportDate", trade.Attribute("reportDate")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@putCall", trade.Attribute("putCall")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@principalAdjustFactor", ConvertToDecimal(trade.Attribute("principalAdjustFactor")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@settleDateTarget", trade.Attribute("settleDateTarget")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@tradeMoney", ConvertToDecimal(trade.Attribute("tradeMoney")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@openCloseIndicator", trade.Attribute("openCloseIndicator")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@notes", trade.Attribute("notes")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@clearingFirmID", trade.Attribute("clearingFirmID")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@relatedTransactionID", trade.Attribute("relatedTransactionID")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@rtn", trade.Attribute("rtn")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@orderReference", trade.Attribute("orderReference")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@volatilityOrderLink", trade.Attribute("volatilityOrderLink")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@orderTime", trade.Attribute("orderTime")?.Value);
+                                                    updateCmd.Parameters.AddWithValue("@holdingPeriodDateTime", trade.Attribute("holdingPeriodDateTime")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@whenRealized", trade.Attribute("whenRealized")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@whenReopened", trade.Attribute("whenReopened")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@levelOfDetail", trade.Attribute("levelOfDetail")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@changeInPrice", ConvertToDecimal(trade.Attribute("changeInPrice")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@changeInQuantity", ConvertToDecimal(trade.Attribute("changeInQuantity")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@isAPIOrder", trade.Attribute("isAPIOrder")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@accruedInt", ConvertToDecimal(trade.Attribute("accruedInt")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@positionActionID", trade.Attribute("positionActionID")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@serialNumber", trade.Attribute("serialNumber")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@deliveryType", trade.Attribute("deliveryType")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@commodityType", trade.Attribute("commodityType")?.Value );
+                                                    updateCmd.Parameters.AddWithValue("@fineness", ConvertToDecimal(trade.Attribute("fineness")?.Value));
+                                                    updateCmd.Parameters.AddWithValue("@weight", ConvertToDecimal(trade.Attribute("weight")?.Value));
+                                                    updateCmd.ExecuteNonQuery();
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                // Insert new row
+                                ExecuteInsertCommand(connection, transaction, @"INSERT INTO [dbo].[TradeExecutions]
+                                    ([symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission], [ibCommissionCurrency],
+                                     [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID], [brokerageOrderID], [exchOrderId], [extExecID],
+                                     [orderType], [traderID], [currency], [description], [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange],
+                                     [proceeds], [netCash], [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID], [ibOrderID],
+                                     [openDateTime], [initialInvestment], [accountId], [acctAlias], [model], [fxRateToBase], [subCategory], [securityIDType], [cusip],
+                                     [isin], [figi], [listingExchange], [underlyingConid], [underlyingSymbol], [underlyingSecurityID], [underlyingListingExchange],
+                                     [issuer], [issuerCountryCode], [multiplier], [relatedTradeID], [strike], [reportDate], [putCall], [principalAdjustFactor],
+                                     [settleDateTarget], [tradeMoney], [openCloseIndicator], [notes], [clearingFirmID], [relatedTransactionID], [rtn], [orderReference],
+                                     [volatilityOrderLink], [orderTime], [holdingPeriodDateTime], [whenRealized], [whenReopened], [levelOfDetail], [changeInPrice],
+                                     [changeInQuantity], [isAPIOrder], [accruedInt], [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight])
+                                    VALUES
+                                    (@symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission, @ibCommissionCurrency,
+                                     @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID, @brokerageOrderID, @exchOrderId, @extExecID,
+                                     @orderType, @traderID, @currency, @description, @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange,
+                                     @proceeds, @netCash, @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID, @ibOrderID,
+                                     @openDateTime, @initialInvestment, @accountId, @acctAlias, @model, @fxRateToBase, @subCategory, @securityIDType, @cusip,
+                                     @isin, @figi, @listingExchange, @underlyingConid, @underlyingSymbol, @underlyingSecurityID, @underlyingListingExchange,
+                                     @issuer, @issuerCountryCode, @multiplier, @relatedTradeID, @strike, @reportDate, @putCall, @principalAdjustFactor,
+                                     @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID, @rtn, @orderReference,
+                                     @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized, @whenReopened, @levelOfDetail, @changeInPrice,
+                                     @changeInQuantity, @isAPIOrder, @accruedInt, @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)",
+                                    new Dictionary<string, object>
+                                    {
+                                        { "@symbol", trade.Attribute("symbol")?.Value },
+                                        { "@securityID", trade.Attribute("securityID")?.Value },
+                                        { "@tradeID", ConvertToLong(trade.Attribute("tradeID")?.Value) },
+                                        { "@dateTime", trade.Attribute("dateTime")?.Value },
+                                        { "@tradeDate", trade.Attribute("tradeDate")?.Value },
+                                        { "@quantity", ConvertToDecimal(trade.Attribute("quantity")?.Value) },
+                                        { "@tradePrice", ConvertToDecimal(trade.Attribute("tradePrice")?.Value) },
+                                        { "@ibCommission", ConvertToDecimal(trade.Attribute("ibCommission")?.Value) },
+                                        { "@ibCommissionCurrency", trade.Attribute("ibCommissionCurrency")?.Value },
+                                        { "@closePrice", ConvertToDecimal(trade.Attribute("closePrice")?.Value) },
+                                        { "@cost", ConvertToDecimal(trade.Attribute("cost")?.Value) },
+                                        { "@fifoPnlRealized", ConvertToDecimal(trade.Attribute("fifoPnlRealized")?.Value) },
+                                        { "@buySell", trade.Attribute("buySell")?.Value },
+                                        { "@transactionID", ConvertToLong(trade.Attribute("transactionID")?.Value) },
+                                        { "@ibExecID", trade.Attribute("ibExecID")?.Value },
+                                        { "@brokerageOrderID", trade.Attribute("brokerageOrderID")?.Value },
+                                        { "@exchOrderId", trade.Attribute("exchOrderId")?.Value },
+                                        { "@extExecID", trade.Attribute("extExecID")?.Value },
+                                        { "@orderType", trade.Attribute("orderType")?.Value },
+                                        { "@traderID", trade.Attribute("traderID")?.Value },
+                                        { "@currency", trade.Attribute("currency")?.Value },
+                                        { "@description", trade.Attribute("description")?.Value },
+                                        { "@conid", ConvertToLong(trade.Attribute("conid")?.Value) },
+                                        { "@taxes", ConvertToDecimal(trade.Attribute("taxes")?.Value) },
+                                        { "@assetCategory", trade.Attribute("assetCategory")?.Value },
+                                        { "@expiry", trade.Attribute("expiry")?.Value },
+                                        { "@transactionType", trade.Attribute("transactionType")?.Value },
+                                        { "@exchange", trade.Attribute("exchange")?.Value },
+                                        { "@proceeds", ConvertToDecimal(trade.Attribute("proceeds")?.Value) },
+                                        { "@netCash", ConvertToDecimal(trade.Attribute("netCash")?.Value) },
+                                        { "@mtmPnl", ConvertToDecimal(trade.Attribute("mtmPnl")?.Value) },
+                                        { "@origTradePrice", ConvertToDecimal(trade.Attribute("origTradePrice")?.Value) },
+                                        { "@origTradeDate", trade.Attribute("origTradeDate")?.Value },
+                                        { "@origTradeID", trade.Attribute("origTradeID")?.Value },
+                                        { "@origOrderID", ConvertToLong(trade.Attribute("origOrderID")?.Value) },
+                                        { "@origTransactionID", ConvertToLong(trade.Attribute("origTransactionID")?.Value) },
+                                        { "@ibOrderID", ConvertToLong(trade.Attribute("ibOrderID")?.Value) },
+                                        { "@openDateTime", trade.Attribute("openDateTime")?.Value },
+                                        { "@initialInvestment", ConvertToDecimal(trade.Attribute("initialInvestment")?.Value) },
+                                        { "@accountId", trade.Attribute("accountId")?.Value },
+                                        { "@acctAlias", trade.Attribute("acctAlias")?.Value },
+                                        { "@model", trade.Attribute("model")?.Value },
+                                        { "@fxRateToBase", ConvertToDecimal(trade.Attribute("fxRateToBase")?.Value) },
+                                        { "@subCategory", trade.Attribute("subCategory")?.Value },
+                                        { "@securityIDType", trade.Attribute("securityIDType")?.Value },
+                                        { "@cusip", trade.Attribute("cusip")?.Value },
+                                        { "@isin", trade.Attribute("isin")?.Value },
+                                        { "@figi", trade.Attribute("figi")?.Value },
+                                        { "@listingExchange", trade.Attribute("listingExchange")?.Value },
+                                        { "@underlyingConid", trade.Attribute("underlyingConid")?.Value },
+                                        { "@underlyingSymbol", trade.Attribute("underlyingSymbol")?.Value },
+                                        { "@underlyingSecurityID", trade.Attribute("underlyingSecurityID")?.Value },
+                                        { "@underlyingListingExchange", trade.Attribute("underlyingListingExchange")?.Value },
+                                        { "@issuer", trade.Attribute("issuer")?.Value },
+                                        { "@issuerCountryCode", trade.Attribute("issuerCountryCode")?.Value },
+                                        { "@multiplier", ConvertToInt(trade.Attribute("multiplier")?.Value) },
+                                        { "@relatedTradeID", trade.Attribute("relatedTradeID")?.Value },
+                                        { "@strike", ConvertToDecimal(trade.Attribute("strike")?.Value) },
+                                        { "@reportDate", trade.Attribute("reportDate")?.Value },
+                                        { "@putCall", trade.Attribute("putCall")?.Value },
+                                        { "@principalAdjustFactor", ConvertToDecimal(trade.Attribute("principalAdjustFactor")?.Value) },
+                                        { "@settleDateTarget", trade.Attribute("settleDateTarget")?.Value },
+                                        { "@tradeMoney", ConvertToDecimal(trade.Attribute("tradeMoney")?.Value) },
+                                        { "@openCloseIndicator", trade.Attribute("openCloseIndicator")?.Value },
+                                        { "@notes", trade.Attribute("notes")?.Value },
+                                        { "@clearingFirmID", trade.Attribute("clearingFirmID")?.Value },
+                                        { "@relatedTransactionID", trade.Attribute("relatedTransactionID")?.Value },
+                                        { "@rtn", trade.Attribute("rtn")?.Value },
+                                        { "@orderReference", trade.Attribute("orderReference")?.Value },
+                                        { "@volatilityOrderLink", trade.Attribute("volatilityOrderLink")?.Value },
+                                        { "@orderTime", trade.Attribute("orderTime")?.Value },
+                                        { "@holdingPeriodDateTime", trade.Attribute("holdingPeriodDateTime")?.Value },
+                                        { "@whenRealized", trade.Attribute("whenRealized")?.Value },
+                                        { "@whenReopened", trade.Attribute("whenReopened")?.Value },
+                                        { "@levelOfDetail", trade.Attribute("levelOfDetail")?.Value },
+                                        { "@changeInPrice", ConvertToDecimal(trade.Attribute("changeInPrice")?.Value) },
+                                        { "@changeInQuantity", ConvertToDecimal(trade.Attribute("changeInQuantity")?.Value) },
+                                        { "@isAPIOrder", trade.Attribute("isAPIOrder")?.Value },
+                                        { "@accruedInt", ConvertToDecimal(trade.Attribute("accruedInt")?.Value) },
+                                        { "@positionActionID", trade.Attribute("positionActionID")?.Value },
+                                        { "@serialNumber", trade.Attribute("serialNumber")?.Value },
+                                        { "@deliveryType", trade.Attribute("deliveryType")?.Value },
+                                        { "@commodityType", trade.Attribute("commodityType")?.Value },
+                                        { "@fineness", ConvertToDecimal(trade.Attribute("fineness")?.Value) },
+                                        { "@weight", ConvertToDecimal(trade.Attribute("weight")?.Value) }
+                                    });
+                            }
+                        }
                     }
                     transaction.Commit();
                 }
 
-                Console.WriteLine($"Successfully inserted {newTradesCount} new trades into the database.");
+                Console.WriteLine($"Successfully inserted {trades.Count} trades into the database.");
             });
         }
 

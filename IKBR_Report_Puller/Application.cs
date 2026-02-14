@@ -62,10 +62,10 @@ namespace IKBR_Report_Puller
 
                 _dataService.InsertTodayExecutions(todayReportXml);
 
-                // Fetch instrument data for all open positions
-                var positionDetails = _dataService.GetOpenPositionInstrumentNames(mainReportXml)
-                    .Select(p => (p.listingExchange, p.symbol, p.securityID));
-                await _positionProcessor.ProcessPositionsAsync(positionDetails, mainReportXml);
+                //// Fetch instrument data for all open positions
+                //var positionDetails = _dataService.GetOpenPositionInstrumentNames(mainReportXml)
+                //    .Select(p => (p.listingExchange, p.symbol, p.securityID));
+                //await _positionProcessor.ProcessPositionsAsync(positionDetails, mainReportXml);
             }
             catch (Exception ex)
             {

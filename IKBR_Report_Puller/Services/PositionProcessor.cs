@@ -56,6 +56,12 @@ namespace IKBR_Report_Puller.Services
                     continue;
                 }
 
+                if (result.timestamp == null)
+                {
+                    Console.WriteLine($"Timestamp data is missing for {item.symbol}.");
+                    continue;
+                }
+
                 for (int i = 0; i < instrumentTimestamps.Count; i++)
                 {
                     DateTime date = DateTimeOffset.FromUnixTimeSeconds(instrumentTimestamps[i]).DateTime;
