@@ -200,7 +200,7 @@ namespace IKBR_Report_Puller.Services
                 connection.Open();
                 var tradesBySymbol = new Dictionary<string, List<(DateTime tradeDate, decimal quantity, decimal price, string openClose)>>();
 
-                using (var cmd = new SqlCommand("SELECT symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[TradeExecutions] ORDER BY tradeDate ASC, dateTime ASC", connection))
+                using (var cmd = new SqlCommand("SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[TradeExecutions] ORDER BY ibOrderID, tradeDate DESC, dateTime DESC", connection))
                 {
                     using (var reader = cmd.ExecuteReader())
                     {
