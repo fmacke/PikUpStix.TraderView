@@ -41,26 +41,9 @@ namespace IKBR_Report_Puller
                 var outputFilePath = _config["IBKR:OutputFilePath"];
                 const int maxRetries = 10;
                 const int delayInSeconds = 15;
-
-                //// Fetch and process main report
-                XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
-                var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";   
-                string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
-                mainReportXml.Save(mainReportFilePath);
-                Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
-
-                _dataService.InsertTradeExecutions(mainReportXml);
-                _dataService.InsertOpenPositions(mainReportXml);
-                _excelReportService.CreateOpenPositionsReport(mainReportXml, outputFilePath);
-
-                //// Fetch and process today's report
-                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                fileName = DateTime.UtcNow.ToString("yyyyMMdd") + "_TraderSyncAccess_today.xml";
-                string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
-                todayReportXml.Save(todayReportFilePath);
-                Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
-
-                _dataService.InsertTodayExecutions(todayReportXml);
+                (XDocument mainReportXml, string fileName) = await GetReportData(outputFilePath, maxRetries, delayInSeconds);
+                SaveReportDataToDB(outputFilePath, mainReportXml);
+                await WriteTodayReport(outputFilePath, maxRetries, delayInSeconds, fileName);
 
                 //// Fetch instrument data for all open positions
                 //var positionDetails = _dataService.GetOpenPositionInstrumentNames(mainReportXml)
@@ -71,6 +54,37 @@ namespace IKBR_Report_Puller
             {
                 Console.WriteLine($"\nAn error occurred: {ex.Message}");
             }
+        }
+
+        private void SaveReportDataToDB(string? outputFilePath, XDocument mainReportXml)
+        {
+            _dataService.InsertTradeExecutions(mainReportXml);
+            _dataService.InsertOpenPositions(mainReportXml);
+            _excelReportService.CreateOpenPositionsReport(mainReportXml, outputFilePath);
+        }
+
+        private async Task<string> WriteTodayReport(string outputFilePath, int maxRetries, int delayInSeconds, string fileName)
+        {
+            //// Fetch and process today's report
+            XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+            fileName = DateTime.UtcNow.ToString("yyyyMMdd") + "_TraderSyncAccess_today.xml";
+            string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
+            todayReportXml.Save(todayReportFilePath);
+            Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
+
+            _dataService.InsertTodayExecutions(todayReportXml);
+            return fileName;
+        }
+
+        private async Task<(XDocument mainReportXml, string fileName)> GetReportData(string? outputFilePath, int maxRetries, int delayInSeconds)
+        {
+            //// Fetch and process main report
+            XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
+            string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
+            mainReportXml.Save(mainReportFilePath);
+            Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
+            return (mainReportXml, fileName);
         }
     }
 }

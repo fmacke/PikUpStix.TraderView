@@ -8,21 +8,23 @@ using IKBR_Report_Puller.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 
-namespace IKBR_Report_Puller.Tests
+namespace IKBR_Report_Puller.Tests.Services
 {
     [TestClass]
     public class ExcelReportServiceTests
     {
         private Mock<IDataService> _mockDataService;
         private ExcelReportService _excelReportService;
+        private Mock<TradeHistoryService> _mockTradeHistoryService;
 
         [TestInitialize]
         public void Setup()
         {
             _mockDataService = new Mock<IDataService>();
+            _mockTradeHistoryService = new Mock<TradeHistoryService>();
             _mockDataService.Setup(ds => ds.ConnectionString).Returns("FakeConnectionString");
 
-            _excelReportService = new ExcelReportService(_mockDataService.Object);
+            _excelReportService = new ExcelReportService(_mockDataService.Object, _mockTradeHistoryService.Object);
         }
 
         [TestMethod]
@@ -111,7 +113,7 @@ namespace IKBR_Report_Puller.Tests
             _mockDataService.Setup(ds => ds.ConnectionString).Returns(connectionString);
 
             // Act
-            _excelReportService.CreateTradeHistoryWorksheet(workbook, connectionString);
+            _excelReportService.CreateTradeHistoryWorksheet(workbook);
 
             // Assert
             var worksheet = workbook.Worksheet("Trade History");

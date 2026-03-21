@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using ClosedXML.Excel;
+using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
 
@@ -13,10 +14,12 @@ namespace IKBR_Report_Puller.Services
     public class ExcelReportService : IExcelReportService
     {
         private readonly IDataService _dataService;
+        private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
-        public ExcelReportService(IDataService dataService)
+        public ExcelReportService(IDataService dataService, ITradeHistoryReportService tradeHistoryReportService)
         {
             _dataService = dataService;
+            _tradeHistoryReportService = tradeHistoryReportService;
         }
 
         public void CreateOpenPositionsReport(XDocument reportXml, string outputFilePath)
@@ -49,7 +52,7 @@ namespace IKBR_Report_Puller.Services
                     var worksheet = workbook.Worksheets.Add("Open Positions");
 
                     // Add the new 'Trade History' worksheet
-                    CreateTradeHistoryWorksheet(workbook, _dataService.ConnectionString);
+                    CreateTradeHistoryWorksheet(workbook);
 
                     // Add headers
                     worksheet.Cell(1, 1).Value = "Account";
@@ -179,9 +182,48 @@ namespace IKBR_Report_Puller.Services
             }
         }
 
-        public void CreateTradeHistoryWorksheet(XLWorkbook workbook, string connectionString)
+        
+
+        private List<TradeExecution> GetTradeExecutions()
         {
-            var worksheet = workbook.Worksheets.Add("Trade History");
+            var tradeExecutions = new List<TradeExecution>();
+
+            using (var connection = new SqlConnection(_dataService.ConnectionString))
+            {
+                connection.Open();
+                using (var cmd = new SqlCommand("SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[TradeExecutions] ORDER BY ibOrderID, tradeDate ASC, dateTime ASC", connection))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            tradeExecutions.Add(new TradeExecution
+                            {
+                                IbOrderID =  reader.GetInt64(0), // Updated to GetInt64 for BIGINT
+                                Symbol = reader.GetString(1),
+                                TradeDate = reader.GetDateTime(2),
+                                Quantity = reader.GetDecimal(3),
+                                AveragePrice = reader.GetDecimal(4)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return tradeExecutions;
+        }
+
+        public void CreateTradeHistoryWorksheet(XLWorkbook workbook)
+        {
+            var tradeExecutions = GetTradeExecutions();
+            _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
+            CreateTradeHistoryWorkSheet(workbook, _tradeHistoryReportService.TradeHistory, "Trade History");
+            CreateTradeHistoryWorkSheet(workbook, _tradeHistoryReportService.TradeHistoryAggregated, "Trade History Aggregated");
+        }
+
+        private void CreateTradeHistoryWorkSheet(XLWorkbook workbook, List<HistoricalTrade> historicalData, string worksheetName)
+        {
+            var worksheet = workbook.Worksheets.Add(worksheetName);
 
             // Add headers
             worksheet.Cell(1, 1).Value = "ibOrderID";
@@ -196,101 +238,26 @@ namespace IKBR_Report_Puller.Services
             worksheet.Cell(1, 10).Value = "Value";
             worksheet.Cell(1, 11).Value = "Margin";
 
-            using (var connection = new SqlConnection(connectionString))
+
+            int currentRow = 2;
+            foreach (var historicalTrade in historicalData)
             {
-                connection.Open();
-                var tradesByOrderId = new Dictionary<string, List<(string symbol, DateTime tradeDate, decimal quantity, decimal price, string openClose)>>();
+                worksheet.Cell(currentRow, 1).Value = historicalTrade.CloseIbOrderID;
+                worksheet.Cell(currentRow, 2).Value = historicalTrade.Symbol;
+                worksheet.Cell(currentRow, 3).Value = historicalTrade.TradeOpened;
+                worksheet.Cell(currentRow, 3).Style.DateFormat.Format = "yyyy-MM-dd";
+                worksheet.Cell(currentRow, 4).Value = historicalTrade.TradeClosed;
+                worksheet.Cell(currentRow, 4).Style.DateFormat.Format = "yyyy-MM-dd";
+                worksheet.Cell(currentRow, 5).Value = (historicalTrade.TradeClosed - historicalTrade.TradeOpened).TotalDays;
+                worksheet.Cell(currentRow, 6).Value = historicalTrade.Quantity;
+                worksheet.Cell(currentRow, 7).Value = historicalTrade.AveragePrice;
+                worksheet.Cell(currentRow, 8).Value = historicalTrade.ClosePrice;
+                worksheet.Cell(currentRow, 9).Value = historicalTrade.TotalCost;
+                worksheet.Cell(currentRow, 10).Value = historicalTrade.MarketValue;
+                worksheet.Cell(currentRow, 11).Value = historicalTrade.RealizedPnL;
+                worksheet.Cell(currentRow, 11).Style.NumberFormat.Format = "#,##0.00";
 
-                using (var cmd = new SqlCommand("SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[TradeExecutions] ORDER BY ibOrderID, tradeDate ASC, dateTime ASC", connection))
-                {
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            long? ibOrderID = reader.IsDBNull(0) ? (long?)null : reader.GetInt64(0);
-                            string symbol = reader.GetString(1);
-                            if (ibOrderID.HasValue && !tradesByOrderId.ContainsKey(ibOrderID.Value.ToString()))
-                            {
-                                tradesByOrderId[ibOrderID.Value.ToString()] = new List<(string, DateTime, decimal, decimal, string)>();
-                            }
-                            tradesByOrderId[ibOrderID?.ToString() ?? "NULL"].Add((
-                                symbol,
-                                reader.GetDateTime(2),
-                                reader.GetDecimal(3),
-                                reader.GetDecimal(4),
-                                reader.IsDBNull(5) ? "" : reader.GetString(5)
-                            ));
-                        }
-                    }
-                }
-
-                int currentRow = 2;var openTrades = new Queue<(DateTime tradeDate, decimal quantity, decimal price)>();
-                foreach (var orderId in tradesByOrderId.Keys)
-                {
-                    
-                    var trades = tradesByOrderId[orderId];
-
-                    Console.WriteLine($"Number of trades for orderId {orderId}: {trades.Count}");
-
-                    foreach (var trade in trades)
-                    {
-                        if (!string.IsNullOrEmpty(trade.openClose) && trade.openClose.Trim().Equals("O", StringComparison.OrdinalIgnoreCase)) // Opening trade
-                        {
-                            openTrades.Enqueue((trade.tradeDate, trade.quantity, trade.price));
-                            Console.WriteLine($"Enqueued open trade: {trade.tradeDate}, {trade.quantity}, {trade.price}");
-                        }
-                        else if (!string.IsNullOrEmpty(trade.openClose) && trade.openClose.Trim().Equals("C", StringComparison.OrdinalIgnoreCase)) // Closing trade
-                        {
-                            decimal closingQuantity = Math.Abs(trade.quantity);
-                            decimal closingPrice = trade.price;
-                            DateTime closingDate = trade.tradeDate;
-
-                            while (closingQuantity > 0 && openTrades.Any())
-                            {
-                                var (openDate, openQuantity, openPrice) = openTrades.Dequeue();
-                                decimal quantityToClose = Math.Min(closingQuantity, openQuantity);
-
-                                worksheet.Cell(currentRow, 1).Value = orderId;
-                                worksheet.Cell(currentRow, 2).Value = trade.symbol;
-                                var dateOpenedCell = worksheet.Cell(currentRow, 3);
-                                dateOpenedCell.Value = openDate;
-                                dateOpenedCell.Style.DateFormat.Format = "yyyy-MM-dd";
-
-                                var dateClosedCell = worksheet.Cell(currentRow, 4);
-                                dateClosedCell.Value = closingDate;
-                                dateClosedCell.Style.DateFormat.Format = "yyyy-MM-dd";
-
-                                var daysOpenCell = worksheet.Cell(currentRow, 5);
-                                daysOpenCell.FormulaA1 = $"{dateClosedCell.Address} - {dateOpenedCell.Address}";
-
-                                worksheet.Cell(currentRow, 6).Value = quantityToClose;
-                                worksheet.Cell(currentRow, 7).Value = openPrice;
-                                worksheet.Cell(currentRow, 8).Value = closingPrice;
-
-                                var costCell = worksheet.Cell(currentRow, 9);
-                                costCell.FormulaA1 = $"{worksheet.Cell(currentRow, 6).Address} * {worksheet.Cell(currentRow, 7).Address}";
-                                costCell.Style.NumberFormat.Format = "#,##0.00";
-
-                                var valueCell = worksheet.Cell(currentRow, 10);
-                                valueCell.FormulaA1 = $"{worksheet.Cell(currentRow, 6).Address} * {worksheet.Cell(currentRow, 8).Address}";
-                                valueCell.Style.NumberFormat.Format = "#,##0.00";
-
-                                var marginCell = worksheet.Cell(currentRow, 11);
-                                marginCell.FormulaA1 = $"{valueCell.Address} - {costCell.Address}";
-                                marginCell.Style.NumberFormat.Format = "#,##0.00";
-
-                                currentRow++;
-
-                                closingQuantity -= quantityToClose;
-                                if (openQuantity > quantityToClose)
-                                {
-                                    // Re-enqueue the remaining part of the open trade back into the same queue
-                                    openTrades.Enqueue((openDate, openQuantity - quantityToClose, openPrice));
-                                }
-                            }
-                        }
-                    }
-                }
+                currentRow++;
             }
         }
     }
