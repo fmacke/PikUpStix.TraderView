@@ -60,7 +60,7 @@ namespace IKBR_Report_Puller
         {
             _dataService.InsertTradeExecutions(mainReportXml);
             _dataService.InsertOpenPositions(mainReportXml);
-            _excelReportService.CreateOpenPositionsReport(mainReportXml, outputFilePath);
+            _excelReportService.CreateReport(mainReportXml, outputFilePath);
         }
 
         private async Task<string> WriteTodayReport(string outputFilePath, int maxRetries, int delayInSeconds, string fileName)
