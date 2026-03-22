@@ -242,6 +242,7 @@ namespace IKBR_Report_Puller.Services
             worksheet.Cells[1, 9].Value = "Cost";
             worksheet.Cells[1, 10].Value = "Value";
             worksheet.Cells[1, 11].Value = "Margin";
+            worksheet.Cells[1, 12].Value = "MarginPercent";
 
             int currentRow = 2;
             foreach (var historicalTrade in historicalData)
@@ -260,6 +261,8 @@ namespace IKBR_Report_Puller.Services
                 worksheet.Cells[currentRow, 10].Value = Math.Round(historicalTrade.MarketValue, 2); ;
                 worksheet.Cells[currentRow, 11].Value = Math.Round(historicalTrade.RealizedPnL,2);;
                 worksheet.Cells[currentRow, 11].Style.Numberformat.Format = "#,##0.00";
+                worksheet.Cells[currentRow, 12].Value = Math.Round(historicalTrade.RealizedPnLPercentage, 2); ;
+                worksheet.Cells[currentRow, 12].Style.Numberformat.Format = "#,##0.00";
 
                 currentRow++;
             }
@@ -268,7 +271,7 @@ namespace IKBR_Report_Puller.Services
             string sanitizedTableName = worksheetName.Replace(" ", "_").Replace("-", "_").Replace("/", "_");
 
             // Format the data as a table
-            var tableRange = worksheet.Cells[1, 1, currentRow - 1, 11];
+            var tableRange = worksheet.Cells[1, 1, currentRow - 1, 12];
             var table = worksheet.Tables.Add(tableRange, sanitizedTableName);
             table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium9;
 

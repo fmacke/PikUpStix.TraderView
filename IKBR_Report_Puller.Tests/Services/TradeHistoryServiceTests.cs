@@ -4,7 +4,7 @@ using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Services;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace IKBR_Report_Puller.Tests
+namespace IKBR_Report_Puller.Tests.Services
 {
     [TestClass]
     public class TradeHistoryServiceTests
