@@ -1,4 +1,6 @@
 using System.Xml.Linq;
+using IKBR_Report_Puller.Services;
+using IKBR_Report_Puller.Domain;
 
 namespace IKBR_Report_Puller.Interfaces
 {
@@ -10,5 +12,6 @@ namespace IKBR_Report_Puller.Interfaces
         void UpsertTimeSeriesData(string instrumentName, string listingExchange, string securityIdentifier, string provider, string dataName, string dataSource, string format, string frequency, string currency, DateTime date, double openPrice, double closePrice, double lowPrice, double highPrice, double volume);
         string ConnectionString { get; }
         List<(string securityID, string listingExchange, string symbol)> GetOpenPositionInstrumentNames(XDocument reportXml);
+        List<TradeExecution> GetTradeExecutions();
     }
 }

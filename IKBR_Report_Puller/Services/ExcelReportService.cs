@@ -76,30 +76,7 @@ namespace IKBR_Report_Puller.Services
 
         private List<TradeExecution> GetTradeExecutions()
         {
-            var tradeExecutions = new List<TradeExecution>();
-
-            using (var connection = new SqlConnection(_dataService.ConnectionString))
-            {
-                connection.Open();
-                using (var cmd = new SqlCommand("SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[TradeExecutions] ORDER BY ibOrderID, tradeDate ASC, dateTime ASC", connection))
-                {
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            tradeExecutions.Add(new TradeExecution
-                            {
-                                IbOrderID = reader.GetInt64(0), // Updated to GetInt64 for BIGINT
-                                Symbol = reader.GetString(1),
-                                TradeDate = reader.GetDateTime(2),
-                                Quantity = reader.GetDecimal(3),
-                                AveragePrice = reader.GetDecimal(4)
-                            });
-                        }
-                    }
-                }
-            }
-
+            var tradeExecutions = _dataService.GetTradeExecutions();
             return tradeExecutions;
         }
 

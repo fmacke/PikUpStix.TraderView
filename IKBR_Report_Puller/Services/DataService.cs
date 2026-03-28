@@ -4,6 +4,7 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using System.Xml.Linq;
+using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -599,6 +600,35 @@ namespace IKBR_Report_Puller.Services
                                       .ToList();
 
             return instrumentDetails;
+        }
+
+        public List<TradeExecution> GetTradeExecutions()
+        {
+            var tradeExecutions = new List<TradeExecution>();
+
+            using (var connection = new SqlConnection(_connectionString))
+            {
+                connection.Open();
+                using (var cmd = new SqlCommand("SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator FROM [dbo].[TradeExecutions] ORDER BY ibOrderID, tradeDate ASC, dateTime ASC", connection))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            tradeExecutions.Add(new TradeExecution
+                            {
+                                IbOrderID = reader.GetInt64(0), // Updated to GetInt64 for BIGINT
+                                Symbol = reader.GetString(1),
+                                TradeDate = reader.GetDateTime(2),
+                                Quantity = reader.GetDecimal(3),
+                                AveragePrice = reader.GetDecimal(4)
+                            });
+                        }
+                    }
+                }
+            }
+
+            return tradeExecutions;
         }
 
         private void ExecuteDatabaseOperation(Action<SqlConnection> operation)
