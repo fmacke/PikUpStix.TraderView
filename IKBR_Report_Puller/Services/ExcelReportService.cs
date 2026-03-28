@@ -45,12 +45,11 @@ namespace IKBR_Report_Puller.Services
                 var openPositions = reportXml.Descendants("OpenPosition").ToList();
                 if (!openPositions.Any())
                 {
-                    Console.WriteLine("No open positions found in the report. Skipping Excel report creation.");
-                    return;
+                    Console.WriteLine("No open positions found in the report. Moving to historical trades.");
                 }
 
                 // Set the EPPlus license for non-commercial use
-                ExcelPackage.License.SetNonCommercialPersonal("My Name"); //This will also set the Author property to the name provided in the argument.
+                ExcelPackage.License.SetNonCommercialPersonal("DFM"); //This will also set the Author property to the name provided in the argument.
 
                 using (var package = new ExcelPackage())
                 {
@@ -245,7 +244,7 @@ namespace IKBR_Report_Puller.Services
             worksheet.Cells[1, 12].Value = "MarginPercent";
 
             int currentRow = 2;
-            foreach (var historicalTrade in historicalData)
+            foreach (var historicalTrade in historicalData.OrderByDescending(x => x.TradeClosed))
             {
                 worksheet.Cells[currentRow, 1].Value = historicalTrade.CloseIbOrderID;
                 worksheet.Cells[currentRow, 2].Value = historicalTrade.Symbol;
