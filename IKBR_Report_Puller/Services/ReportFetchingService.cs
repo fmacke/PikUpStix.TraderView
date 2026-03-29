@@ -1,9 +1,11 @@
 using System;
-using System.Net.Http;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Extensions.Configuration;
+using System.Linq;
+using IBApi; // Ensure TwsClient is referenced
 
 namespace IKBR_Report_Puller.Services
 {
@@ -11,6 +13,8 @@ namespace IKBR_Report_Puller.Services
     {
         private readonly IConfiguration _config;
         private readonly HttpClient _client;
+
+        // Config values for reports (Path B)
         private readonly string _token;
         private readonly string _baseUrl;
         private readonly string _mainQueryId;
@@ -20,11 +24,14 @@ namespace IKBR_Report_Puller.Services
         {
             _config = config;
             _client = client;
+
             _token = _config["IBKR:Token"];
             _baseUrl = _config["IBKR:BaseUrl"];
             _mainQueryId = _config["IBKR:QueryId"];
             _todayQueryId = _config["IBKR:QueryTodayExecutionsId"];
         }
+
+
 
         public async Task<XDocument> FetchMainReportAsync(int maxRetries, int delayInSeconds)
         {

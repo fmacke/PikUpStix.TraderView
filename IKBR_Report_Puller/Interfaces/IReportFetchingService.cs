@@ -7,5 +7,6 @@ namespace IKBR_Report_Puller.Interfaces
     {
         Task<XDocument> FetchMainReportAsync(int maxRetries, int delayInSeconds);
         Task<XDocument> FetchTodayReportAsync(int maxRetries, int delayInSeconds);
+        
     }
 }

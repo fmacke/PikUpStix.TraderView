@@ -13,6 +13,7 @@ namespace IKBR_Report_Puller
     public class Application
     {
         private readonly IReportFetchingService _reportFetchingService;
+        private readonly IChartService _chartService;
         private readonly IDataService _dataService;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
@@ -21,6 +22,7 @@ namespace IKBR_Report_Puller
 
         public Application(
             IReportFetchingService reportFetchingService,
+            IChartService chartService,
             IDataService dataService,
             IExcelReportService excelReportService,
             IConfiguration config,
@@ -29,6 +31,7 @@ namespace IKBR_Report_Puller
             _reportFetchingService = reportFetchingService;
             _dataService = dataService;
             _excelReportService = excelReportService;
+            _chartService = chartService;            
             _config = config;
             _timeSeriesService = timeSeriesService;
             _positionProcessor = new PositionProcessor(_timeSeriesService, _dataService, _config);
@@ -40,10 +43,16 @@ namespace IKBR_Report_Puller
             {
                 var outputFilePath = _config["IBKR:OutputFilePath"];
                 const int maxRetries = 10;
-                const int delayInSeconds = 15;
+                const int delayInSeconds = 2;
                 (XDocument mainReportXml, string fileName) = await GetReportData(outputFilePath, maxRetries, delayInSeconds);
                 SaveReportDataToDB(outputFilePath, mainReportXml);
                 await WriteTodayReport(outputFilePath, maxRetries, delayInSeconds, fileName);
+                var socketUrl = _config["IBKRClient:SocketUrl"];
+                var port = int.Parse(_config["IBKRClient:Port"]);
+                var clientId = int.Parse(_config["IBKRClient:ClientId"]);
+                await _chartService.ConnectAsync(socketUrl, port, clientId);
+                var newbus = await _chartService.GetHistoricalDataAsync("NVDA");
+                var ekdkd = newbus.ToString();
 
                 //// Fetch instrument data for all open positions
                 //var positionDetails = _dataService.GetOpenPositionInstrumentNames(mainReportXml)
