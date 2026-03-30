@@ -31,7 +31,7 @@ namespace IKBR_Report_Puller
                     services.AddSingleton<IReportFetchingService, ReportFetchingService>();
                     services.AddSingleton<ITimeSeriesService, TimeSeriesService>();
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
-                    services.AddSingleton<IChartService, ChartService>();
+                    services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddSingleton<Application>();
                 })
                 .Build();

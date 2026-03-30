@@ -13,16 +13,19 @@ namespace IKBR_Report_Puller
     public class Application
     {
         private readonly IReportFetchingService _reportFetchingService;
-        private readonly IChartService _chartService;
+        private readonly IChartDataService _chartDataService;
         private readonly IDataService _dataService;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
         private readonly ITimeSeriesService _timeSeriesService;
         private readonly PositionProcessor _positionProcessor;
 
+        const int maxRetries = 10;
+        const int delayInSeconds = 2;
+
         public Application(
             IReportFetchingService reportFetchingService,
-            IChartService chartService,
+            IChartDataService chartService,
             IDataService dataService,
             IExcelReportService excelReportService,
             IConfiguration config,
@@ -31,7 +34,7 @@ namespace IKBR_Report_Puller
             _reportFetchingService = reportFetchingService;
             _dataService = dataService;
             _excelReportService = excelReportService;
-            _chartService = chartService;            
+            _chartDataService = chartService;            
             _config = config;
             _timeSeriesService = timeSeriesService;
             _positionProcessor = new PositionProcessor(_timeSeriesService, _dataService, _config);
@@ -42,16 +45,12 @@ namespace IKBR_Report_Puller
             try
             {
                 var outputFilePath = _config["IBKR:OutputFilePath"];
-                const int maxRetries = 10;
-                const int delayInSeconds = 2;
-                (XDocument mainReportXml, string fileName) = await GetReportData(outputFilePath, maxRetries, delayInSeconds);
+                
+                (XDocument mainReportXml, string fileName) = await GetReportData(outputFilePath);
                 SaveReportDataToDB(outputFilePath, mainReportXml);
-                await WriteTodayReport(outputFilePath, maxRetries, delayInSeconds, fileName);
-                var socketUrl = _config["IBKRClient:SocketUrl"];
-                var port = int.Parse(_config["IBKRClient:Port"]);
-                var clientId = int.Parse(_config["IBKRClient:ClientId"]);
-                await _chartService.ConnectAsync(socketUrl, port, clientId);
-                var newbus = await _chartService.GetHistoricalDataAsync("NVDA");
+                await WriteTodayReport(outputFilePath, fileName);
+                
+                var newbus = await _chartDataService.GetHistoricalDataAsync("NVDA");
                 var ekdkd = newbus.ToString();
 
                 //// Fetch instrument data for all open positions
@@ -72,7 +71,7 @@ namespace IKBR_Report_Puller
             _excelReportService.CreateReport(mainReportXml, outputFilePath);
         }
 
-        private async Task<string> WriteTodayReport(string outputFilePath, int maxRetries, int delayInSeconds, string fileName)
+        private async Task<string> WriteTodayReport(string outputFilePath, string fileName)
         {
             //// Fetch and process today's report
             XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
@@ -85,7 +84,7 @@ namespace IKBR_Report_Puller
             return fileName;
         }
 
-        private async Task<(XDocument mainReportXml, string fileName)> GetReportData(string? outputFilePath, int maxRetries, int delayInSeconds)
+        private async Task<(XDocument mainReportXml, string fileName)> GetReportData(string? outputFilePath)
         {
             //// Fetch and process main report
             XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);

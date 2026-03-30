@@ -1,16 +1,17 @@
+using IBApi;
+using IKBR_Report_Puller.Interfaces;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using IBApi;
-using IKBR_Report_Puller.Interfaces;
 
 namespace IKBR_Report_Puller.Services
 {
     /// <summary>
     /// Inherits from DefaultWrapper to hide the 60+ unused IBKR API methods.
     /// </summary>
-    public class ChartService : DefaultWrapper, IChartService, IDisposable
+    public class ChartDataService : DefaultWrapper, IChartDataService, IDisposable
     {
         private readonly EClientSocket _client;
         private readonly EReaderSignal _signal;
@@ -25,10 +26,14 @@ namespace IKBR_Report_Puller.Services
 
         public bool IsConnected => _client.IsConnected();
 
-        public ChartService()
+        public ChartDataService(IConfiguration config)
         {
             _signal = new EReaderMonitorSignal();
             _client = new EClientSocket(this, _signal);
+            var socketUrl = config["IBKRClient:SocketUrl"];
+            var port = int.Parse(config["IBKRClient:Port"]);
+            var clientId = int.Parse(config["IBKRClient:ClientId"]);
+            ConnectAsync(socketUrl, port, clientId);
         }
 
         /// <summary>
