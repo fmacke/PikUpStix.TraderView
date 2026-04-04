@@ -1,0 +1,103 @@
+using System.Collections.Generic;
+using IKBR_Report_Puller.Domain;
+
+namespace IKBR_Report_Puller.Data.Repositories
+{
+    /// <summary>
+    /// Builds parameter dictionaries for Trade database operations
+    /// </summary>
+    public static class TradeParameterBuilder
+    {
+        public static Dictionary<string, object> GetTradeParameters(Trade trade)
+        {
+            return new Dictionary<string, object>
+            {
+                { "@symbol", trade.Symbol },
+                { "@securityID", trade.SecurityID },
+                { "@tradeID", trade.TradeID },
+                { "@dateTime", trade.DateTime },
+                { "@tradeDate", trade.TradeDate },
+                { "@quantity", trade.Quantity },
+                { "@tradePrice", trade.TradePrice },
+                { "@ibCommission", trade.IbCommission },
+                { "@ibCommissionCurrency", trade.IbCommissionCurrency },
+                { "@closePrice", trade.ClosePrice },
+                { "@cost", trade.Cost },
+                { "@fifoPnlRealized", trade.FifoPnlRealized },
+                { "@buySell", trade.BuySell },
+                { "@transactionID", trade.TransactionID },
+                { "@ibExecID", trade.IbExecID },
+                { "@brokerageOrderID", trade.BrokerageOrderID },
+                { "@exchOrderId", trade.ExchOrderId },
+                { "@extExecID", trade.ExtExecID },
+                { "@orderType", trade.OrderType },
+                { "@traderID", trade.TraderID },
+                { "@currency", trade.Currency },
+                { "@description", trade.Description },
+                { "@conid", trade.Conid },
+                { "@taxes", trade.Taxes },
+                { "@assetCategory", trade.AssetCategory },
+                { "@expiry", trade.Expiry },
+                { "@transactionType", trade.TransactionType },
+                { "@exchange", trade.Exchange },
+                { "@proceeds", trade.Proceeds },
+                { "@netCash", trade.NetCash },
+                { "@mtmPnl", trade.MtmPnl },
+                { "@origTradePrice", trade.OrigTradePrice },
+                { "@origTradeDate", trade.OrigTradeDate },
+                { "@origTradeID", trade.OrigTradeID },
+                { "@origOrderID", trade.OrigOrderID },
+                { "@origTransactionID", trade.OrigTransactionID },
+                { "@ibOrderID", trade.IbOrderID },
+                { "@openDateTime", trade.OpenDateTime },
+                { "@initialInvestment", trade.InitialInvestment },
+                { "@accountId", trade.AccountId },
+                { "@acctAlias", trade.AcctAlias },
+                { "@model", trade.Model },
+                { "@fxRateToBase", trade.FxRateToBase },
+                { "@subCategory", trade.SubCategory },
+                { "@securityIDType", trade.SecurityIDType },
+                { "@cusip", trade.Cusip },
+                { "@isin", trade.Isin },
+                { "@figi", trade.Figi },
+                { "@listingExchange", trade.ListingExchange },
+                { "@underlyingConid", trade.UnderlyingConid },
+                { "@underlyingSymbol", trade.UnderlyingSymbol },
+                { "@underlyingSecurityID", trade.UnderlyingSecurityID },
+                { "@underlyingListingExchange", trade.UnderlyingListingExchange },
+                { "@issuer", trade.Issuer },
+                { "@issuerCountryCode", trade.IssuerCountryCode },
+                { "@multiplier", trade.Multiplier },
+                { "@relatedTradeID", trade.RelatedTradeID },
+                { "@strike", trade.Strike },
+                { "@reportDate", trade.ReportDate },
+                { "@putCall", trade.PutCall },
+                { "@principalAdjustFactor", trade.PrincipalAdjustFactor },
+                { "@settleDateTarget", trade.SettleDateTarget },
+                { "@tradeMoney", trade.TradeMoney },
+                { "@openCloseIndicator", trade.OpenCloseIndicator },
+                { "@notes", trade.Notes },
+                { "@clearingFirmID", trade.ClearingFirmID },
+                { "@relatedTransactionID", trade.RelatedTransactionID },
+                { "@rtn", trade.Rtn },
+                { "@orderReference", trade.OrderReference },
+                { "@volatilityOrderLink", trade.VolatilityOrderLink },
+                { "@orderTime", trade.OrderTime },
+                { "@holdingPeriodDateTime", trade.HoldingPeriodDateTime },
+                { "@whenRealized", trade.WhenRealized },
+                { "@whenReopened", trade.WhenReopened },
+                { "@levelOfDetail", trade.LevelOfDetail },
+                { "@changeInPrice", trade.ChangeInPrice },
+                { "@changeInQuantity", trade.ChangeInQuantity },
+                { "@isAPIOrder", trade.IsAPIOrder },
+                { "@accruedInt", trade.AccruedInt },
+                { "@positionActionID", trade.PositionActionID },
+                { "@serialNumber", trade.SerialNumber },
+                { "@deliveryType", trade.DeliveryType },
+                { "@commodityType", trade.CommodityType },
+                { "@fineness", trade.Fineness },
+                { "@weight", trade.Weight }
+            };
+        }
+    }
+}
