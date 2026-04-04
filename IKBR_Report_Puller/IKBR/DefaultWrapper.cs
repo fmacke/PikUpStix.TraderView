@@ -1,6 +1,6 @@
 using IBApi;
 
-namespace IKBR_Report_Puller.Services
+namespace IKBR_Report_Puller.IKBR
 {
     // This provides the "empty" implementation for the 60+ IBKR methods
     public abstract class DefaultWrapper : EWrapper

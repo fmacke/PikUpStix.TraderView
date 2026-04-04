@@ -1,5 +1,6 @@
 using IKBR_Report_Puller.Services;
 using IKBR_Report_Puller.Interfaces;
+using IKBR_Report_Puller.Domain;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Xml.Linq;
@@ -22,29 +23,34 @@ namespace IKBR_Report_Puller.Tests.Services
         }
 
         [TestMethod]
-        public void CreateReport_NoFlexStatement_ShouldLogAndReturn()
+        public void CreateReport_NoData_ShouldLogAndReturn()
         {
             // Arrange
             var reportXml = new XDocument(new XElement("Root"));
+            var report = IKBRReportParser.ParseMainReport(reportXml);
 
             // Act
-            _service.CreateReport(reportXml, "output.xlsx");
+            _service.CreateReport(report, "output.xlsx");
 
             // Assert
             // Verify logging or other side effects
         }
 
         [TestMethod]
-        public void CreateReport_ValidFlexStatement_ShouldCreateReport()
+        public void CreateReport_ValidReport_ShouldLog()
         {
             // Arrange
-            var reportXml = new XDocument(new XElement("FlexStatement", new XAttribute("whenGenerated", "2023-10-01")));
+            var reportXml = new XDocument(
+                new XElement("FlexStatement", 
+                    new XAttribute("whenGenerated", "20231001;120000"),
+                    new XAttribute("accountId", "U1234567")));
+            var report = IKBRReportParser.ParseMainReport(reportXml);
 
             // Act
-            _service.CreateReport(reportXml, "output.xlsx");
+            _service.CreateReport(report, "output.xlsx");
 
             // Assert
-            // Verify file creation or other side effects
+            // Verify logging (Excel report creation is currently stubbed)
         }
     }
 }

@@ -1,8 +1,10 @@
 using IBApi;
+using IKBR_Report_Puller.IKBR;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -67,10 +69,9 @@ namespace IKBR_Report_Puller.Services
         }
 
         /// <summary>
-        /// Requests historical data and returns a Task that completes when all bars are received.
-        /// Perfect for CAN SLIM trend analysis.
+        /// Requests historical data by symbol, asset category, currency and exchange.
         /// </summary>
-        public async Task<List<Bar>> GetHistoricalDataAsync(string symbol)
+        public async Task<List<Bar>> GetHistoricalDataAsync(string symbol, string assetCategory, string currency, string listingExchange)
         {
             if (!_client.IsConnected())
                 throw new InvalidOperationException("Socket not connected. Call ConnectAsync first.");
@@ -82,16 +83,81 @@ namespace IKBR_Report_Puller.Services
             Contract contract = new Contract
             {
                 Symbol = symbol,
-                SecType = "STK",
-                Currency = "USD",
-                Exchange = "SMART"
+                SecType = assetCategory,
+                Currency = currency,
+                Exchange = listingExchange
             };
 
             // Requesting 1 Year of Daily Bars for Relative Strength Calculation
-            // Parameters: id, contract, endDateTime, duration, barSize, whatToShow, useRTH, formatDate, keepUpToDate, chartOptions
             _client.reqHistoricalData(reqId, contract, "", "1 Y", "1 day", "TRADES", 1, 1, false, null);
 
             return await _dataTcs.Task;
+        }
+
+        /// <summary>
+        /// Requests historical data by contract ID and date range.
+        /// </summary>
+        public async Task<List<Bar>> GetHistoricalDataAsync(string conid, DateTime from, DateTime to)
+        {
+            if (!_client.IsConnected())
+                throw new InvalidOperationException("Socket not connected. Call ConnectAsync first.");
+
+            _dataTcs = new TaskCompletionSource<List<Bar>>();
+            _currentBars = new List<Bar>();
+            int reqId = Interlocked.Increment(ref _requestId);
+
+            // Define the contract using the unique Conid
+            Contract contract = new Contract
+            {
+                ConId = int.Parse(conid),
+                Exchange = "SMART" // Usually required to route the request effectively
+            };
+
+            // Calculate duration string based on the from/to dates
+            // IBKR requires a specific format: "3600 S", "3 D", "1 W", "1 M", "1 Y"
+            string duration = CalculateIbkrDuration(from, to);
+
+            // Format the endDateTime (to) as "yyyyMMdd-HH:mm:ss"
+            string endDateTime = to.ToString("yyyyMMdd-HH:mm:ss");
+
+            // Parameters: id, contract, endDateTime, duration, barSize, whatToShow, useRTH, formatDate, keepUpToDate, chartOptions
+            _client.reqHistoricalData(
+                reqId,
+                contract,
+                endDateTime,
+                duration,
+                "1 day",
+                "TRADES",
+                1, // useRTH: 1 = Regular Trading Hours only (Crucial for CAN SLIM RS lines)
+                1, // formatDate: 1 = yyyyMMdd HH:mm:ss
+                false,
+                null
+            );
+
+            return await _dataTcs.Task;
+        }
+
+        private string CalculateIbkrDuration(DateTime from, DateTime to)
+        {
+            if (from >= to)
+                throw new ArgumentException("The 'from' date must be earlier than the 'to' date.");
+
+            TimeSpan span = to - from;
+
+            // Use Days if the span is at least 1 day. 
+            // IBKR allows "D" for days.
+            if (span.TotalDays >= 1)
+            {
+                // We round up to the nearest whole day to ensure the 'from' date is included
+                int days = (int)Math.Ceiling(span.TotalDays);
+                return $"{days} D";
+            }
+            else
+            {
+                // For intra-day spans, use Seconds
+                int seconds = (int)Math.Ceiling(span.TotalSeconds);
+                return $"{seconds} S";
+            }
         }
 
         // --- IBKR CALLBACK OVERRIDES ---

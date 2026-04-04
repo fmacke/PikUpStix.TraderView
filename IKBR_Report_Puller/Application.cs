@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Interfaces;
 using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
@@ -17,46 +18,34 @@ namespace IKBR_Report_Puller
         private readonly IDataService _dataService;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
-        private readonly ITimeSeriesService _timeSeriesService;
-        private readonly PositionProcessor _positionProcessor;
 
         const int maxRetries = 10;
         const int delayInSeconds = 2;
+        string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
 
         public Application(
             IReportFetchingService reportFetchingService,
             IChartDataService chartService,
             IDataService dataService,
             IExcelReportService excelReportService,
-            IConfiguration config,
-            ITimeSeriesService timeSeriesService)
+            IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
             _dataService = dataService;
             _excelReportService = excelReportService;
             _chartDataService = chartService;            
             _config = config;
-            _timeSeriesService = timeSeriesService;
-            _positionProcessor = new PositionProcessor(_timeSeriesService, _dataService, _config);
+            outputFilePath = _config["IBKR:OutputFilePath"];
         }
 
         public async Task RunAsync()
         {
             try
             {
-                var outputFilePath = _config["IBKR:OutputFilePath"];
-                
-                (XDocument mainReportXml, string fileName) = await GetReportData(outputFilePath);
-                SaveReportDataToDB(outputFilePath, mainReportXml);
-                await WriteTodayReport(outputFilePath, fileName);
-                
-                var newbus = await _chartDataService.GetHistoricalDataAsync("NVDA");
-                var ekdkd = newbus.ToString();
-
-                //// Fetch instrument data for all open positions
-                //var positionDetails = _dataService.GetOpenPositionInstrumentNames(mainReportXml)
-                //    .Select(p => (p.listingExchange, p.symbol, p.securityID));
-                //await _positionProcessor.ProcessPositionsAsync(positionDetails, mainReportXml);
+                (IKBRReport mainReport, string fileName) = await GetReportData();
+                SaveReportDataToDB(mainReport);
+                await WriteTodayReport(fileName);                
+                SaveChartDataForTrades(mainReport);
             }
             catch (Exception ex)
             {
@@ -64,14 +53,42 @@ namespace IKBR_Report_Puller
             }
         }
 
-        private void SaveReportDataToDB(string? outputFilePath, XDocument mainReportXml)
+        private void SaveChartDataForTrades(IKBRReport report)
         {
-            _dataService.InsertTradeExecutions(mainReportXml);
-            _dataService.InsertOpenPositions(mainReportXml);
-            _excelReportService.CreateReport(mainReportXml, outputFilePath);
+            var trades = _dataService.GetTradeExecutions();
+            if (!trades.Any())
+            {
+                Console.WriteLine("No trade confirmations found in the report.");
+                return;
+            }
+
+            foreach (var trade in trades)
+            {
+                var openTime = trade.TradeDate.AddDays(-10);
+                var closeTime = trade.TradeDate.AddDays(10);
+
+                // Check if chart data exists for the trade's open-to-close time range
+                //bool chartDataExists = _chartDataService.ChartDataExistsForTimeRange(openTime, closeTime);
+
+                //if (!chartDataExists)
+                //{
+                //    Console.WriteLine($"Missing chart data for trade ID {trade.IbOrderID} from {openTime} to {closeTime}.");
+                //}
+                //else
+                //{
+                //    Console.WriteLine($"Chart data exists for trade ID {trade.IbOrderID}.");
+                //}
+            }
         }
 
-        private async Task<string> WriteTodayReport(string outputFilePath, string fileName)
+        private void SaveReportDataToDB(IKBRReport mainReport)
+        {
+            _dataService.InsertTradeExecutions(mainReport);
+            _dataService.InsertOpenPositions(mainReport);
+            _excelReportService.CreateReport(mainReport, outputFilePath);
+        }
+
+        private async Task<string> WriteTodayReport(string fileName)
         {
             //// Fetch and process today's report
             XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
@@ -80,11 +97,14 @@ namespace IKBR_Report_Puller
             todayReportXml.Save(todayReportFilePath);
             Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
 
-            _dataService.InsertTodayExecutions(todayReportXml);
+            // Convert XDocument to IKBRReport
+            var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
+            _dataService.InsertTodayExecutions(todayReport);
+
             return fileName;
         }
 
-        private async Task<(XDocument mainReportXml, string fileName)> GetReportData(string? outputFilePath)
+        private async Task<(IKBRReport mainReport, string fileName)> GetReportData()
         {
             //// Fetch and process main report
             XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
@@ -92,7 +112,11 @@ namespace IKBR_Report_Puller
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
             mainReportXml.Save(mainReportFilePath);
             Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
-            return (mainReportXml, fileName);
+
+            // Convert XDocument to IKBRReport
+            var mainReport = IKBRReportParser.ParseMainReport(mainReportXml);
+
+            return (mainReport, fileName);
         }
     }
 }
