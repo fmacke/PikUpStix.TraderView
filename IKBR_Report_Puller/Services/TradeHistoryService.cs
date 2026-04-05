@@ -35,7 +35,8 @@ namespace IKBR_Report_Puller.Services
                     CloseIbOrderID = group.Key,
                     TradeOpened = group.First().TradeOpened,
                     TradeClosed = group.First().TradeClosed,
-                    Quantity = group.Sum(trade => trade.Quantity)
+                    Quantity = group.Sum(trade => trade.Quantity),
+                    SecurityId = group.First().SecurityId
                 })
                 .OrderByDescending(trade => trade.Quantity)
                 .ToList();
@@ -153,7 +154,8 @@ namespace IKBR_Report_Puller.Services
                 IsClosed = false,
                 Quantity = tradeExecution.Quantity,
                 Symbol = tradeExecution.Symbol,
-                TradeDate = tradeExecution.TradeDate
+                TradeDate = tradeExecution.TradeDate,
+                SecurityId = tradeExecution.SecurityId
             });
         }
     }

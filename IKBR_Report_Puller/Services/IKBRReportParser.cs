@@ -70,7 +70,7 @@ namespace IKBR_Report_Puller.Services
                 AssetCategory = trade.Attribute("assetCategory")?.Value,
                 Symbol = trade.Attribute("symbol")?.Value,
                 Description = trade.Attribute("description")?.Value,
-                Conid = ConvertToLong(trade.Attribute("conid")?.Value),
+                Conid = trade.Attribute("conid")?.Value,
                 SecurityID = trade.Attribute("securityID")?.Value,
                 SecurityIDType = trade.Attribute("securityIDType")?.Value,
                 Cusip = trade.Attribute("cusip")?.Value,

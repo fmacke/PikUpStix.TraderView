@@ -14,6 +14,8 @@
         }
         public long IbOrderID { get; set; }
         public string Symbol { get; set; }
+        public int InstrumentId { get; set; }
+        public string SecurityId { get; set; }
         public decimal AveragePrice { get; set; }
         public DateTime TradeDate { get; set; }
         public TradeType TradeType { get; private set; } // Made setter private to ensure it is only set internally

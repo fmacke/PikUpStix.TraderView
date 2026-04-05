@@ -43,7 +43,7 @@ namespace IKBR_Report_Puller.Services
                 using (var package = new ExcelPackage())
                 {
                     CreateOpenPositionsWorkSheet(package, report);
-                    _tradeHistoryReportService.CreateTradeHistoryReport(GetTradeExecutions());
+                    _tradeHistoryReportService.CreateTradeHistoryReport(_dataService.GetTradeExecutions());
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "Trade History");
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "Trade History Aggregated");
                     CreateVisualReport(package, _tradeHistoryReportService.TradeHistoryAggregated, "Trade Report");
@@ -62,12 +62,6 @@ namespace IKBR_Report_Puller.Services
             {
                 Console.WriteLine($"\nAn error occurred during Excel report creation: {ex.Message}");
             }
-        }
-
-        private List<TradeExecution> GetTradeExecutions()
-        {
-            var tradeExecutions = _dataService.GetTradeExecutions();
-            return tradeExecutions;
         }
 
         private void CreateOpenPositionsWorkSheet(ExcelPackage package, IKBRReport report)

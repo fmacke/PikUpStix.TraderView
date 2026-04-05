@@ -11,8 +11,11 @@ namespace IKBR_Report_Puller.Data.Repositories
     /// </summary>
     public class TradeRepository : BaseRepository
     {
-        public TradeRepository(string connectionString) : base(connectionString)
+        private readonly InstrumentRepository _instrumentRepository;
+
+        public TradeRepository(string connectionString, InstrumentRepository instrumentRepository) : base(connectionString)
         {
+            _instrumentRepository = instrumentRepository;
         }
 
         /// <summary>
@@ -165,9 +168,19 @@ namespace IKBR_Report_Puller.Data.Repositories
 
         private void UpdateTrade(SqlConnection connection, SqlTransaction transaction, Trade trade)
         {
+            // Get or create instrument and get its InstrumentId
+            int instrumentId = _instrumentRepository.GetOrCreateInstrumentByConid(
+                trade.Conid,
+                trade.Symbol,
+                trade.ListingExchange,
+                trade.Currency,
+                trade.AssetCategory,
+                trade.SecurityID,
+                trade.Description);
+
             const string updateQuery = @"
                 UPDATE dbo.TradeExecutions
-                SET symbol = @symbol, securityID = @securityID, tradeID = @tradeID, dateTime = @dateTime,
+                SET InstrumentId = @instrumentId, symbol = @symbol, securityID = @securityID, tradeID = @tradeID, dateTime = @dateTime,
                     tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice, ibCommission = @ibCommission,
                     ibCommissionCurrency = @ibCommissionCurrency, closePrice = @closePrice, cost = @cost,
                     fifoPnlRealized = @fifoPnlRealized, buySell = @buySell, transactionID = @transactionID,
@@ -196,14 +209,27 @@ namespace IKBR_Report_Puller.Data.Repositories
                     commodityType = @commodityType, fineness = @fineness, weight = @weight
                 WHERE ibExecID = @ibExecID";
 
-            ExecuteCommand(connection, transaction, updateQuery, TradeParameterBuilder.GetTradeParameters(trade));
+            var parameters = TradeParameterBuilder.GetTradeParameters(trade);
+            parameters.Add("@instrumentId", instrumentId);
+
+            ExecuteCommand(connection, transaction, updateQuery, parameters);
         }
 
         private void InsertTrade(SqlConnection connection, SqlTransaction transaction, Trade trade)
         {
+            // Get or create instrument and get its InstrumentId
+            int instrumentId = _instrumentRepository.GetOrCreateInstrumentByConid(
+                trade.Conid,
+                trade.Symbol,
+                trade.ListingExchange,
+                trade.Currency,
+                trade.AssetCategory,
+                trade.SecurityID,
+                trade.Description);
+
             const string insertQuery = @"
                 INSERT INTO [dbo].[TradeExecutions]
-                ([symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
+                ([InstrumentId], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
                  [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],
                  [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description],
                  [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash],
@@ -217,7 +243,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                  [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt],
                  [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight])
                 VALUES
-                (@symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
+                (@instrumentId, @symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
                  @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID,
                  @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description,
                  @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash,
@@ -231,7 +257,10 @@ namespace IKBR_Report_Puller.Data.Repositories
                  @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt,
                  @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
 
-            ExecuteCommand(connection, transaction, insertQuery, TradeParameterBuilder.GetTradeParameters(trade));
+            var parameters = TradeParameterBuilder.GetTradeParameters(trade);
+            parameters.Add("@instrumentId", instrumentId);
+
+            ExecuteCommand(connection, transaction, insertQuery, parameters);
         }
 
         private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)

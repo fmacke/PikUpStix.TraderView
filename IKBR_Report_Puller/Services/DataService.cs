@@ -30,11 +30,11 @@ namespace IKBR_Report_Puller.Services
             var dbName = config["Database:DbName"];
             _connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
 
-            // Initialize repositories
-            _tradeRepository = new TradeRepository(_connectionString);
+            // Initialize repositories - InstrumentRepository must be created first since TradeRepository depends on it
+            _instrumentRepository = new InstrumentRepository(_connectionString);
+            _tradeRepository = new TradeRepository(_connectionString, _instrumentRepository);
             _openPositionRepository = new OpenPositionRepository(_connectionString);
             _historicalDataRepository = new HistoricalDataRepository(_connectionString);
-            _instrumentRepository = new InstrumentRepository(_connectionString);
         }
 
         public string ConnectionString => _connectionString;

@@ -18,6 +18,7 @@ namespace IKBR_Report_Puller
         private readonly IDataService _dataService;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
+        private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
         const int maxRetries = 10;
         const int delayInSeconds = 2;
@@ -28,6 +29,7 @@ namespace IKBR_Report_Puller
             IChartDataService chartService,
             IDataService dataService,
             IExcelReportService excelReportService,
+            ITradeHistoryReportService tradeHistoryReportService,
             IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
@@ -35,6 +37,7 @@ namespace IKBR_Report_Puller
             _excelReportService = excelReportService;
             _chartDataService = chartService;            
             _config = config;
+            _tradeHistoryReportService = tradeHistoryReportService;
             outputFilePath = _config["IBKR:OutputFilePath"];
         }
 
@@ -45,7 +48,6 @@ namespace IKBR_Report_Puller
                 (IKBRReport mainReport, string fileName) = await GetReportData();
                 SaveReportDataToDB(mainReport);
                 await WriteTodayReport(fileName);                
-                SaveChartDataForTrades(mainReport);
             }
             catch (Exception ex)
             {
@@ -53,39 +55,27 @@ namespace IKBR_Report_Puller
             }
         }
 
-        private void SaveChartDataForTrades(IKBRReport report)
-        {
-            var trades = _dataService.GetTradeExecutions();
-            if (!trades.Any())
-            {
-                Console.WriteLine("No trade confirmations found in the report.");
-                return;
-            }
-
-            foreach (var trade in trades)
-            {
-                var openTime = trade.TradeDate.AddDays(-10);
-                var closeTime = trade.TradeDate.AddDays(10);
-
-                // Check if chart data exists for the trade's open-to-close time range
-                //bool chartDataExists = _chartDataService.ChartDataExistsForTimeRange(openTime, closeTime);
-
-                //if (!chartDataExists)
-                //{
-                //    Console.WriteLine($"Missing chart data for trade ID {trade.IbOrderID} from {openTime} to {closeTime}.");
-                //}
-                //else
-                //{
-                //    Console.WriteLine($"Chart data exists for trade ID {trade.IbOrderID}.");
-                //}
-            }
-        }
 
         private void SaveReportDataToDB(IKBRReport mainReport)
         {
             _dataService.InsertTradeExecutions(mainReport);
             _dataService.InsertOpenPositions(mainReport);
             _excelReportService.CreateReport(mainReport, outputFilePath);
+            UpdateHistoricalDataForPositions();
+        }
+
+        private void UpdateHistoricalDataForPositions()
+        {
+            _tradeHistoryReportService.CreateTradeHistoryReport(_dataService.GetTradeExecutions());
+            var trades = _tradeHistoryReportService.TradeHistoryAggregated;
+            foreach(var trade in trades)
+            {
+                // Update historical data for the trade's symbol and date range
+                var startDate = trade.TradeOpened.AddDays(-30);
+                var endDate = trade.TradeClosed.AddDays(30);
+                // Update historical data logic here
+               // _chartDataService
+            }
         }
 
         private async Task<string> WriteTodayReport(string fileName)

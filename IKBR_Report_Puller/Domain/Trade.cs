@@ -4,6 +4,7 @@ namespace IKBR_Report_Puller.Domain
 {
     public class Trade
     {
+        public int InstrumentId { get; set; }
         public string AccountId { get; set; }
         public string AcctAlias { get; set; }
         public string Model { get; set; }
@@ -12,7 +13,7 @@ namespace IKBR_Report_Puller.Domain
         public string AssetCategory { get; set; }
         public string Symbol { get; set; }
         public string Description { get; set; }
-        public long? Conid { get; set; }
+        public string Conid { get; set; }
         public string SecurityID { get; set; }
         public string SecurityIDType { get; set; }
         public string Cusip { get; set; }
