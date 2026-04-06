@@ -1,19 +1,20 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Linq;
 
 namespace IKBR_Report_Puller.Data.Repositories
 {
     /// <summary>
     /// Repository for Trade-related database operations
     /// </summary>
-    public class TradeRepository : BaseRepository
+    public class TradeExecutionRepository : BaseRepository
     {
         private readonly InstrumentRepository _instrumentRepository;
 
-        public TradeRepository(string connectionString, InstrumentRepository instrumentRepository) : base(connectionString)
+        public TradeExecutionRepository(string connectionString, InstrumentRepository instrumentRepository) : base(connectionString)
         {
             _instrumentRepository = instrumentRepository;
         }
@@ -71,7 +72,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                 var tradeExecutions = new List<TradeExecution>();
 
                 using (var cmd = new SqlCommand(
-                    "SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator " +
+                    "SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator, instrumentid, currency, conid " +
                     "FROM [dbo].[TradeExecutions] " +
                     "ORDER BY ibOrderID, tradeDate ASC, dateTime ASC", connection))
                 {
@@ -81,11 +82,14 @@ namespace IKBR_Report_Puller.Data.Repositories
                         {
                             tradeExecutions.Add(new TradeExecution
                             {
-                                IbOrderID = reader.GetInt64(0),
-                                Symbol = reader.GetString(1),
-                                TradeDate = reader.GetDateTime(2),
-                                Quantity = reader.GetDecimal(3),
-                                AveragePrice = reader.GetDecimal(4)
+                                IbOrderID = reader.GetInt64("ibOrderID"),
+                                Symbol = reader.GetString("symbol"),
+                                TradeDate = reader.GetDateTime("tradeDate"),
+                                Quantity = reader.GetDecimal("quantity"),
+                                AveragePrice = reader.GetDecimal("tradePrice"),
+                                InstrumentId = reader.GetInt32("instrumentid"),
+                                Currency = reader.GetString("currency"),
+                                SecurityId = reader.GetString("conid")
                             });
                         }
                     }
@@ -139,8 +143,6 @@ namespace IKBR_Report_Puller.Data.Repositories
             });
         }
 
-        #region Private Helper Methods
-
         private void UpdateTradeIfIncomplete(SqlConnection connection, SqlTransaction transaction, Trade trade, string ibExecID)
         {
             using (var selectCmd = new SqlCommand(
@@ -168,16 +170,6 @@ namespace IKBR_Report_Puller.Data.Repositories
 
         private void UpdateTrade(SqlConnection connection, SqlTransaction transaction, Trade trade)
         {
-            // Get or create instrument and get its InstrumentId
-            int instrumentId = _instrumentRepository.GetOrCreateInstrumentByConid(
-                trade.Conid,
-                trade.Symbol,
-                trade.ListingExchange,
-                trade.Currency,
-                trade.AssetCategory,
-                trade.SecurityID,
-                trade.Description);
-
             const string updateQuery = @"
                 UPDATE dbo.TradeExecutions
                 SET InstrumentId = @instrumentId, symbol = @symbol, securityID = @securityID, tradeID = @tradeID, dateTime = @dateTime,
@@ -210,23 +202,13 @@ namespace IKBR_Report_Puller.Data.Repositories
                 WHERE ibExecID = @ibExecID";
 
             var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-            parameters.Add("@instrumentId", instrumentId);
+            parameters.Add("@instrumentId", trade.InstrumentId);
 
             ExecuteCommand(connection, transaction, updateQuery, parameters);
         }
 
         private void InsertTrade(SqlConnection connection, SqlTransaction transaction, Trade trade)
         {
-            // Get or create instrument and get its InstrumentId
-            int instrumentId = _instrumentRepository.GetOrCreateInstrumentByConid(
-                trade.Conid,
-                trade.Symbol,
-                trade.ListingExchange,
-                trade.Currency,
-                trade.AssetCategory,
-                trade.SecurityID,
-                trade.Description);
-
             const string insertQuery = @"
                 INSERT INTO [dbo].[TradeExecutions]
                 ([InstrumentId], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
@@ -258,7 +240,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                  @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
 
             var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-            parameters.Add("@instrumentId", instrumentId);
+            parameters.Add("@instrumentId", trade.InstrumentId);
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
         }
@@ -299,7 +281,5 @@ namespace IKBR_Report_Puller.Data.Repositories
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
         }
-
-        #endregion
     }
 }

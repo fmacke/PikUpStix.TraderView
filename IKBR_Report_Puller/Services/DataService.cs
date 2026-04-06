@@ -17,7 +17,7 @@ namespace IKBR_Report_Puller.Services
         private readonly string _connectionString;
 
         // Repositories
-        private readonly TradeRepository _tradeRepository;
+        private readonly TradeExecutionRepository _tradeExecutionRepository;
         private readonly OpenPositionRepository _openPositionRepository;
         private readonly HistoricalDataRepository _historicalDataRepository;
         private readonly InstrumentRepository _instrumentRepository;
@@ -32,7 +32,7 @@ namespace IKBR_Report_Puller.Services
 
             // Initialize repositories - InstrumentRepository must be created first since TradeRepository depends on it
             _instrumentRepository = new InstrumentRepository(_connectionString);
-            _tradeRepository = new TradeRepository(_connectionString, _instrumentRepository);
+            _tradeExecutionRepository = new TradeExecutionRepository(_connectionString, _instrumentRepository);
             _openPositionRepository = new OpenPositionRepository(_connectionString);
             _historicalDataRepository = new HistoricalDataRepository(_connectionString);
         }
@@ -51,8 +51,8 @@ namespace IKBR_Report_Puller.Services
                 Console.WriteLine("No trades found in the report.");
                 return;
             }
-
-            _tradeRepository.UpsertTradeExecutions(report.Trades);
+            _instrumentRepository.UpsertInstruments(report.Trades);
+            _tradeExecutionRepository.UpsertTradeExecutions(report.Trades);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace IKBR_Report_Puller.Services
         /// </summary>
         public List<TradeExecution> GetTradeExecutions()
         {
-            return _tradeRepository.GetTradeExecutions();
+            return _tradeExecutionRepository.GetTradeExecutions();
         }
 
         /// <summary>
@@ -73,8 +73,8 @@ namespace IKBR_Report_Puller.Services
                 Console.WriteLine("No trade confirmations found in the report.");
                 return;
             }
-
-            _tradeRepository.UpsertTodayExecutions(report.TradeConfirms);
+            _instrumentRepository.UpsertInstruments(report.TradeConfirms);
+            _tradeExecutionRepository.UpsertTodayExecutions(report.TradeConfirms);
         }
 
         #endregion
@@ -100,62 +100,22 @@ namespace IKBR_Report_Puller.Services
 
             _openPositionRepository.InsertOpenPositions(report.WhenGenerated, report.OpenPositions);
         }
-
-        /// <summary>
-        /// Gets instrument details (securityID, listingExchange, symbol) for all open positions
-        /// </summary>
-        public List<(string securityID, string listingExchange, string symbol)> GetOpenPositionInstrumentNames(IKBRReport report)
-        {
-            if (report == null || !report.OpenPositions.Any())
-            {
-                return new List<(string securityID, string listingExchange, string symbol)>();
-            }
-
-            return _openPositionRepository.GetOpenPositionInstrumentNames(report.OpenPositions);
-        }
-
         #endregion
-
-        #region HistoricalData Operations
 
         /// <summary>
         /// Inserts chart data for a given instrument, skipping duplicates
         /// </summary>
-        public void InsertChartData(string instrumentId, List<Bar> bars)
+        public void UpsertHistoricalData(string instrumentId, List<Bar> bars)
         {
-            _historicalDataRepository.InsertChartData(instrumentId, bars);
+            _historicalDataRepository.UpdateHistoricalData(instrumentId, bars);
         }
-
-        #endregion
-
-        #region Instrument Operations
 
         /// <summary>
-        /// Upserts time series instrument data
+        /// Gets missing date ranges for historical data for a given instrument and date range
         /// </summary>
-        public void UpsertTimeSeriesData(
-            string instrumentName,
-            string listingExchange,
-            string securityIdentifier,
-            string provider,
-            string dataName,
-            string dataSource,
-            string format,
-            string frequency,
-            string currency,
-            DateTime date,
-            double openPrice,
-            double closePrice,
-            double lowPrice,
-            double highPrice,
-            double volume)
+        public List<(DateTime startDate, DateTime endDate)> GetMissingDateRanges(int instrumentId, DateTime startDate, DateTime endDate)
         {
-            _instrumentRepository.UpsertTimeSeriesData(
-                instrumentName, listingExchange, securityIdentifier, provider, dataName,
-                dataSource, format, frequency, currency, date, openPrice, closePrice,
-                lowPrice, highPrice, volume);
+            return _historicalDataRepository.GetMissingDateRanges(instrumentId, startDate, endDate);
         }
-
-        #endregion
     }
 }

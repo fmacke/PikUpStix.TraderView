@@ -9,5 +9,8 @@ namespace IKBR_Report_Puller.Domain
         public string TradeDate { get; set; }
         public decimal? Quantity { get; set; }
         public decimal? Price { get; set; }
+        public string Currency { get; set; }
+        public string ConId { get; set; }
+
     }
 }

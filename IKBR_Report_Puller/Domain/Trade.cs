@@ -14,7 +14,6 @@ namespace IKBR_Report_Puller.Domain
         public string Symbol { get; set; }
         public string Description { get; set; }
         public string Conid { get; set; }
-        public string SecurityID { get; set; }
         public string SecurityIDType { get; set; }
         public string Cusip { get; set; }
         public string Isin { get; set; }

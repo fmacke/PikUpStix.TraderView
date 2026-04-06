@@ -5,7 +5,7 @@ namespace IKBR_Report_Puller.Interfaces
 {
     public interface IChartDataService
     {
-        Task<List<Bar>> GetHistoricalDataAsync(string symbol, string assetCategory, string currency, string listingExchange);
+        Task<List<Bar>> GetHistoricalDataAsync(string conid, DateTime from, DateTime to);
         Task<bool> ConnectAsync(string host, int port, int clientId);
     }
 }

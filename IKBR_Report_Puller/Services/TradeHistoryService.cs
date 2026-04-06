@@ -35,6 +35,8 @@ namespace IKBR_Report_Puller.Services
                     CloseIbOrderID = group.Key,
                     TradeOpened = group.First().TradeOpened,
                     TradeClosed = group.First().TradeClosed,
+                    Currency = group.First().Currency,
+                    InstrumentId = group.First().InstrumentId,
                     Quantity = group.Sum(trade => trade.Quantity),
                     SecurityId = group.First().SecurityId
                 })
@@ -115,12 +117,15 @@ namespace IKBR_Report_Puller.Services
                 Symbol = position.Symbol,
                 AveragePrice = position.AveragePrice,
                 ClosePrice = tradeExecution.AveragePrice,
+                InstrumentId = tradeExecution.InstrumentId,
+                Currency = tradeExecution.Currency,
                 //RealizedPnL = CalculateRealizedPnL(position.TradeType, position.AveragePrice, tradeExecution.AveragePrice, tradeQuantity),
                 OpenIbOrderID = position.IbOrderID,
                 CloseIbOrderID = tradeExecution.IbOrderID,
                 TradeOpened = position.TradeDate,
                 TradeClosed = tradeExecution.TradeDate,
-                Quantity = tradeQuantity
+                Quantity = tradeQuantity,
+                SecurityId = tradeExecution.SecurityId
             });
         }
 
@@ -155,7 +160,9 @@ namespace IKBR_Report_Puller.Services
                 Quantity = tradeExecution.Quantity,
                 Symbol = tradeExecution.Symbol,
                 TradeDate = tradeExecution.TradeDate,
-                SecurityId = tradeExecution.SecurityId
+                SecurityId = tradeExecution.SecurityId,
+                Currency = tradeExecution.Currency,
+                InstrumentId = tradeExecution.InstrumentId
             });
         }
     }

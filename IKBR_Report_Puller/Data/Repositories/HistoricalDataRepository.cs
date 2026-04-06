@@ -18,7 +18,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Inserts chart data bars for a given instrument, skipping duplicates
         /// </summary>
-        public void InsertChartData(string instrumentId, List<Bar> bars)
+        public void UpdateHistoricalData(string instrumentId, List<Bar> bars)
         {
             if (bars == null || !bars.Any())
             {
@@ -47,11 +47,82 @@ namespace IKBR_Report_Puller.Data.Repositories
                 {
                     foreach (var bar in newBars)
                     {
-                        InsertBar(connection, transaction, instrumentIdInt, bar);
+                        InsertHistoricalData(connection, transaction, instrumentIdInt, bar);
                     }
                     transaction.Commit();
                     Console.WriteLine($"Successfully inserted {newBars.Count} new chart data records for instrument {instrumentId}.");
                 }
+            });
+        }
+
+        /// <summary>
+        /// Gets missing date ranges for historical data for a given instrument and date range
+        /// </summary>
+        public List<(DateTime startDate, DateTime endDate)> GetMissingDateRanges(int instrumentId, DateTime startDate, DateTime endDate)
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                var existingDates = GetExistingDates(connection, instrumentId);
+                var missingRanges = new List<(DateTime startDate, DateTime endDate)>();
+
+                if (!existingDates.Any())
+                {
+                    // No data exists, return the entire range
+                    return new List<(DateTime, DateTime)> { (startDate, endDate) };
+                }
+
+                // Generate all expected dates (trading days approximation - all weekdays)
+                var expectedDates = new List<DateTime>();
+                for (var date = startDate; date <= endDate; date = date.AddDays(1))
+                {
+                    // Skip weekends (rough approximation - doesn't account for holidays)
+                    if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
+                    {
+                        expectedDates.Add(date.Date);
+                    }
+                }
+
+                // Find missing dates
+                var missingDates = expectedDates.Where(d => !existingDates.Contains(d.Date)).OrderBy(d => d).ToList();
+
+                if (!missingDates.Any())
+                {
+                    return missingRanges;
+                }
+
+                // Group consecutive missing dates into ranges
+                DateTime? rangeStart = null;
+                DateTime? rangeEnd = null;
+
+                foreach (var date in missingDates)
+                {
+                    if (rangeStart == null)
+                    {
+                        rangeStart = date;
+                        rangeEnd = date;
+                    }
+                    else if (date == rangeEnd.Value.AddDays(1) || 
+                             (date.DayOfWeek == DayOfWeek.Monday && rangeEnd.Value.DayOfWeek == DayOfWeek.Friday && (date - rangeEnd.Value).Days <= 3))
+                    {
+                        // Consecutive date (or Monday following Friday)
+                        rangeEnd = date;
+                    }
+                    else
+                    {
+                        // Gap detected, save current range and start new one
+                        missingRanges.Add((rangeStart.Value, rangeEnd.Value));
+                        rangeStart = date;
+                        rangeEnd = date;
+                    }
+                }
+
+                // Add the last range
+                if (rangeStart != null)
+                {
+                    missingRanges.Add((rangeStart.Value, rangeEnd.Value));
+                }
+
+                return missingRanges;
             });
         }
 
@@ -74,7 +145,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             return existingDates;
         }
 
-        private void InsertBar(SqlConnection connection, SqlTransaction transaction, int instrumentId, Bar bar)
+        private void InsertHistoricalData(SqlConnection connection, SqlTransaction transaction, int instrumentId, Bar bar)
         {
             const string insertQuery = @"
                 INSERT INTO [dbo].[HistoricalData]

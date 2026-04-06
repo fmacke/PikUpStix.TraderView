@@ -14,7 +14,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             {
                 { "@InstrumentId", trade.InstrumentId },
                 { "@symbol", trade.Symbol },
-                { "@securityID", trade.SecurityID },
+                { "@conID", trade.Conid },
                 { "@tradeID", trade.TradeID },
                 { "@dateTime", trade.DateTime },
                 { "@tradeDate", trade.TradeDate },

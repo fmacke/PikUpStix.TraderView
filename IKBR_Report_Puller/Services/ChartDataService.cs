@@ -69,32 +69,6 @@ namespace IKBR_Report_Puller.Services
         }
 
         /// <summary>
-        /// Requests historical data by symbol, asset category, currency and exchange.
-        /// </summary>
-        public async Task<List<Bar>> GetHistoricalDataAsync(string symbol, string assetCategory, string currency, string listingExchange)
-        {
-            if (!_client.IsConnected())
-                throw new InvalidOperationException("Socket not connected. Call ConnectAsync first.");
-
-            _dataTcs = new TaskCompletionSource<List<Bar>>();
-            _currentBars = new List<Bar>();
-            int reqId = Interlocked.Increment(ref _requestId);
-
-            Contract contract = new Contract
-            {
-                Symbol = symbol,
-                SecType = assetCategory,
-                Currency = currency,
-                Exchange = listingExchange
-            };
-
-            // Requesting 1 Year of Daily Bars for Relative Strength Calculation
-            _client.reqHistoricalData(reqId, contract, "", "1 Y", "1 day", "TRADES", 1, 1, false, null);
-
-            return await _dataTcs.Task;
-        }
-
-        /// <summary>
         /// Requests historical data by contract ID and date range.
         /// </summary>
         public async Task<List<Bar>> GetHistoricalDataAsync(string conid, DateTime from, DateTime to)

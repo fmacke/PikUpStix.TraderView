@@ -71,7 +71,6 @@ namespace IKBR_Report_Puller.Services
                 Symbol = trade.Attribute("symbol")?.Value,
                 Description = trade.Attribute("description")?.Value,
                 Conid = trade.Attribute("conid")?.Value,
-                SecurityID = trade.Attribute("securityID")?.Value,
                 SecurityIDType = trade.Attribute("securityIDType")?.Value,
                 Cusip = trade.Attribute("cusip")?.Value,
                 Isin = trade.Attribute("isin")?.Value,
