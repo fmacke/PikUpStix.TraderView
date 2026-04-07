@@ -84,7 +84,7 @@ namespace IKBR_Report_Puller.Data.Repositories
 
         /// <summary>
         /// Ensures instruments exist for the given trade confirmations
-        /// Creates missing instruments automatically
+        /// Creates missing instruments automatically and populates InstrumentID on each trade confirm
         /// </summary>
         internal void UpsertInstruments(List<TradeConfirm> tradeConfirms)
         {
@@ -106,6 +106,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                         int createdCount = 0;
                         int existingCount = 0;
 
+                        // Dictionary to cache conid -> instrumentId mappings
+                        var conidToInstrumentIdMap = new Dictionary<string, int>();
+
                         foreach (var conid in uniqueConids)
                         {
                             int? instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
@@ -121,11 +124,29 @@ namespace IKBR_Report_Puller.Data.Repositories
                                     tradeConfirm.Symbol,
                                     tradeConfirm.Currency);
 
+                                // Get the newly created instrument ID
+                                instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
                                 createdCount++;
                             }
                             else
                             {
                                 existingCount++;
+                            }
+
+                            // Store the mapping
+                            if (instrumentId.HasValue)
+                            {
+                                conidToInstrumentIdMap[conid] = instrumentId.Value;
+                            }
+                        }
+
+                        // Populate InstrumentID on all trade confirms
+                        foreach (var tradeConfirm in tradeConfirms)
+                        {
+                            if (!string.IsNullOrEmpty(tradeConfirm.ConId) && 
+                                conidToInstrumentIdMap.TryGetValue(tradeConfirm.ConId, out int instrumentId))
+                            {
+                                tradeConfirm.InstrumentID = instrumentId.ToString();
                             }
                         }
 

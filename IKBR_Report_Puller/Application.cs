@@ -21,8 +21,8 @@ namespace IKBR_Report_Puller
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
-        const int maxRetries = 10;
-        const int delayInSeconds = 2;
+        const int maxRetries = 3;
+        const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
 
         public Application(
@@ -59,10 +59,10 @@ namespace IKBR_Report_Puller
 
         private void SaveReportDataToDB(IKBRReport mainReport)
         {
-            _dataService.InsertTradeExecutions(mainReport);
-            _dataService.InsertOpenPositions(mainReport);
+            _dataService.InsertTradeExecutions(mainReport);          
+            _dataService.InsertOpenPositions(mainReport);  
             _excelReportService.CreateReport(mainReport, outputFilePath);
-            UpdateHistoricalDataForPositions();
+            UpdateHistoricalDataForPositions();        
         }
 
         private void UpdateHistoricalDataForPositions()
@@ -72,6 +72,7 @@ namespace IKBR_Report_Puller
 
             foreach (var trade in trades)
             {
+                Console.WriteLine($"Processing trade for {trade.Symbol} opened on {trade.TradeOpened:yyyy-MM-dd} and closed on {trade.TradeClosed:yyyy-MM-dd}");
                 // Calculate date range: startDate - 100 days to endDate + 20 days
                 DateTime requiredStartDate = trade.TradeOpened.AddDays(-100);
                 DateTime requiredEndDate = trade.TradeClosed.AddDays(20);
@@ -85,7 +86,7 @@ namespace IKBR_Report_Puller
 
                 Console.WriteLine($"Checking historical data for {trade.Symbol} from {requiredStartDate:yyyy-MM-dd} to {requiredEndDate:yyyy-MM-dd}");
 
-               // Check for missing date ranges
+                // Check for missing date ranges
                 var missingRanges = _dataService.GetMissingDateRanges(trade.InstrumentId, requiredStartDate, requiredEndDate);
 
                 if (missingRanges.Any())
@@ -148,7 +149,7 @@ namespace IKBR_Report_Puller
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
             _dataService.InsertTodayExecutions(todayReport);
-
+            Console.WriteLine("boom7");
             return fileName;
         }
 

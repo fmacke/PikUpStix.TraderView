@@ -214,7 +214,9 @@ namespace IKBR_Report_Puller.Services
                 Symbol = tradeConfirm.Attribute("symbol")?.Value,
                 TradeDate = tradeConfirm.Attribute("tradeDate")?.Value,
                 Quantity = ConvertToDecimal(tradeConfirm.Attribute("quantity")?.Value),
-                Price = ConvertToDecimal(tradeConfirm.Attribute("price")?.Value)
+                Price = ConvertToDecimal(tradeConfirm.Attribute("price")?.Value),
+                ConId = tradeConfirm.Attribute("conid")?.Value,
+                Currency = tradeConfirm.Attribute("currency")?.Value
             };
         }
 

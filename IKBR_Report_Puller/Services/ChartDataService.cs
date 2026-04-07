@@ -156,10 +156,17 @@ namespace IKBR_Report_Puller.Services
 
         public override void error(int id, int errorCode, string errorMsg)
         {
-            // Log errors for debugging
+            // IBKR warning codes (non-critical)
+            if (IsWarningCode(errorCode))
+            {
+                Console.WriteLine($"[IBKR Warning {errorCode}] {errorMsg}");
+                return; // Don't fail the operation for warnings
+            }
+
+            // Log critical errors
             Console.WriteLine($"[IBKR Error {errorCode}] {errorMsg}");
 
-            // Handle specific CAN SLIM issues
+            // Handle specific critical errors
             if (errorCode == 162) // Pacing violation or no market data permission
             {
                 _dataTcs?.TrySetException(new Exception($"Market Data Error: {errorMsg}"));
@@ -170,6 +177,23 @@ namespace IKBR_Report_Puller.Services
             {
                 _connectionTcs?.TrySetResult(false);
             }
+        }
+
+        /// <summary>
+        /// Determines if an IBKR error code is a warning (non-critical) rather than a critical error
+        /// </summary>
+        private bool IsWarningCode(int errorCode)
+        {
+            // Common IBKR warning codes that don't require failing the operation
+            return errorCode switch
+            {
+                2104 => true, // Market data farm connection is OK
+                2106 => true, // HMDS data farm connection is OK
+                2158 => true, // Sec-def data farm connection is OK
+                2176 => true, // API version does not support fractional shares (auto-trimmed)
+                2177 => true, // API version does not support some feature
+                _ => false
+            };
         }
 
         public void Dispose()

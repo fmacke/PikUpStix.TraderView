@@ -68,7 +68,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                 if (!existingDates.Any())
                 {
                     // No data exists, return the entire range
-                    return new List<(DateTime, DateTime)> { (startDate, endDate) };
+                    // Ensure endDate is after startDate for single-day ranges
+                    var adjustedEndDate = startDate == endDate ? endDate.AddDays(1) : endDate;
+                    return new List<(DateTime, DateTime)> { (startDate, adjustedEndDate) };
                 }
 
                 // Generate all expected dates (trading days approximation - all weekdays)
@@ -110,7 +112,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                     else
                     {
                         // Gap detected, save current range and start new one
-                        missingRanges.Add((rangeStart.Value, rangeEnd.Value));
+                        // Ensure endDate is after startDate for single-day ranges
+                        var adjustedEndDate = rangeStart.Value == rangeEnd.Value ? rangeEnd.Value.AddDays(1) : rangeEnd.Value;
+                        missingRanges.Add((rangeStart.Value, adjustedEndDate));
                         rangeStart = date;
                         rangeEnd = date;
                     }
@@ -119,7 +123,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                 // Add the last range
                 if (rangeStart != null)
                 {
-                    missingRanges.Add((rangeStart.Value, rangeEnd.Value));
+                    // Ensure endDate is after startDate for single-day ranges
+                    var adjustedEndDate = rangeStart.Value == rangeEnd.Value ? rangeEnd.Value.AddDays(1) : rangeEnd.Value;
+                    missingRanges.Add((rangeStart.Value, adjustedEndDate));
                 }
 
                 return missingRanges;

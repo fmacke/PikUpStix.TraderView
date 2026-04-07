@@ -249,8 +249,9 @@ namespace IKBR_Report_Puller.Data.Repositories
         {
             const string updateQuery = @"
                 UPDATE dbo.TradeExecutions 
-                SET symbol = @symbol, tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice 
-                WHERE execID = @execID";
+                SET symbol = @symbol, tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice,
+                    currency = @currency, conid = @conid, instrumentId = @instrumentId 
+                WHERE ibexecID = @execID";
 
             var parameters = new Dictionary<string, object>
             {
@@ -258,7 +259,10 @@ namespace IKBR_Report_Puller.Data.Repositories
                 { "@symbol", tradeConfirm.Symbol },
                 { "@tradeDate", tradeConfirm.TradeDate },
                 { "@quantity", tradeConfirm.Quantity },
-                { "@tradePrice", tradeConfirm.Price }
+                { "@tradePrice", tradeConfirm.Price },
+                { "@currency", tradeConfirm.Currency },
+                { "@conid", tradeConfirm.ConId },
+                { "@instrumentId", tradeConfirm.InstrumentID }
             };
 
             ExecuteCommand(connection, transaction, updateQuery, parameters);
@@ -267,16 +271,19 @@ namespace IKBR_Report_Puller.Data.Repositories
         private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
         {
             const string insertQuery = @"
-                INSERT INTO dbo.TradeExecutions (execID, symbol, tradeDate, quantity, tradePrice) 
-                VALUES (@execID, @symbol, @tradeDate, @quantity, @tradePrice)";
+                INSERT INTO dbo.TradeExecutions (ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid, instrumentId) 
+                VALUES (@ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid, @instrumentId)";
 
             var parameters = new Dictionary<string, object>
             {
-                { "@execID", execID },
+                { "@ibexecID", execID },
                 { "@symbol", tradeConfirm.Symbol },
                 { "@tradeDate", tradeConfirm.TradeDate },
                 { "@quantity", tradeConfirm.Quantity },
-                { "@tradePrice", tradeConfirm.Price }
+                { "@tradePrice", tradeConfirm.Price },
+                { "@currency", tradeConfirm.Currency },
+                { "@conid", tradeConfirm.ConId },
+                { "@instrumentId", tradeConfirm.InstrumentID }
             };
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
