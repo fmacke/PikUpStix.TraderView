@@ -13,6 +13,6 @@ namespace IKBR_Report_Puller.Domain
         public string ConId { get; set; }
         public string InstrumentID { get; set; }
         public string ListingExchange { get; set; }
-
+        public long? IbOrderID { get; internal set; }
     }
 }

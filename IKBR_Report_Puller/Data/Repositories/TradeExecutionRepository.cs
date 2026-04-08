@@ -280,11 +280,12 @@ namespace IKBR_Report_Puller.Data.Repositories
         private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
         {
             const string insertQuery = @"
-                INSERT INTO dbo.TradeExecutions (ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid, instrumentId) 
+                INSERT INTO dbo.TradeExecutions (ibOrderID, ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid, instrumentId) 
                 VALUES (@ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid, @instrumentId)";
 
             var parameters = new Dictionary<string, object>
             {
+                { "@ibOrderID", tradeConfirm.IbOrderID.ToString() },
                 { "@ibexecID", execID },
                 { "@symbol", tradeConfirm.Symbol },
                 { "@tradeDate", tradeConfirm.TradeDate },
