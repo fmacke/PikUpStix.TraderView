@@ -37,7 +37,6 @@ namespace IKBR_Report_Puller
             _dataService = dataService;
             _excelReportService = excelReportService;
             _chartDataService = chartService;   
-            _chartDataService.ConnectAsync(config["IBKRClient:SocketUrl"], int.Parse(config["IBKRClient:Port"]), int.Parse(config["IBKRClient:ClientId"])).Wait();
             _config = config;
             _tradeHistoryReportService = tradeHistoryReportService;
             outputFilePath = _config["IBKR:OutputFilePath"];
@@ -72,6 +71,10 @@ namespace IKBR_Report_Puller
 
             foreach (var trade in trades)
             {
+                if(trade.IbOrderID == 5041927325)
+                {
+                    Console.WriteLine("Debug breakpoint hit for trade FIX with IB Order ID 5041927325");
+                }
                 Console.WriteLine($"Processing trade for {trade.Symbol} opened on {trade.TradeOpened:yyyy-MM-dd} and closed on {trade.TradeClosed:yyyy-MM-dd}");
                 // Calculate date range: startDate - 100 days to endDate + 20 days
                 DateTime requiredStartDate = trade.TradeOpened.AddDays(-100);
@@ -149,7 +152,6 @@ namespace IKBR_Report_Puller
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
             _dataService.InsertTodayExecutions(todayReport);
-            Console.WriteLine("boom7");
             return fileName;
         }
 

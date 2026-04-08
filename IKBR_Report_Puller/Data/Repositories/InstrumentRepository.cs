@@ -122,6 +122,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                                     transaction,
                                     conid,
                                     tradeConfirm.Symbol,
+                                    tradeConfirm.ListingExchange,
                                     tradeConfirm.Currency);
 
                                 // Get the newly created instrument ID
@@ -230,6 +231,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             SqlTransaction transaction,
             string conid,
             string symbol,
+            string listingExchange,
             string currency)
         {
             const string insertQuery = @"

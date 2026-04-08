@@ -48,6 +48,8 @@ namespace IKBR_Report_Puller.Data.Repositories
 
                         if (exists)
                         {
+                            var tradeExec = GetTradeExecutionsByIbExecID(connection, transaction, ibExecID, out var existingTrade);
+                            trade.InstrumentId = existingTrade.InstrumentId;
                             UpdateTradeIfIncomplete(connection, transaction, trade, ibExecID);
                         }
                         else
@@ -145,26 +147,33 @@ namespace IKBR_Report_Puller.Data.Repositories
 
         private void UpdateTradeIfIncomplete(SqlConnection connection, SqlTransaction transaction, Trade trade, string ibExecID)
         {
-            using (var selectCmd = new SqlCommand(
-                "SELECT securityID, tradeID, dateTime FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID",
-                connection, transaction))
+            try
             {
-                selectCmd.Parameters.AddWithValue("@ibExecID", ibExecID);
-                using (var reader = selectCmd.ExecuteReader())
+                using (var selectCmd = new SqlCommand(
+                    "SELECT securityID, tradeID, dateTime FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID",
+                    connection, transaction))
                 {
-                    if (reader.Read())
+                    selectCmd.Parameters.AddWithValue("@ibExecID", ibExecID);
+                    using (var reader = selectCmd.ExecuteReader())
                     {
-                        var securityID = reader["securityID"] as string;
-                        var tradeID = reader["tradeID"] as long?;
-                        var dateTime = reader["dateTime"] as string;
-
-                        if (string.IsNullOrEmpty(securityID) && tradeID == null && string.IsNullOrEmpty(dateTime))
+                        if (reader.Read())
                         {
-                            reader.Close();
-                            UpdateTrade(connection, transaction, trade);
+                            var securityID = reader["securityID"] as string;
+                            var tradeID = reader["tradeID"] as long?;
+                            var dateTime = reader["dateTime"] as string;
+
+                            if (string.IsNullOrEmpty(securityID) && tradeID == null && string.IsNullOrEmpty(dateTime))
+                            {
+                                reader.Close();
+                                UpdateTrade(connection, transaction, trade);
+                            }
                         }
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating trade with ibExecID {ibExecID}: {ex.Message}"); Console.WriteLine(ex.Message);
             }
         }
 
@@ -202,7 +211,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                 WHERE ibExecID = @ibExecID";
 
             var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-            parameters.Add("@instrumentId", trade.InstrumentId);
+            
 
             ExecuteCommand(connection, transaction, updateQuery, parameters);
         }
@@ -287,6 +296,70 @@ namespace IKBR_Report_Puller.Data.Repositories
             };
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
+        }
+
+        /// <summary>
+        /// Gets trade execution data by ibExecID and returns the existing trade information
+        /// </summary>
+        private TradeExecution GetTradeExecutionsByIbExecID(SqlConnection connection, SqlTransaction transaction, string ibExecID, out Trade existingTrade)
+        {
+            existingTrade = new Trade();
+            TradeExecution tradeExecution = null;
+
+            using (var cmd = new SqlCommand(
+                @"SELECT InstrumentId, symbol, tradeDate, quantity, tradePrice, currency, conid, ibOrderID, 
+                         securityID, tradeID, dateTime 
+                  FROM dbo.TradeExecutions 
+                  WHERE ibExecID = @ibExecID", 
+                connection, transaction))
+            {
+                cmd.Parameters.AddWithValue("@ibExecID", ibExecID);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        // Populate the existing trade with instrumentId and other key fields
+                        existingTrade.InstrumentId = reader.IsDBNull(reader.GetOrdinal("InstrumentId")) 
+                            ? 0 
+                            : reader.GetInt32(reader.GetOrdinal("InstrumentId"));
+
+                        existingTrade.IbExecID = ibExecID;
+                        existingTrade.Symbol = reader.IsDBNull(reader.GetOrdinal("symbol")) 
+                            ? null 
+                            : reader.GetString(reader.GetOrdinal("symbol"));
+
+                        existingTrade.Conid = reader.IsDBNull(reader.GetOrdinal("conid")) 
+                            ? null 
+                            : reader.GetString(reader.GetOrdinal("conid"));
+
+                        // Populate trade execution for return
+                        tradeExecution = new TradeExecution
+                        {
+                            InstrumentId = existingTrade.InstrumentId,
+                            Symbol = existingTrade.Symbol,
+                            SecurityId = existingTrade.Conid,
+                            TradeDate = reader.IsDBNull(reader.GetOrdinal("tradeDate")) 
+                                ? DateTime.MinValue 
+                                : reader.GetDateTime(reader.GetOrdinal("tradeDate")),
+                            Quantity = reader.IsDBNull(reader.GetOrdinal("quantity")) 
+                                ? 0 
+                                : reader.GetDecimal(reader.GetOrdinal("quantity")),
+                            AveragePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice")) 
+                                ? 0 
+                                : reader.GetDecimal(reader.GetOrdinal("tradePrice")),
+                            Currency = reader.IsDBNull(reader.GetOrdinal("currency")) 
+                                ? null 
+                                : reader.GetString(reader.GetOrdinal("currency")),
+                            IbOrderID = reader.IsDBNull(reader.GetOrdinal("ibOrderID")) 
+                                ? 0 
+                                : reader.GetInt64(reader.GetOrdinal("ibOrderID"))
+                        };
+                    }
+                }
+            }
+
+            return tradeExecution;
         }
     }
 }
