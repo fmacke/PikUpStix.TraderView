@@ -5,7 +5,7 @@ using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using IKBR_Report_Puller.Domain;
-using IKBR_Report_Puller.Helpers;
+using IKBR_Report_Puller.IKBR;
 using IKBR_Report_Puller.Interfaces;
 using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;

@@ -4,7 +4,7 @@ using System.Linq;
 using IBApi;
 using DomainBar = IKBR_Report_Puller.Domain.Bar;
 
-namespace IKBR_Report_Puller.Helpers
+namespace IKBR_Report_Puller.IKBR
 {
     /// <summary>
     /// Converts between IBApi.Bar and Domain.Bar types
