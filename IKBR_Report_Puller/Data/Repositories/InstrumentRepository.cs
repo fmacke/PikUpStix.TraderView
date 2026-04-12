@@ -79,7 +79,23 @@ namespace IKBR_Report_Puller.Data.Repositories
                         throw;
                     }
                 }
+                using (var transaction = connection.BeginTransaction())
+                {
+                    foreach (var trade in trades.Where(x => x.InstrumentId == 0))
+                    {
+                        if (!string.IsNullOrEmpty(trade.Conid))
+                        {
+                            int? instrumentId = GetInstrumentIdByConid(connection, transaction, trade.Conid);
+                            if (instrumentId.HasValue)
+                            {
+                                trade.InstrumentId = instrumentId.Value;
+                            }
+                        }
+                    }
+                }
             });
+
+            
         }
 
         /// <summary>

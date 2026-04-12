@@ -249,7 +249,6 @@ namespace IKBR_Report_Puller.Data.Repositories
                  @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
 
             var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-            parameters.Add("@instrumentId", trade.InstrumentId);
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
         }
