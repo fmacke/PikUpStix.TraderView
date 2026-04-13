@@ -1,0 +1,6 @@
+@TradeViewer.API_HostAddress = http://localhost:5174
+
+GET {{TradeViewer.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
