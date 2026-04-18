@@ -12,9 +12,9 @@ function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
         <div className="trade-list">
             <h2>Trades</h2>
             <div className="trade-list-items">
-                {trades.map(trade => (
+                {trades.map((trade, index) => (
                     <div
-                        key={trade.id}
+                        key={`${trade.id}-${index}`}
                         className={`trade-item ${selectedTradeId === trade.id ? 'selected' : ''}`}
                         onClick={() => onTradeSelect(trade)}
                     >

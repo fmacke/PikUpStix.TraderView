@@ -89,6 +89,7 @@ namespace IKBR_Report_Puller.Data.Repositories
 
                 if (!missingDates.Any())
                 {
+                    // No missing dates found
                     return missingRanges;
                 }
 
@@ -100,32 +101,40 @@ namespace IKBR_Report_Puller.Data.Repositories
                 {
                     if (rangeStart == null)
                     {
+                        // Start a new range
                         rangeStart = date;
-                        rangeEnd = date;
-                    }
-                    else if (date == rangeEnd.Value.AddDays(1) || 
-                             (date.DayOfWeek == DayOfWeek.Monday && rangeEnd.Value.DayOfWeek == DayOfWeek.Friday && (date - rangeEnd.Value).Days <= 3))
-                    {
-                        // Consecutive date (or Monday following Friday)
                         rangeEnd = date;
                     }
                     else
                     {
-                        // Gap detected, save current range and start new one
-                        // Ensure endDate is after startDate for single-day ranges
-                        var adjustedEndDate = rangeStart.Value == rangeEnd.Value ? rangeEnd.Value.AddDays(1) : rangeEnd.Value;
-                        missingRanges.Add((rangeStart.Value, adjustedEndDate));
-                        rangeStart = date;
-                        rangeEnd = date;
+                        // Check if this date is consecutive to the current range
+                        var daysDiff = (date - rangeEnd.Value).Days;
+                        bool isConsecutive = daysDiff == 1;
+
+                        // Also consider weekends: Monday following Friday is consecutive
+                        bool isWeekendGap = date.DayOfWeek == DayOfWeek.Monday && 
+                                          rangeEnd.Value.DayOfWeek == DayOfWeek.Friday && 
+                                          daysDiff <= 3;
+
+                        if (isConsecutive || isWeekendGap)
+                        {
+                            // Extend the current range
+                            rangeEnd = date;
+                        }
+                        else
+                        {
+                            // Gap detected, save current range and start new one
+                            missingRanges.Add((rangeStart.Value, rangeEnd.Value));
+                            rangeStart = date;
+                            rangeEnd = date;
+                        }
                     }
                 }
 
-                // Add the last range
-                if (rangeStart != null)
+                // Add the final range
+                if (rangeStart.HasValue && rangeEnd.HasValue)
                 {
-                    // Ensure endDate is after startDate for single-day ranges
-                    var adjustedEndDate = rangeStart.Value == rangeEnd.Value ? rangeEnd.Value.AddDays(1) : rangeEnd.Value;
-                    missingRanges.Add((rangeStart.Value, adjustedEndDate));
+                    missingRanges.Add((rangeStart.Value, rangeEnd.Value));
                 }
 
                 return missingRanges;

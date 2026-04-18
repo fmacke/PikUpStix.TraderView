@@ -71,10 +71,6 @@ namespace IKBR_Report_Puller
 
             foreach (var trade in trades)
             {
-                if(trade.IbOrderID == 5041927325)
-                {
-                    Console.WriteLine("Debug breakpoint hit for trade FIX with IB Order ID 5041927325");
-                }
                 Console.WriteLine($"Processing trade for {trade.Symbol} opened on {trade.TradeOpened:yyyy-MM-dd} and closed on {trade.TradeClosed:yyyy-MM-dd}");
                 // Calculate date range: startDate - 100 days to endDate + 20 days
                 DateTime requiredStartDate = trade.TradeOpened.AddDays(-100);
@@ -118,6 +114,7 @@ namespace IKBR_Report_Puller
                 Console.WriteLine($"Fetching historical data for {symbol} (conid: {conid}) from {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}");
 
                 // Fetch data from IBKR API
+                _chartDataService.ConnectAsync(_config["IBKRClient:SocketUrl"], int.Parse(_config["IBKRClient:Port"]), int.Parse(_config["IBKRClient:ClientId"])).Wait();
                 var ibkrBars = await _chartDataService.GetHistoricalDataAsync(conid, startDate, endDate);
 
                 if (ibkrBars == null || !ibkrBars.Any())

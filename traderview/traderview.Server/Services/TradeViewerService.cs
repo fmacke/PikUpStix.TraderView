@@ -1,9 +1,9 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
-using TradeViewer.API.DTOs;
+using traderview.Server.DTOs;
 using IKBR_Report_Puller.Interfaces;
 
-namespace TradeViewer.API.Services
+namespace traderview.Server.Services
 {
     public class TradeViewerService : ITradeViewerService
     {

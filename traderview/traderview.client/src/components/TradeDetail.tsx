@@ -1,5 +1,6 @@
 import type { Trade } from '../types/api';
 import './TradeDetail.css';
+import TradingViewChart from './TradingViewChart';
 
 interface TradeDetailProps {
     trade: Trade | null;
@@ -24,6 +25,10 @@ function TradeDetail({ trade }: TradeDetailProps) {
                 <span className={`trade-side ${trade.buySell.toLowerCase()}`}>
                     {trade.buySell}
                 </span>
+            </div>
+
+            <div className="chart-container">
+                <TradingViewChart trade={trade} />
             </div>
 
             <div className="detail-sections">

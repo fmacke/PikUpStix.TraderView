@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Trade } from '../types/api';
+import type { Trade, TradeContext } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -16,5 +16,24 @@ export const apiService = {
     async getTrades(): Promise<Trade[]> {
         const response = await apiClient.get<Trade[]>('/tradeviewer/trades');
         return response.data;
+    },
+
+    // Get candlestick data for a specific trade
+    async getTradeCandlesticks(tradeId: number, daysBefore: number = 5, daysAfter: number = 5): Promise<TradeContext> {
+        console.log(`Making API call to /tradeviewer/trades/${tradeId}/candlesticks`);
+        try {
+            const response = await apiClient.get<TradeContext>(
+                `/tradeviewer/trades/${tradeId}/candlesticks`,
+                {
+                    params: { daysBefore, daysAfter },
+                    timeout: 30000 // 30 second timeout
+                }
+            );
+            console.log('API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('API call failed:', error);
+            throw error;
+        }
     },
 };

@@ -37,8 +37,8 @@ export interface Execution {
 export interface TradeContext {
     trade: Trade;
     candlesticks: Candlestick[];
-    startDate: string;
-    endDate: string;
+    entryDate: string;
+    exitDate: string;
 }
 
 export interface Candlestick {

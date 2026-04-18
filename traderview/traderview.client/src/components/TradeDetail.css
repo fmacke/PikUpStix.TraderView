@@ -30,6 +30,10 @@
     border-bottom: 2px solid #e5e7eb;
 }
 
+.chart-container {
+    margin-bottom: 2rem;
+}
+
 .trade-header h1 {
     margin: 0;
     font-size: 2rem;

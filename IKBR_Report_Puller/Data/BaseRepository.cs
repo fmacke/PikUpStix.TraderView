@@ -68,12 +68,19 @@ namespace IKBR_Report_Puller.Data
         /// </summary>
         protected void ExecuteCommand(SqlConnection connection, SqlTransaction transaction, string query, Dictionary<string, object> parameters)
         {
-            using SqlCommand cmd = new SqlCommand(query, connection, transaction);
-            foreach (var param in parameters)
+            try
             {
-                cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                using SqlCommand cmd = new SqlCommand(query, connection, transaction);
+                foreach (var param in parameters)
+                {
+                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                }
+                cmd.ExecuteNonQuery();
             }
-            cmd.ExecuteNonQuery();
+            catch(Exception ex)
+            {
+                string boom = ex.Message;
+            }
         }
 
         /// <summary>
