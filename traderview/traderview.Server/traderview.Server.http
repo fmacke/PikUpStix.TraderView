@@ -1,0 +1,6 @@
+@traderview.Server_HostAddress = http://localhost:5137
+
+GET {{traderview.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

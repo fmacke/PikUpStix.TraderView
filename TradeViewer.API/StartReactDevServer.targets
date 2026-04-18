@@ -1,0 +1,8 @@
+<Project>
+  <Target Name="StartReactDevServer" BeforeTargets="PreBuildEvent" Condition="'$(Configuration)' == 'Debug'">
+	<Message Text="Checking if React development server needs to be started..." Importance="high" />
+	<Exec Command="powershell -ExecutionPolicy Bypass -File &quot;$(SolutionDir)start-react-dev.ps1&quot;" 
+		  IgnoreExitCode="true" 
+		  ContinueOnError="true" />
+  </Target>
+</Project>

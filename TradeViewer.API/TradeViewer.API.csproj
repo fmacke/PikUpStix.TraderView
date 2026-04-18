@@ -16,4 +16,6 @@
     <ProjectReference Include="..\IKBR_Report_Puller\IKBR_Report_Puller.csproj" />
   </ItemGroup>
 
+  <Import Project="StartReactDevServer.targets" />
+
 </Project>
