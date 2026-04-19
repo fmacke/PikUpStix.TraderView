@@ -31,8 +31,8 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                     chartRef.current = null;
                 }
 
-                // Fetch candlestick data
-                const tradeContext = await apiService.getTradeCandlesticks(trade.id, 5, 5);
+                // Fetch candlestick data with 20 bars before entry and 20 bars after exit
+                const tradeContext = await apiService.getTradeCandlesticks(trade.id, 20, 20);
 
                 console.log('Received candlestick data:', tradeContext);
 
@@ -114,6 +114,22 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                     title: `Exit: $${trade.exitPrice.toFixed(2)}`,
                 });
 
+                // Calculate price range including entry/exit points
+                const candleHighs = candlestickData.map(c => c.high);
+                const candleLows = candlestickData.map(c => c.low);
+                const maxCandlePrice = Math.max(...candleHighs);
+                const minCandlePrice = Math.min(...candleLows);
+
+                // Include entry and exit prices in the range calculation
+                const maxPrice = Math.max(maxCandlePrice, trade.entryPrice, trade.exitPrice);
+                const minPrice = Math.min(minCandlePrice, trade.entryPrice, trade.exitPrice);
+
+                // Add 5% padding to ensure entry/exit lines are visible
+                const priceRange = maxPrice - minPrice;
+                const pricePadding = priceRange * 0.05;
+                const visibleMinPrice = minPrice - pricePadding;
+                const visibleMaxPrice = maxPrice + pricePadding;
+
                 // Reset and fit the chart to show all data properly
                 // This multi-step approach ensures the chart renders correctly
                 if (candlestickData.length > 0) {
@@ -137,6 +153,20 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                             chartRef.current.timeScale().setVisibleRange({
                                 from: (firstTime - padding) as any,
                                 to: (lastTime + padding) as any,
+                            });
+
+                            // Set the price scale to include entry/exit prices with padding
+                            chartRef.current.priceScale('right').applyOptions({
+                                autoScale: false,
+                            });
+
+                            candlestickSeries.applyOptions({
+                                autoscaleInfoProvider: () => ({
+                                    priceRange: {
+                                        minValue: visibleMinPrice,
+                                        maxValue: visibleMaxPrice,
+                                    },
+                                }),
                             });
 
                             // Follow up with fitContent to optimize the view
