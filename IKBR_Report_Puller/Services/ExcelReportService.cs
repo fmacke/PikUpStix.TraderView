@@ -97,6 +97,8 @@ namespace IKBR_Report_Puller.Services
                 worksheet.Cells[currentRow, 1].Value = accountId;
                 worksheet.Cells[currentRow, 2].Value = symbol;
 
+                // TODO: This data call should be optimized to avoid multiple database calls for each position. Consider fetching all trades once and caching them for processing.
+                // TODO: Move this data call to a repository and use dependency injection to get the data. This will make the code cleaner and easier to test.
                 // Fetch all trades for the given conid and apply FIFO logic
                 var trades = new List<(DateTime tradeDate, decimal quantity, string openClose)>();
                 using (SqlCommand cmd = new SqlCommand("SELECT tradeDate, quantity, openCloseIndicator FROM [dbo].[TradeExecutions] WHERE [conid] = @conid AND [accountId] = @accountId ORDER BY tradeDate ASC, dateTime ASC", connection))

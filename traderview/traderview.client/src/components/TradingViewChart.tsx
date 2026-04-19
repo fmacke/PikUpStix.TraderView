@@ -25,6 +25,12 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
 
                 console.log('Fetching candlesticks for trade:', trade.id);
 
+                // Clean up existing chart before creating a new one
+                if (chartRef.current) {
+                    chartRef.current.remove();
+                    chartRef.current = null;
+                }
+
                 // Fetch candlestick data
                 const tradeContext = await apiService.getTradeCandlesticks(trade.id, 5, 5);
 
@@ -57,6 +63,8 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                     timeScale: {
                         timeVisible: true,
                         secondsVisible: false,
+                        rightOffset: 5,
+                        barSpacing: 10,
                     },
                     rightPriceScale: {
                         borderColor: '#cccccc',
@@ -106,10 +114,42 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                     title: `Exit: $${trade.exitPrice.toFixed(2)}`,
                 });
 
-                // Fit content to visible range
-                chart.timeScale().fitContent();
+                // Reset and fit the chart to show all data properly
+                // This multi-step approach ensures the chart renders correctly
+                if (candlestickData.length > 0) {
+                    const firstTime = candlestickData[0].time;
+                    const lastTime = candlestickData[candlestickData.length - 1].time;
 
-                setLoading(false);
+                    // Calculate time padding (10% of the range on each side)
+                    const timeRange = lastTime - firstTime;
+                    const padding = Math.max(timeRange * 0.1, 86400); // At least 1 day padding
+
+                    // Set loading to false first so chart container is visible
+                    setLoading(false);
+
+                    // Use setTimeout to ensure the chart container is rendered and has dimensions
+                    setTimeout(() => {
+                        if (chartRef.current) {
+                            // Reset any previous scroll/zoom state
+                            chartRef.current.timeScale().resetTimeScale();
+
+                            // Set visible range explicitly with padding
+                            chartRef.current.timeScale().setVisibleRange({
+                                from: (firstTime - padding) as any,
+                                to: (lastTime + padding) as any,
+                            });
+
+                            // Follow up with fitContent to optimize the view
+                            setTimeout(() => {
+                                if (chartRef.current) {
+                                    chartRef.current.timeScale().fitContent();
+                                }
+                            }, 50);
+                        }
+                    }, 0);
+                } else {
+                    setLoading(false);
+                }
 
                 // Handle window resize
                 const handleResize = () => {
@@ -167,7 +207,7 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
             </div>
             {loading && <div className="chart-loading">Loading chart data...</div>}
             {error && <div className="chart-error">Error: {error}</div>}
-            <div ref={chartContainerRef} className="chart-wrapper" style={{ display: loading || error ? 'none' : 'block' }} />
+            <div ref={chartContainerRef} className="chart-wrapper" style={{ opacity: loading || error ? 0 : 1, visibility: loading || error ? 'hidden' : 'visible' }} />
         </div>
     );
 }

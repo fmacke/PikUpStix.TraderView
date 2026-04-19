@@ -45,10 +45,8 @@ namespace IKBR_Report_Puller.Data.Repositories
 
                 using (var transaction = connection.BeginTransaction())
                 {
-                    foreach (var bar in newBars)
-                    {
-                        InsertHistoricalData(connection, transaction, instrumentIdInt, bar);
-                    }
+                    // Use bulk insert for better performance
+                    InsertHistoricalData(connection, transaction, instrumentIdInt, newBars);
                     transaction.Commit();
                     Console.WriteLine($"Successfully inserted {newBars.Count} new chart data records for instrument {instrumentId}.");
                 }
@@ -160,27 +158,83 @@ namespace IKBR_Report_Puller.Data.Repositories
             return existingDates;
         }
 
-        private void InsertHistoricalData(SqlConnection connection, SqlTransaction transaction, int instrumentId, Bar bar)
+        private void InsertHistoricalData(SqlConnection connection, SqlTransaction transaction, int instrumentId, List<Bar> bars)
         {
+            if (bars == null || !bars.Any())
+            {
+                return;
+            }
+
+            // Use parameterized batch insert for better performance
             const string insertQuery = @"
                 INSERT INTO [dbo].[HistoricalData]
                 ([Date], [OpenPrice], [ClosePrice], [LowPrice], [HighPrice], [Volume], [Settle], [OpenInterest], [InstrumentId])
                 VALUES (@date, @openPrice, @closePrice, @lowPrice, @highPrice, @volume, @settle, @openInterest, @instrumentId)";
 
-            var parameters = new Dictionary<string, object>
+            using (var cmd = new SqlCommand(insertQuery, connection, transaction))
             {
-                { "@date", bar.Date },
-                { "@openPrice", bar.OpenPrice },
-                { "@closePrice", bar.ClosePrice },
-                { "@lowPrice", bar.LowPrice },
-                { "@highPrice", bar.HighPrice },
-                { "@volume", bar.Volume },
-                { "@settle", bar.Settle },
-                { "@openInterest", bar.OpenInterest },
-                { "@instrumentId", instrumentId }
-            };
+                // Add parameters once with explicit precision and scale for Decimal types
+                cmd.Parameters.Add("@date", System.Data.SqlDbType.DateTime);
 
-            ExecuteCommand(connection, transaction, insertQuery, parameters);
+                // Decimal parameters require explicit Precision and Scale for Prepare()
+                // Using 18,6 which allows for large numbers with reasonable precision
+                var openPriceParam = cmd.Parameters.Add("@openPrice", System.Data.SqlDbType.Decimal);
+                openPriceParam.Precision = 18;
+                openPriceParam.Scale = 6;
+
+                var closePriceParam = cmd.Parameters.Add("@closePrice", System.Data.SqlDbType.Decimal);
+                closePriceParam.Precision = 18;
+                closePriceParam.Scale = 6;
+
+                var lowPriceParam = cmd.Parameters.Add("@lowPrice", System.Data.SqlDbType.Decimal);
+                lowPriceParam.Precision = 18;
+                lowPriceParam.Scale = 6;
+
+                var highPriceParam = cmd.Parameters.Add("@highPrice", System.Data.SqlDbType.Decimal);
+                highPriceParam.Precision = 18;
+                highPriceParam.Scale = 6;
+
+                var volumeParam = cmd.Parameters.Add("@volume", System.Data.SqlDbType.Decimal);
+                volumeParam.Precision = 18;
+                volumeParam.Scale = 6;
+
+                var settleParam = cmd.Parameters.Add("@settle", System.Data.SqlDbType.Decimal);
+                settleParam.Precision = 18;
+                settleParam.Scale = 6;
+
+                var openInterestParam = cmd.Parameters.Add("@openInterest", System.Data.SqlDbType.Decimal);
+                openInterestParam.Precision = 18;
+                openInterestParam.Scale = 6;
+
+                cmd.Parameters.Add("@instrumentId", System.Data.SqlDbType.Int);
+
+                // Prepare the command once
+                try
+                {
+                    cmd.Prepare();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error preparing SQL command: {ex.Message}");
+                    throw;
+                }
+
+                // Execute for each bar
+                foreach (var bar in bars)
+                {
+                    cmd.Parameters["@date"].Value = bar.Date;
+                    cmd.Parameters["@openPrice"].Value = bar.OpenPrice;
+                    cmd.Parameters["@closePrice"].Value = bar.ClosePrice;
+                    cmd.Parameters["@lowPrice"].Value = bar.LowPrice;
+                    cmd.Parameters["@highPrice"].Value = bar.HighPrice;
+                    cmd.Parameters["@volume"].Value = bar.Volume;
+                    cmd.Parameters["@settle"].Value = bar.Settle;
+                    cmd.Parameters["@openInterest"].Value = bar.OpenInterest;
+                    cmd.Parameters["@instrumentId"].Value = instrumentId;
+
+                    cmd.ExecuteNonQuery();
+                }
+            }
         }
 
         #endregion

@@ -15,10 +15,10 @@ namespace IKBR_Report_Puller
     public class Application
     {
         private readonly IReportFetchingService _reportFetchingService;
-        private readonly IChartDataService _chartDataService;
         private readonly IDataService _dataService;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
+        private readonly IHistoricalDataService _historicalDataService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
         const int maxRetries = 3;
@@ -27,18 +27,18 @@ namespace IKBR_Report_Puller
 
         public Application(
             IReportFetchingService reportFetchingService,
-            IChartDataService chartService,
             IDataService dataService,
             IExcelReportService excelReportService,
+            IHistoricalDataService historicalDataService,
             ITradeHistoryReportService tradeHistoryReportService,
             IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
             _dataService = dataService;
             _excelReportService = excelReportService;
-            _chartDataService = chartService;   
-            _config = config;
+            _historicalDataService = historicalDataService;
             _tradeHistoryReportService = tradeHistoryReportService;
+            _config = config;
             outputFilePath = _config["IBKR:OutputFilePath"];
         }
 
@@ -48,7 +48,8 @@ namespace IKBR_Report_Puller
             {
                 (IKBRReport mainReport, string fileName) = await GetReportData();
                 SaveReportDataToDB(mainReport);
-                await WriteTodayReport(fileName);                
+                await WriteTodayReport(fileName);
+                
             }
             catch (Exception ex)
             {
@@ -61,80 +62,8 @@ namespace IKBR_Report_Puller
             _dataService.InsertTradeExecutions(mainReport);          
             _dataService.InsertOpenPositions(mainReport);  
             _excelReportService.CreateReport(mainReport, outputFilePath);
-            UpdateHistoricalDataForPositions();        
-        }
-
-        private void UpdateHistoricalDataForPositions()
-        {
             _tradeHistoryReportService.CreateTradeHistoryReport(_dataService.GetTradeExecutions());
-            var trades = _tradeHistoryReportService.TradeHistoryAggregated;
-
-            foreach (var trade in trades)
-            {
-                Console.WriteLine($"Processing trade for {trade.Symbol} opened on {trade.TradeOpened:yyyy-MM-dd} and closed on {trade.TradeClosed:yyyy-MM-dd}");
-                // Calculate date range: startDate - 100 days to endDate + 20 days
-                DateTime requiredStartDate = trade.TradeOpened.AddDays(-100);
-                DateTime requiredEndDate = trade.TradeClosed.AddDays(20);
-
-                // If endDate + 20 is past today, use today instead
-                DateTime today = DateTime.Today;
-                if (requiredEndDate > today)
-                {
-                    requiredEndDate = today;
-                }
-
-                Console.WriteLine($"Checking historical data for {trade.Symbol} from {requiredStartDate:yyyy-MM-dd} to {requiredEndDate:yyyy-MM-dd}");
-
-                // Check for missing date ranges
-                var missingRanges = _dataService.GetMissingDateRanges(trade.InstrumentId, requiredStartDate, requiredEndDate);
-
-                if (missingRanges.Any())
-                {
-                    Console.WriteLine($"Found {missingRanges.Count} missing date range(s) for {trade.Symbol}:");
-                    foreach (var range in missingRanges)
-                    {
-                        Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
-                        FetchHistoricalDataStub(trade.SecurityId, trade.Symbol, range.startDate, range.endDate, trade.InstrumentId);
-                    }
-                }
-                else
-                {
-                    Console.WriteLine($"All required historical data exists for {trade.Symbol}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Fetches historical data from IBKR and saves it to the database
-        /// </summary>
-        private async void FetchHistoricalDataStub(string conid, string symbol, DateTime startDate, DateTime endDate, int instrumentId)
-        {
-            try
-            {
-                Console.WriteLine($"Fetching historical data for {symbol} (conid: {conid}) from {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}");
-
-                // Fetch data from IBKR API
-                _chartDataService.ConnectAsync(_config["IBKRClient:SocketUrl"], int.Parse(_config["IBKRClient:Port"]), int.Parse(_config["IBKRClient:ClientId"])).Wait();
-                var ibkrBars = await _chartDataService.GetHistoricalDataAsync(conid, startDate, endDate);
-
-                if (ibkrBars == null || !ibkrBars.Any())
-                {
-                    Console.WriteLine($"Warning: No historical data returned for {symbol}");
-                    return;
-                }
-
-                // Convert IBKR bars to domain bars
-                var domainBars = BarConverter.ConvertToDomainBars(ibkrBars, instrumentId);
-
-                // Save to database
-                _dataService.UpsertHistoricalData(instrumentId.ToString(), domainBars);
-
-                Console.WriteLine($"Successfully saved {domainBars.Count} bars for {symbol}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching historical data for {symbol}: {ex.Message}");
-            }
+            _historicalDataService.UpdateHistoricalDataForPositions(_tradeHistoryReportService.TradeHistoryAggregated);        
         }
 
         private async Task<string> WriteTodayReport(string fileName)

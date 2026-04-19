@@ -4,13 +4,6 @@ VisualStudioVersion = 18.5.11626.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKBR_Report_Puller", "IKBR_Report_Puller\IKBR_Report_Puller.csproj", "{B1CAFCB1-BE51-470E-BB65-F78983C5EB53}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "trade-viewer-ui", "trade-viewer-ui", "{8C7E8A1F-9D2C-4F3A-B8E5-6F1A2D3C4E5F}"
-	ProjectSection(SolutionItems) = preProject
-		trade-viewer-ui\package.json = trade-viewer-ui\package.json
-		trade-viewer-ui\README.md = trade-viewer-ui\README.md
-		trade-viewer-ui\tsconfig.json = trade-viewer-ui\tsconfig.json
-	EndProjectSection
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKBR_Report_Puller.Tests", "IKBR_Report_Puller.Tests\IKBR_Report_Puller.Tests.csproj", "{DC922003-0BD1-4199-B07C-9047724ED4A1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentations", "Presentations", "{1640123E-8739-4B63-9A82-29CD0309C868}"
