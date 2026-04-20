@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import type { IChartApi } from 'lightweight-charts';
 import type { Trade } from '../types/api';
 import { apiService } from '../services/apiService';
@@ -94,6 +94,26 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                 console.log('Candlestick data for chart:', candlestickData);
 
                 candlestickSeries.setData(candlestickData);
+
+                // Add a line series connecting entry and exit points in blue
+                const tradeLine = chart.addSeries(LineSeries, {
+                    color: '#2196F3', // blue color for all trades
+                    lineWidth: 3,
+                    lineStyle: 0, // solid line
+                    crosshairMarkerVisible: true,
+                    crosshairMarkerRadius: 6,
+                    lastValueVisible: false,
+                    priceLineVisible: false,
+                });
+
+                // Create line data points from entry to exit
+                const entryTime = Math.floor(new Date(trade.entryDate).getTime() / 1000);
+                const exitTime = Math.floor(new Date(trade.exitDate).getTime() / 1000);
+
+                tradeLine.setData([
+                    { time: entryTime as any, value: trade.entryPrice },
+                    { time: exitTime as any, value: trade.exitPrice },
+                ]);
 
                 // Add price lines for entry and exit points
                 candlestickSeries.createPriceLine({

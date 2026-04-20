@@ -18,6 +18,12 @@
 .trade-list-items {
     overflow-y: auto;
     flex: 1;
+    outline: none; /* Remove default focus outline */
+}
+
+.trade-list-items:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
 }
 
 .trade-item {
