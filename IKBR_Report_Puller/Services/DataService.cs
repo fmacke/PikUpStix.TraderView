@@ -102,6 +102,8 @@ namespace IKBR_Report_Puller.Services
         }
         #endregion
 
+        #region Historical Data Operations
+
         /// <summary>
         /// Inserts chart data for a given instrument, skipping duplicates
         /// </summary>
@@ -117,5 +119,20 @@ namespace IKBR_Report_Puller.Services
         {
             return _historicalDataRepository.GetMissingDateRanges(instrumentId, startDate, endDate);
         }
+
+        #endregion
+
+        #region Trade Summary Operations
+
+        /// <summary>
+        /// Gets aggregated trade summary for a specific order ID
+        /// </summary>
+        public TradeSummary? GetTradeSummaryByOrderId(long orderId)
+        {
+            return _tradeExecutionRepository.GetTradeSummaryByOrderId(orderId);
+        }
+
+        #endregion
     }
 }
+

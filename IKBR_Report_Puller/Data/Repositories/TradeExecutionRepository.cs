@@ -361,5 +361,85 @@ namespace IKBR_Report_Puller.Data.Repositories
 
             return tradeExecution;
         }
+
+        /// <summary>
+        /// Gets aggregated trade summary by order ID
+        /// Tracks the position from opening through closing executions
+        /// </summary>
+        public TradeSummary? GetTradeSummaryByOrderId(long orderId)
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                // First, get all executions for this order and subsequent related executions
+                var query = @"
+                    WITH TradeChain AS (
+                        -- Get the opening trade details
+                        SELECT 
+                            ibOrderID,
+                            InstrumentId,
+                            symbol,
+                            tradeDate,
+                            dateTime,
+                            quantity,
+                            tradePrice,
+                            buySell,
+                            fifoPnlRealized,
+                            SUM(quantity) OVER (PARTITION BY symbol, InstrumentId ORDER BY tradeDate, dateTime) as RunningQuantity
+                        FROM TradeExecutions
+                        WHERE symbol = (SELECT TOP 1 symbol FROM TradeExecutions WHERE ibOrderID = @OrderId)
+                            AND InstrumentId = (SELECT TOP 1 InstrumentId FROM TradeExecutions WHERE ibOrderID = @OrderId)
+                            AND tradeDate >= (SELECT MIN(tradeDate) FROM TradeExecutions WHERE ibOrderID = @OrderId)
+                    ),
+                    PositionLifecycle AS (
+                        SELECT *,
+                            ROW_NUMBER() OVER (ORDER BY tradeDate, dateTime) as RowNum,
+                            CASE WHEN RunningQuantity = 0 THEN 1 ELSE 0 END as IsClosed
+                        FROM TradeChain
+                        WHERE tradeDate >= (SELECT MIN(tradeDate) FROM TradeExecutions WHERE ibOrderID = @OrderId)
+                    )
+                    SELECT 
+                        @OrderId as Id,
+                        InstrumentId,
+                        symbol as Symbol,
+                        MIN(tradeDate) as EntryDate,
+                        MAX(CASE WHEN IsClosed = 1 THEN tradeDate END) as ExitDate,
+                        CASE 
+                            WHEN SUM(CASE WHEN buySell = 'BUY' THEN ABS(quantity) ELSE 0 END) > 
+                                 SUM(CASE WHEN buySell = 'SELL' THEN ABS(quantity) ELSE 0 END) THEN 'BUY'
+                            ELSE 'SELL'
+                        END as BuySell,
+                        AVG(CASE WHEN quantity > 0 THEN tradePrice ELSE NULL END) as AvgEntryPrice,
+                        AVG(CASE WHEN quantity < 0 THEN tradePrice ELSE NULL END) as AvgExitPrice,
+                        MAX(ABS(RunningQuantity)) as TotalQuantity,
+                        SUM(ISNULL(fifoPnlRealized, 0)) as TotalPnl
+                    FROM PositionLifecycle
+                    WHERE RowNum <= (SELECT MIN(RowNum) FROM PositionLifecycle WHERE IsClosed = 1)
+                    GROUP BY InstrumentId, symbol";
+
+                using var command = new SqlCommand(query, connection);
+                command.Parameters.AddWithValue("@OrderId", orderId);
+
+                using var reader = command.ExecuteReader();
+                if (reader.Read())
+                {
+                    return new TradeSummary
+                    {
+                        Id = reader.GetInt64("Id"),
+                        InstrumentId = reader.GetInt32("InstrumentId"),
+                        Symbol = reader.GetString("Symbol"),
+                        EntryDate = reader.GetDateTime("EntryDate"),
+                        ExitDate = reader.IsDBNull(reader.GetOrdinal("ExitDate")) ? reader.GetDateTime("EntryDate") : reader.GetDateTime("ExitDate"),
+                        EntryPrice = reader.IsDBNull(reader.GetOrdinal("AvgEntryPrice")) ? 0 : reader.GetDecimal("AvgEntryPrice"),
+                        ExitPrice = reader.IsDBNull(reader.GetOrdinal("AvgExitPrice")) ? 0 : reader.GetDecimal("AvgExitPrice"),
+                        Quantity = reader.GetDecimal("TotalQuantity"),
+                        Pnl = reader.GetDecimal("TotalPnl"),
+                        BuySell = reader.GetString("BuySell")
+                    };
+                }
+
+                return null;
+            });
+        }
     }
 }
+

@@ -60,12 +60,14 @@ namespace traderview.Server.Services
         {
             try
             {
+                // Get trade summary using DataService
+                var tradeSummary = await Task.Run(() => _dataService.GetTradeSummaryByOrderId(tradeId));
+                if (tradeSummary == null) return null;
+
+                var trade = MapToTradeDto(tradeSummary);
+
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
-
-                // Get trade summary
-                var trade = await GetTradeSummaryAsync(connection, tradeId);
-                if (trade == null) return null;
 
                 // Get instrument details
                 var instrument = await GetInstrumentAsync(connection, trade.InstrumentId);
@@ -92,12 +94,14 @@ namespace traderview.Server.Services
         {
             try
             {
+                // Get trade summary using DataService
+                var tradeSummary = await Task.Run(() => _dataService.GetTradeSummaryByOrderId(tradeId));
+                if (tradeSummary == null) return null;
+
+                var trade = MapToTradeDto(tradeSummary);
+
                 using var connection = new SqlConnection(_connectionString);
                 await connection.OpenAsync();
-
-                // Get trade summary
-                var trade = await GetTradeSummaryAsync(connection, tradeId);
-                if (trade == null) return null;
 
                 // Get candlestick data around the trade dates
                 var candlesticks = await GetCandlesticksAsync(
@@ -122,49 +126,21 @@ namespace traderview.Server.Services
             }
         }
 
-        private async Task<TradeDto?> GetTradeSummaryAsync(SqlConnection connection, long tradeId)
+        private TradeDto MapToTradeDto(IKBR_Report_Puller.Domain.TradeSummary tradeSummary)
         {
-            var query = @"
-                SELECT 
-                    ibOrderID as Id,
-                    InstrumentId,
-                    symbol as Symbol,
-                    MIN(tradeDate) as EntryDate,
-                    MAX(tradeDate) as ExitDate,
-                    CASE 
-                        WHEN SUM(CASE WHEN buySell = 'BUY' THEN quantity ELSE 0 END) > 0 THEN 'BUY'
-                        ELSE 'SELL'
-                    END as BuySell,
-                    AVG(CASE WHEN buySell = 'BUY' THEN tradePrice ELSE NULL END) as AvgEntryPrice,
-                    AVG(CASE WHEN buySell = 'SELL' THEN tradePrice ELSE NULL END) as AvgExitPrice,
-                    ABS(SUM(quantity)) as TotalQuantity,
-                    SUM(ISNULL(fifoPnlRealized, 0)) as TotalPnl
-                FROM TradeExecutions
-                WHERE ibOrderID = @TradeId
-                GROUP BY ibOrderID, InstrumentId, symbol";
-
-            using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@TradeId", tradeId);
-
-            using var reader = await command.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+            return new TradeDto
             {
-                return new TradeDto
-                {
-                    Id = reader.GetInt64("Id"),
-                    InstrumentId = reader.GetInt32("InstrumentId"),
-                    Symbol = reader.GetString("Symbol"),
-                    EntryDate = reader.GetDateTime("EntryDate"),
-                    ExitDate = reader.GetDateTime("ExitDate"),
-                    EntryPrice = reader.IsDBNull("AvgEntryPrice") ? 0 : reader.GetDecimal("AvgEntryPrice"),
-                    ExitPrice = reader.IsDBNull("AvgExitPrice") ? 0 : reader.GetDecimal("AvgExitPrice"),
-                    Quantity = reader.GetDecimal("TotalQuantity"),
-                    Pnl = reader.GetDecimal("TotalPnl"),
-                    BuySell = reader.GetString("BuySell")
-                };
-            }
-
-            return null;
+                Id = tradeSummary.Id,
+                InstrumentId = tradeSummary.InstrumentId,
+                Symbol = tradeSummary.Symbol,
+                EntryDate = tradeSummary.EntryDate,
+                ExitDate = tradeSummary.ExitDate,
+                EntryPrice = tradeSummary.EntryPrice,
+                ExitPrice = tradeSummary.ExitPrice,
+                Quantity = tradeSummary.Quantity,
+                Pnl = tradeSummary.Pnl,
+                BuySell = tradeSummary.BuySell
+            };
         }
 
         private async Task<InstrumentDto?> GetInstrumentAsync(SqlConnection connection, int instrumentId)

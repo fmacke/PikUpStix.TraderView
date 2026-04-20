@@ -11,7 +11,9 @@ namespace IKBR_Report_Puller.Interfaces
         void InsertTodayExecutions(IKBRReport report);
         void UpsertHistoricalData(string instrumentId, List<Bar> bars);
         List<(DateTime startDate, DateTime endDate)> GetMissingDateRanges(int instrumentId, DateTime startDate, DateTime endDate);
-         string ConnectionString { get; }   
+        string ConnectionString { get; }   
         List<TradeExecution> GetTradeExecutions();
+        TradeSummary? GetTradeSummaryByOrderId(long orderId);
     }
 }
+
