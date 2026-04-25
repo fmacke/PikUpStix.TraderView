@@ -31,8 +31,9 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                     chartRef.current = null;
                 }
 
-                // Fetch candlestick data with 20 bars before entry and 20 bars after exit
-                const tradeContext = await apiService.getTradeCandlesticks(trade.id, 20, 20);
+                // Fetch candlestick data with up to 100 bars before entry and 100 bars after exit
+                // Using 150 calendar days to approximately get 100 trading days (accounting for weekends/holidays)
+                const tradeContext = await apiService.getTradeCandlesticks(trade.id, 150, 150);
 
                 console.log('Received candlestick data:', tradeContext);
 

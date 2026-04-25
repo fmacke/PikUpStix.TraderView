@@ -90,7 +90,7 @@ namespace traderview.Server.Services
             }
         }
 
-        public async Task<TradeContextDto?> GetTradeContextAsync(long tradeId, int daysBefore = 30, int daysAfter = 30)
+        public async Task<TradeContextDto?> GetTradeContextAsync(long tradeId, int daysBefore = 150, int daysAfter = 150)
         {
             try
             {

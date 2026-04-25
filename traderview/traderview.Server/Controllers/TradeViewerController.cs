@@ -47,8 +47,8 @@ namespace traderview.Server.Controllers
         /// Get candlestick data for a specific trade
         /// </summary>
         /// <param name="tradeId">The trade ID</param>
-        /// <param name="daysBefore">Number of days before trade entry to include (default: 5)</param>
-        /// <param name="daysAfter">Number of days after trade exit to include (default: 5)</param>
+        /// <param name="daysBefore">Number of calendar days before trade entry to include (default: 150, which typically provides ~100 trading days)</param>
+        /// <param name="daysAfter">Number of calendar days after trade exit to include (default: 150, which typically provides ~100 trading days)</param>
         /// <returns>Trade context with candlestick data</returns>
         [HttpGet("trades/{tradeId}/candlesticks")]
         [ProducesResponseType(typeof(TradeContextDto), StatusCodes.Status200OK)]
@@ -56,8 +56,8 @@ namespace traderview.Server.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TradeContextDto>> GetTradeCandlesticksAsync(
             long tradeId,
-            [FromQuery] int daysBefore = 5,
-            [FromQuery] int daysAfter = 5)
+            [FromQuery] int daysBefore = 150,
+            [FromQuery] int daysAfter = 150)
         {
             try
             {
