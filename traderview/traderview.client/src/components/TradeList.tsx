@@ -12,6 +12,11 @@ function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
     const listRef = useRef<HTMLDivElement>(null);
     const selectedItemRef = useRef<HTMLDivElement>(null);
 
+    // Sort trades by exit date (most recent first)
+    const sortedTrades = [...trades].sort((a, b) => {
+        return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
+    });
+
     // Focus the list container on mount and when selection changes
     useEffect(() => {
         if (listRef.current) {
@@ -30,18 +35,18 @@ function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
     }, [selectedTradeId]);
 
     const handleKeyDown = (event: React.KeyboardEvent) => {
-        if (trades.length === 0) return;
+        if (sortedTrades.length === 0) return;
 
-        const currentIndex = trades.findIndex(trade => trade.id === selectedTradeId);
+        const currentIndex = sortedTrades.findIndex(trade => trade.id === selectedTradeId);
 
         if (event.key === 'ArrowDown') {
             event.preventDefault();
-            const nextIndex = currentIndex < trades.length - 1 ? currentIndex + 1 : 0;
-            onTradeSelect(trades[nextIndex]);
+            const nextIndex = currentIndex < sortedTrades.length - 1 ? currentIndex + 1 : 0;
+            onTradeSelect(sortedTrades[nextIndex]);
         } else if (event.key === 'ArrowUp') {
             event.preventDefault();
-            const prevIndex = currentIndex > 0 ? currentIndex - 1 : trades.length - 1;
-            onTradeSelect(trades[prevIndex]);
+            const prevIndex = currentIndex > 0 ? currentIndex - 1 : sortedTrades.length - 1;
+            onTradeSelect(sortedTrades[prevIndex]);
         }
     };
 
@@ -54,7 +59,7 @@ function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
             >
-                {trades.map((trade, index) => (
+                {sortedTrades.map((trade, index) => (
                     <div
                         key={`${trade.id}-${index}`}
                         ref={selectedTradeId === trade.id ? selectedItemRef : null}

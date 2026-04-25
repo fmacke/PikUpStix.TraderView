@@ -74,9 +74,12 @@ function App() {
             setError(null);
             const data = await apiService.getTrades();
             setTrades(data);
-            // Auto-select the first trade if available
+            // Auto-select the most recently closed trade (sorted by exitDate descending)
             if (data.length > 0) {
-                setSelectedTrade(data[0]);
+                const sortedData = [...data].sort((a, b) => {
+                    return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
+                });
+                setSelectedTrade(sortedData[0]);
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Failed to load trades. Make sure the API is running.');
