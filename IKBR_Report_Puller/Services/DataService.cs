@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using IKBR_Report_Puller.Data.Repositories;
 using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Extensions.Configuration;
@@ -16,13 +15,21 @@ namespace IKBR_Report_Puller.Services
     {
         private readonly string _connectionString;
 
-        // Repositories
-        private readonly TradeExecutionRepository _tradeExecutionRepository;
-        private readonly OpenPositionRepository _openPositionRepository;
-        private readonly HistoricalDataRepository _historicalDataRepository;
-        private readonly InstrumentRepository _instrumentRepository;
+        // Repository interfaces - following Dependency Inversion Principle
+        private readonly ITradeExecutionRepository _tradeExecutionRepository;
+        private readonly IOpenPositionRepository _openPositionRepository;
+        private readonly IHistoricalDataRepository _historicalDataRepository;
+        private readonly IInstrumentRepository _instrumentRepository;
 
-        public DataService(IConfiguration config)
+        /// <summary>
+        /// Constructor with dependency injection of repositories
+        /// </summary>
+        public DataService(
+            IConfiguration config,
+            IInstrumentRepository instrumentRepository,
+            ITradeExecutionRepository tradeExecutionRepository,
+            IHistoricalDataRepository historicalDataRepository,
+            IOpenPositionRepository openPositionRepository)
         {
             var dbUser = config["Database:User"];
             var dbPassword = config["Database:Password"];
@@ -30,11 +37,11 @@ namespace IKBR_Report_Puller.Services
             var dbName = config["Database:DbName"];
             _connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
 
-            // Initialize repositories - InstrumentRepository must be created first since TradeRepository depends on it
-            _instrumentRepository = new InstrumentRepository(_connectionString);
-            _tradeExecutionRepository = new TradeExecutionRepository(_connectionString, _instrumentRepository);
-            _openPositionRepository = new OpenPositionRepository(_connectionString);
-            _historicalDataRepository = new HistoricalDataRepository(_connectionString);
+            // Inject repositories instead of creating them (follows Dependency Inversion Principle)
+            _instrumentRepository = instrumentRepository;
+            _tradeExecutionRepository = tradeExecutionRepository;
+            _openPositionRepository = openPositionRepository;
+            _historicalDataRepository = historicalDataRepository;
         }
 
         public string ConnectionString => _connectionString;

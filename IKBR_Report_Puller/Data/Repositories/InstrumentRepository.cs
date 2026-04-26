@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using IKBR_Report_Puller.Domain;
+using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
 
 namespace IKBR_Report_Puller.Data.Repositories
@@ -9,7 +10,7 @@ namespace IKBR_Report_Puller.Data.Repositories
     /// <summary>
     /// Repository for Instrument-related database operations
     /// </summary>
-    public class InstrumentRepository : BaseRepository
+    public class InstrumentRepository : BaseRepository, IInstrumentRepository
     {
         public InstrumentRepository(string connectionString) : base(connectionString)
         {
@@ -19,7 +20,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// Ensures instruments exist for the given trades
         /// Creates missing instruments automatically
         /// </summary>
-        internal void UpsertInstruments(List<Trade> trades)
+        public void UpsertInstruments(List<Trade> trades)
         {
             if (trades == null || !trades.Any())
                 return;
@@ -104,7 +105,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// Ensures instruments exist for the given trade confirmations
         /// Creates missing instruments automatically and populates InstrumentID on each trade confirm
         /// </summary>
-        internal void UpsertInstruments(List<TradeConfirm> tradeConfirms)
+        public void UpsertInstruments(List<TradeConfirm> tradeConfirms)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
                 return;

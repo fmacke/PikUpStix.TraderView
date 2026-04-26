@@ -9,7 +9,7 @@ namespace IKBR_Report_Puller.Interfaces
         void InsertOpenPositions(IKBRReport report);
         void InsertTradeExecutions(IKBRReport report);
         void InsertTodayExecutions(IKBRReport report);
-        int InsertInstrument(string conid, string symbol, string listingExchange, string currency);
+        int? InsertInstrument(string conid, string symbol, string listingExchange, string currency);
         void UpsertHistoricalData(string instrumentId, List<Bar> bars);
         List<(DateTime startDate, DateTime endDate)> GetMissingDateRanges(int instrumentId, DateTime startDate, DateTime endDate);
         string ConnectionString { get; }   

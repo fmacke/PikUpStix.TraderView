@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using IKBR_Report_Puller.Domain;
+using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
 
 namespace IKBR_Report_Puller.Data.Repositories
@@ -9,7 +10,7 @@ namespace IKBR_Report_Puller.Data.Repositories
     /// <summary>
     /// Repository for HistoricalData (chart data) operations
     /// </summary>
-    public class HistoricalDataRepository : BaseRepository
+    public class HistoricalDataRepository : BaseRepository, IHistoricalDataRepository
     {
         public HistoricalDataRepository(string connectionString) : base(connectionString)
         {

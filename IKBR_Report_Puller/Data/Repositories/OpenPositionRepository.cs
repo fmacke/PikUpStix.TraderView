@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using IKBR_Report_Puller.Domain;
+using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
 
 namespace IKBR_Report_Puller.Data.Repositories
@@ -9,7 +10,7 @@ namespace IKBR_Report_Puller.Data.Repositories
     /// <summary>
     /// Repository for OpenPosition-related database operations
     /// </summary>
-    public class OpenPositionRepository : BaseRepository
+    public class OpenPositionRepository : BaseRepository, IOpenPositionRepository
     {
         public OpenPositionRepository(string connectionString) : base(connectionString)
         {

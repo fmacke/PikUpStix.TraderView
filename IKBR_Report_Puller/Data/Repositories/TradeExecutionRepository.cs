@@ -1,4 +1,5 @@
 using IKBR_Report_Puller.Domain;
+using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
 using System;
 using System.Collections.Generic;
@@ -10,11 +11,11 @@ namespace IKBR_Report_Puller.Data.Repositories
     /// <summary>
     /// Repository for Trade-related database operations
     /// </summary>
-    public class TradeExecutionRepository : BaseRepository
+    public class TradeExecutionRepository : BaseRepository, ITradeExecutionRepository
     {
-        private readonly InstrumentRepository _instrumentRepository;
+        private readonly IInstrumentRepository _instrumentRepository;
 
-        public TradeExecutionRepository(string connectionString, InstrumentRepository instrumentRepository) : base(connectionString)
+        public TradeExecutionRepository(string connectionString, IInstrumentRepository instrumentRepository) : base(connectionString)
         {
             _instrumentRepository = instrumentRepository;
         }
