@@ -4,6 +4,7 @@ using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.IKBR;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using System;
 using System.Diagnostics.Metrics;
 using System.Linq;
@@ -33,12 +34,12 @@ namespace IKBR_Report_Puller.Services
         /// <summary>
         /// Updates historical data for all positions/trades by identifying and filling missing date ranges
         /// </summary>
-        public void UpdateHistoricalDataForPositions(List<HistoricalTrade> trades)
+        public void UpdateHistoricalDataForHistoricalTrades(List<HistoricalTrade> trades)
         {
             foreach (var trade in trades)
             {
                 Console.WriteLine($"Processing trade for {trade.Symbol} opened on {trade.TradeOpened:yyyy-MM-dd} and closed on {trade.TradeClosed:yyyy-MM-dd}");
-                List<(DateTime startDate, DateTime endDate)> missingRanges = GetMissingRanges(trade);
+                List<(DateTime startDate, DateTime endDate)> missingRanges = GetMissingRanges(trade.TradeOpened, trade.TradeClosed, trade.Symbol, trade.InstrumentId);
 
                 if (missingRanges.Any())
                 {
@@ -59,23 +60,62 @@ namespace IKBR_Report_Puller.Services
             }
         }
 
-        private List<(DateTime startDate, DateTime endDate)> GetMissingRanges(HistoricalTrade trade)
+        public void UpdateHistoricalDataForPositions(List<OpenPosition> positions)
+        {
+            foreach (var position in positions)
+            {
+                Console.WriteLine($"Processing position for {position.Symbol} opened on {position.OpenDateTime:yyyy-MM-dd}");
+
+                var instrumentId = _dataService.GetInstrumentIdFromConId(position.Conid.ToString());
+
+                if(instrumentId == null)
+                {
+                    Console.WriteLine($"Warning: Could not find instrument ID for {position.Symbol} (conid: {position.Conid}). Adding new instrument.");
+                    instrumentId = _dataService.InsertInstrument(position.Conid.ToString(), position.Symbol, position.ListingExchange, position.Currency);
+                }
+                if (instrumentId != null)
+                {
+                    List<(DateTime startDate, DateTime endDate)> missingRanges = GetMissingRanges(
+                        Convert.ToDateTime(position.OpenDateTime), Convert.ToDateTime(position.OpenDateTime),
+                        position.Symbol, Convert.ToInt32(instrumentId));
+
+                    if (missingRanges.Any())
+                    {
+                        Console.WriteLine($"Found {missingRanges.Count} missing date range(s) for {position.Symbol}:");
+                        foreach (var range in missingRanges)
+                        {
+                            Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
+                            var domainBars = FetchHistoricalData(position.Conid.ToString(), position.Symbol, range.startDate, range.endDate, Convert.ToInt32(instrumentId));
+                            // Save to database
+                            _dataService.UpsertHistoricalData(instrumentId.ToString(), domainBars.Result);
+                            Console.WriteLine($"Successfully saved {domainBars.Result.Count} bars for {position.Symbol}");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine($"All required historical data exists for {position.Symbol}");
+                    }
+                }
+            }
+        }
+
+        private List<(DateTime startDate, DateTime endDate)> GetMissingRanges(DateTime tradeOpened, DateTime tradeClosed, string symbol, int instrumentId)
         {
             // Calculate date range: startDate - 100 days to endDate + 100 days
-            DateTime requiredStartDate = trade.TradeOpened.AddDays(-100);
-            DateTime requiredEndDate = trade.TradeClosed.AddDays(100);
+            DateTime requiredStartDate = tradeOpened.AddDays(-100);
+            DateTime requiredEndDate = tradeClosed.AddDays(100);
 
-            // If endDate + 20 is past today, use today instead
+            // If endDate + 100 is past today, use today instead
             DateTime today = DateTime.Today;
             if (requiredEndDate > today)
             {
                 requiredEndDate = today;
             }
 
-            Console.WriteLine($"Checking historical data for {trade.Symbol} from {requiredStartDate:yyyy-MM-dd} to {requiredEndDate:yyyy-MM-dd}");
+            Console.WriteLine($"Checking historical data for {symbol} from {requiredStartDate:yyyy-MM-dd} to {requiredEndDate:yyyy-MM-dd}");
 
             // Check for missing date ranges
-            var missingRanges = _dataService.GetMissingDateRanges(trade.InstrumentId, requiredStartDate, requiredEndDate);
+            var missingRanges = _dataService.GetMissingDateRanges(instrumentId, requiredStartDate, requiredEndDate);
             return missingRanges;
         }
 

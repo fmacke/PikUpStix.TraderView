@@ -7,6 +7,7 @@ namespace IKBR_Report_Puller.Interfaces
         /// <summary>
         /// Updates historical data for all positions/trades by identifying and filling missing date ranges
         /// </summary>
-        void UpdateHistoricalDataForPositions(List<HistoricalTrade> trades);
+        void UpdateHistoricalDataForHistoricalTrades(List<HistoricalTrade> trades);
+        void UpdateHistoricalDataForPositions(List<OpenPosition> positions);
     }
 }

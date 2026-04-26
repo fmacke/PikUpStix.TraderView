@@ -150,3 +150,26 @@
 .negative {
     color: #dc2626;
 }
+
+/* RS Indicator Section */
+.rs-indicator-section {
+    margin-top: 2rem;
+}
+
+.rs-loading,
+.rs-error {
+    padding: 2rem;
+    text-align: center;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    border: 1px solid #e5e7eb;
+}
+
+.rs-loading p {
+    color: #6b7280;
+    font-style: italic;
+}
+
+.rs-error p {
+    color: #dc2626;
+}

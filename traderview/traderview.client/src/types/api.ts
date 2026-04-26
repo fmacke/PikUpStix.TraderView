@@ -49,3 +49,30 @@ export interface Candlestick {
     close: number;
     volume: number;
 }
+
+export interface RSIndicatorData {
+    rsData: RSDataPoint[];
+    metrics: RSMetrics;
+}
+
+export interface RSDataPoint {
+    date: string;
+    rsRatio: number;
+    rsma: number;
+    isRS50High: boolean;
+    isRSNewHigh: boolean;
+    isBlueDot: boolean;
+}
+
+export interface RSMetrics {
+    institutionalCount: number | null;
+    institutionalPercent: number | null;
+    institutionalCountDelta: number | null;
+    isInstitutionalGrowing: boolean;
+    isRSNewHigh: boolean;
+    isStage2Trend: boolean;
+    distanceFrom52WeekHigh: number;
+    sma50: number;
+    sma150: number;
+    sma200: number;
+}

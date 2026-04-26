@@ -63,4 +63,34 @@ namespace traderview.Server.DTOs
         public InstrumentDto Instrument { get; set; } = new();
         public List<TradeExecutionDto> Executions { get; set; } = new();
     }
+
+    public class RSIndicatorDataDto
+    {
+        public List<RSDataPointDto> RSData { get; set; } = new();
+        public RSMetricsDto Metrics { get; set; } = new();
+    }
+
+    public class RSDataPointDto
+    {
+        public DateTime Date { get; set; }
+        public double RSRatio { get; set; }
+        public double RSMA { get; set; }
+        public bool IsRS50High { get; set; }
+        public bool IsRSNewHigh { get; set; }
+        public bool IsBlueDot { get; set; }
+    }
+
+    public class RSMetricsDto
+    {
+        public int? InstitutionalCount { get; set; }
+        public double? InstitutionalPercent { get; set; }
+        public int? InstitutionalCountDelta { get; set; }
+        public bool IsInstitutionalGrowing { get; set; }
+        public bool IsRSNewHigh { get; set; }
+        public bool IsStage2Trend { get; set; }
+        public double DistanceFrom52WeekHigh { get; set; }
+        public double SMA50 { get; set; }
+        public double SMA150 { get; set; }
+        public double SMA200 { get; set; }
+    }
 }

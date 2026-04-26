@@ -39,6 +39,14 @@ namespace IKBR_Report_Puller.Services
 
         public string ConnectionString => _connectionString;
 
+        #region Instrument Operations
+        public int? InsertInstrument(string conid, string symbol, string listingExchange, string currency)
+        {
+            return _instrumentRepository.InsertInstrument(conid, symbol, listingExchange, currency);
+        }
+
+        #endregion
+
         #region Trade Operations
 
         /// <summary>
@@ -130,6 +138,16 @@ namespace IKBR_Report_Puller.Services
         public TradeSummary? GetTradeSummaryByOrderId(long orderId)
         {
             return _tradeExecutionRepository.GetTradeSummaryByOrderId(orderId);
+        }
+
+        public int? GetInstrumentIdFromConId(string conid)
+        {
+            if (conid == null)
+            {
+                Console.WriteLine("ConId is null. Cannot retrieve InstrumentId.");
+                return null;
+            }
+            return _instrumentRepository.GetInstrumentIdFromConId(conid);
         }
 
         #endregion

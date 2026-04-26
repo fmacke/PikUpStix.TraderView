@@ -1,12 +1,45 @@
-import type { Trade } from '../types/api';
+import { useState, useEffect } from 'react';
+import type { Trade, RSIndicatorData } from '../types/api';
+import { apiService } from '../services/apiService';
 import './TradeDetail.css';
 import TradingViewChart from './TradingViewChart';
+import RSIndicatorChart from './RSIndicatorChart';
+import RSMetricsDashboard from './RSMetricsDashboard';
 
 interface TradeDetailProps {
     trade: Trade | null;
 }
 
 function TradeDetail({ trade }: TradeDetailProps) {
+    const [rsData, setRsData] = useState<RSIndicatorData | null>(null);
+    const [rsLoading, setRsLoading] = useState<boolean>(false);
+    const [rsError, setRsError] = useState<string | null>(null);
+
+    // Fetch RS indicator data when trade changes
+    useEffect(() => {
+        if (!trade) {
+            setRsData(null);
+            return;
+        }
+
+        const fetchRSData = async () => {
+            try {
+                setRsLoading(true);
+                setRsError(null);
+                const data = await apiService.getRSIndicator(trade.id);
+                setRsData(data);
+            } catch (error) {
+                console.error('Error fetching RS indicator data:', error);
+                setRsError('RS indicator data not available. Ensure benchmark data (SPX) exists in the database.');
+                setRsData(null);
+            } finally {
+                setRsLoading(false);
+            }
+        };
+
+        fetchRSData();
+    }, [trade]);
+
     if (!trade) {
         return (
             <div className="trade-detail">
@@ -84,6 +117,28 @@ function TradeDetail({ trade }: TradeDetailProps) {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* RS Indicator Section */}
+            <div className="rs-indicator-section">
+                {rsLoading && (
+                    <div className="rs-loading">
+                        <p>Loading RS indicator data...</p>
+                    </div>
+                )}
+
+                {rsError && (
+                    <div className="rs-error">
+                        <p>{rsError}</p>
+                    </div>
+                )}
+
+                {!rsLoading && !rsError && rsData && (
+                    <>
+                        <RSIndicatorChart rsData={rsData.rsData} />
+                        <RSMetricsDashboard metrics={rsData.metrics} />
+                    </>
+                )}
             </div>
         </div>
     );

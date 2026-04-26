@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Trade, TradeContext } from '../types/api';
+import type { Trade, TradeContext, RSIndicatorData } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -37,4 +37,29 @@ export const apiService = {
             throw error;
         }
     },
+
+    // Get RS indicator data for a specific trade
+    async getRSIndicator(
+        tradeId: number, 
+        benchmarkSymbol: string = 'SPX', 
+        daysBefore: number = 150, 
+        daysAfter: number = 150
+    ): Promise<RSIndicatorData> {
+        console.log(`Making API call to /tradeviewer/trades/${tradeId}/rs-indicator`);
+        try {
+            const response = await apiClient.get<RSIndicatorData>(
+                `/tradeviewer/trades/${tradeId}/rs-indicator`,
+                {
+                    params: { benchmarkSymbol, daysBefore, daysAfter },
+                    timeout: 30000 // 30 second timeout
+                }
+            );
+            console.log('RS indicator API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('RS indicator API call failed:', error);
+            throw error;
+        }
+    },
 };
+

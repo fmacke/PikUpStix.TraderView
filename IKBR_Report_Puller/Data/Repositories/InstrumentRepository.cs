@@ -98,6 +98,8 @@ namespace IKBR_Report_Puller.Data.Repositories
             
         }
 
+        
+
         /// <summary>
         /// Ensures instruments exist for the given trade confirmations
         /// Creates missing instruments automatically and populates InstrumentID on each trade confirm
@@ -185,14 +187,30 @@ namespace IKBR_Report_Puller.Data.Repositories
         }
 
         #region Private Helper Methods
+        public int? GetInstrumentIdFromConId(string conid)
+        {
+            ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        int? instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
+
+                        return instrumentId;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error obtaining instrumentId from conid: {ex.Message}");
+                        throw;
+                    }
+                }
+            });
+            return null;
+        }
 
         private int? GetInstrumentIdByConid(SqlConnection connection, SqlTransaction transaction, string conid)
         {
-            if (string.IsNullOrEmpty(conid))
-            {
-                return null;
-            }
-
             const string query = "SELECT Id FROM dbo.Instruments WHERE ConId = @conid";
 
             var parameters = new Dictionary<string, object>
@@ -203,7 +221,35 @@ namespace IKBR_Report_Puller.Data.Repositories
             int instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
             return instrumentId > 0 ? instrumentId : (int?)null;
         }
+        public int? InsertInstrument(string conid, string symbol, string listingExchange, string currency)
+        {
+            ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        InsertInstrumentFromTradeConfirm(
+                                    connection,
+                                    transaction,
+                                    conid,
+                                    symbol,
+                                    listingExchange,
+                                    currency);
 
+                        // Get the newly created instrument ID
+                        return GetInstrumentIdByConid(connection, transaction, conid);
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine($"Error upserting instruments from trade confirmations: {ex.Message}");
+                        throw;
+                    }
+                }
+            });
+            return null;
+        }
         private void InsertInstrumentFromTrade(
             SqlConnection connection,
             SqlTransaction transaction,

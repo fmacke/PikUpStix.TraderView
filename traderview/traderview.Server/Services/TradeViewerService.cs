@@ -244,5 +244,237 @@ namespace traderview.Server.Services
 
             return candlesticks;
         }
+
+        public async Task<RSIndicatorDataDto?> GetRSIndicatorDataAsync(long tradeId, string benchmarkSymbol = "SPX", int daysBefore = 150, int daysAfter = 150)
+        {
+            try
+            {
+                // Get trade summary
+                var tradeSummary = await Task.Run(() => _dataService.GetTradeSummaryByOrderId(tradeId));
+                if (tradeSummary == null) return null;
+
+                var trade = MapToTradeDto(tradeSummary);
+
+                using var connection = new SqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Get stock candlestick data
+                var stockCandlesticks = await GetCandlesticksAsync(
+                    connection,
+                    trade.InstrumentId,
+                    trade.EntryDate.AddDays(-daysBefore),
+                    trade.ExitDate.AddDays(daysAfter)
+                );
+
+                if (stockCandlesticks.Count == 0)
+                {
+                    _logger.LogWarning("No stock price data available for trade {TradeId}", tradeId);
+                    return null;
+                }
+
+                // Get benchmark candlestick data (SPX or similar)
+                var benchmarkCandlesticks = await GetBenchmarkCandlesticksAsync(
+                    connection,
+                    benchmarkSymbol,
+                    trade.EntryDate.AddDays(-daysBefore),
+                    trade.ExitDate.AddDays(daysAfter)
+                );
+
+                if (benchmarkCandlesticks.Count == 0)
+                {
+                    _logger.LogWarning("No benchmark data available for {BenchmarkSymbol}", benchmarkSymbol);
+                    // Return null or stub data - for now return null
+                    return null;
+                }
+
+                // Calculate RS data
+                var rsDataPoints = CalculateRSData(stockCandlesticks, benchmarkCandlesticks);
+
+                // Calculate metrics
+                var metrics = CalculateRSMetrics(stockCandlesticks, rsDataPoints, trade);
+
+                return new RSIndicatorDataDto
+                {
+                    RSData = rsDataPoints,
+                    Metrics = metrics
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating RS indicator for trade {TradeId}", tradeId);
+                throw;
+            }
+        }
+
+        private async Task<List<CandlestickDto>> GetBenchmarkCandlesticksAsync(
+            SqlConnection connection,
+            string benchmarkSymbol,
+            DateTime startDate,
+            DateTime endDate)
+        {
+            // Try to find benchmark instrument by symbol (e.g., SPX, ^GSPC, etc.)
+            var instrumentQuery = @"
+                SELECT Id 
+                FROM Instruments 
+                WHERE Symbol = @Symbol OR DataName = @Symbol OR InstrumentName LIKE '%' + @Symbol + '%'";
+
+            int? benchmarkInstrumentId = null;
+
+            using (var command = new SqlCommand(instrumentQuery, connection))
+            {
+                command.Parameters.AddWithValue("@Symbol", benchmarkSymbol);
+                var result = await command.ExecuteScalarAsync();
+                if (result != null)
+                {
+                    benchmarkInstrumentId = Convert.ToInt32(result);
+                }
+            }
+
+            if (benchmarkInstrumentId == null)
+            {
+                _logger.LogWarning("Benchmark instrument {BenchmarkSymbol} not found in database", benchmarkSymbol);
+                return new List<CandlestickDto>();
+            }
+
+            return await GetCandlesticksAsync(connection, benchmarkInstrumentId.Value, startDate, endDate);
+        }
+
+        private List<RSDataPointDto> CalculateRSData(List<CandlestickDto> stockData, List<CandlestickDto> benchmarkData)
+        {
+            var rsDataPoints = new List<RSDataPointDto>();
+
+            // Create a dictionary of benchmark closes by date for fast lookup
+            var benchmarkByDate = benchmarkData.ToDictionary(c => c.Date.Date, c => c.Close);
+
+            // Calculate RS ratio for each date where both stock and benchmark data exist
+            var rsRatios = new List<(DateTime Date, double RSRatio)>();
+
+            foreach (var stockCandle in stockData)
+            {
+                if (benchmarkByDate.TryGetValue(stockCandle.Date.Date, out var benchmarkClose) && benchmarkClose > 0)
+                {
+                    double rsRatio = stockCandle.Close / benchmarkClose;
+                    rsRatios.Add((stockCandle.Date, rsRatio));
+                }
+            }
+
+            if (rsRatios.Count == 0) return rsDataPoints;
+
+            // Calculate 21-period moving average of RS ratio
+            const int maLength = 21;
+            var rsMAValues = CalculateSMA(rsRatios.Select(r => r.RSRatio).ToList(), maLength);
+
+            // Calculate 50-bar and 52-week (252 bars) highs
+            const int rs50Period = 50;
+            const int rs252Period = 252;
+
+            for (int i = 0; i < rsRatios.Count; i++)
+            {
+                var (date, rsRatio) = rsRatios[i];
+                double rsMA = i >= maLength - 1 ? rsMAValues[i] : rsRatio;
+
+                // Check if RS is at 50-bar high
+                int lookback50 = Math.Min(rs50Period, i + 1);
+                double rs50High = rsRatios.Skip(Math.Max(0, i - lookback50 + 1)).Take(lookback50).Max(r => r.RSRatio);
+                bool isRS50High = Math.Abs(rsRatio - rs50High) < 0.0001;
+
+                // Check if RS is at 52-week high (252 bars)
+                int lookback252 = Math.Min(rs252Period, i + 1);
+                double rs252High = rsRatios.Skip(Math.Max(0, i - lookback252 + 1)).Take(lookback252).Max(r => r.RSRatio);
+                bool isRSNewHigh = Math.Abs(rsRatio - rs252High) < 0.0001;
+
+                // Check if price is at 52-week high (for blue dot logic)
+                var stockCandle = stockData[i];
+                int priceLookback252 = Math.Min(rs252Period, i + 1);
+                double price52High = stockData.Skip(Math.Max(0, i - priceLookback252 + 1)).Take(priceLookback252).Max(c => c.High);
+                bool isBlueDot = isRSNewHigh && stockCandle.Close < price52High;
+
+                rsDataPoints.Add(new RSDataPointDto
+                {
+                    Date = date,
+                    RSRatio = rsRatio,
+                    RSMA = rsMA,
+                    IsRS50High = isRS50High,
+                    IsRSNewHigh = isRSNewHigh,
+                    IsBlueDot = isBlueDot
+                });
+            }
+
+            return rsDataPoints;
+        }
+
+        private RSMetricsDto CalculateRSMetrics(List<CandlestickDto> stockData, List<RSDataPointDto> rsData, TradeDto trade)
+        {
+            // Get latest values
+            var latestCandle = stockData.LastOrDefault();
+            var latestRS = rsData.LastOrDefault();
+
+            if (latestCandle == null || latestRS == null)
+            {
+                return new RSMetricsDto();
+            }
+
+            // Calculate SMAs for trend analysis (Stage 2)
+            var closes = stockData.Select(c => c.Close).ToList();
+            var sma50Values = CalculateSMA(closes, 50);
+            var sma150Values = CalculateSMA(closes, 150);
+            var sma200Values = CalculateSMA(closes, 200);
+
+            double sma50 = closes.Count >= 50 ? sma50Values.Last() : 0;
+            double sma150 = closes.Count >= 150 ? sma150Values.Last() : 0;
+            double sma200 = closes.Count >= 200 ? sma200Values.Last() : 0;
+
+            // Check Stage 2 trend: Close > SMA50 > SMA150 > SMA200
+            bool isStage2Trend = sma50 > 0 && sma150 > 0 && sma200 > 0 &&
+                                 latestCandle.Close > sma50 &&
+                                 sma50 > sma150 &&
+                                 sma150 > sma200;
+
+            // Calculate distance from 52-week high
+            int lookback252 = Math.Min(252, stockData.Count);
+            double high52Week = stockData.TakeLast(lookback252).Max(c => c.High);
+            double distanceFrom52WeekHigh = ((high52Week - latestCandle.Close) / high52Week) * 100;
+
+            return new RSMetricsDto
+            {
+                // Institutional data would come from external API - stub for now
+                InstitutionalCount = null,
+                InstitutionalPercent = null,
+                InstitutionalCountDelta = null,
+                IsInstitutionalGrowing = false,
+
+                IsRSNewHigh = latestRS.IsRS50High,
+                IsStage2Trend = isStage2Trend,
+                DistanceFrom52WeekHigh = distanceFrom52WeekHigh,
+                SMA50 = sma50,
+                SMA150 = sma150,
+                SMA200 = sma200
+            };
+        }
+
+        private List<double> CalculateSMA(List<double> values, int period)
+        {
+            var smaValues = new List<double>();
+
+            for (int i = 0; i < values.Count; i++)
+            {
+                if (i < period - 1)
+                {
+                    // Not enough data yet, use current value or 0
+                    smaValues.Add(0);
+                }
+                else
+                {
+                    double sum = 0;
+                    for (int j = 0; j < period; j++)
+                    {
+                        sum += values[i - j];
+                    }
+                    smaValues.Add(sum / period);
+                }
+            }
+
+            return smaValues;
+        }
     }
 }

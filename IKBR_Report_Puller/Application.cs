@@ -63,7 +63,8 @@ namespace IKBR_Report_Puller
             _dataService.InsertOpenPositions(mainReport);  
             _excelReportService.CreateReport(mainReport, outputFilePath);
             _tradeHistoryReportService.CreateTradeHistoryReport(_dataService.GetTradeExecutions());
-            _historicalDataService.UpdateHistoricalDataForPositions(_tradeHistoryReportService.TradeHistoryAggregated);        
+            _historicalDataService.UpdateHistoricalDataForPositions(mainReport.OpenPositions);
+            _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);        
         }
 
         private async Task<string> WriteTodayReport(string fileName)
