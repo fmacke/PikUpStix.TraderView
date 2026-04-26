@@ -15,18 +15,21 @@ namespace IKBR_Report_Puller.Services
     public class HistoricalDataService : IHistoricalDataService
     {
         private readonly IChartDataService _chartDataService;
-        private readonly IDataService _dataService;
+        private readonly IHistoricalDataRepository _historicalDataRepository;
+        private readonly IInstrumentRepository _instrumentRepository;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly IConfiguration _config;
 
         public HistoricalDataService(
             IChartDataService chartDataService,
-            IDataService dataService,
+            IHistoricalDataRepository historicalDataRepository,
+            IInstrumentRepository instrumentRepository,
             ITradeHistoryReportService tradeHistoryReportService,
             IConfiguration config)
         {
             _chartDataService = chartDataService;
-            _dataService = dataService;
+            _historicalDataRepository = historicalDataRepository;
+            _instrumentRepository = instrumentRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
             _config = config;
         }
@@ -49,7 +52,7 @@ namespace IKBR_Report_Puller.Services
                         Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
                         var domainBars =FetchHistoricalData(trade.SecurityId, trade.Symbol, range.startDate, range.endDate, trade.InstrumentId);
                         // Save to database
-                        _dataService.UpsertHistoricalData(trade.InstrumentId.ToString(), domainBars.Result);
+                        _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), domainBars.Result);
                         Console.WriteLine($"Successfully saved {domainBars.Result.Count} bars for {trade.Symbol}");
                     }
                 }
@@ -66,12 +69,12 @@ namespace IKBR_Report_Puller.Services
             {
                 Console.WriteLine($"Processing position for {position.Symbol} opened on {position.OpenDateTime:yyyy-MM-dd}");
 
-                var instrumentId = _dataService.GetInstrumentIdFromConId(position.Conid.ToString());
+                var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(position.Conid.ToString());
 
                 if(instrumentId == null)
                 {
                     Console.WriteLine($"Warning: Could not find instrument ID for {position.Symbol} (conid: {position.Conid}). Adding new instrument.");
-                    instrumentId = _dataService.InsertInstrument(position.Conid.ToString(), position.Symbol, position.ListingExchange, position.Currency);
+                    instrumentId = _instrumentRepository.InsertInstrument(position.Conid.ToString(), position.Symbol, position.ListingExchange, position.Currency);
                 }
                 if (instrumentId != null)
                 {
@@ -87,7 +90,7 @@ namespace IKBR_Report_Puller.Services
                             Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
                             var domainBars = FetchHistoricalData(position.Conid.ToString(), position.Symbol, range.startDate, range.endDate, Convert.ToInt32(instrumentId));
                             // Save to database
-                            _dataService.UpsertHistoricalData(instrumentId.ToString(), domainBars.Result);
+                            _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), domainBars.Result);
                             Console.WriteLine($"Successfully saved {domainBars.Result.Count} bars for {position.Symbol}");
                         }
                     }
@@ -115,7 +118,7 @@ namespace IKBR_Report_Puller.Services
             Console.WriteLine($"Checking historical data for {symbol} from {requiredStartDate:yyyy-MM-dd} to {requiredEndDate:yyyy-MM-dd}");
 
             // Check for missing date ranges
-            var missingRanges = _dataService.GetMissingDateRanges(instrumentId, requiredStartDate, requiredEndDate);
+            var missingRanges = _historicalDataRepository.GetMissingDateRanges(instrumentId, requiredStartDate, requiredEndDate);
             return missingRanges;
         }
 

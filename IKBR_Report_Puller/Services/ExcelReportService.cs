@@ -1,6 +1,7 @@
 using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing.Chart;
 using System;
@@ -13,13 +14,23 @@ namespace IKBR_Report_Puller.Services
 {
     public class ExcelReportService : IExcelReportService
     {
-        private readonly IDataService _dataService;
+        private readonly ITradeExecutionRepository _tradeExecutionRepository;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
+        private readonly string _connectionString;
 
-        public ExcelReportService(IDataService dataService, ITradeHistoryReportService tradeHistoryReportService)
+        public ExcelReportService(
+            ITradeExecutionRepository tradeExecutionRepository,
+            ITradeHistoryReportService tradeHistoryReportService,
+            IConfiguration configuration)
         {
-            _dataService = dataService;
+            _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
+
+            var dbUser = configuration["Database:User"];
+            var dbPassword = configuration["Database:Password"];
+            var dbHost = configuration["Database:Host"];
+            var dbName = configuration["Database:DbName"];
+            _connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
         }
 
         public void CreateReport(IKBRReport report, string outputFilePath)
@@ -43,7 +54,7 @@ namespace IKBR_Report_Puller.Services
                 using (var package = new ExcelPackage())
                 {
                     CreateOpenPositionsWorkSheet(package, report);
-                    _tradeHistoryReportService.CreateTradeHistoryReport(_dataService.GetTradeExecutions());
+                    _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "Trade History");
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "Trade History Aggregated");
                     CreateVisualReport(package, _tradeHistoryReportService.TradeHistoryAggregated, "Trade Report");
@@ -84,7 +95,7 @@ namespace IKBR_Report_Puller.Services
 
             // Populate data
             int currentRow = 2;
-            using SqlConnection connection = new SqlConnection(_dataService.ConnectionString);
+            using SqlConnection connection = new SqlConnection(_connectionString);
             connection.Open();
 
             foreach (var position in report.OpenPositions)

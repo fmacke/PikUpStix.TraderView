@@ -38,8 +38,7 @@ builder.Services.AddScoped<IOpenPositionRepository>(provider =>
     return new OpenPositionRepository(connectionString);
 });
 
-// Register IKBR services
-builder.Services.AddScoped<IDataService, DataService>();
+// Register IKBR services (no longer need IDataService - services use repositories directly)
 builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
 
 // Register TradeViewer service

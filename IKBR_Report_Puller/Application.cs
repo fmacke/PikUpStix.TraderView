@@ -15,7 +15,9 @@ namespace IKBR_Report_Puller
     public class Application
     {
         private readonly IReportFetchingService _reportFetchingService;
-        private readonly IDataService _dataService;
+        private readonly ITradeExecutionRepository _tradeExecutionRepository;
+        private readonly IInstrumentRepository _instrumentRepository;
+        private readonly IOpenPositionRepository _openPositionRepository;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
         private readonly IHistoricalDataService _historicalDataService;
@@ -27,14 +29,18 @@ namespace IKBR_Report_Puller
 
         public Application(
             IReportFetchingService reportFetchingService,
-            IDataService dataService,
+            ITradeExecutionRepository tradeExecutionRepository,
+            IInstrumentRepository instrumentRepository,
+            IOpenPositionRepository openPositionRepository,
             IExcelReportService excelReportService,
             IHistoricalDataService historicalDataService,
             ITradeHistoryReportService tradeHistoryReportService,
             IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
-            _dataService = dataService;
+            _tradeExecutionRepository = tradeExecutionRepository;
+            _instrumentRepository = instrumentRepository;
+            _openPositionRepository = openPositionRepository;
             _excelReportService = excelReportService;
             _historicalDataService = historicalDataService;
             _tradeHistoryReportService = tradeHistoryReportService;
@@ -59,10 +65,14 @@ namespace IKBR_Report_Puller
 
         private void SaveReportDataToDB(IKBRReport mainReport)
         {
-            _dataService.InsertTradeExecutions(mainReport);          
-            _dataService.InsertOpenPositions(mainReport);  
+            // Upsert instruments first, then trade executions (order matters due to FK constraints)
+            _instrumentRepository.UpsertInstruments(mainReport.Trades);
+            _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
+
+            _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
+
             _excelReportService.CreateReport(mainReport, outputFilePath);
-            _tradeHistoryReportService.CreateTradeHistoryReport(_dataService.GetTradeExecutions());
+            _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
             _historicalDataService.UpdateHistoricalDataForPositions(mainReport.OpenPositions);
             _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);        
         }
@@ -78,7 +88,11 @@ namespace IKBR_Report_Puller
 
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
-            _dataService.InsertTodayExecutions(todayReport);
+
+            // Upsert instruments first, then trade executions
+            _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms);
+            _tradeExecutionRepository.UpsertTodayExecutions(todayReport.TradeConfirms);
+
             return fileName;
         }
 

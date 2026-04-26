@@ -1,6 +1,7 @@
 using IKBR_Report_Puller.Services;
 using IKBR_Report_Puller.Interfaces;
 using IKBR_Report_Puller.Domain;
+using Microsoft.Extensions.Configuration;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
 using System.Xml.Linq;
@@ -10,16 +11,28 @@ namespace IKBR_Report_Puller.Tests.Services
     [TestClass]
     public class ExcelReportServiceTests
     {
-        private Mock<IDataService> _mockDataService;
+        private Mock<ITradeExecutionRepository> _mockTradeExecutionRepository;
         private Mock<ITradeHistoryReportService> _mockTradeHistoryReportService;
+        private Mock<IConfiguration> _mockConfiguration;
         private ExcelReportService _service;
 
         [TestInitialize]
         public void Setup()
         {
-            _mockDataService = new Mock<IDataService>();
+            _mockTradeExecutionRepository = new Mock<ITradeExecutionRepository>();
             _mockTradeHistoryReportService = new Mock<ITradeHistoryReportService>();
-            _service = new ExcelReportService(_mockDataService.Object, _mockTradeHistoryReportService.Object);
+            _mockConfiguration = new Mock<IConfiguration>();
+
+            // Setup configuration mock
+            _mockConfiguration.Setup(c => c["Database:User"]).Returns("testuser");
+            _mockConfiguration.Setup(c => c["Database:Password"]).Returns("testpass");
+            _mockConfiguration.Setup(c => c["Database:Host"]).Returns("localhost");
+            _mockConfiguration.Setup(c => c["Database:DbName"]).Returns("testdb");
+
+            _service = new ExcelReportService(
+                _mockTradeExecutionRepository.Object, 
+                _mockTradeHistoryReportService.Object,
+                _mockConfiguration.Object);
         }
 
         [TestMethod]

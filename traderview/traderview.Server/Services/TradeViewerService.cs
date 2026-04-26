@@ -9,19 +9,19 @@ namespace traderview.Server.Services
     {
         private readonly string _connectionString;
         private readonly ILogger<TradeViewerService> _logger;
-        private readonly IDataService _dataService;
+        private readonly ITradeExecutionRepository _tradeExecutionRepository;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
         public TradeViewerService(
             IConfiguration configuration, 
             ILogger<TradeViewerService> logger,
-            IDataService dataService,
+            ITradeExecutionRepository tradeExecutionRepository,
             ITradeHistoryReportService tradeHistoryReportService)
         {
             _connectionString = configuration.GetConnectionString("TradingDatabase") 
                 ?? throw new InvalidOperationException("Connection string 'TradingDatabase' not found.");
             _logger = logger;
-            _dataService = dataService;
+            _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
         }
 
@@ -29,8 +29,8 @@ namespace traderview.Server.Services
         {
             try
             {
-                // Use existing service to get trade executions and create history
-                var tradeExecutions = _dataService.GetTradeExecutions();
+                // Use repository to get trade executions and create history
+                var tradeExecutions = _tradeExecutionRepository.GetTradeExecutions();
                 _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
                 var trades = _tradeHistoryReportService.TradeHistoryAggregated;
 
@@ -60,8 +60,8 @@ namespace traderview.Server.Services
         {
             try
             {
-                // Get trade summary using DataService
-                var tradeSummary = await Task.Run(() => _dataService.GetTradeSummaryByOrderId(tradeId));
+                // Get trade summary using repository
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByOrderId(tradeId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -94,8 +94,8 @@ namespace traderview.Server.Services
         {
             try
             {
-                // Get trade summary using DataService
-                var tradeSummary = await Task.Run(() => _dataService.GetTradeSummaryByOrderId(tradeId));
+                // Get trade summary using repository
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByOrderId(tradeId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -250,7 +250,7 @@ namespace traderview.Server.Services
             try
             {
                 // Get trade summary
-                var tradeSummary = await Task.Run(() => _dataService.GetTradeSummaryByOrderId(tradeId));
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByOrderId(tradeId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);

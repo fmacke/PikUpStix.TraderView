@@ -26,7 +26,38 @@ namespace IKBR_Report_Puller
                 .ConfigureServices((hostContext, services) =>
                 {
                     services.AddSingleton<HttpClient>();
-                    services.AddSingleton<IDataService, DataService>();
+
+                    // Register repositories (repositories should be scoped or transient, but using singleton for console app simplicity)
+                    services.AddSingleton<IInstrumentRepository>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var connectionString = BuildConnectionString(config);
+                        return new Data.Repositories.InstrumentRepository(connectionString);
+                    });
+
+                    services.AddSingleton<ITradeExecutionRepository>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
+                        var connectionString = BuildConnectionString(config);
+                        return new Data.Repositories.TradeExecutionRepository(connectionString, instrumentRepo);
+                    });
+
+                    services.AddSingleton<IHistoricalDataRepository>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var connectionString = BuildConnectionString(config);
+                        return new Data.Repositories.HistoricalDataRepository(connectionString);
+                    });
+
+                    services.AddSingleton<IOpenPositionRepository>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var connectionString = BuildConnectionString(config);
+                        return new Data.Repositories.OpenPositionRepository(connectionString);
+                    });
+
+                    // Register services
                     services.AddSingleton<IExcelReportService, ExcelReportService>();
                     services.AddSingleton<IReportFetchingService, ReportFetchingService>();
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
@@ -38,6 +69,16 @@ namespace IKBR_Report_Puller
 
             var app = host.Services.GetRequiredService<Application>();
             await app.RunAsync();
+        }
+
+        // Helper method to build connection string
+        static string BuildConnectionString(IConfiguration config)
+        {
+            var dbUser = config["Database:User"];
+            var dbPassword = config["Database:Password"];
+            var dbHost = config["Database:Host"];
+            var dbName = config["Database:DbName"];
+            return $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
         }
     }
 }
