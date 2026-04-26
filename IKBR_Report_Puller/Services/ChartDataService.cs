@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using IBApi;
 using IKBR_Report_Puller.IKBR;
 using IKBR_Report_Puller.Interfaces;
@@ -71,7 +72,7 @@ namespace IKBR_Report_Puller.Services
         /// <summary>
         /// Requests historical data by contract ID and date range.
         /// </summary>
-        public async Task<List<Bar>> GetHistoricalDataAsync(string conid, DateTime from, DateTime to, string symbol = null)
+        public async Task<List<Bar>> GetHistoricalDataAsync(string conid, string listingExchange, DateTime from, DateTime to, string symbol = null, string contractUnitType = null)
         {
             if (!_client.IsConnected())
                 throw new InvalidOperationException("Socket not connected. Call ConnectAsync first.");
@@ -101,15 +102,23 @@ namespace IKBR_Report_Puller.Services
                 contract.Symbol = currencies[0];      // Base currency (e.g., EUR)
                 contract.Currency = currencies[1];    // Quote currency (e.g., GBP)
                 contract.SecType = "CASH";
-                contract.Exchange = "IDEALPRO"; // Forex exchange
+                contract.Exchange = listingExchange;// "IDEALPRO"; // Forex exchange
                 whatToShow = "BID_ASK"; // Use BID_ASK for forex (MIDPOINT may not be available for historical data)
                 useRTH = 0; // Include all trading hours (forex trades 24/5)
+            }
+            else if (contractUnitType == "INDEX")
+            {
+                // Index (e.g., SPX, NDX)
+                contract.SecType = "IND"; // Security type for indices
+                contract.Exchange = listingExchange;
+                whatToShow = "TRADES";
+                useRTH = 1; // Regular Trading Hours only
             }
             else
             {
                 // Stock or other equity
                 contract.SecType = "STK"; // Explicitly set security type for stocks
-                contract.Exchange = "SMART";
+                contract.Exchange = listingExchange;
                 whatToShow = "TRADES";
                 useRTH = 1; // Regular Trading Hours only
             }

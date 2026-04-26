@@ -9,6 +9,7 @@ using IKBR_Report_Puller.IKBR;
 using IKBR_Report_Puller.Interfaces;
 using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
+using PikUpStix.TraderView.Interfaces;
 
 namespace IKBR_Report_Puller.Console
 {
@@ -52,10 +53,40 @@ namespace IKBR_Report_Puller.Console
         {
             try
             {
-                (IKBRReport mainReport, string fileName) = await GetReportData();
-                SaveReportDataToDB(mainReport);
-                await WriteTodayReport(fileName);
-
+                //(IKBRReport mainReport, string fileName) = await GetReportData();
+                //await SaveReportDataToDB(mainReport);
+                //await WriteTodayReport(fileName);
+                var marketDataToUpdate = new List<Instrument>()
+                {
+                    new Instrument( )
+                    {
+                        InstrumentName = "SPX",
+                        Provider = "IBKR",
+                        DataName = "SPX",
+                        DataSource = "IBKR",
+                        Format = "PullerUpdate",
+                        Frequency = "D1",
+                        ContractUnitType = "IND",
+                        PriceQuotation = "USD",
+                        Currency = "USD",
+                        ListingExchange = "CBOE",
+                        ConId = "416904"
+                    },
+                    new Instrument( ){
+                        InstrumentName = "NDX",
+                        Provider = "IBKR",
+                        DataName = "NDX",
+                        DataSource = "IBKR",
+                        Format = "PullerUpdate",
+                        Frequency = "D1",
+                        ContractUnitType = "IND",
+                        PriceQuotation = "USD",
+                        Currency = "USD",
+                        ListingExchange = "NASDAQ",
+                        ConId = "9833"
+                    }
+                };
+                await _historicalDataService.UpdateHistoricalDataForInstruments(marketDataToUpdate, DateTime.Now.AddDays(-200), DateTime.Now);
             }
             catch (Exception ex)
             {
@@ -63,18 +94,18 @@ namespace IKBR_Report_Puller.Console
             }
         }
 
-        private void SaveReportDataToDB(IKBRReport mainReport)
+        private async Task SaveReportDataToDB(IKBRReport mainReport)
         {
             // Upsert instruments first, then trade executions (order matters due to FK constraints)
             _instrumentRepository.UpsertInstruments(mainReport.Trades);
             _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-
             _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
+            
 
             _excelReportService.CreateReport(mainReport, outputFilePath);
             _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
-            _historicalDataService.UpdateHistoricalDataForPositions(mainReport.OpenPositions);
-            _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);        
+            await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
+            await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);       
         }
 
         private async Task<string> WriteTodayReport(string fileName)

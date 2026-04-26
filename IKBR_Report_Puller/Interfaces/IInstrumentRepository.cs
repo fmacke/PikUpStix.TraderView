@@ -16,6 +16,13 @@ namespace IKBR_Report_Puller.Interfaces
         int? GetInstrumentIdFromConId(string conid);
 
         /// <summary>
+        /// Gets an instrument by its ID
+        /// </summary>
+        /// <param name="instrumentId">The instrument ID</param>
+        /// <returns>The instrument, or null if not found</returns>
+        Instrument Get(int instrumentId);
+
+        /// <summary>
         /// Inserts a new instrument into the database
         /// </summary>
         /// <param name="conid">Contract ID</param>

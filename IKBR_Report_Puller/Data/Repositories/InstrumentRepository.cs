@@ -188,15 +188,95 @@ namespace IKBR_Report_Puller.Data.Repositories
         }
 
         #region Private Helper Methods
-        public int? GetInstrumentIdFromConId(string conid)
+        public Instrument Get(int instrumentId)
         {
+            Instrument instrument = null;
             ExecuteDatabaseOperation(connection =>
             {
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
                     {
-                        int? instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
+                        const string query = @"
+                            SELECT Id, InstrumentName, Provider, DataName, DataSource, Format, Frequency, 
+                                   ContractUnit, ContractUnitType, PriceQuotation, MinimumPriceFluctuation, 
+                                   Currency, ListingExchange, ConId 
+                            FROM dbo.Instruments 
+                            WHERE Id = @instrumentId";
+
+                        var parameters = new Dictionary<string, object>
+                        {
+                            { "@instrumentId", instrumentId }
+                        };
+
+                        using (var cmd = new SqlCommand(query, connection, transaction))
+                        {
+                            foreach (var param in parameters)
+                            {
+                                cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                            }
+
+                            using (var reader = cmd.ExecuteReader())
+                            {
+                                if (reader.Read())
+                                {
+                                    instrument = new Instrument
+                                    {
+                                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                        InstrumentName = reader.IsDBNull(reader.GetOrdinal("InstrumentName")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("InstrumentName")),
+                                        Provider = reader.IsDBNull(reader.GetOrdinal("Provider")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("Provider")),
+                                        DataName = reader.IsDBNull(reader.GetOrdinal("DataName")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("DataName")),
+                                        DataSource = reader.IsDBNull(reader.GetOrdinal("DataSource")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("DataSource")),
+                                        Format = reader.IsDBNull(reader.GetOrdinal("Format")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("Format")),
+                                        Frequency = reader.IsDBNull(reader.GetOrdinal("Frequency")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("Frequency")),
+                                        ContractUnit = reader.IsDBNull(reader.GetOrdinal("ContractUnit")) 
+                                            ? null : reader.GetDouble(reader.GetOrdinal("ContractUnit")),
+                                        ContractUnitType = reader.IsDBNull(reader.GetOrdinal("ContractUnitType")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("ContractUnitType")),
+                                        PriceQuotation = reader.IsDBNull(reader.GetOrdinal("PriceQuotation")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("PriceQuotation")),
+                                        MinimumPriceFluctuation = reader.IsDBNull(reader.GetOrdinal("MinimumPriceFluctuation")) 
+                                            ? null : reader.GetDouble(reader.GetOrdinal("MinimumPriceFluctuation")),
+                                        Currency = reader.IsDBNull(reader.GetOrdinal("Currency")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("Currency")),
+                                        ListingExchange = reader.IsDBNull(reader.GetOrdinal("ListingExchange")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("ListingExchange")),
+                                        ConId = reader.IsDBNull(reader.GetOrdinal("ConId")) 
+                                            ? null : reader.GetString(reader.GetOrdinal("ConId"))
+                                    };
+                                }
+                            }
+                        }
+
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine($"Error retrieving instrument by ID: {ex.Message}");
+                        throw;
+                    }
+                }
+            });
+            return instrument;
+        }
+
+        public int? GetInstrumentIdFromConId(string conid)
+        {
+            int? instrumentId = null;
+            ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
 
                         return instrumentId;
                     }
@@ -207,7 +287,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                     }
                 }
             });
-            return null;
+            return instrumentId;
         }
 
         private int? GetInstrumentIdByConid(SqlConnection connection, SqlTransaction transaction, string conid)
@@ -224,6 +304,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         }
         public int? InsertInstrument(string conid, string symbol, string listingExchange, string currency)
         {
+            int? id = null;
             ExecuteDatabaseOperation(connection =>
             {
                 using (var transaction = connection.BeginTransaction())
@@ -239,7 +320,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                                     currency);
 
                         // Get the newly created instrument ID
-                        return GetInstrumentIdByConid(connection, transaction, conid);
+                        id = GetInstrumentIdByConid(connection, transaction, conid);
+                        transaction.Commit();
+                        return id;
                     }
                     catch (Exception ex)
                     {
@@ -249,7 +332,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                     }
                 }
             });
-            return null;
+            return id;
         }
         private void InsertInstrumentFromTrade(
             SqlConnection connection,

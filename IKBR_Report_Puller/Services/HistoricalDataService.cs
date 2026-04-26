@@ -4,6 +4,7 @@ using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.IKBR;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Extensions.Configuration;
+using PikUpStix.TraderView.Interfaces;
 using System;
 using System.Diagnostics.Metrics;
 using System.Linq;
@@ -36,7 +37,7 @@ namespace IKBR_Report_Puller.Services
         /// <summary>
         /// Updates historical data for all positions/trades by identifying and filling missing date ranges
         /// </summary>
-        public void UpdateHistoricalDataForHistoricalTrades(List<HistoricalTrade> trades)
+        public async Task UpdateHistoricalDataForHistoricalTrades(List<HistoricalTrade> trades)
         {
             foreach (var trade in trades)
             {
@@ -45,14 +46,16 @@ namespace IKBR_Report_Puller.Services
 
                 if (missingRanges.Any())
                 {
+                    var instrument = _instrumentRepository.Get(trade.InstrumentId);
+
                     Console.WriteLine($"Found {missingRanges.Count} missing date range(s) for {trade.Symbol}:");
                     foreach (var range in missingRanges)
                     {
                         Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
-                        var domainBars =FetchHistoricalData(trade.SecurityId, trade.Symbol, range.startDate, range.endDate, trade.InstrumentId);
+                        var domainBars = await FetchHistoricalData(trade.SecurityId, instrument.ListingExchange, trade.Symbol, range.startDate, range.endDate, trade.InstrumentId, instrument.ContractUnitType);
                         // Save to database
-                        _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), domainBars.Result);
-                        Console.WriteLine($"Successfully saved {domainBars.Result.Count} bars for {trade.Symbol}");
+                        _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), domainBars);
+                        Console.WriteLine($"Successfully saved {domainBars.Count} bars for {trade.Symbol}");
                     }
                 }
                 else
@@ -62,41 +65,92 @@ namespace IKBR_Report_Puller.Services
             }
         }
 
-        public void UpdateHistoricalDataForPositions(List<OpenPosition> positions)
+        public async Task UpdateHistoricalDataForOpenPositions(List<OpenPosition> positions)
         {
+
             foreach (var position in positions)
             {
-                Console.WriteLine($"Processing position for {position.Symbol} opened on {position.OpenDateTime:yyyy-MM-dd}");
-
-                var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(position.Conid.ToString());
-
-                if(instrumentId == null)
+                try
                 {
-                    Console.WriteLine($"Warning: Could not find instrument ID for {position.Symbol} (conid: {position.Conid}). Adding new instrument.");
-                    instrumentId = _instrumentRepository.InsertInstrument(position.Conid.ToString(), position.Symbol, position.ListingExchange, position.Currency);
-                }
-                if (instrumentId != null)
-                {
-                    List<(DateTime startDate, DateTime endDate)> missingRanges = GetMissingRanges(
-                        Convert.ToDateTime(position.OpenDateTime), Convert.ToDateTime(position.OpenDateTime),
-                        position.Symbol, Convert.ToInt32(instrumentId));
+                    Console.WriteLine($"Processing position for {position.Symbol} opened on {position.OpenDateTime:yyyy-MM-dd}");
 
-                    if (missingRanges.Any())
+                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(position.Conid.ToString());
+
+                    if (instrumentId == null)
                     {
-                        Console.WriteLine($"Found {missingRanges.Count} missing date range(s) for {position.Symbol}:");
-                        foreach (var range in missingRanges)
+                        Console.WriteLine($"Warning: Could not find instrument ID for {position.Symbol} (conid: {position.Conid}). Adding new instrument.");
+                        instrumentId = _instrumentRepository.InsertInstrument(position.Conid.ToString(), position.Symbol, position.ListingExchange, position.Currency);
+                    }
+                    if (instrumentId != null)
+                    {
+                        List<(DateTime startDate, DateTime endDate)> missingRanges = GetMissingRanges(
+                            DateTime.Now.AddDays(-100), DateTime.Now, position.Symbol, Convert.ToInt32(instrumentId));
+
+                        if (missingRanges.Any())
                         {
-                            Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
-                            var domainBars = FetchHistoricalData(position.Conid.ToString(), position.Symbol, range.startDate, range.endDate, Convert.ToInt32(instrumentId));
-                            // Save to database
-                            _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), domainBars.Result);
-                            Console.WriteLine($"Successfully saved {domainBars.Result.Count} bars for {position.Symbol}");
+                            Console.WriteLine($"Found {missingRanges.Count} missing date range(s) for {position.Symbol}:");
+                            foreach (var range in missingRanges)
+                            {
+                                Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
+                                var domainBars = await FetchHistoricalData(position.Conid.ToString(), position.ListingExchange, position.Symbol, range.startDate, range.endDate, Convert.ToInt32(instrumentId), null);
+                                // Save to database
+                                _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), domainBars);
+                                Console.WriteLine($"Successfully saved {domainBars.Count} bars for {position.Symbol}");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"All required historical data exists for {position.Symbol}");
                         }
                     }
-                    else
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"UpdateHistoricalDataForPositions failed for {position.Symbol}:" + ex.Message);
+                }
+            }
+        }
+        public async Task UpdateHistoricalDataForInstruments(List<Domain.Instrument> instruments, DateTime start, DateTime end)
+        {
+            foreach (var instrument in instruments)
+            {
+                try
+                {
+                    Console.WriteLine($"Processing instrument {instrument.InstrumentName}");
+
+                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(instrument.ConId);
+
+                    if (instrumentId == null)
                     {
-                        Console.WriteLine($"All required historical data exists for {position.Symbol}");
+                        Console.WriteLine($"Warning: Could not find instrument ID for {instrument.InstrumentName} (conid: {instrument.ConId}). Adding new instrument.");
+                        instrumentId = _instrumentRepository.InsertInstrument(instrument.ConId, instrument.InstrumentName, instrument.ListingExchange, instrument.Currency);
                     }
+                    if (instrumentId != null)
+                    {
+                        List<(DateTime startDate, DateTime endDate)> missingRanges = GetMissingRanges(
+                            start, end, instrument.InstrumentName, Convert.ToInt32(instrumentId));
+
+                        if (missingRanges.Any())
+                        {
+                            Console.WriteLine($"Found {missingRanges.Count} missing date range(s) for {instrument.InstrumentName}:");
+                            foreach (var range in missingRanges)
+                            {
+                                Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
+                                var domainBars = await FetchHistoricalData(instrument.ConId, instrument.ListingExchange, instrument.InstrumentName, range.startDate, range.endDate, Convert.ToInt32(instrumentId), instrument.ContractUnitType);
+                                // Save to database
+                                _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), domainBars);
+                                Console.WriteLine($"Successfully saved {domainBars.Count} bars for {instrument.InstrumentName}");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine($"All required historical data exists for {instrument.InstrumentName}");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"UpdateHistoricalDataForInstruments failed for {instrument.InstrumentName}:" + ex.Message);
                 }
             }
         }
@@ -124,15 +178,10 @@ namespace IKBR_Report_Puller.Services
         /// <summary>
         /// Fetches historical data from IBKR and saves it to the database
         /// </summary>
-        private async Task<List<Bar>> FetchHistoricalData(string conid, string symbol, DateTime startDate, DateTime endDate, int instrumentId)
+        private async Task<List<Bar>> FetchHistoricalData(string conid, string listingExchange, string symbol, DateTime startDate, DateTime endDate, int instrumentId, string contractUnitType)
         {
             try
             {
-                if (startDate == endDate)
-                {
-                    startDate = startDate.AddDays(-1);
-                }
-
                 Console.WriteLine($"Fetching historical data for {symbol} (conid: {conid}) from {startDate:yyyy-MM-dd} to {endDate:yyyy-MM-dd}");
 
                 // Fetch data from IBKR API
@@ -141,7 +190,7 @@ namespace IKBR_Report_Puller.Services
                     int.Parse(_config["IBKRClient:Port"]), 
                     int.Parse(_config["IBKRClient:ClientId"]));
 
-                var ibkrBars = await _chartDataService.GetHistoricalDataAsync(conid, startDate, endDate, symbol);
+                var ibkrBars = await _chartDataService.GetHistoricalDataAsync(conid, listingExchange, startDate, endDate, symbol, contractUnitType);
 
                 if (ibkrBars == null || !ibkrBars.Any())
                 {

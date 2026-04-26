@@ -1,13 +1,14 @@
 using IKBR_Report_Puller.Domain;
 
-namespace IKBR_Report_Puller.Interfaces
+namespace PikUpStix.TraderView.Interfaces
 {
     public interface IHistoricalDataService
     {
         /// <summary>
         /// Updates historical data for all positions/trades by identifying and filling missing date ranges
         /// </summary>
-        void UpdateHistoricalDataForHistoricalTrades(List<HistoricalTrade> trades);
-        void UpdateHistoricalDataForPositions(List<OpenPosition> positions);
+        Task UpdateHistoricalDataForHistoricalTrades(List<HistoricalTrade> trades);
+        Task UpdateHistoricalDataForOpenPositions(List<OpenPosition> positions);
+        Task UpdateHistoricalDataForInstruments(List<Instrument> instruments, DateTime start, DateTime end);
     }
 }

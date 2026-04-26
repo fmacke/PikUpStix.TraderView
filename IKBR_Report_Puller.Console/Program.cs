@@ -6,6 +6,7 @@ using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using PikUpStix.TraderView.Interfaces;
 
 namespace IKBR_Report_Puller.Console
 {

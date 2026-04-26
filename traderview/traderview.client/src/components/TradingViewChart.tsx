@@ -97,24 +97,27 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                 candlestickSeries.setData(candlestickData);
 
                 // Add a line series connecting entry and exit points in blue
-                const tradeLine = chart.addSeries(LineSeries, {
-                    color: '#2196F3', // blue color for all trades
-                    lineWidth: 3,
-                    lineStyle: 0, // solid line
-                    crosshairMarkerVisible: true,
-                    crosshairMarkerRadius: 6,
-                    lastValueVisible: false,
-                    priceLineVisible: false,
-                });
-
-                // Create line data points from entry to exit
+                // Only add the line if entry and exit are on different days
                 const entryTime = Math.floor(new Date(trade.entryDate).getTime() / 1000);
                 const exitTime = Math.floor(new Date(trade.exitDate).getTime() / 1000);
 
-                tradeLine.setData([
-                    { time: entryTime as any, value: trade.entryPrice },
-                    { time: exitTime as any, value: trade.exitPrice },
-                ]);
+                if (entryTime !== exitTime) {
+                    const tradeLine = chart.addSeries(LineSeries, {
+                        color: '#2196F3', // blue color for all trades
+                        lineWidth: 3,
+                        lineStyle: 0, // solid line
+                        crosshairMarkerVisible: true,
+                        crosshairMarkerRadius: 6,
+                        lastValueVisible: false,
+                        priceLineVisible: false,
+                    });
+
+                    // Create line data points from entry to exit
+                    tradeLine.setData([
+                        { time: entryTime as any, value: trade.entryPrice },
+                        { time: exitTime as any, value: trade.exitPrice },
+                    ]);
+                }
 
                 // Add price lines for entry and exit points
                 candlestickSeries.createPriceLine({
