@@ -10,7 +10,7 @@ using IKBR_Report_Puller.Interfaces;
 using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
 
-namespace IKBR_Report_Puller
+namespace IKBR_Report_Puller.Console
 {
     public class Application
     {
@@ -55,11 +55,11 @@ namespace IKBR_Report_Puller
                 (IKBRReport mainReport, string fileName) = await GetReportData();
                 SaveReportDataToDB(mainReport);
                 await WriteTodayReport(fileName);
-                
+
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"\nAn error occurred: {ex.Message}");
+                System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
             }
         }
 
@@ -84,7 +84,7 @@ namespace IKBR_Report_Puller
             fileName = DateTime.UtcNow.ToString("yyyyMMdd") + "_TraderSyncAccess_today.xml";
             string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
             todayReportXml.Save(todayReportFilePath);
-            Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
+            System.Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
 
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
@@ -103,7 +103,7 @@ namespace IKBR_Report_Puller
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
             mainReportXml.Save(mainReportFilePath);
-            Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
+            System.Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
 
             // Convert XDocument to IKBRReport
             var mainReport = IKBRReportParser.ParseMainReport(mainReportXml);

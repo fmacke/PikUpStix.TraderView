@@ -2,15 +2,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.5.11626.173
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKBR_Report_Puller", "IKBR_Report_Puller\IKBR_Report_Puller.csproj", "{B1CAFCB1-BE51-470E-BB65-F78983C5EB53}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PikUpStix.TraderView", "IKBR_Report_Puller\PikUpStix.TraderView.csproj", "{B1CAFCB1-BE51-470E-BB65-F78983C5EB53}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKBR_Report_Puller.Tests", "IKBR_Report_Puller.Tests\IKBR_Report_Puller.Tests.csproj", "{DC922003-0BD1-4199-B07C-9047724ED4A1}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PikUpStix.TraderView.Tests", "IKBR_Report_Puller.Tests\PikUpStix.TraderView.Tests.csproj", "{DC922003-0BD1-4199-B07C-9047724ED4A1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Presentations", "Presentations", "{1640123E-8739-4B63-9A82-29CD0309C868}"
 EndProject
 Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "traderview.client", "traderview\traderview.client\traderview.client.esproj", "{B83DAE5F-E995-F2B6-23DB-B1485DF268F1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "traderview.Server", "traderview\traderview.Server\traderview.Server.csproj", "{5AD69441-98F1-4962-8716-013B48D25A1A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IKBR_Report_Puller.Console", "IKBR_Report_Puller.Console\IKBR_Report_Puller.Console.csproj", "{F8635584-BF3F-1757-807E-BCCB2BA849C1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -76,6 +78,18 @@ Global
 		{5AD69441-98F1-4962-8716-013B48D25A1A}.Release|x64.Build.0 = Release|Any CPU
 		{5AD69441-98F1-4962-8716-013B48D25A1A}.Release|x86.ActiveCfg = Release|Any CPU
 		{5AD69441-98F1-4962-8716-013B48D25A1A}.Release|x86.Build.0 = Release|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Debug|x64.Build.0 = Debug|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Debug|x86.Build.0 = Debug|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Release|x64.ActiveCfg = Release|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Release|x64.Build.0 = Release|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Release|x86.ActiveCfg = Release|Any CPU
+		{F8635584-BF3F-1757-807E-BCCB2BA849C1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

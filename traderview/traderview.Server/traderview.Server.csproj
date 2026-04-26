@@ -22,7 +22,7 @@
     <ProjectReference Include="..\traderview.client\traderview.client.esproj">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
-    <ProjectReference Include="..\..\IKBR_Report_Puller\IKBR_Report_Puller.csproj" />
+    <ProjectReference Include="..\..\IKBR_Report_Puller\PikUpStix.TraderView.csproj" />
   </ItemGroup>
 
 </Project>

@@ -4,7 +4,6 @@ using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.IKBR;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Diagnostics.Metrics;
 using System.Linq;
