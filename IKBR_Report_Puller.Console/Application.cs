@@ -24,8 +24,8 @@ namespace IKBR_Report_Puller.Console
         private readonly IHistoricalDataService _historicalDataService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
-        const int maxRetries = 3;
-        const int delayInSeconds = 5;
+        const int maxRetries = 10;
+        const int delayInSeconds = 10;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
 
         public Application(
@@ -53,40 +53,27 @@ namespace IKBR_Report_Puller.Console
         {
             try
             {
-                //(IKBRReport mainReport, string fileName) = await GetReportData();
-                //await SaveReportDataToDB(mainReport);
-                //await WriteTodayReport(fileName);
-                var marketDataToUpdate = new List<Instrument>()
-                {
-                    new Instrument( )
-                    {
-                        InstrumentName = "SPX",
-                        Provider = "IBKR",
-                        DataName = "SPX",
-                        DataSource = "IBKR",
-                        Format = "PullerUpdate",
-                        Frequency = "D1",
-                        ContractUnitType = "IND",
-                        PriceQuotation = "USD",
-                        Currency = "USD",
-                        ListingExchange = "CBOE",
-                        ConId = "416904"
-                    },
-                    new Instrument( ){
-                        InstrumentName = "NDX",
-                        Provider = "IBKR",
-                        DataName = "NDX",
-                        DataSource = "IBKR",
-                        Format = "PullerUpdate",
-                        Frequency = "D1",
-                        ContractUnitType = "IND",
-                        PriceQuotation = "USD",
-                        Currency = "USD",
-                        ListingExchange = "NASDAQ",
-                        ConId = "9833"
-                    }
-                };
-                await _historicalDataService.UpdateHistoricalDataForInstruments(marketDataToUpdate, DateTime.Now.AddDays(-200), DateTime.Now);
+                (IKBRReport mainReport, string fileName) = await GetReportData();
+                await SaveReportDataToDB(mainReport);
+                await WriteTodayReport(fileName);
+                //var marketDataToUpdate = new List<Instrument>()
+                //{
+                //    new Instrument( )
+                //    {
+                //        InstrumentName = "SPX",
+                //        Provider = "IBKR",
+                //        DataName = "SPX",
+                //        DataSource = "IBKR",
+                //        Format = "PullerUpdate",
+                //        Frequency = "D1",
+                //        ContractUnitType = "INDEX",
+                //        PriceQuotation = "USD",
+                //        Currency = "USD",
+                //        ListingExchange = "CBOE",
+                //        ConId = "416904"
+                //    },
+                //};
+                //await _historicalDataService.UpdateHistoricalDataForInstruments(marketDataToUpdate, DateTime.Now.AddDays(-200), DateTime.Now);
             }
             catch (Exception ex)
             {

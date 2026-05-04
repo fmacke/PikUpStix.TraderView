@@ -67,7 +67,7 @@ function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
                         onClick={() => onTradeSelect(trade)}
                     >
                         <div className="trade-symbol">{trade.symbol}</div>
-                        <div className="trade-date">{new Date(trade.entryDate).toLocaleDateString()}</div>
+                        <div className="trade-date">Closed: {new Date(trade.exitDate).toLocaleDateString()}</div>
                         <div className={`trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
                             ${trade.pnl.toFixed(2)}
                         </div>

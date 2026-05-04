@@ -82,29 +82,29 @@ namespace IKBR_Report_Puller.IKBR
         public void completedOrder(Contract contract, Order order, OrderState orderState) { }
         public void completedOrdersEnd() { }
 
-        public void error(Exception e)
+        public virtual void error(Exception e)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"[IBKR Error Exception] {e.Message}");
         }
 
-        public void error(string str)
+        public virtual void error(string str)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"[IBKR Error] {str}");
         }
 
         public void commissionReport(CommissionReport commissionReport)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void historicalDataUpdate(int reqId, Bar bar)
         {
-            throw new NotImplementedException();
+            // Not used for non-streaming historical data requests
         }
 
         public void marketDataType(int reqId, int marketDataType)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void connectAck()
@@ -113,47 +113,47 @@ namespace IKBR_Report_Puller.IKBR
 
         public void positionMulti(int requestId, string account, string modelCode, Contract contract, double pos, double avgCost)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void positionMultiEnd(int requestId)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void accountUpdateMulti(int requestId, string account, string modelCode, string key, string value, string currency)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void accountUpdateMultiEnd(int requestId)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void securityDefinitionOptionParameter(int reqId, string exchange, int underlyingConId, string tradingClass, string multiplier, HashSet<string> expirations, HashSet<double> strikes)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void securityDefinitionOptionParameterEnd(int reqId)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void softDollarTiers(int reqId, SoftDollarTier[] tiers)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void familyCodes(FamilyCode[] familyCodes)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
 
         public void histogramData(int reqId, HistogramEntry[] data)
         {
-            throw new NotImplementedException();
+            // Not used for historical data requests
         }
     }
 }

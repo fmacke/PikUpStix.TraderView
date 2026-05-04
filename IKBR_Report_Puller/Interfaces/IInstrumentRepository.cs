@@ -29,8 +29,9 @@ namespace IKBR_Report_Puller.Interfaces
         /// <param name="symbol">Trading symbol</param>
         /// <param name="listingExchange">Exchange where the instrument is listed</param>
         /// <param name="currency">Currency of the instrument</param>
+        /// <param name="assetCategory">Asset category of the instrument</param>
         /// <returns>The newly created instrument ID, or null if insertion failed</returns>
-        int? InsertInstrument(string conid, string symbol, string listingExchange, string currency);
+        int? InsertInstrument(string conid, string symbol, string listingExchange, string currency, string assetCategory);
 
         /// <summary>
         /// Ensures instruments exist for the given trades.

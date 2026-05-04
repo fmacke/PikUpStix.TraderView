@@ -6,13 +6,14 @@ using IKBR_Report_Puller.Interfaces;
 using Microsoft.Extensions.Configuration;
 using System.Linq;
 using IBApi; // Ensure TwsClient is referenced
+using System.Net.Http;
 
 namespace IKBR_Report_Puller.Services
 {
     public class ReportFetchingService : IReportFetchingService
     {
         private readonly IConfiguration _config;
-        private readonly HttpClient _client;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         // Config values for reports (Path B)
         private readonly string _token;
@@ -20,10 +21,10 @@ namespace IKBR_Report_Puller.Services
         private readonly string _mainQueryId;
         private readonly string _todayQueryId;
 
-        public ReportFetchingService(IConfiguration config, HttpClient client)
+        public ReportFetchingService(IConfiguration config, IHttpClientFactory httpClientFactory)
         {
             _config = config;
-            _client = client;
+            _httpClientFactory = httpClientFactory;
 
             _token = _config["IBKR:Token"];
             _baseUrl = _config["IBKR:BaseUrl"];
@@ -36,14 +37,16 @@ namespace IKBR_Report_Puller.Services
         public async Task<XDocument> FetchMainReportAsync(int maxRetries, int delayInSeconds)
         {
             Console.WriteLine("Fetching main report...");
-            var service = new IKBRReportServiceBase(_token, _mainQueryId, _baseUrl, _client);
+            var client = _httpClientFactory.CreateClient("IKBR");
+            var service = new IKBRReportServiceBase(_token, _mainQueryId, _baseUrl, client);
             return await service.FetchReportAsync(maxRetries, delayInSeconds);
         }
 
         public async Task<XDocument> FetchTodayReportAsync(int maxRetries, int delayInSeconds)
         {
             Console.WriteLine("\nFetching 'Today' report...");
-            var service = new IKBRReportServiceBase(_token, _todayQueryId, _baseUrl, _client);
+            var client = _httpClientFactory.CreateClient("IKBR");
+            var service = new IKBRReportServiceBase(_token, _todayQueryId, _baseUrl, client);
             return await service.FetchReportAsync(maxRetries, delayInSeconds);
         }
     }

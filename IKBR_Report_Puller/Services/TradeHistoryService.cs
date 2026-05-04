@@ -111,7 +111,8 @@ namespace IKBR_Report_Puller.Services
 
         private void AddHistoricalTrade(Position position, TradeExecution tradeExecution)
         {
-            var tradeQuantity = Math.Min(position.Quantity, Math.Abs(tradeExecution.Quantity));
+            // Use the absolute value of the execution quantity - this represents the actual quantity being closed
+            var tradeQuantity = Math.Abs(tradeExecution.Quantity);
             TradeHistory.Add(new HistoricalTrade
             {
                 Symbol = position.Symbol,

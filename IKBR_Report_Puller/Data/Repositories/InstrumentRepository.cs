@@ -48,15 +48,14 @@ namespace IKBR_Report_Puller.Data.Repositories
                             {
                                 var trade = trades.First(t => t.Conid == conid);
 
-                                InsertInstrumentFromTrade(
+                                InsertInstrument(
                                     connection,
                                     transaction,
                                     conid,
                                     trade.Symbol,
                                     trade.ListingExchange,
                                     trade.Currency,
-                                    trade.AssetCategory,
-                                    trade.Description);
+                                    trade.AssetCategory);
 
                                 createdCount++;
                             }
@@ -136,13 +135,14 @@ namespace IKBR_Report_Puller.Data.Repositories
                             {
                                 var tradeConfirm = tradeConfirms.First(t => t.ConId == conid);
 
-                                InsertInstrumentFromTradeConfirm(
+                                InsertInstrument(
                                     connection,
                                     transaction,
                                     conid,
                                     tradeConfirm.Symbol,
                                     tradeConfirm.ListingExchange,
-                                    tradeConfirm.Currency);
+                                    tradeConfirm.Currency,
+                                    tradeConfirm.AssetCategory);
 
                                 // Get the newly created instrument ID
                                 instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
@@ -302,7 +302,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             int instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
             return instrumentId > 0 ? instrumentId : (int?)null;
         }
-        public int? InsertInstrument(string conid, string symbol, string listingExchange, string currency)
+        public int? InsertInstrument(string conid, string symbol, string listingExchange, string currency, string assetCategory)
         {
             int? id = null;
             ExecuteDatabaseOperation(connection =>
@@ -311,13 +311,14 @@ namespace IKBR_Report_Puller.Data.Repositories
                 {
                     try
                     {
-                        InsertInstrumentFromTradeConfirm(
+                        InsertInstrument(
                                     connection,
                                     transaction,
                                     conid,
                                     symbol,
                                     listingExchange,
-                                    currency);
+                                    currency,
+                                    assetCategory);
 
                         // Get the newly created instrument ID
                         id = GetInstrumentIdByConid(connection, transaction, conid);
@@ -334,51 +335,14 @@ namespace IKBR_Report_Puller.Data.Repositories
             });
             return id;
         }
-        private void InsertInstrumentFromTrade(
+        private void InsertInstrument(
             SqlConnection connection,
             SqlTransaction transaction,
             string conid,
             string symbol,
             string listingExchange,
             string currency,
-            string assetCategory,
-            string description)
-        {
-            const string insertQuery = @"
-                INSERT INTO dbo.Instruments 
-                (InstrumentName, Provider, DataName, DataSource, Format, Frequency, ContractUnit, ContractUnitType, 
-                 PriceQuotation, MinimumPriceFluctuation, Currency, ListingExchange, ConId) 
-                VALUES 
-                (@instrumentName, @provider, @dataName, @dataSource, @format, @frequency, @contractUnit, @contractUnitType, 
-                 @priceQuotation, @minimumPriceFluctuation, @currency, @listingExchange, @conId)";
-
-            var parameters = new Dictionary<string, object>
-            {
-                { "@instrumentName", symbol ?? description ?? "Unknown" },
-                { "@provider", "IBKR" },
-                { "@dataName", assetCategory ?? "Unknown" },
-                { "@dataSource", "Trade Execution" },
-                { "@format", "Trade" },
-                { "@frequency", "Trade" },
-                { "@contractUnit", DBNull.Value },
-                { "@contractUnitType", DBNull.Value },
-                { "@priceQuotation", DBNull.Value },
-                { "@minimumPriceFluctuation", DBNull.Value },
-                { "@currency", (object)currency ?? DBNull.Value },
-                { "@listingExchange", (object)listingExchange ?? DBNull.Value },
-                { "@conId", conid }
-            };
-
-            ExecuteCommand(connection, transaction, insertQuery, parameters);
-        }
-
-        private void InsertInstrumentFromTradeConfirm(
-            SqlConnection connection,
-            SqlTransaction transaction,
-            string conid,
-            string symbol,
-            string listingExchange,
-            string currency)
+            string assetCategory)
         {
             const string insertQuery = @"
                 INSERT INTO dbo.Instruments 
@@ -392,22 +356,21 @@ namespace IKBR_Report_Puller.Data.Repositories
             {
                 { "@instrumentName", symbol ?? "Unknown" },
                 { "@provider", "IBKR" },
-                { "@dataName", "Trade Confirmation" },
-                { "@dataSource", "Today Report" },
-                { "@format", "TradeConfirm" },
-                { "@frequency", "Intraday" },
+                { "@dataName", assetCategory ?? "Unknown" },
+                { "@dataSource", "Trade Execution" },
+                { "@format", "Trade" },
+                { "@frequency", "Trade" },
                 { "@contractUnit", DBNull.Value },
-                { "@contractUnitType", DBNull.Value },
+                { "@contractUnitType", assetCategory },
                 { "@priceQuotation", DBNull.Value },
                 { "@minimumPriceFluctuation", DBNull.Value },
                 { "@currency", (object)currency ?? DBNull.Value },
-                { "@listingExchange", DBNull.Value },
+                { "@listingExchange", (object)listingExchange ?? DBNull.Value },
                 { "@conId", conid }
             };
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
         }
-
         #endregion
     }
 }

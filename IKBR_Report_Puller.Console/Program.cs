@@ -26,7 +26,16 @@ namespace IKBR_Report_Puller.Console
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
-                    services.AddSingleton<HttpClient>();
+                    // Register HttpClient factory to avoid DNS and socket exhaustion issues
+                    services.AddHttpClient("IKBR", client =>
+                    {
+                        client.Timeout = TimeSpan.FromMinutes(5);
+                    })
+                    .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+                    {
+                        PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+                        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(1)
+                    });
 
                     // Register repositories (repositories should be scoped or transient, but using singleton for console app simplicity)
                     services.AddSingleton<IInstrumentRepository>(provider =>

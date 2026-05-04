@@ -213,6 +213,7 @@ namespace IKBR_Report_Puller.Services
                 ExecID = tradeConfirm.Attribute("execID")?.Value,
                 Symbol = tradeConfirm.Attribute("symbol")?.Value,
                 TradeDate = tradeConfirm.Attribute("tradeDate")?.Value,
+                AssetCategory = tradeConfirm.Attribute("assetCategory")?.Value,
                 ListingExchange = tradeConfirm.Attribute("listingExchange")?.Value,
                 Quantity = ConvertToDecimal(tradeConfirm.Attribute("quantity")?.Value),
                 Price = ConvertToDecimal(tradeConfirm.Attribute("price")?.Value),

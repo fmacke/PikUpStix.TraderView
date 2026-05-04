@@ -27,27 +27,69 @@ public class IKBRReportServiceBase
         string requestUrl = $"{_baseUrl}?t={_token}&q={_queryId}&v=3";
         Console.WriteLine("Pinging Flex Query API to request report...");
 
-        HttpResponseMessage initialResponse = await _client.GetAsync(requestUrl);
-        initialResponse.EnsureSuccessStatusCode();
-        string initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+        string referenceCode = null;
+        string statementUrl = null;
 
-        Console.WriteLine("Initial API Response:");
-        Console.WriteLine(initialResponseBody);
-
-        XDocument initialXml = XDocument.Parse(initialResponseBody);
-        var responseElement = initialXml.Element("FlexStatementResponse");
-        string status = responseElement?.Element("Status")?.Value;
-        string referenceCode = responseElement?.Element("ReferenceCode")?.Value;
-        string statementUrl = responseElement?.Element("Url")?.Value;
-
-        if (status != "Success" || string.IsNullOrEmpty(referenceCode) || string.IsNullOrEmpty(statementUrl))
+        // Retry logic for initial request (handles transient errors like 1001)
+        for (int attempt = 0; attempt < maxRetries; attempt++)
         {
-            string errorCode = responseElement?.Element("ErrorCode")?.Value;
-            string errorMessage = responseElement?.Element("ErrorMessage")?.Value;
-            throw new InvalidOperationException($"Failed to request report. ErrorCode: {errorCode}, ErrorMessage: {errorMessage}");
+            try
+            {
+                HttpResponseMessage initialResponse = await _client.GetAsync(requestUrl);
+                initialResponse.EnsureSuccessStatusCode();
+                string initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+
+                Console.WriteLine("Initial API Response:");
+                Console.WriteLine(initialResponseBody);
+
+                XDocument initialXml = XDocument.Parse(initialResponseBody);
+                var responseElement = initialXml.Element("FlexStatementResponse");
+                string status = responseElement?.Element("Status")?.Value;
+                referenceCode = responseElement?.Element("ReferenceCode")?.Value;
+                statementUrl = responseElement?.Element("Url")?.Value;
+
+                if (status == "Success" && !string.IsNullOrEmpty(referenceCode) && !string.IsNullOrEmpty(statementUrl))
+                {
+                    Console.WriteLine($"Report requested successfully. Reference code: {referenceCode}");
+                    break;
+                }
+
+                // Handle transient errors (1001, 1003, etc.)
+                string errorCode = responseElement?.Element("ErrorCode")?.Value;
+                string errorMessage = responseElement?.Element("ErrorMessage")?.Value;
+
+                // Known transient error codes that should be retried
+                if (errorCode == "1001" || errorCode == "1003")
+                {
+                    Console.WriteLine($"Transient error {errorCode}: {errorMessage}");
+                    if (attempt < maxRetries - 1)
+                    {
+                        Console.WriteLine($"Retrying initial request in {delayInSeconds} seconds... (Attempt {attempt + 1}/{maxRetries})");
+                        await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                        continue;
+                    }
+                }
+
+                // Non-transient error or final retry exhausted
+                throw new InvalidOperationException($"Failed to request report. ErrorCode: {errorCode}, ErrorMessage: {errorMessage}");
+            }
+            catch (InvalidOperationException)
+            {
+                throw; // Re-throw our own exception
+            }
+            catch (Exception ex) when (attempt < maxRetries - 1)
+            {
+                // Network errors or other exceptions - retry
+                Console.WriteLine($"Request failed with exception: {ex.Message}");
+                Console.WriteLine($"Retrying initial request in {delayInSeconds} seconds... (Attempt {attempt + 1}/{maxRetries})");
+                await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+            }
         }
 
-        Console.WriteLine($"Report requested successfully. Reference code: {referenceCode}");
+        if (string.IsNullOrEmpty(referenceCode) || string.IsNullOrEmpty(statementUrl))
+        {
+            throw new InvalidOperationException("Failed to request report after multiple retries.");
+        }
 
         for (int i = 0; i < maxRetries; i++)
         {

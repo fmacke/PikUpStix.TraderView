@@ -108,11 +108,18 @@ namespace IKBR_Report_Puller.Services
             }
             else if (contractUnitType == "INDEX")
             {
-                // Index (e.g., SPX, NDX)
-                contract.SecType = "IND"; // Security type for indices
-                contract.Exchange = listingExchange;
-                whatToShow = "TRADES";
-                useRTH = 1; // Regular Trading Hours only
+                // If you have the ConId, sometimes the cleanest way is to ONLY use it.
+                // However, for IND types, Currency and SecType are often still required.
+                contract.ConId = int.Parse(conid);
+                contract.SecType = "IND";
+                contract.Currency = "USD";
+
+                // For NDX, do not use "NASDAQ" if the ConId is provided; 
+                // leave it as null or use "ISLAND" as the routing exchange.
+                contract.Exchange = "NASDAQ";
+
+                whatToShow = "MIDPOINT";
+                useRTH = 1;
             }
             else
             {
@@ -136,7 +143,7 @@ namespace IKBR_Report_Puller.Services
             }
             else
             {
-                Console.WriteLine($"[ChartDataService] Requesting historical data - Symbol: {symbol}, ConId: {conid}, SecType: {contract.SecType ?? "default"}, Exchange: {contract.Exchange}, Duration: {duration}, WhatToShow: {whatToShow}");
+                Console.WriteLine(value: $"[ChartDataService] Requesting historical data - Symbol: {symbol}, ConId: {conid}, SecType: {contract.SecType ?? "default"}, Exchange: {contract.Exchange}, Duration: {duration}, WhatToShow: {whatToShow}");
             }
 
             // Parameters: id, contract, endDateTime, duration, barSize, whatToShow, useRTH, formatDate, keepUpToDate, chartOptions
