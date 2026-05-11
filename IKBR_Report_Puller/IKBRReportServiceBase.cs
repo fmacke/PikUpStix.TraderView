@@ -31,7 +31,7 @@ public class IKBRReportServiceBase
         string statementUrl = null;
 
         // Retry logic for initial request (handles transient errors like 1001)
-        for (int attempt = 0; attempt < maxRetries; attempt++)
+        for (int attempt = 0; attempt < maxRetries; attempt++) 
         {
             try
             {
@@ -54,18 +54,26 @@ public class IKBRReportServiceBase
                     break;
                 }
 
-                // Handle transient errors (1001, 1003, etc.)
+                // Handle transient errors (1001, 1003, 1018, etc.)
                 string errorCode = responseElement?.Element("ErrorCode")?.Value;
                 string errorMessage = responseElement?.Element("ErrorMessage")?.Value;
 
                 // Known transient error codes that should be retried
-                if (errorCode == "1001" || errorCode == "1003")
+                // 1001: Statement generation temporarily unavailable
+                // 1003: Statement generation in progress
+                // 1018: Service temporarily unavailable
+                if (errorCode == "1001" || errorCode == "1003" || errorCode == "1018")
                 {
                     Console.WriteLine($"Transient error {errorCode}: {errorMessage}");
                     if (attempt < maxRetries - 1)
                     {
-                        Console.WriteLine($"Retrying initial request in {delayInSeconds} seconds... (Attempt {attempt + 1}/{maxRetries})");
-                        await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                        // Use exponential backoff with jitter for better retry behavior
+                        int waitTime = delayInSeconds * (int)Math.Pow(2, Math.Min(attempt, 4)); // Cap at 2^4 = 16x
+                        int jitter = new Random().Next(0, 2000); // Add 0-2 seconds random jitter
+                        int totalWaitMs = (waitTime * 1000) + jitter;
+
+                        Console.WriteLine($"Retrying initial request in {totalWaitMs / 1000.0:F1} seconds... (Attempt {attempt + 1}/{maxRetries})");
+                        await Task.Delay(totalWaitMs);
                         continue;
                     }
                 }
@@ -79,10 +87,11 @@ public class IKBRReportServiceBase
             }
             catch (Exception ex) when (attempt < maxRetries - 1)
             {
-                // Network errors or other exceptions - retry
+                // Network errors or other exceptions - retry with exponential backoff
+                int waitTime = delayInSeconds * (int)Math.Pow(2, Math.Min(attempt, 4));
                 Console.WriteLine($"Request failed with exception: {ex.Message}");
-                Console.WriteLine($"Retrying initial request in {delayInSeconds} seconds... (Attempt {attempt + 1}/{maxRetries})");
-                await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+                Console.WriteLine($"Retrying initial request in {waitTime} seconds... (Attempt {attempt + 1}/{maxRetries})");
+                await Task.Delay(TimeSpan.FromSeconds(waitTime));
             }
         }
 

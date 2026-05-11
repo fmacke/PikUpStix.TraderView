@@ -24,8 +24,8 @@ namespace IKBR_Report_Puller.Console
         private readonly IHistoricalDataService _historicalDataService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
-        const int maxRetries = 10;
-        const int delayInSeconds = 10;
+        const int maxRetries = 3;
+        const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
 
         public Application(
@@ -48,6 +48,7 @@ namespace IKBR_Report_Puller.Console
             _config = config;
             outputFilePath = _config["IBKR:OutputFilePath"];
         }
+
 
         public async Task RunAsync()
         {
@@ -84,9 +85,9 @@ namespace IKBR_Report_Puller.Console
         private async Task SaveReportDataToDB(IKBRReport mainReport)
         {
             // Upsert instruments first, then trade executions (order matters due to FK constraints)
-            _instrumentRepository.UpsertInstruments(mainReport.Trades);
-            _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-            _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
+            //_instrumentRepository.UpsertInstruments(mainReport.Trades);
+            //_tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
+            //_openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
             
 
             _excelReportService.CreateReport(mainReport, outputFilePath);
@@ -117,7 +118,8 @@ namespace IKBR_Report_Puller.Console
         private async Task<(IKBRReport mainReport, string fileName)> GetReportData()
         {
             //// Fetch and process main report
-            XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260511_193118_TraderSyncAccess.xml");
+            XDocument mainReportXml =  await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
             mainReportXml.Save(mainReportFilePath);
@@ -127,6 +129,27 @@ namespace IKBR_Report_Puller.Console
             var mainReport = IKBRReportParser.ParseMainReport(mainReportXml);
 
             return (mainReport, fileName);
+        }
+        public static XDocument LoadXmlDocument(string directory)
+        {
+            try
+            {
+                // Simple validation to ensure the file actually exists
+                if (!File.Exists(directory))
+                {
+                    System.Console.WriteLine($"Error: File not found at {directory}");
+                    return null;
+                }
+
+                // XDocument.Load handles the heavy lifting
+                return XDocument.Load(directory);
+            }
+            catch (Exception ex)
+            {
+                // Handles XML parsing errors, permissions, etc.
+                System.Console.WriteLine($"An error occurred: {ex.Message}");
+                return null;
+            }
         }
     }
 }

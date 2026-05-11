@@ -30,6 +30,7 @@ namespace IKBR_Report_Puller.Console
                     services.AddHttpClient("IKBR", client =>
                     {
                         client.Timeout = TimeSpan.FromMinutes(5);
+                        client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                     })
                     .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
                     {
@@ -78,7 +79,8 @@ namespace IKBR_Report_Puller.Console
                 .Build();
 
             var app = host.Services.GetRequiredService<Application>();
-            await app.RunAsync();
+                await app.RunAsync();
+
         }
 
         // Helper method to build connection string
