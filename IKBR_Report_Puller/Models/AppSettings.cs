@@ -18,4 +18,11 @@ namespace IKBR_Report_Puller.Models
 
         public string GetConnectionString() => $"Server={Host};Database={DbName};User ID={User};Password={Password};TrustServerCertificate=True;";
     }
+
+    public class FinancialModelingPrepSettings
+    {
+        public string ApiKey { get; set; }
+        public string BaseUrl { get; set; } = "https://financialmodelingprep.com/stable";
+        public string OutputFilePath { get; set; } = @"C:\Users\finn\OneDrive\Documents\Wealth\Business\trading\Trade Diaries";
+    }
 }

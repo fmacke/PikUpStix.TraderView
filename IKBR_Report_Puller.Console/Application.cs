@@ -23,6 +23,7 @@ namespace IKBR_Report_Puller.Console
         private readonly IConfiguration _config;
         private readonly IHistoricalDataService _historicalDataService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
+        private readonly IEconomicCalendarService _economicCalendarService;
 
         const int maxRetries = 3;
         const int delayInSeconds = 5;
@@ -36,6 +37,7 @@ namespace IKBR_Report_Puller.Console
             IExcelReportService excelReportService,
             IHistoricalDataService historicalDataService,
             ITradeHistoryReportService tradeHistoryReportService,
+            IEconomicCalendarService economicCalendarService,
             IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
@@ -45,6 +47,7 @@ namespace IKBR_Report_Puller.Console
             _excelReportService = excelReportService;
             _historicalDataService = historicalDataService;
             _tradeHistoryReportService = tradeHistoryReportService;
+            _economicCalendarService = economicCalendarService;
             _config = config;
             outputFilePath = _config["IBKR:OutputFilePath"];
         }
@@ -54,27 +57,11 @@ namespace IKBR_Report_Puller.Console
         {
             try
             {
-                (IKBRReport mainReport, string fileName) = await GetReportData();
-                await SaveReportDataToDB(mainReport);
-                await WriteTodayReport(fileName);
-                //var marketDataToUpdate = new List<Instrument>()
-                //{
-                //    new Instrument( )
-                //    {
-                //        InstrumentName = "SPX",
-                //        Provider = "IBKR",
-                //        DataName = "SPX",
-                //        DataSource = "IBKR",
-                //        Format = "PullerUpdate",
-                //        Frequency = "D1",
-                //        ContractUnitType = "INDEX",
-                //        PriceQuotation = "USD",
-                //        Currency = "USD",
-                //        ListingExchange = "CBOE",
-                //        ConId = "416904"
-                //    },
-                //};
-                //await _historicalDataService.UpdateHistoricalDataForInstruments(marketDataToUpdate, DateTime.Now.AddDays(-200), DateTime.Now);
+                //(IKBRReport mainReport, string fileName) = await GetReportData();
+                //await SaveReportDataToDB(mainReport);
+                //await WriteTodayReport(fileName);
+                //await SaveEconomicCalendarUpdates();
+                await SaveIndexHistory();
             }
             catch (Exception ex)
             {
@@ -82,18 +69,43 @@ namespace IKBR_Report_Puller.Console
             }
         }
 
+        private async Task SaveIndexHistory()
+        {
+            var marketDataToUpdate = new List<Instrument>()
+                {
+                    new Instrument( )
+                    {
+                        InstrumentName = "SPX",
+                        Provider = "IBKR",
+                        DataName = "SPX",
+                        DataSource = "IBKR",
+                        Format = "PullerUpdate",
+                        Frequency = "D1",
+                        ContractUnitType = "INDEX",
+                        PriceQuotation = "USD",
+                        Currency = "USD",
+                        ListingExchange = "CBOE",
+                        ConId = "416904"
+                    },
+                };
+            await _historicalDataService.UpdateHistoricalDataForInstruments(marketDataToUpdate, DateTime.Now.AddDays(-200), DateTime.Now);
+        }
+
         private async Task SaveReportDataToDB(IKBRReport mainReport)
         {
             // Upsert instruments first, then trade executions (order matters due to FK constraints)
-            //_instrumentRepository.UpsertInstruments(mainReport.Trades);
-            //_tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-            //_openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
-            
-
+            _instrumentRepository.UpsertInstruments(mainReport.Trades);
+            _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
+            _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
             _excelReportService.CreateReport(mainReport, outputFilePath);
             _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
             await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
             await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);       
+        }
+
+        private async Task SaveEconomicCalendarUpdates()
+        {
+            var events = await _economicCalendarService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30),  DateTime.Now.AddDays(30));
         }
 
         private async Task<string> WriteTodayReport(string fileName)

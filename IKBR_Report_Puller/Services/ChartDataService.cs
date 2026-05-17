@@ -114,11 +114,13 @@ namespace IKBR_Report_Puller.Services
                 contract.SecType = "IND";
                 contract.Currency = "USD";
 
-                // For NDX, do not use "NASDAQ" if the ConId is provided; 
-                // leave it as null or use "ISLAND" as the routing exchange.
-                contract.Exchange = "NASDAQ";
+                // For indices with ConId, use primary exchange or leave empty
+                // IBKR will route to the correct data source
+                contract.Exchange = string.IsNullOrEmpty(listingExchange) ? "" : listingExchange;
 
-                whatToShow = "MIDPOINT";
+                // Use TRADES for calculated indices like SPX
+                // MIDPOINT is not available for indices
+                whatToShow = "TRADES";
                 useRTH = 1;
             }
             else
@@ -174,9 +176,11 @@ namespace IKBR_Report_Puller.Services
 
         private string CalculateIbkrDuration(DateTime from, DateTime to)
         {
-            if (from >= to)
+            if (from > to)
                 throw new ArgumentException("The 'from' date must be earlier than the 'to' date.");
 
+            if (from == to)
+                to = to.AddDays(1);
             TimeSpan span = to - from;
 
             // IBKR requires durations > 365 days to be specified in years
