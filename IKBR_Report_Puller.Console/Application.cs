@@ -57,11 +57,13 @@ namespace IKBR_Report_Puller.Console
         {
             try
             {
-                //(IKBRReport mainReport, string fileName) = await GetReportData();
-                //await SaveReportDataToDB(mainReport);
+                (IKBRReport mainReport, string fileName) = await GetReportData();
+                await SaveReportDataToDB(mainReport);
+                //await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
+                //await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
                 //await WriteTodayReport(fileName);
                 //await SaveEconomicCalendarUpdates();
-                await SaveIndexHistory();
+                //await SaveIndexHistory();
             }
             catch (Exception ex)
             {
@@ -99,8 +101,7 @@ namespace IKBR_Report_Puller.Console
             _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
             _excelReportService.CreateReport(mainReport, outputFilePath);
             _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
-            await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
-            await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);       
+                 
         }
 
         private async Task SaveEconomicCalendarUpdates()
