@@ -59,6 +59,9 @@ namespace IKBR_Report_Puller.Console
             {
                 (IKBRReport mainReport, string fileName) = await GetReportData();
                 await SaveReportDataToDB(mainReport);
+                _excelReportService.CreateReport(mainReport, outputFilePath);
+                //_excelReportService.CreateTradesFromTradeExecutionsReport(_tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
+                //_tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
                 //await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
                 //await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
                 //await WriteTodayReport(fileName);
@@ -98,9 +101,7 @@ namespace IKBR_Report_Puller.Console
             // Upsert instruments first, then trade executions (order matters due to FK constraints)
             _instrumentRepository.UpsertInstruments(mainReport.Trades);
             _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-            _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
-            _excelReportService.CreateReport(mainReport, outputFilePath);
-            _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
+            _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);         
                  
         }
 

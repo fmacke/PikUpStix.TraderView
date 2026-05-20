@@ -6,5 +6,6 @@ namespace IKBR_Report_Puller.Interfaces
     public interface IExcelReportService
     {
         void CreateReport(IKBRReport report, string outputFilePath);
+        void CreateTradesFromTradeExecutionsReport(IEnumerable<TradeExecution> tradeExecutions, string outputFilePath);
     }
 }
