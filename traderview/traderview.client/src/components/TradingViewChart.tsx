@@ -84,13 +84,17 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                 });
 
                 // Convert candlestick data to chart format
-                const candlestickData = tradeContext.candlesticks.map(candle => ({
-                    time: Math.floor(new Date(candle.date).getTime() / 1000) as any,
-                    open: candle.open,
-                    high: candle.high,
-                    low: candle.low,
-                    close: candle.close,
-                }));
+                // Parse date as UTC to avoid timezone shifts (dates come as YYYY-MM-DD from database)
+                const candlestickData = tradeContext.candlesticks.map(candle => {
+                    const dateStr = candle.date.split('T')[0]; // Get just the date part (YYYY-MM-DD)
+                    return {
+                        time: dateStr as any, // Use date string directly for lightweight-charts
+                        open: candle.open,
+                        high: candle.high,
+                        low: candle.low,
+                        close: candle.close,
+                    };
+                });
 
                 console.log('Candlestick data for chart:', candlestickData);
 
@@ -98,10 +102,11 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
 
                 // Add a line series connecting entry and exit points in blue
                 // Only add the line if entry and exit are on different days
-                const entryTime = Math.floor(new Date(trade.entryDate).getTime() / 1000);
-                const exitTime = Math.floor(new Date(trade.exitDate).getTime() / 1000);
+                // Parse dates as date strings to avoid timezone shifts
+                const entryDateStr = trade.entryDate.split('T')[0];
+                const exitDateStr = trade.exitDate.split('T')[0];
 
-                if (entryTime !== exitTime) {
+                if (entryDateStr !== exitDateStr) {
                     const tradeLine = chart.addSeries(LineSeries, {
                         color: '#2196F3', // blue color for all trades
                         lineWidth: 3,
@@ -114,8 +119,8 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
 
                     // Create line data points from entry to exit
                     tradeLine.setData([
-                        { time: entryTime as any, value: trade.entryPrice },
-                        { time: exitTime as any, value: trade.exitPrice },
+                        { time: entryDateStr as any, value: trade.entryPrice },
+                        { time: exitDateStr as any, value: trade.exitPrice },
                     ]);
                 }
 
@@ -160,9 +165,8 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                     const firstTime = candlestickData[0].time;
                     const lastTime = candlestickData[candlestickData.length - 1].time;
 
-                    // Calculate time padding (10% of the range on each side)
-                    const timeRange = lastTime - firstTime;
-                    const padding = Math.max(timeRange * 0.1, 86400); // At least 1 day padding
+                    // Calculate time padding (add 10 days on each side for visibility)
+                    const paddingDays = 10;
 
                     // Set loading to false first so chart container is visible
                     setLoading(false);
@@ -173,10 +177,16 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                             // Reset any previous scroll/zoom state
                             chartRef.current.timeScale().resetTimeScale();
 
+                            // Calculate visible range with padding (date strings in YYYY-MM-DD format)
+                            const firstDate = new Date(firstTime as string);
+                            const lastDate = new Date(lastTime as string);
+                            firstDate.setDate(firstDate.getDate() - paddingDays);
+                            lastDate.setDate(lastDate.getDate() + paddingDays);
+
                             // Set visible range explicitly with padding
                             chartRef.current.timeScale().setVisibleRange({
-                                from: (firstTime - padding) as any,
-                                to: (lastTime + padding) as any,
+                                from: firstDate.toISOString().split('T')[0] as any,
+                                to: lastDate.toISOString().split('T')[0] as any,
                             });
 
                             // Set the price scale to include entry/exit prices with padding

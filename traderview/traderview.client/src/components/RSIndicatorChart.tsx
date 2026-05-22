@@ -64,13 +64,14 @@ function RSIndicatorChart({ rsData }: RSIndicatorChartProps) {
         });
 
         // Convert RS data to chart format
+        // Parse dates as date strings to avoid timezone shifts
         const rsLineData: LineData[] = rsData.map(point => ({
-            time: Math.floor(new Date(point.date).getTime() / 1000) as Time,
+            time: point.date.split('T')[0] as Time,
             value: point.rsRatio,
         }));
 
         const rsMAData: LineData[] = rsData.map(point => ({
-            time: Math.floor(new Date(point.date).getTime() / 1000) as Time,
+            time: point.date.split('T')[0] as Time,
             value: point.rsma,
         }));
 

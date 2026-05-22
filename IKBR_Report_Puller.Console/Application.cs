@@ -60,13 +60,13 @@ namespace IKBR_Report_Puller.Console
                 (IKBRReport mainReport, string fileName) = await GetReportData();
                 await SaveReportDataToDB(mainReport);
                 _excelReportService.CreateReport(mainReport, outputFilePath);
-                //_excelReportService.CreateTradesFromTradeExecutionsReport(_tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
-                //_tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
-                //await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
-                //await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
-                //await WriteTodayReport(fileName);
-                //await SaveEconomicCalendarUpdates();
-                //await SaveIndexHistory();
+                _excelReportService.CreateTradesFromTradeExecutionsReport(_tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
+                _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
+                await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
+                await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
+                await WriteTodayReport(fileName);
+                await SaveEconomicCalendarUpdates();
+                await SaveIndexHistory();
             }
             catch (Exception ex)
             {
