@@ -57,16 +57,23 @@ namespace IKBR_Report_Puller.Console
         {
             try
             {
-                (IKBRReport mainReport, string fileName) = await GetReportData();
-                await SaveReportDataToDB(mainReport);
-                _excelReportService.CreateReport(mainReport, outputFilePath);
-                _excelReportService.CreateTradesFromTradeExecutionsReport(_tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
+                (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
+                // Upsert instruments first, then trade executions, then open positions
+                _instrumentRepository.UpsertInstruments(mainReport.Trades);
+                _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
+                _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
+                
+               
+                _excelReportService.CreateExcelFileReport(mainReport, outputFilePath);
+                _excelReportService.CreateExcelFileReport(_tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
                 _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
-                await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
-                await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
-                await WriteTodayReport(fileName);
-                await SaveEconomicCalendarUpdates();
-                await SaveIndexHistory();
+
+
+                //await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
+                //await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
+                //await WriteTodayReport(fileName);
+                //await SaveEconomicCalendarUpdates();
+                //await SaveIndexHistory();
             }
             catch (Exception ex)
             {
@@ -98,10 +105,7 @@ namespace IKBR_Report_Puller.Console
 
         private async Task SaveReportDataToDB(IKBRReport mainReport)
         {
-            // Upsert instruments first, then trade executions (order matters due to FK constraints)
-            _instrumentRepository.UpsertInstruments(mainReport.Trades);
-            _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-            _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);         
+                  
                  
         }
 
@@ -129,7 +133,7 @@ namespace IKBR_Report_Puller.Console
             return fileName;
         }
 
-        private async Task<(IKBRReport mainReport, string fileName)> GetReportData()
+        private async Task<(IKBRReport mainReport, string fileName)> GetReportDataFromInteractiveBrokers()
         {
             //// Fetch and process main report
             //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260511_193118_TraderSyncAccess.xml");

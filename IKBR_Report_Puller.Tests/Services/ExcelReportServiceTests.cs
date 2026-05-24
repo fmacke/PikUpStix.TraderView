@@ -43,7 +43,7 @@ namespace IKBR_Report_Puller.Tests.Services
             var report = IKBRReportParser.ParseMainReport(reportXml);
 
             // Act
-            _service.CreateReport(report, "output.xlsx");
+            _service.CreateExcelFileReport(report, "output.xlsx");
 
             // Assert
             // Verify logging or other side effects
@@ -60,7 +60,7 @@ namespace IKBR_Report_Puller.Tests.Services
             var report = IKBRReportParser.ParseMainReport(reportXml);
 
             // Act
-            _service.CreateReport(report, "output.xlsx");
+            _service.CreateExcelFileReport(report, "output.xlsx");
 
             // Assert
             // Verify logging (Excel report creation is currently stubbed)

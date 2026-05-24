@@ -34,7 +34,7 @@ namespace IKBR_Report_Puller.Services
             _connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
         }
 
-        public void CreateReport(IKBRReport report, string outputFilePath)
+        public void CreateExcelFileReport(IKBRReport report, string outputFilePath)
         {
             try
             {
@@ -79,7 +79,7 @@ namespace IKBR_Report_Puller.Services
                 Console.WriteLine($"\nAn error occurred during Excel report creation: {ex.Message}");
             }
         }
-        public void CreateTradesFromTradeExecutionsReport(IEnumerable<TradeExecution> tradeExecutions, string outputFilePath)
+        public void CreateExcelFileReport(IEnumerable<TradeExecution> tradeExecutions, string outputFilePath)
         {
             try
             {
@@ -90,9 +90,7 @@ namespace IKBR_Report_Puller.Services
 
                 using (var package = new ExcelPackage())
                 {
-                    _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
                     CreateTradeHistoryWorksheet(package, historicalTrades, "Trade History boom");
-
 
                     // Save the workbook
                     string whenGeneratedStr = DateTime.Now.ToString("yyyyMMddHHmmss");
