@@ -15,3 +15,4 @@
         public DateTime TradeClosed { get; set; }
     }
 }
+ 
