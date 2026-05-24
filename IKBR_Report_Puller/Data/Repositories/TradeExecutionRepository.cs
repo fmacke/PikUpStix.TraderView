@@ -76,7 +76,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                 var tradeExecutions = new List<TradeExecution>();
 
                 using (var cmd = new SqlCommand(
-                    "SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator, instrumentid, currency, conid " +
+                    "SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator, instrumentid, currency, conid, ibExecID, IBCommission, IBCommissionCurrency " +
                     "FROM [dbo].[TradeExecutions] " +
                     "ORDER BY ibOrderID, tradeDate ASC, dateTime ASC", connection))
                 {
@@ -93,7 +93,10 @@ namespace IKBR_Report_Puller.Data.Repositories
                                 AveragePrice = reader.GetDecimal("tradePrice"),
                                 InstrumentId = reader.GetInt32("instrumentid"),
                                 Currency = reader.GetString("currency"),
-                                SecurityId = reader.GetString("conid")
+                                SecurityId = reader.GetString("conid"),
+                                IbExecID = reader.GetString("ibExecID"),
+                                IBCommission = reader.GetDecimal("ibCommission"),
+                                IBCommissionCurrency = reader.GetString("ibCommissionCurrency"),
                             });
                         }
                     }

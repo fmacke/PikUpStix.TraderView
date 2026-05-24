@@ -1,5 +1,6 @@
 ﻿using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Interfaces;
+using System.Text;
 
 namespace IKBR_Report_Puller.Services
 {
@@ -8,21 +9,114 @@ namespace IKBR_Report_Puller.Services
         public List<HistoricalTrade> TradeHistoryAggregated { get; set; } = new List<HistoricalTrade>();
         public List<HistoricalTrade> TradeHistory { get; set; } = new List<HistoricalTrade>();
         public List<Position> positions = new List<Position>();
-        public void CreateTradeHistoryReport(List<TradeExecution> tradeExecutions)
-        {            
-            foreach (var tradeExecution in tradeExecutions)
+        public void CreateTradeHistoryReport(List<TradeExecution> rawExecutions)
+        {
+            // Sort chronologically across the entire history to maintain structural FIFO consistency
+            var executionGroups = rawExecutions
+                .Where(e => e.Quantity != 0)
+                .OrderBy(e => e.TradeDate)
+                .GroupBy(e => e.Symbol);
+
+            foreach (var group in executionGroups)
             {
-                if (!AnyOpenPositions(tradeExecution.Symbol))
+                string symbol = group.Key;
+                var longInventory = new Queue<ExecutionQueueItem>();
+                var shortInventory = new Queue<ExecutionQueueItem>();
+                
+
+                foreach (var exec in group)
                 {
-                    // No open positions
-                    OpenPosition(tradeExecution);
-                }
-                else {
-                    // Update existing position
-                    ModifyPosition(tradeExecution, GetPosition(tradeExecution.Symbol));
+                    decimal qtyRemaining = exec.Quantity;
+                    decimal execPrice = exec.AveragePrice;
+                    DateTime execTime = exec.TradeDate;
+                    long execOrderId = exec.IbOrderID;
+                    
+
+
+                    // Case A: Buy Transaction (Opens Long / Closes Short)
+                    if (qtyRemaining > 0)
+                    {
+                        while (shortInventory.Count > 0 && qtyRemaining > 0)
+                        {
+                            var shortMatch = shortInventory.Peek();
+                            decimal matchQty = Math.Min(shortMatch.Quantity, qtyRemaining);
+
+                            TradeHistory.Add(new HistoricalTrade
+                            {
+                                Symbol = symbol,
+                                Quantity = -matchQty, // Kept negative to reflect original Short position orientation
+                                AveragePrice = shortMatch.Price, // Short entry price
+                                ClosePrice = execPrice,          // Cost to buy back and cover
+                                OpenIbOrderID = shortMatch.IbOrderID,
+                                CloseIbOrderID = execOrderId,
+                                TradeOpened = shortMatch.Timestamp,
+                                TradeClosed = execTime,
+                                IBCommission = commission,
+                                IBCommissionCurrency = exec.IBCommissionCurrency
+                            });
+
+                            qtyRemaining -= matchQty;
+                            shortMatch.Quantity -= matchQty;
+
+                            if (shortMatch.Quantity == 0)
+                                shortInventory.Dequeue();
+                        }
+
+                        if (qtyRemaining > 0)
+                        {
+                            longInventory.Enqueue(new ExecutionQueueItem
+                            {
+                                Timestamp = execTime,
+                                Quantity = qtyRemaining,
+                                Price = execPrice,
+                                IbOrderID = execOrderId
+                            });
+                        }
+                    }
+                    // Case B: Sell Transaction (Closes Long / Opens Short)
+                    else
+                    {
+                        decimal sellQtyAbs = Math.Abs(qtyRemaining);
+
+                        while (longInventory.Count > 0 && sellQtyAbs > 0)
+                        {
+                            var longMatch = longInventory.Peek();
+                            decimal matchQty = Math.Min(longMatch.Quantity, sellQtyAbs);
+
+                            TradeHistory.Add(new HistoricalTrade
+                            {
+                                Symbol = symbol,
+                                Quantity = matchQty, // Positive for Long positions
+                                AveragePrice = longMatch.Price, // Entry buy price
+                                ClosePrice = execPrice,         // Exit liquidation price
+                                OpenIbOrderID = longMatch.IbOrderID,
+                                CloseIbOrderID = execOrderId,
+                                TradeOpened = longMatch.Timestamp,
+                                TradeClosed = execTime,
+                                IBCommission = commission,
+                                IBCommissionCurrency = exec.IBCommissionCurrency
+                            });
+
+                            sellQtyAbs -= matchQty;
+                            longMatch.Quantity -= matchQty;
+
+                            if (longMatch.Quantity == 0)
+                                longInventory.Dequeue();
+                        }
+
+                        if (sellQtyAbs > 0)
+                        {
+                            shortInventory.Enqueue(new ExecutionQueueItem
+                            {
+                                Timestamp = execTime,
+                                Quantity = sellQtyAbs,
+                                Price = execPrice,
+                                IbOrderID = execOrderId
+                            });
+                        }
+                    }
                 }
             }
-
             // Aggregate TradeHistory by IbOrderID
             TradeHistoryAggregated = TradeHistory
                 .GroupBy(trade => trade.CloseIbOrderID)
@@ -38,133 +132,21 @@ namespace IKBR_Report_Puller.Services
                     Currency = group.First().Currency,
                     InstrumentId = group.First().InstrumentId,
                     Quantity = group.Sum(trade => trade.Quantity),
-                    SecurityId = group.First().SecurityId
+                    SecurityId = group.First().SecurityId,
+                    IBCommission = group.Sum(trade => trade.IBCommission),
+                    IBCommissionCurrency = group.First().IBCommissionCurrency
                 })
                 .OrderByDescending(trade => trade.Quantity)
                 .ToList();
         }
-
-        private Position GetPosition(string symbol)
-        {
-            var position = positions.Where(x => x.Symbol == symbol && x.IsClosed == false).FirstOrDefault();
-            if (position != null)
-                return position;
-            throw new Exception("No position found.");
-        }
-
-        private void ModifyPosition(TradeExecution tradeExecution, Position position)
-        {
-            if (tradeExecution.IsLong && position.IsShort
-                || tradeExecution.IsShort && position.IsLong)
-            {
-                CloseOrReversePosition(tradeExecution, position);
-            }
-            if(tradeExecution.IsLong && position.IsLong
-                || tradeExecution.IsShort && position.IsShort)
-            {
-                IncreasePosition(tradeExecution, position);
-            }
-        }
-       private void CloseOrReversePosition(TradeExecution tradeExecution, Position position)
-        {            
-            UpdatePosition(tradeExecution, position);
-            AddHistoricalTrade(position, tradeExecution);            
-        }
-
-        public void UpdatePosition(TradeExecution tradeExecution, Position position)
-        {
-            var existingQuantity = position.Quantity;
-            var revisedQuantity = position.Quantity + tradeExecution.Quantity;
-            if (revisedQuantity == 0)
-            {
-                // Position is fully closed
-                position.IsClosed = true;
-            }
-            if (revisedQuantity > 0 && position.IsLong)
-            {
-                // Position is reduced but still long
-                position.Quantity = revisedQuantity;
-                position.AveragePrice = (position.AveragePrice + tradeExecution.AveragePrice) / 2m;
-            }
-            if (revisedQuantity < 0 && position.IsShort)
-            {
-                // Position is reduced but still short
-                position.Quantity = revisedQuantity;
-                position.AveragePrice = (position.AveragePrice + tradeExecution.AveragePrice) / 2m;
-            }
-            if(revisedQuantity > 0 && position.IsShort
-                || revisedQuantity < 0 && position.IsLong)
-            {
-                // Position is reversed 
-                position.IsClosed = true;
-                positions.Add(new Position()
-                {
-                    Symbol = position.Symbol,
-                    AveragePrice = tradeExecution.AveragePrice,
-                    Quantity = revisedQuantity,
-                    IsClosed = false,
-                    IbOrderID = tradeExecution.IbOrderID,
-                    TradeDate = tradeExecution.TradeDate
-                });
-            }
-        }
-
-        private void AddHistoricalTrade(Position position, TradeExecution tradeExecution)
-        {
-            // Use the absolute value of the execution quantity - this represents the actual quantity being closed
-            var tradeQuantity = Math.Abs(tradeExecution.Quantity);
-            TradeHistory.Add(new HistoricalTrade
-            {
-                Symbol = position.Symbol,
-                AveragePrice = position.AveragePrice,
-                ClosePrice = tradeExecution.AveragePrice,
-                InstrumentId = tradeExecution.InstrumentId,
-                Currency = tradeExecution.Currency,
-                //RealizedPnL = CalculateRealizedPnL(position.TradeType, position.AveragePrice, tradeExecution.AveragePrice, tradeQuantity),
-                OpenIbOrderID = position.IbOrderID,
-                CloseIbOrderID = tradeExecution.IbOrderID,
-                TradeOpened = position.TradeDate,
-                TradeClosed = tradeExecution.TradeDate,
-                Quantity = tradeQuantity,
-                SecurityId = tradeExecution.SecurityId
-            });
-        }
-
-        private decimal CalculateRealizedPnL(TradeType tradeType, decimal positionAveragePrice, decimal tradeExecutionAveragePrice, decimal tradeQuantity)
-        {
-            var priceDifference = tradeExecutionAveragePrice - positionAveragePrice;
-            if(tradeType == TradeType.Short)
-                priceDifference = positionAveragePrice - tradeExecutionAveragePrice; // For short positions, PnL is reversed
-            return priceDifference * tradeQuantity;
-        }
-
-        private void IncreasePosition(TradeExecution tradeExecution, Position position)
-        {
-            // Add quantity and recalculate average price
-            var totalCost = position.AveragePrice * position.Quantity + tradeExecution.AveragePrice * tradeExecution.Quantity;
-            position.Quantity += tradeExecution.Quantity;
-            position.AveragePrice = totalCost / position.Quantity;
-        }
-
-        private bool AnyOpenPositions(string symbol)
-        {
-            return positions.Any(x => x.Symbol == symbol && x.IsClosed == false);
-        }
-
-        private void OpenPosition(TradeExecution tradeExecution)
-        {
-            positions.Add(new Position
-            {
-                AveragePrice = tradeExecution.AveragePrice,
-                IbOrderID = tradeExecution.IbOrderID,
-                IsClosed = false,
-                Quantity = tradeExecution.Quantity,
-                Symbol = tradeExecution.Symbol,
-                TradeDate = tradeExecution.TradeDate,
-                SecurityId = tradeExecution.SecurityId,
-                Currency = tradeExecution.Currency,
-                InstrumentId = tradeExecution.InstrumentId
-            });
-        }
+    }
+    class ExecutionQueueItem
+    {
+        public DateTime Timestamp { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal Price { get; set; }
+        public long IbOrderID { get; set; }
     }
 }
+
+

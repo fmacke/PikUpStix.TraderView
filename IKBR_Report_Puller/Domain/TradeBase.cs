@@ -16,6 +16,7 @@
         public string Symbol { get; set; }
         public int InstrumentId { get; set; }
         public string Currency { get; set; }
+        
         public string SecurityId { get; set; }
         public decimal AveragePrice { get; set; }
         public DateTime TradeDate { get; set; }

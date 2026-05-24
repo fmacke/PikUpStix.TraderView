@@ -64,9 +64,8 @@ namespace IKBR_Report_Puller.Console
                 _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
                 
                
-                _excelReportService.CreateExcelFileReport(mainReport, outputFilePath);
-                _excelReportService.CreateExcelFileReport(_tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
-                _tradeHistoryReportService.CreateTradeHistoryReport(_tradeExecutionRepository.GetTradeExecutions());
+                _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, _tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
+
 
 
                 //await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);

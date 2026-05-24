@@ -8,6 +8,8 @@
         public long OpenIbOrderID { get; set; }
         public long CloseIbOrderID { get; set; }
         public decimal ClosePrice { get; set; }
+        public decimal IBCommission { get; set; } = 0;
+        public string IBCommissionCurrency { get; set; }
         public decimal TotalCost => AveragePrice * (decimal)Math.Sqrt((double)Quantity * (double)Quantity);
         public DateTime TradeOpened{ get; set; }
         public DateTime TradeClosed { get; set; }

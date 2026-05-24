@@ -34,17 +34,11 @@ namespace IKBR_Report_Puller.Services
             _connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
         }
 
-        public void CreateExcelFileReport(IKBRReport report, string outputFilePath)
+        public void CreateExcelFileReport(List<OpenPosition> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
         {
             try
             {
-                if (report == null)
-                {
-                    Console.WriteLine("No report data found. Skipping Excel report creation.");
-                    return;
-                }
-
-                if (!report.OpenPositions.Any())
+                if (!openPositions.Any())
                 {
                     Console.WriteLine("No open positions found in the report. Moving to historical trades.");
                 }
@@ -54,18 +48,14 @@ namespace IKBR_Report_Puller.Services
 
                 using (var package = new ExcelPackage())
                 {
-                    CreateOpenPositionsWorkSheet(package, report);
-                    var tradeExecutions = _tradeExecutionRepository.GetTradeExecutions();
-                    var fifoMatcher = new TradeFifoMatcher();
-                    var historicalTrades = fifoMatcher.ProcessExecutions(tradeExecutions);
-                    
+                    CreateOpenPositionsWorkSheet(package, openPositions);                   
                     _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "Trade History");
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "Trade History Aggregated");
                     CreateVisualReport(package, _tradeHistoryReportService.TradeHistoryAggregated, "Trade Report");
 
                     // Save the workbook
-                    string whenGeneratedStr = report.WhenGenerated.ToString("yyyyMMddHHmmss");
+                    string whenGeneratedStr = DateTime.Now.ToString("yyyyMMddHHmmss");
                     string fileName = outputFilePath.Replace("[FILE_NAME]", $"{whenGeneratedStr}.xlsx");
                     string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
                     string filePath = Path.Combine(desktopPath, fileName);
@@ -79,33 +69,8 @@ namespace IKBR_Report_Puller.Services
                 Console.WriteLine($"\nAn error occurred during Excel report creation: {ex.Message}");
             }
         }
-        public void CreateExcelFileReport(IEnumerable<TradeExecution> tradeExecutions, string outputFilePath)
-        {
-            try
-            {
-                var fifoMatcher = new TradeFifoMatcher();
-                var historicalTrades = fifoMatcher.ProcessExecutions(tradeExecutions.ToList());
-                // Set the EPPlus license for non-commercial use
-                ExcelPackage.License.SetNonCommercialPersonal("DFM");
 
-                using (var package = new ExcelPackage())
-                {
-                    CreateTradeHistoryWorksheet(package, historicalTrades, "Trade History boom");
-
-                    // Save the workbook
-                    string whenGeneratedStr = DateTime.Now.ToString("yyyyMMddHHmmss");
-                    string fileName = outputFilePath.Replace("[FILE_NAME]", $"{whenGeneratedStr}boom.xlsx");
-                    string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                    string filePath = Path.Combine(desktopPath, fileName);
-                    package.SaveAs(new FileInfo(filePath));
-                    Console.WriteLine($"Successfully created Excel report at {filePath}");
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-        }
-        private void CreateOpenPositionsWorkSheet(ExcelPackage package, IKBRReport report)
+        private void CreateOpenPositionsWorkSheet(ExcelPackage package, List<OpenPosition> openPositions)
         {
             // Create Open Positions worksheet
             var worksheet = package.Workbook.Worksheets.Add("Open Positions");
@@ -128,7 +93,7 @@ namespace IKBR_Report_Puller.Services
             using SqlConnection connection = new SqlConnection(_connectionString);
             connection.Open();
 
-            foreach (var position in report.OpenPositions)
+            foreach (var position in openPositions)
             {
                 string accountId = position.AccountId;
                 string symbol = position.Symbol;
@@ -247,8 +212,10 @@ namespace IKBR_Report_Puller.Services
             worksheet.Cells[1, 8].Value = "Value Price";
             worksheet.Cells[1, 9].Value = "Cost";
             worksheet.Cells[1, 10].Value = "Value";
-            worksheet.Cells[1, 11].Value = "Margin";
-            worksheet.Cells[1, 12].Value = "MarginPercent";
+            worksheet.Cells[1, 11].Value = "IB Commission";
+            worksheet.Cells[1, 12].Value = "IB Commission Currency";
+            worksheet.Cells[1, 13].Value = "Margin";
+            worksheet.Cells[1, 14].Value = "MarginPercent";
 
             int currentRow = 2;
             foreach (var historicalTrade in historicalData.OrderByDescending(x => x.TradeClosed))
@@ -265,11 +232,13 @@ namespace IKBR_Report_Puller.Services
                 worksheet.Cells[currentRow, 8].Value = Math.Round(historicalTrade.ClosePrice, 2);
                 worksheet.Cells[currentRow, 9].Value = Math.Round(historicalTrade.TotalCost, 2);
                 worksheet.Cells[currentRow, 10].Value = Math.Round(historicalTrade.MarketValue, 2);
-                worksheet.Cells[currentRow, 11].Value = Math.Round(historicalTrade.RealizedPnL, 2);
+                worksheet.Cells[currentRow, 11].Value = Math.Round(historicalTrade.IBCommission, 2);
                 worksheet.Cells[currentRow, 11].Style.Numberformat.Format = "#,##0.00";
-                worksheet.Cells[currentRow, 12].Value = Math.Round(historicalTrade.RealizedPnLPercentage, 2);
-                worksheet.Cells[currentRow, 12].Style.Numberformat.Format = "#,##0.00";
-
+                worksheet.Cells[currentRow, 12].Value = historicalTrade.IBCommissionCurrency;
+                worksheet.Cells[currentRow, 13].Value = Math.Round(historicalTrade.RealizedPnL, 2);
+                worksheet.Cells[currentRow, 13].Style.Numberformat.Format = "#,##0.00";
+                worksheet.Cells[currentRow, 14].Value = Math.Round(historicalTrade.RealizedPnLPercentage, 2);
+                worksheet.Cells[currentRow, 14].Style.Numberformat.Format = "#,##0.00";
                 currentRow++;
             }
 
@@ -277,14 +246,16 @@ namespace IKBR_Report_Puller.Services
             string sanitizedTableName = worksheetName.Replace(" ", "_").Replace("-", "_").Replace("/", "_");
 
             // Format the data as a table
-            var tableRange = worksheet.Cells[1, 1, currentRow - 1, 12];
+            var tableRange = worksheet.Cells[1, 1, currentRow - 1, 14];
             var table = worksheet.Tables.Add(tableRange, sanitizedTableName);
             table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium9;
 
             // Add totals row and sum the Margin column
             table.ShowTotal = true;
             table.Columns[10].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
-            worksheet.Cells[currentRow, 11].Style.Numberformat.Format = "#,##0.00";
+            worksheet.Cells[currentRow, 10].Style.Numberformat.Format = "#,##0.00";
+            table.Columns[12].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
+            worksheet.Cells[currentRow, 12].Style.Numberformat.Format = "#,##0.00";
 
             // Adjust column widths
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
@@ -346,123 +317,6 @@ namespace IKBR_Report_Puller.Services
 
             // Adjust column widths
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
-        }
-    }
-    public class TradeFifoMatcher
-    {
-        private class ExecutionQueueItem
-        {
-            public DateTime Timestamp { get; set; }
-            public decimal Quantity { get; set; }
-            public decimal Price { get; set; }
-            public long IbOrderID { get; set; }
-        }
-
-        public List<HistoricalTrade> ProcessExecutions(List<TradeExecution> rawExecutions)
-        {
-            var historicalTrades = new List<HistoricalTrade>();
-
-            // Sort chronologically across the entire history to maintain structural FIFO consistency
-            var executionGroups = rawExecutions
-                .Where(e => e.Quantity != 0)
-                .OrderBy(e => e.TradeDate)
-                .GroupBy(e => e.Symbol);
-
-            foreach (var group in executionGroups)
-            {
-                string symbol = group.Key;
-                var longInventory = new Queue<ExecutionQueueItem>();
-                var shortInventory = new Queue<ExecutionQueueItem>();
-
-                foreach (var exec in group)
-                {
-                    decimal qtyRemaining = exec.Quantity;
-                    decimal execPrice = exec.AveragePrice;
-                    DateTime execTime = exec.TradeDate;
-                    long execOrderId = exec.IbOrderID;
-
-                    // Case A: Buy Transaction (Opens Long / Closes Short)
-                    if (qtyRemaining > 0)
-                    {
-                        while (shortInventory.Count > 0 && qtyRemaining > 0)
-                        {
-                            var shortMatch = shortInventory.Peek();
-                            decimal matchQty = Math.Min(shortMatch.Quantity, qtyRemaining);
-
-                            historicalTrades.Add(new HistoricalTrade
-                            {
-                                Symbol = symbol,
-                                Quantity = -matchQty, // Kept negative to reflect original Short position orientation
-                                AveragePrice = shortMatch.Price, // Short entry price
-                                ClosePrice = execPrice,          // Cost to buy back and cover
-                                OpenIbOrderID = shortMatch.IbOrderID,
-                                CloseIbOrderID = execOrderId,
-                                TradeOpened = shortMatch.Timestamp,
-                                TradeClosed = execTime
-                            });
-
-                            qtyRemaining -= matchQty;
-                            shortMatch.Quantity -= matchQty;
-
-                            if (shortMatch.Quantity == 0)
-                                shortInventory.Dequeue();
-                        }
-
-                        if (qtyRemaining > 0)
-                        {
-                            longInventory.Enqueue(new ExecutionQueueItem
-                            {
-                                Timestamp = execTime,
-                                Quantity = qtyRemaining,
-                                Price = execPrice,
-                                IbOrderID = execOrderId
-                            });
-                        }
-                    }
-                    // Case B: Sell Transaction (Closes Long / Opens Short)
-                    else
-                    {
-                        decimal sellQtyAbs = Math.Abs(qtyRemaining);
-
-                        while (longInventory.Count > 0 && sellQtyAbs > 0)
-                        {
-                            var longMatch = longInventory.Peek();
-                            decimal matchQty = Math.Min(longMatch.Quantity, sellQtyAbs);
-
-                            historicalTrades.Add(new HistoricalTrade
-                            {
-                                Symbol = symbol,
-                                Quantity = matchQty, // Positive for Long positions
-                                AveragePrice = longMatch.Price, // Entry buy price
-                                ClosePrice = execPrice,         // Exit liquidation price
-                                OpenIbOrderID = longMatch.IbOrderID,
-                                CloseIbOrderID = execOrderId,
-                                TradeOpened = longMatch.Timestamp,
-                                TradeClosed = execTime
-                            });
-
-                            sellQtyAbs -= matchQty;
-                            longMatch.Quantity -= matchQty;
-
-                            if (longMatch.Quantity == 0)
-                                longInventory.Dequeue();
-                        }
-
-                        if (sellQtyAbs > 0)
-                        {
-                            shortInventory.Enqueue(new ExecutionQueueItem
-                            {
-                                Timestamp = execTime,
-                                Quantity = sellQtyAbs,
-                                Price = execPrice,
-                                IbOrderID = execOrderId
-                            });
-                        }
-                    }
-                }
-            }
-
-            return historicalTrades;
         }
     }
 }
