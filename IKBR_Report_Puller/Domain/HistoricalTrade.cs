@@ -10,7 +10,7 @@
         public decimal ClosePrice { get; set; }
         public decimal IBCommission { get; set; } = 0;
         public string IBCommissionCurrency { get; set; }
-        public decimal TotalCost => AveragePrice * (decimal)Math.Sqrt((double)Quantity * (double)Quantity);
+        public decimal TotalCost => AveragePrice * (decimal)Math.Sqrt((double)Quantity * (double)Quantity) - IBCommission;
         public DateTime TradeOpened{ get; set; }
         public DateTime TradeClosed { get; set; }
     }
