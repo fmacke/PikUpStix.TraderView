@@ -30,7 +30,7 @@ namespace IKBR_Report_Puller.Services
                     decimal execPrice = exec.AveragePrice;
                     DateTime execTime = exec.TradeDate;
                     long execOrderId = exec.IbOrderID;
-                    
+                    int instrumentId = exec.InstrumentId;
 
 
                     // Case A: Buy Transaction (Opens Long / Closes Short)
@@ -57,7 +57,8 @@ namespace IKBR_Report_Puller.Services
                                 TradeOpened = shortMatch.Timestamp,
                                 TradeClosed = execTime,
                                 IBCommission = openingCommission + closingCommission,
-                                IBCommissionCurrency = exec.IBCommissionCurrency
+                                IBCommissionCurrency = exec.IBCommissionCurrency,
+                                InstrumentId = instrumentId
                             });
 
                             qtyRemaining -= matchQty;
@@ -106,7 +107,8 @@ namespace IKBR_Report_Puller.Services
                                 TradeOpened = longMatch.Timestamp,
                                 TradeClosed = execTime,
                                 IBCommission = openingCommission + closingCommission,
-                                IBCommissionCurrency = exec.IBCommissionCurrency
+                                IBCommissionCurrency = exec.IBCommissionCurrency,
+                                InstrumentId = instrumentId
                             });
 
                             sellQtyAbs -= matchQty;

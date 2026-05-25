@@ -61,15 +61,11 @@ namespace IKBR_Report_Puller.Console
                 // Upsert instruments first, then trade executions, then open positions
                 _instrumentRepository.UpsertInstruments(mainReport.Trades);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-                _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
-                
-               
+                _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);             
                 _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, _tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
 
-
-
                 //await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
-                //await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
+                await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
                 //await WriteTodayReport(fileName);
                 //await SaveEconomicCalendarUpdates();
                 //await SaveIndexHistory();

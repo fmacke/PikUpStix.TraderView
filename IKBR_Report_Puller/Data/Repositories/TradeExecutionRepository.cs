@@ -33,7 +33,6 @@ namespace IKBR_Report_Puller.Data.Repositories
 
             ExecuteDatabaseOperation(connection =>
             {
-                //ok, i'm pretty sure things are failing to update here because ibExecID is not a unique identifier for trades. it seems like there can be multiple executions with the same ibExecID, which is causing the update logic to fail since it assumes a one-to-one relationship between ibExecID and trade records. i need to rethink the logic to handle cases where multiple trades share the same ibExecID, perhaps by also considering other fields like tradeDate, quantity, or price to uniquely identify records for updates.'
                 using (var transaction = connection.BeginTransaction())
                 {
                     foreach (var trade in trades)
