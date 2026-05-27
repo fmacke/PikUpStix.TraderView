@@ -51,7 +51,11 @@ namespace IKBR_Report_Puller.Services
                     if(instrument == null) {
                        throw new Exception("Instrument not found for trade: " + trade.Symbol);
                     }
-                    var domainBars = await FetchHistoricalData(trade.SecurityId, instrument.ListingExchange, trade.Symbol, trade.TradeOpened.AddDays(-200), DateTime.Now, trade.InstrumentId, instrument.ContractUnitType);
+                    if(string.IsNullOrEmpty(instrument.ConId)) {
+                       Console.WriteLine($"Warning: ConId is missing for {trade.Symbol}. Skipping historical data fetch.");
+                       continue;
+                    }
+                    var domainBars = await FetchHistoricalData(instrument.ConId, instrument.ListingExchange, trade.Symbol, trade.TradeOpened.AddDays(-200), DateTime.Now, trade.InstrumentId, instrument.ContractUnitType);
 
                     // Check if connection failed
                     if (domainBars == null)
@@ -103,11 +107,20 @@ namespace IKBR_Report_Puller.Services
                 {
                     var instrument = _instrumentRepository.Get(trade.InstrumentId);
 
+                    if(instrument == null) {
+                       Console.WriteLine($"Warning: Instrument not found for {trade.Symbol}. Skipping historical data fetch.");
+                       continue;
+                    }
+                    if(string.IsNullOrEmpty(instrument.ConId)) {
+                       Console.WriteLine($"Warning: ConId is missing for {trade.Symbol}. Skipping historical data fetch.");
+                       continue;
+                    }
+
                     Console.WriteLine($"Found {missingRanges.Count} missing date range(s) for {trade.Symbol}:");
                     foreach (var range in missingRanges)
                     {
                         Console.WriteLine($"  Missing data from {range.startDate:yyyy-MM-dd} to {range.endDate:yyyy-MM-dd}");
-                        var domainBars = await FetchHistoricalData(trade.SecurityId, instrument.ListingExchange, trade.Symbol, range.startDate, range.endDate, trade.InstrumentId, instrument.ContractUnitType);
+                        var domainBars = await FetchHistoricalData(instrument.ConId, instrument.ListingExchange, trade.Symbol, range.startDate, range.endDate, trade.InstrumentId, instrument.ContractUnitType);
 
                         // Check if connection failed
                         if (domainBars == null)
