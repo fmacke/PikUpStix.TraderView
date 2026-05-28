@@ -37,7 +37,7 @@ namespace traderview.Server.Services
                 // Map HistoricalTrade to TradeDto
                 return await Task.FromResult(trades.Select(trade => new TradeDto
                 {
-                    Id = trade.OpenIbOrderID,
+                    Id = trade.CloseIbOrderID,
                     InstrumentId = trade.InstrumentId,
                     Symbol = trade.Symbol,
                     EntryDate = trade.TradeOpened,
@@ -60,8 +60,8 @@ namespace traderview.Server.Services
         {
             try
             {
-                // Get trade summary using repository
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByOrderId(tradeId));
+                // Get trade summary using repository (tradeId is the close order ID)
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByCloseOrderId(tradeId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -94,8 +94,8 @@ namespace traderview.Server.Services
         {
             try
             {
-                // Get trade summary using repository
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByOrderId(tradeId));
+                // Get trade summary using repository (tradeId is the close order ID)
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByCloseOrderId(tradeId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -249,8 +249,8 @@ namespace traderview.Server.Services
         {
             try
             {
-                // Get trade summary
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByOrderId(tradeId));
+                // Get trade summary (tradeId is the close order ID)
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByCloseOrderId(tradeId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);

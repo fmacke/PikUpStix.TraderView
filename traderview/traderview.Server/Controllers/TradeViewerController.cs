@@ -5,7 +5,7 @@ using traderview.Server.DTOs;
 namespace traderview.Server.Controllers
 {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/tradeviewer")]
     public class TradeViewerController : ControllerBase
     {
         private readonly ITradeViewerService _tradeViewerService;

@@ -59,9 +59,9 @@ function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
             >
-                {sortedTrades.map((trade, index) => (
+                {sortedTrades.map((trade) => (
                     <div
-                        key={`${trade.id}-${index}`}
+                        key={trade.id}
                         ref={selectedTradeId === trade.id ? selectedItemRef : null}
                         className={`trade-item ${selectedTradeId === trade.id ? 'selected' : ''}`}
                         onClick={() => onTradeSelect(trade)}

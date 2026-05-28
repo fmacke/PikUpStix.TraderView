@@ -252,7 +252,7 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                 chartRef.current = null;
             }
         };
-    }, [trade]);
+    }, [trade.id, trade.symbol, trade.entryDate, trade.exitDate, trade.entryPrice, trade.exitPrice, trade.buySell, trade.pnl, trade.instrumentId]);
 
     return (
         <div className="tradingview-chart-container">

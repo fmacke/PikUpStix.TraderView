@@ -32,5 +32,12 @@ namespace IKBR_Report_Puller.Interfaces
         /// <param name="orderId">The order ID to retrieve</param>
         /// <returns>Trade summary, or null if not found</returns>
         TradeSummary? GetTradeSummaryByOrderId(long orderId);
+
+        /// <summary>
+        /// Gets aggregated trade summary for a specific closing order ID
+        /// </summary>
+        /// <param name="closeOrderId">The closing order ID to retrieve</param>
+        /// <returns>Trade summary, or null if not found</returns>
+        TradeSummary? GetTradeSummaryByCloseOrderId(long closeOrderId);
     }
 }

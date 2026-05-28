@@ -38,7 +38,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
         };
 
         fetchRSData();
-    }, [trade]);
+    }, [trade?.id]);
 
     if (!trade) {
         return (
