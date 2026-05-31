@@ -43,48 +43,54 @@ namespace IKBR_Report_Puller.Services
 
             foreach (var trade in trades)
             {
-                Console.WriteLine($"Processing trade for {trade.Symbol} opened on {trade.TradeOpened:yyyy-MM-dd} and closed on {trade.TradeClosed:yyyy-MM-dd}");
-
-                if (trade.TradeClosed.AddDays(700) > DateTime.Now)
+                if (trade.Symbol == "GBP.USD")
                 {
-                    var instrument = _instrumentRepository.Get(trade.InstrumentId);
-                    if(instrument == null) {
-                       throw new Exception("Instrument not found for trade: " + trade.Symbol);
-                    }
-                    if(string.IsNullOrEmpty(instrument.ConId)) {
-                       Console.WriteLine($"Warning: ConId is missing for {trade.Symbol}. Skipping historical data fetch.");
-                       continue;
-                    }
-                    var domainBars = await FetchHistoricalData(instrument.ConId, instrument.ListingExchange, trade.Symbol, trade.TradeOpened.AddDays(-200), DateTime.Now, trade.InstrumentId, instrument.ContractUnitType);
 
-                    // Check if connection failed
-                    if (domainBars == null)
+                    Console.WriteLine($"Processing trade for {trade.Symbol} opened on {trade.TradeOpened:yyyy-MM-dd} and closed on {trade.TradeClosed:yyyy-MM-dd}");
+
+                    if (trade.TradeClosed.AddDays(700) > DateTime.Now)
                     {
-                        connectionFailed = true;
-                        Console.WriteLine($"Connection failed. Stopping further data fetching.");
-                        Console.WriteLine($"Please ensure IBKR Gateway or TWS is running on {_config["IBKRClient:SocketUrl"]}:{_config["IBKRClient:Port"]}");
-                        break;
+                        var instrument = _instrumentRepository.Get(trade.InstrumentId);
+                        if (instrument == null)
+                        {
+                            throw new Exception("Instrument not found for trade: " + trade.Symbol);
+                        }
+                        if (string.IsNullOrEmpty(instrument.ConId))
+                        {
+                            Console.WriteLine($"Warning: ConId is missing for {trade.Symbol}. Skipping historical data fetch.");
+                            continue;
+                        }
+                        var domainBars = await FetchHistoricalData(instrument.ConId, instrument.ListingExchange, trade.Symbol, trade.TradeOpened.AddDays(-200), DateTime.Now, trade.InstrumentId, instrument.ContractUnitType);
+
+                        // Check if connection failed
+                        if (domainBars == null)
+                        {
+                            connectionFailed = true;
+                            Console.WriteLine($"Connection failed. Stopping further data fetching.");
+                            Console.WriteLine($"Please ensure IBKR Gateway or TWS is running on {_config["IBKRClient:SocketUrl"]}:{_config["IBKRClient:Port"]}");
+                            break;
+                        }
+
+                        // Save to database
+                        _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), domainBars);
+                        Console.WriteLine($"Successfully saved {domainBars.Count} bars for {trade.Symbol}");
                     }
-
-                    // Save to database
-                    _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), domainBars);
-                    Console.WriteLine($"Successfully saved {domainBars.Count} bars for {trade.Symbol}");
+                    else
+                    {
+                        Console.WriteLine($"All required historical data exists for {trade.Symbol}");
+                    }
                 }
-                else
+
+                if (connectionFailed)
                 {
-                    Console.WriteLine($"All required historical data exists for {trade.Symbol}");
+                    Console.WriteLine("\n=== CONNECTION FAILURE SUMMARY ===");
+                    Console.WriteLine("Historical data fetch was stopped due to connection failure.");
+                    Console.WriteLine($"To resolve this:");
+                    Console.WriteLine($"1. Start IBKR Gateway or Trader Workstation (TWS)");
+                    Console.WriteLine($"2. Ensure it's configured to accept API connections on port {_config["IBKRClient:Port"]}");
+                    Console.WriteLine($"3. Verify the socket settings in your configuration match your IBKR setup");
+                    Console.WriteLine($"4. Re-run this operation after the connection is established");
                 }
-            }
-
-            if (connectionFailed)
-            {
-                Console.WriteLine("\n=== CONNECTION FAILURE SUMMARY ===");
-                Console.WriteLine("Historical data fetch was stopped due to connection failure.");
-                Console.WriteLine($"To resolve this:");
-                Console.WriteLine($"1. Start IBKR Gateway or Trader Workstation (TWS)");
-                Console.WriteLine($"2. Ensure it's configured to accept API connections on port {_config["IBKRClient:Port"]}");
-                Console.WriteLine($"3. Verify the socket settings in your configuration match your IBKR setup");
-                Console.WriteLine($"4. Re-run this operation after the connection is established");
             }
         }
         public async Task UpdateHistoricalDataForHistoricalTradesCopy(List<HistoricalTrade> trades)

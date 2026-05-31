@@ -84,11 +84,18 @@ namespace IKBR_Report_Puller.Services
             // Determine if this is a forex pair by checking the symbol format (e.g., EUR.GBP, GBP.USD)
             // A valid forex pair has exactly two 3-letter currency codes separated by a dot
             bool isForex = IsForexPair(symbol);
+            int conId = int.Parse(conid);
 
+            //if (isForex && conId == 12087797)
+            //{
+            //    // Special handling for EUR.GBP which has a different ConId and exchange
+            //    conId = 12087792;
+            //}
             // Define the contract using the unique Conid
             Contract contract = new Contract
             {
-                ConId = int.Parse(conid)
+
+                ConId = conId
             };
 
             // Set contract-specific parameters based on instrument type
@@ -103,14 +110,14 @@ namespace IKBR_Report_Puller.Services
                 contract.Currency = currencies[1];    // Quote currency (e.g., GBP)
                 contract.SecType = "CASH";
                 contract.Exchange = listingExchange;// "IDEALPRO"; // Forex exchange
-                whatToShow = "BID_ASK"; // Use BID_ASK for forex (MIDPOINT may not be available for historical data)
+                whatToShow = "MIDPOINT"; // Use MIDPOINT for forex historical data (more reliable than BID_ASK)
                 useRTH = 0; // Include all trading hours (forex trades 24/5)
             }
             else if (contractUnitType == "INDEX")
             {
                 // If you have the ConId, sometimes the cleanest way is to ONLY use it.
                 // However, for IND types, Currency and SecType are often still required.
-                contract.ConId = int.Parse(conid);
+                contract.ConId = conId;
                 contract.SecType = "IND";
                 contract.Currency = "USD";
 
@@ -137,15 +144,15 @@ namespace IKBR_Report_Puller.Services
             string duration = CalculateIbkrDuration(from, to);
 
             // Format the endDateTime (to) as "yyyyMMdd-HH:mm:ss"
-            string endDateTime = to.ToString("yyyyMMdd-HH:mm:ss");
+            string endDateTime = "";// to.ToString("yyyyMMdd-HH:mm:ss");
 
             if (isForex)
             {
-                Console.WriteLine($"[ChartDataService] Requesting historical data - Symbol: {contract.Symbol}/{contract.Currency}, ConId: {conid}, SecType: {contract.SecType}, Exchange: {contract.Exchange}, Duration: {duration}, WhatToShow: {whatToShow}");
+                Console.WriteLine($"[ChartDataService] Requesting historical data - Symbol: {contract.Symbol}/{contract.Currency}, ConId: {conId}, SecType: {contract.SecType}, Exchange: {contract.Exchange}, Duration: {duration}, WhatToShow: {whatToShow}");
             }
             else
             {
-                Console.WriteLine(value: $"[ChartDataService] Requesting historical data - Symbol: {symbol}, ConId: {conid}, SecType: {contract.SecType ?? "default"}, Exchange: {contract.Exchange}, Duration: {duration}, WhatToShow: {whatToShow}");
+                Console.WriteLine(value: $"[ChartDataService] Requesting historical data - Symbol: {symbol}, ConId: {conId}, SecType: {contract.SecType ?? "default"}, Exchange: {contract.Exchange}, Duration: {duration}, WhatToShow: {whatToShow}");
             }
 
             // Parameters: id, contract, endDateTime, duration, barSize, whatToShow, useRTH, formatDate, keepUpToDate, chartOptions
@@ -162,12 +169,12 @@ namespace IKBR_Report_Puller.Services
                 null
             );
 
-            // Wait for the response with a timeout (60 seconds for large historical data requests)
-            var completedTask = await Task.WhenAny(_dataTcs.Task, Task.Delay(10000));
+            // Wait for the response with a timeout (120 seconds for large historical data requests)
+            var completedTask = await Task.WhenAny(_dataTcs.Task, Task.Delay(120000));
 
             if (completedTask != _dataTcs.Task)
             {
-                Console.WriteLine($"[ChartDataService] Request timed out after 60 seconds for {symbol}");
+                Console.WriteLine($"[ChartDataService] Request timed out after 120 seconds for {symbol}");
                 throw new TimeoutException($"Historical data request timed out for {symbol} (ConId: {conid})");
             }
 

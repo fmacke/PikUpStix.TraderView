@@ -131,8 +131,8 @@ namespace IKBR_Report_Puller.Console
         private async Task<(IKBRReport mainReport, string fileName)> GetReportDataFromInteractiveBrokers()
         {
             //// Fetch and process main report
-            //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260511_193118_TraderSyncAccess.xml");
-            XDocument mainReportXml =  await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260530_120419_TraderSyncAccess.xml");
+            //XDocument mainReportXml =  await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
             mainReportXml.Save(mainReportFilePath);
