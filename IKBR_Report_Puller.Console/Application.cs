@@ -1,11 +1,5 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Security.Principal;
-using System.Threading.Tasks;
 using System.Xml.Linq;
 using IKBR_Report_Puller.Domain;
-using IKBR_Report_Puller.IKBR;
 using IKBR_Report_Puller.Interfaces;
 using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
@@ -21,9 +15,9 @@ namespace IKBR_Report_Puller.Console
         private readonly IOpenPositionRepository _openPositionRepository;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
-        private readonly IHistoricalDataService _historicalDataService;
+        //private readonly IHistoricalDataService _historicalDataService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
-        private readonly IEconomicDataService _economicCalendarService;
+        private readonly IEconomicDataService marketDataService;
 
         const int maxRetries = 3;
         const int delayInSeconds = 5;
@@ -35,7 +29,7 @@ namespace IKBR_Report_Puller.Console
             IInstrumentRepository instrumentRepository,
             IOpenPositionRepository openPositionRepository,
             IExcelReportService excelReportService,
-            IHistoricalDataService historicalDataService,
+            //IHistoricalDataService historicalDataService,
             ITradeHistoryReportService tradeHistoryReportService,
             IEconomicDataService economicCalendarService,
             IConfiguration config)
@@ -45,9 +39,9 @@ namespace IKBR_Report_Puller.Console
             _instrumentRepository = instrumentRepository;
             _openPositionRepository = openPositionRepository;
             _excelReportService = excelReportService;
-            _historicalDataService = historicalDataService;
+            //_historicalDataService = historicalDataService;
             _tradeHistoryReportService = tradeHistoryReportService;
-            _economicCalendarService = economicCalendarService;
+            marketDataService = economicCalendarService;
             _config = config;
             outputFilePath = _config["IBKR:OutputFilePath"];
         }
@@ -64,45 +58,18 @@ namespace IKBR_Report_Puller.Console
                 _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);             
                 _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, _tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
 
-                //await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
-                //await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
-                //await WriteTodayReport(fileName);
-                await _economicCalendarService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                //await _economicCalendarService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                //await SaveIndexHistory();
+                await WriteTodayReport(fileName);
+                await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));                
+                await marketDataService.FetchAndSaveChartData(new List<string>()
+                    { 
+                        "SPX", "IWM", "WTI", "BITCOIN", "XAUUSD", "XAGUSD", "NDX", "VIX"
+                    }, 200);
             }
             catch (Exception ex)
             {
                 System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
             }
-        }
-
-        private async Task SaveIndexHistory()
-        {
-            var marketDataToUpdate = new List<Instrument>()
-                {
-                    new Instrument( )
-                    {
-                        InstrumentName = "SPX",
-                        Provider = "IBKR",
-                        DataName = "SPX",
-                        DataSource = "IBKR",
-                        Format = "PullerUpdate",
-                        Frequency = "D1",
-                        ContractUnitType = "INDEX",
-                        PriceQuotation = "USD",
-                        Currency = "USD",
-                        ListingExchange = "CBOE",
-                        ConId = "416904"
-                    },
-                };
-            await _historicalDataService.UpdateHistoricalDataForInstruments(marketDataToUpdate, DateTime.Now.AddDays(-200), DateTime.Now);
-        }
-
-        private async Task SaveReportDataToDB(IKBRReport mainReport)
-        {
-                  
-                 
         }
 
         private async Task<string> WriteTodayReport(string fileName)

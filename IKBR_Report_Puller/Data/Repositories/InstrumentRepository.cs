@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DocumentFormat.OpenXml.Math;
 using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
@@ -55,7 +56,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                                     trade.Symbol,
                                     trade.ListingExchange,
                                     trade.Currency,
-                                    trade.AssetCategory);
+                                    trade.AssetCategory,
+                                    "IBKR",
+                                    "IBKR");
 
                                 createdCount++;
                             }
@@ -142,7 +145,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                                     tradeConfirm.Symbol,
                                     tradeConfirm.ListingExchange,
                                     tradeConfirm.Currency,
-                                    tradeConfirm.AssetCategory);
+                                    tradeConfirm.AssetCategory,
+                                    "IBKR",
+                                    "IBKR");
 
                                 // Get the newly created instrument ID
                                 instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
@@ -302,7 +307,44 @@ namespace IKBR_Report_Puller.Data.Repositories
             int instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
             return instrumentId > 0 ? instrumentId : (int?)null;
         }
-        public int? InsertInstrument(string conid, string symbol, string listingExchange, string currency, string assetCategory)
+        public int? GetInstrumentIdFromSymbol(string symbol, string provider)
+        {
+            int? instrumentId = null;
+            ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        instrumentId = GetInstrumentIdBySymbol(connection, transaction, symbol, provider);
+
+                        return instrumentId;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error obtaining instrumentId from symbol: {ex.Message}");
+                        throw;
+                    }
+                }
+            });
+            return instrumentId;
+        }
+
+        private int? GetInstrumentIdBySymbol(SqlConnection connection, SqlTransaction transaction, string symbol, string provider)
+        {
+            const string query = "SELECT Id FROM dbo.Instruments WHERE Symbol = @symbol AND Provider = @provider";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@symbol", symbol },
+                { "@provider", provider }
+            };
+
+            int instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
+            return instrumentId > 0 ? instrumentId : (int?)null;
+        }
+
+        public int? InsertInstrument(string conid, string symbol, string listingExchange, string currency, string assetCategory, string provider, string dataSource)
         {
             int? id = null;
             ExecuteDatabaseOperation(connection =>
@@ -318,7 +360,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                                     symbol,
                                     listingExchange,
                                     currency,
-                                    assetCategory);
+                                    assetCategory,
+                                    provider,
+                                    dataSource);
 
                         // Get the newly created instrument ID
                         id = GetInstrumentIdByConid(connection, transaction, conid);
@@ -342,7 +386,9 @@ namespace IKBR_Report_Puller.Data.Repositories
             string symbol,
             string listingExchange,
             string currency,
-            string assetCategory)
+            string assetCategory,
+            string provider,
+            string dataSource)
         {
             const string insertQuery = @"
                 INSERT INTO dbo.Instruments 
@@ -355,9 +401,9 @@ namespace IKBR_Report_Puller.Data.Repositories
             var parameters = new Dictionary<string, object>
             {
                 { "@instrumentName", symbol ?? "Unknown" },
-                { "@provider", "IBKR" },
+                { "@provider", provider ?? "Unknown" },
                 { "@dataName", assetCategory ?? "Unknown" },
-                { "@dataSource", "Trade Execution" },
+                { "@dataSource", dataSource ?? "Unknown" },
                 { "@format", "Trade" },
                 { "@frequency", "Trade" },
                 { "@contractUnit", DBNull.Value },

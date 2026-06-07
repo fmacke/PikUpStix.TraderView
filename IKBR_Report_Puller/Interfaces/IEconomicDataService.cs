@@ -18,5 +18,6 @@ namespace IKBR_Report_Puller.Interfaces
         /// <returns>List of economic calendar events</returns>
         Task<List<EconomicCalendarEvent>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate);
         Task FetchAndSaveChartData(List<HistoricalTrade> trades);
+        Task FetchAndSaveChartData(List<string> symbols, int lookBackDays);
     }
 }

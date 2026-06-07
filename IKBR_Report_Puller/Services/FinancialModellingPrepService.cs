@@ -1,3 +1,4 @@
+using IKBR_Report_Puller.Data.Repositories;
 using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Interfaces;
 using System;
@@ -17,6 +18,7 @@ namespace IKBR_Report_Puller.Services
         private readonly HttpClient _httpClient;
         private readonly IEconomicCalendarRepository _repository;
         private readonly IHistoricalDataRepository _historicalDataRepository;
+        private readonly IInstrumentRepository _instrumentRepository;
         private readonly string _apiKey;
         private readonly string _baseUrl;
         private readonly string _outputFilePath;
@@ -25,6 +27,7 @@ namespace IKBR_Report_Puller.Services
             HttpClient httpClient,
             IEconomicCalendarRepository repository,
             IHistoricalDataRepository historicalDataRepository,
+            IInstrumentRepository instrumentRepository,
             string apiKey,
             string baseUrl,
             string outputFilePath)
@@ -32,6 +35,7 @@ namespace IKBR_Report_Puller.Services
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _historicalDataRepository = historicalDataRepository ?? throw new ArgumentNullException(nameof(historicalDataRepository));
+            _instrumentRepository = instrumentRepository ?? throw new ArgumentNullException(nameof(instrumentRepository));
             _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
             _baseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
             _outputFilePath = outputFilePath ?? throw new ArgumentNullException(nameof(outputFilePath));
@@ -136,6 +140,71 @@ namespace IKBR_Report_Puller.Services
                     _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), barData);
                 }
                 
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching economic calendar: {ex.Message}");
+                throw;
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"JSON deserialization error: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching and saving economic calendar: {ex.Message}");
+                throw;
+            }
+        }
+
+        public async Task FetchAndSaveChartData(List<string> symbols, int lookBackDays)
+        {
+            try
+            {
+                foreach (var symbol in symbols)
+                {
+                    // Build API URL with date parameters
+                    var fromDateStr = DateTime.Now.AddDays(lookBackDays*-1).ToString("yyyy-MM-dd");
+                    var toDate = DateTime.Now;
+                    if (toDate > DateTime.UtcNow)
+                    {
+                        toDate = DateTime.UtcNow;
+                    }
+                    var sym = symbol.Replace("/", "").Replace("-", "").Replace(" ", "").Replace(".", "");
+                    var toDateStr = toDate.ToString("yyyy-MM-dd");
+                    var url = $"{_baseUrl}/historical-price-eod/full?symbol={sym}&from={fromDateStr}&to={toDateStr}&apikey={_apiKey}";
+                    Console.WriteLine($"Fetching time series data from {fromDateStr} to {toDateStr}...");
+
+                    // Fetch data from API
+                    var response = await _httpClient.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    var content = await response.Content.ReadAsStringAsync();
+
+                    // Deserialize JSON response
+                    var barData = JsonSerializer.Deserialize<List<Bar>>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (barData == null || barData.Count == 0)
+                    {
+                        Console.WriteLine("No chart data found for the specified date range.");
+                    }
+
+                    Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {symbol}.");
+
+                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(symbol);
+                    if(instrumentId == null)
+                    {
+                        Console.WriteLine($"No instrument found for symbol {symbol} so adding to database.");
+                        instrumentId = _instrumentRepository.InsertInstrument(symbol, symbol, "FMP","USD", "INDEX","FinancialModellingPrep", "FinancialModellingPrep");
+                    }
+                    // Save to database
+                    _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), barData);
+                }
+
             }
             catch (HttpRequestException ex)
             {
