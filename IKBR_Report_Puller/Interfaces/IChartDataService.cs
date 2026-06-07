@@ -1,7 +1,7 @@
 using IBApi;
 using System.Xml.Linq;
 
-namespace IKBR_Report_Puller.Interfaces
+namespace PikUpStix.TraderView.Interfaces
 {
     public interface IChartDataService
     {

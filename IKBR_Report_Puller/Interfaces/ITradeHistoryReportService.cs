@@ -1,6 +1,6 @@
 using IKBR_Report_Puller.Domain;
 
-namespace IKBR_Report_Puller.Interfaces
+namespace PikUpStix.TraderView.Interfaces
 {
     public interface ITradeHistoryReportService
     {

@@ -1,6 +1,6 @@
 using IKBR_Report_Puller.Data.Repositories;
 using IKBR_Report_Puller.Domain;
-using IKBR_Report_Puller.Interfaces;
+using PikUpStix.TraderView.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.IO;

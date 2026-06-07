@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using DocumentFormat.OpenXml.Math;
 using IKBR_Report_Puller.Domain;
-using IKBR_Report_Puller.Interfaces;
 using Microsoft.Data.SqlClient;
+using PikUpStix.TraderView.Interfaces;
 
 namespace IKBR_Report_Puller.Data.Repositories
 {

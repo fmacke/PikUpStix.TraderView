@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using IKBR_Report_Puller.Domain;
 
-namespace IKBR_Report_Puller.Interfaces
+namespace PikUpStix.TraderView.Interfaces
 {
     /// <summary>
     /// Service for retrieving and storing economic calendar data

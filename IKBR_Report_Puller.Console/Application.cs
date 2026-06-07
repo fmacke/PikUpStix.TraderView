@@ -1,9 +1,8 @@
 using System.Xml.Linq;
 using IKBR_Report_Puller.Domain;
-using IKBR_Report_Puller.Interfaces;
+using PikUpStix.TraderView.Interfaces;
 using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
-using PikUpStix.TraderView.Interfaces;
 
 namespace IKBR_Report_Puller.Console
 {

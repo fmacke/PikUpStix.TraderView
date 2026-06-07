@@ -1,80 +1,86 @@
 using traderview.Server.Services;
-using IKBR_Report_Puller.Interfaces;
 using IKBR_Report_Puller.Services;
 using IKBR_Report_Puller.Data.Repositories;
+using PikUpStix.TraderView.Interfaces;
 
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-
-// Register repositories (following Repository Pattern with DI)
-// Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
-builder.Services.AddScoped<IInstrumentRepository>(provider => 
+public partial class Program
 {
-    var config = provider.GetRequiredService<IConfiguration>();
-    var connectionString = BuildConnectionString(config);
-    return new InstrumentRepository(connectionString);
-});
+    private static void Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
-{
-    var config = provider.GetRequiredService<IConfiguration>();
-    var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-    var connectionString = BuildConnectionString(config);
-    return new TradeExecutionRepository(connectionString, instrumentRepo);
-});
+        // Add services to the container.
 
-builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
-{
-    var config = provider.GetRequiredService<IConfiguration>();
-    var connectionString = BuildConnectionString(config);
-    return new HistoricalDataRepository(connectionString);
-});
+        // Register repositories (following Repository Pattern with DI)
+        // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
+        builder.Services.AddScoped<IInstrumentRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new InstrumentRepository(connectionString);
+        });
 
-builder.Services.AddScoped<IOpenPositionRepository>(provider =>
-{
-    var config = provider.GetRequiredService<IConfiguration>();
-    var connectionString = BuildConnectionString(config);
-    return new OpenPositionRepository(connectionString);
-});
+        builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
+            var connectionString = BuildConnectionString(config);
+            return new TradeExecutionRepository(connectionString, instrumentRepo);
+        });
 
-// Register IKBR services (no longer need IDataService - services use repositories directly)
-builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
+        builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new HistoricalDataRepository(connectionString);
+        });
 
-// Register TradeViewer service
-builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
+        builder.Services.AddScoped<IOpenPositionRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new OpenPositionRepository(connectionString);
+        });
 
-builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+        // Register IKBR services (no longer need IDataService - services use repositories directly)
+        builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
 
-var app = builder.Build();
+        // Register TradeViewer service
+        builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
 
-app.UseDefaultFiles();
-app.MapStaticAssets();
+        builder.Services.AddControllers();
+        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+        builder.Services.AddOpenApi();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+        var app = builder.Build();
 
-app.UseHttpsRedirection();
+        app.UseDefaultFiles();
+        app.MapStaticAssets();
 
-app.UseAuthorization();
+        // Configure the HTTP request pipeline.
+        if (app.Environment.IsDevelopment())
+        {
+            app.MapOpenApi();
+        }
 
-app.MapControllers();
+        app.UseHttpsRedirection();
 
-app.MapFallbackToFile("/index.html");
+        app.UseAuthorization();
 
-app.Run();
+        app.MapControllers();
 
-// Helper method to build connection string
-static string BuildConnectionString(IConfiguration config)
-{
-    var dbUser = config["Database:User"];
-    var dbPassword = config["Database:Password"];
-    var dbHost = config["Database:Host"];
-    var dbName = config["Database:DbName"];
-    return $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
+        app.MapFallbackToFile("/index.html");
+
+        app.Run();
+
+        // Helper method to build connection string
+        static string BuildConnectionString(IConfiguration config)
+        {
+            var dbUser = config["Database:User"];
+            var dbPassword = config["Database:Password"];
+            var dbHost = config["Database:Host"];
+            var dbName = config["Database:DbName"];
+            return $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
+        }
+    }
 }

@@ -1,10 +1,7 @@
 using IKBR_Report_Puller.Services;
-using IKBR_Report_Puller.Interfaces;
-using IKBR_Report_Puller.Domain;
 using Microsoft.Extensions.Configuration;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
-using System.Xml.Linq;
+using PikUpStix.TraderView.Interfaces;
 
 namespace IKBR_Report_Puller.Tests.Services
 {

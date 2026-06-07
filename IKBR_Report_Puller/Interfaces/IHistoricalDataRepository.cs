@@ -2,7 +2,7 @@ using IKBR_Report_Puller.Domain;
 using System;
 using System.Collections.Generic;
 
-namespace IKBR_Report_Puller.Interfaces
+namespace PikUpStix.TraderView.Interfaces
 {
     /// <summary>
     /// Repository interface for Historical Data (chart data) operations

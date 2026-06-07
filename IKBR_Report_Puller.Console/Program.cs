@@ -1,7 +1,3 @@
-using System;
-using System.Net.Http;
-using System.Threading.Tasks;
-using IKBR_Report_Puller.Interfaces;
 using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -93,7 +89,6 @@ namespace IKBR_Report_Puller.Console
                     services.AddSingleton<IReportFetchingService, ReportFetchingService>();
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
-                    //services.AddSingleton<IHistoricalDataService, HistoricalDataService>();
                     services.AddSingleton<Application>();
                 })
                 .Build();
