@@ -12,23 +12,26 @@ namespace IKBR_Report_Puller.Services
     /// <summary>
     /// Service for retrieving economic calendar data from Financial Modeling Prep API
     /// </summary>
-    public class EconomicCalendarService : IEconomicCalendarService
+    public class FinancialModellingPrepService : IEconomicDataService
     {
         private readonly HttpClient _httpClient;
         private readonly IEconomicCalendarRepository _repository;
+        private readonly IHistoricalDataRepository _historicalDataRepository;
         private readonly string _apiKey;
         private readonly string _baseUrl;
         private readonly string _outputFilePath;
 
-        public EconomicCalendarService(
+        public FinancialModellingPrepService(
             HttpClient httpClient,
             IEconomicCalendarRepository repository,
+            IHistoricalDataRepository historicalDataRepository,
             string apiKey,
             string baseUrl,
             string outputFilePath)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _historicalDataRepository = historicalDataRepository ?? throw new ArgumentNullException(nameof(historicalDataRepository));
             _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
             _baseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
             _outputFilePath = outputFilePath ?? throw new ArgumentNullException(nameof(outputFilePath));
@@ -45,7 +48,6 @@ namespace IKBR_Report_Puller.Services
                 var fromDateStr = fromDate.ToString("yyyy-MM-dd");
                 var toDateStr = toDate.ToString("yyyy-MM-dd");
                 var url = $"{_baseUrl}/economic-calendar?from={fromDateStr}&to={toDateStr}&apikey={_apiKey}";
-
                 Console.WriteLine($"Fetching economic calendar data from {fromDateStr} to {toDateStr}...");
 
                 // Fetch data from API
@@ -62,11 +64,11 @@ namespace IKBR_Report_Puller.Services
 
                 if (events == null || events.Count == 0)
                 {
-                    Console.WriteLine("No economic calendar events found for the specified date range.");
+                    Console.WriteLine("No economic calendar barData found for the specified date range.");
                     return new List<EconomicCalendarEvent>();
                 }
 
-                Console.WriteLine($"Retrieved {events.Count} economic calendar events.");
+                Console.WriteLine($"Retrieved {events.Count} economic calendar barData.");
 
                 // Save to file
                 await SaveToFileAsync(events, fromDateStr, toDateStr);
@@ -93,8 +95,67 @@ namespace IKBR_Report_Puller.Services
             }
         }
 
+        public async Task FetchAndSaveChartData(List<HistoricalTrade> trades)
+        {
+            try
+            {
+                foreach (var trade in trades)
+                {                
+                    // Build API URL with date parameters
+                    var fromDateStr = trade.TradeOpened.AddDays(-200).ToString("yyyy-MM-dd");
+                    var toDate = trade.TradeClosed.AddDays(200);
+                    if(toDate > DateTime.UtcNow)
+                    {
+                        toDate = DateTime.UtcNow;
+                    }
+                    var symbol = trade.Symbol.Replace("/", "").Replace("-", "").Replace(" ", "").Replace(".", "");
+                    var toDateStr = toDate.ToString("yyyy-MM-dd");
+                    var url = $"{_baseUrl}/historical-price-eod/full?symbol={symbol}&from={fromDateStr}&to={toDateStr}&apikey={_apiKey}";
+                    Console.WriteLine($"Fetching time series data from {fromDateStr} to {toDateStr}...");
+
+                    // Fetch data from API
+                    var response = await _httpClient.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+
+                    var content = await response.Content.ReadAsStringAsync();
+
+                    // Deserialize JSON response
+                    var barData = JsonSerializer.Deserialize<List<Bar>>(content, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (barData == null || barData.Count == 0)
+                    {
+                        Console.WriteLine("No chart data found for the specified date range.");
+                    }
+
+                    Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {trade.Symbol}.");
+
+                    // Save to database
+                    _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), barData);
+                }
+                
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching economic calendar: {ex.Message}");
+                throw;
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"JSON deserialization error: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching and saving economic calendar: {ex.Message}");
+                throw;
+            }
+        }
+
         /// <summary>
-        /// Saves economic calendar events to a JSON file
+        /// Saves economic calendar barData to a JSON file
         /// </summary>
         private async Task SaveToFileAsync(List<EconomicCalendarEvent> events, string fromDate, string toDate)
         {

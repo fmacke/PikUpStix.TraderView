@@ -75,17 +75,18 @@ namespace IKBR_Report_Puller.Console
                         return new Data.Repositories.EconomicCalendarRepository(connectionString);
                     });
 
-                    services.AddSingleton<IEconomicCalendarService>(provider =>
+                    services.AddSingleton<IEconomicDataService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
                         var repository = provider.GetRequiredService<IEconomicCalendarRepository>();
+                        var historicalDataRepository = provider.GetRequiredService<IHistoricalDataRepository>();
                         var config = provider.GetRequiredService<IConfiguration>();
 
                         var apiKey = config["FinancialModelingPrep:ApiKey"];
                         var baseUrl = config["FinancialModelingPrep:BaseUrl"];
                         var outputPath = config["FinancialModelingPrep:OutputFilePath"];
 
-                        return new EconomicCalendarService(httpClient, repository, apiKey, baseUrl, outputPath);
+                        return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, apiKey, baseUrl, outputPath);
                     });
                     services.AddSingleton<IExcelReportService, ExcelReportService>();
                     services.AddSingleton<IReportFetchingService, ReportFetchingService>();

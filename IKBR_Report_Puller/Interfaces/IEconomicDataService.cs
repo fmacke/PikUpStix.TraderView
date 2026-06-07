@@ -8,7 +8,7 @@ namespace IKBR_Report_Puller.Interfaces
     /// <summary>
     /// Service for retrieving and storing economic calendar data
     /// </summary>
-    public interface IEconomicCalendarService
+    public interface IEconomicDataService
     {
         /// <summary>
         /// Retrieves economic calendar events for a date range, saves to file and database
@@ -17,5 +17,6 @@ namespace IKBR_Report_Puller.Interfaces
         /// <param name="toDate">End date for calendar events</param>
         /// <returns>List of economic calendar events</returns>
         Task<List<EconomicCalendarEvent>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate);
+        Task FetchAndSaveChartData(List<HistoricalTrade> trades);
     }
 }

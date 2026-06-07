@@ -4,6 +4,7 @@ using IKBR_Report_Puller.Data;
 
 namespace IKBR_Report_Puller.Domain
 {
+
     /// <summary>
     /// Represents an economic calendar event from Financial Modeling Prep API
     /// </summary>

@@ -23,7 +23,7 @@ namespace IKBR_Report_Puller.Console
         private readonly IConfiguration _config;
         private readonly IHistoricalDataService _historicalDataService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
-        private readonly IEconomicCalendarService _economicCalendarService;
+        private readonly IEconomicDataService _economicCalendarService;
 
         const int maxRetries = 3;
         const int delayInSeconds = 5;
@@ -37,7 +37,7 @@ namespace IKBR_Report_Puller.Console
             IExcelReportService excelReportService,
             IHistoricalDataService historicalDataService,
             ITradeHistoryReportService tradeHistoryReportService,
-            IEconomicCalendarService economicCalendarService,
+            IEconomicDataService economicCalendarService,
             IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
@@ -65,9 +65,10 @@ namespace IKBR_Report_Puller.Console
                 _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, _tradeExecutionRepository.GetTradeExecutions(), outputFilePath);
 
                 //await _historicalDataService.UpdateHistoricalDataForOpenPositions(mainReport.OpenPositions);
-                await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
+                //await _historicalDataService.UpdateHistoricalDataForHistoricalTrades(_tradeHistoryReportService.TradeHistoryAggregated);
                 //await WriteTodayReport(fileName);
-                //await SaveEconomicCalendarUpdates();
+                await _economicCalendarService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                //await _economicCalendarService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                 //await SaveIndexHistory();
             }
             catch (Exception ex)
@@ -104,11 +105,6 @@ namespace IKBR_Report_Puller.Console
                  
         }
 
-        private async Task SaveEconomicCalendarUpdates()
-        {
-            var events = await _economicCalendarService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30),  DateTime.Now.AddDays(30));
-        }
-
         private async Task<string> WriteTodayReport(string fileName)
         {
             //// Fetch and process today's report
@@ -131,7 +127,7 @@ namespace IKBR_Report_Puller.Console
         private async Task<(IKBRReport mainReport, string fileName)> GetReportDataFromInteractiveBrokers()
         {
             //// Fetch and process main report
-            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260530_120419_TraderSyncAccess.xml");
+            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260607_153253_TraderSyncAccess.xml");
             //XDocument mainReportXml =  await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
