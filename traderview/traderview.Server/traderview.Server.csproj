@@ -7,6 +7,10 @@
     <SpaRoot>..\traderview.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>..\..</DockerfileContext>
+    <DockerComposeProjectPath>..\..\docker-compose.yml</DockerComposeProjectPath>
+    <UserSecretsId>9fc58286-d2ec-411d-9dbf-b8b46bce63d4</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -15,11 +19,12 @@
       <Version>10.*-*</Version>
     </PackageReference>
     <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.4" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.23.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\traderview.client\traderview.client.esproj">
+    <ProjectReference Include="..\traderview.client\traderview.client.esproj" Condition="'$(BuildingInsideDocker)' != 'true'">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\IKBR_Report_Puller\PikUpStix.TraderView.csproj" />
