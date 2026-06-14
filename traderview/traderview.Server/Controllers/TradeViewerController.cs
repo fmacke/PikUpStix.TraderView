@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using traderview.Server.Services;
 using traderview.Server.DTOs;
+using IKBR_Report_Puller.Console;
 
 namespace traderview.Server.Controllers
 {
@@ -10,13 +11,16 @@ namespace traderview.Server.Controllers
     {
         private readonly ITradeViewerService _tradeViewerService;
         private readonly ILogger<TradeViewerController> _logger;
+        private readonly Application _application;
 
         public TradeViewerController(
             ITradeViewerService tradeViewerService,
-            ILogger<TradeViewerController> logger)
+            ILogger<TradeViewerController> logger,
+            Application application)
         {
             _tradeViewerService = tradeViewerService;
             _logger = logger;
+            _application = application;
         }
 
         /// <summary>
@@ -128,6 +132,34 @@ namespace traderview.Server.Controllers
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { message = "Error fetching RS indicator data", detail = ex.Message }
+                );
+            }
+        }
+
+        /// <summary>
+        /// Sync IBKR data - fetches reports from Interactive Brokers and updates database
+        /// </summary>
+        /// <returns>Success message if sync completes successfully</returns>
+        [HttpPost("sync")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<object>> SyncIBKRDataAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting IBKR data sync...");
+
+                await _application.RunAsync();
+
+                _logger.LogInformation("IBKR data sync completed successfully");
+                return Ok(new { message = "IBKR data sync completed successfully", timestamp = DateTime.UtcNow });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during IBKR data sync");
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { message = "Error during IBKR data sync", detail = ex.Message }
                 );
             }
         }

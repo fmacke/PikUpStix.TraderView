@@ -2,6 +2,7 @@ using traderview.Server.Services;
 using IKBR_Report_Puller.Services;
 using IKBR_Report_Puller.Data.Repositories;
 using PikUpStix.TraderView.Interfaces;
+using IKBR_Report_Puller.Console;
 
 public partial class Program
 {
@@ -10,6 +11,9 @@ public partial class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
+
+        // Register HttpClient and HttpClientFactory
+        builder.Services.AddHttpClient();
 
         // Register repositories (following Repository Pattern with DI)
         // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
@@ -42,8 +46,36 @@ public partial class Program
             return new OpenPositionRepository(connectionString);
         });
 
-        // Register IKBR services (no longer need IDataService - services use repositories directly)
+        builder.Services.AddScoped<IEconomicCalendarRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new EconomicCalendarRepository(connectionString);
+        });
+
+        // Register IKBR services
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
+
+        builder.Services.AddScoped<IReportFetchingService, ReportFetchingService>();
+
+        builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
+
+        builder.Services.AddScoped<IEconomicDataService>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient();
+            var economicRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
+            var historicalRepo = provider.GetRequiredService<IHistoricalDataRepository>();
+            var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
+            var apiKey = config["FinancialModellingPrep:ApiKey"];
+            var baseUrl = config["FinancialModellingPrep:BaseUrl"];
+            var outputFilePath = config["IBKR:OutputFilePath"];
+            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
+        });
+
+        // Register the Application class for IBKR sync operations
+        builder.Services.AddScoped<Application>();
 
         // Register TradeViewer service
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();

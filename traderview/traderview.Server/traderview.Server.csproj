@@ -23,6 +23,7 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\IKBR_Report_Puller\PikUpStix.TraderView.csproj" />
+    <ProjectReference Include="..\..\IKBR_Report_Puller.Console\IKBR_Report_Puller.Console.csproj" />
   </ItemGroup>
 
 </Project>

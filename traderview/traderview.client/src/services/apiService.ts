@@ -61,5 +61,24 @@ export const apiService = {
             throw error;
         }
     },
+
+    // Sync IBKR data - fetches reports from Interactive Brokers and updates database
+    async syncIBKRData(): Promise<{ message: string; timestamp: string }> {
+        console.log('Making API call to /tradeviewer/sync');
+        try {
+            const response = await apiClient.post<{ message: string; timestamp: string }>(
+                '/tradeviewer/sync',
+                {},
+                {
+                    timeout: 300000 // 5 minute timeout for long-running sync operation
+                }
+            );
+            console.log('IBKR sync API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('IBKR sync API call failed:', error);
+            throw error;
+        }
+    },
 };
 

@@ -10,6 +10,8 @@ function App() {
     const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [syncing, setSyncing] = useState<boolean>(false);
+    const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
     useEffect(() => {
         populateTradeData();
@@ -17,6 +19,26 @@ function App() {
 
     const handleTradeSelect = (trade: Trade) => {
         setSelectedTrade(trade);
+    };
+
+    const handleSync = async () => {
+        try {
+            setSyncing(true);
+            setSyncMessage(null);
+            setError(null);
+
+            const result = await apiService.syncIBKRData();
+            setSyncMessage(`✓ ${result.message}`);
+
+            // Refresh trade data after successful sync
+            await populateTradeData();
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to sync IBKR data. Please try again.';
+            setError(errorMessage);
+            console.error('Error syncing IBKR data:', err);
+        } finally {
+            setSyncing(false);
+        }
     };
 
     if (loading) {
@@ -53,6 +75,17 @@ function App() {
 
     return (
         <div className="app-container">
+            <div className="sync-header">
+                <button 
+                    onClick={handleSync} 
+                    disabled={syncing}
+                    className="sync-button"
+                    title="Sync data from Interactive Brokers"
+                >
+                    {syncing ? 'Syncing...' : 'Sync IBKR Data'}
+                </button>
+                {syncMessage && <span className="sync-success">{syncMessage}</span>}
+            </div>
             <div className="master-detail-layout">
                 <div className="detail-pane">
                     <TradeDetail trade={selectedTrade} />
