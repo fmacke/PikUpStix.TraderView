@@ -28,4 +28,8 @@ EXPOSE 8080
 EXPOSE 8081
 
 COPY --from=publish /app/publish .
+
+# Set environment to Docker so it uses appsettings.Docker.json
+ENV ASPNETCORE_ENVIRONMENT=Docker
+
 ENTRYPOINT ["dotnet", "traderview.Server.dll"]
