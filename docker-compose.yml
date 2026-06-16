@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  traderview-server:
+    build:
+      context: .
+      dockerfile: traderview/traderview.Server/Dockerfile
+    container_name: traderview-server
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+      - DB_HOST=host.docker.internal
+      - DB_USER=sa
+      - DB_PASSWORD=Gogogo123!
+      - DB_NAME=TradingBE
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - traderview-network
+
+  traderview-client:
+    build:
+      context: .
+      dockerfile: traderview/traderview.client/Dockerfile
+    container_name: traderview-client
+    ports:
+      - "3000:80"
+    depends_on:
+      - traderview-server
+    networks:
+      - traderview-network
+
+networks:
+  traderview-network:
+    driver: bridge

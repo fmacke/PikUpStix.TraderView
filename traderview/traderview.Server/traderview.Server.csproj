@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\traderview.client\traderview.client.esproj">
+    <ProjectReference Include="..\traderview.client\traderview.client.esproj" Condition="'$(BuildingInsideDocker)' != 'true'">
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\IKBR_Report_Puller\PikUpStix.TraderView.csproj" />

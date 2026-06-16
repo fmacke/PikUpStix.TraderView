@@ -87,7 +87,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                             {
                                 IbOrderID = reader.GetInt64("ibOrderID"),
                                 Symbol = reader.GetString("symbol"),
-                                TradeDate = reader.GetDateTime("tradeDate"),
+                                TradeDate = DateTime.ParseExact(reader.GetString("tradeDate"), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
                                 Quantity = reader.GetDecimal("quantity"),
                                 AveragePrice = reader.GetDecimal("tradePrice"),
                                 InstrumentId = reader.GetInt32("instrumentid"),
@@ -96,7 +96,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                                 IbExecID = reader.GetString("ibExecID"),
                                 IBCommission = reader.GetDecimal("ibCommission"),
                                 IBCommissionCurrency = reader.GetString("ibCommissionCurrency"),
-                            });
+                            }); 
                         }
                     }
                 }
@@ -343,21 +343,24 @@ namespace IKBR_Report_Puller.Data.Repositories
                             InstrumentId = existingTrade.InstrumentId,
                             Symbol = existingTrade.Symbol,
                             SecurityId = existingTrade.Conid,
-                            TradeDate = reader.IsDBNull(reader.GetOrdinal("tradeDate")) 
-                                ? DateTime.MinValue 
-                                : reader.GetDateTime(reader.GetOrdinal("tradeDate")),
-                            Quantity = reader.IsDBNull(reader.GetOrdinal("quantity")) 
-                                ? 0 
-                                : reader.GetDecimal(reader.GetOrdinal("quantity")),
-                            AveragePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice")) 
-                                ? 0 
-                                : reader.GetDecimal(reader.GetOrdinal("tradePrice")),
-                            Currency = reader.IsDBNull(reader.GetOrdinal("currency")) 
-                                ? null 
-                                : reader.GetString(reader.GetOrdinal("currency")),
-                            IbOrderID = reader.IsDBNull(reader.GetOrdinal("ibOrderID")) 
-                                ? 0 
-                                : reader.GetInt64(reader.GetOrdinal("ibOrderID"))
+
+                            // FIX: Read as string, then parse using the exact format
+                                                TradeDate = reader.IsDBNull(reader.GetOrdinal("tradeDate"))
+                             ? DateTime.MinValue
+                             : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("tradeDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
+
+                                                Quantity = reader.IsDBNull(reader.GetOrdinal("quantity"))
+                             ? 0
+                             : reader.GetDecimal(reader.GetOrdinal("quantity")),
+                                                AveragePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice"))
+                             ? 0
+                             : reader.GetDecimal(reader.GetOrdinal("tradePrice")),
+                                                Currency = reader.IsDBNull(reader.GetOrdinal("currency"))
+                             ? null
+                             : reader.GetString(reader.GetOrdinal("currency")),
+                                                IbOrderID = reader.IsDBNull(reader.GetOrdinal("ibOrderID"))
+                             ? 0
+                             : reader.GetInt64(reader.GetOrdinal("ibOrderID"))
                         };
                     }
                 }
