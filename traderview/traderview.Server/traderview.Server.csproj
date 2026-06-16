@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -23,7 +23,6 @@
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
     </ProjectReference>
     <ProjectReference Include="..\..\IKBR_Report_Puller\PikUpStix.TraderView.csproj" />
-    <ProjectReference Include="..\..\IKBR_Report_Puller.Console\IKBR_Report_Puller.Console.csproj" />
   </ItemGroup>
 
 </Project>

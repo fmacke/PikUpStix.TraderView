@@ -2,7 +2,7 @@ using traderview.Server.Services;
 using IKBR_Report_Puller.Services;
 using IKBR_Report_Puller.Data.Repositories;
 using PikUpStix.TraderView.Interfaces;
-using IKBR_Report_Puller.Console;
+
 
 public partial class Program
 {
@@ -74,8 +74,6 @@ public partial class Program
             return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
         });
 
-        // Register the Application class for IBKR sync operations
-        builder.Services.AddScoped<Application>();
 
         // Register TradeViewer service
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
