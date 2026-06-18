@@ -56,7 +56,7 @@ public partial class Program
         // Register IKBR services
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
 
-        builder.Services.AddScoped<IReportFetchingService, ReportFetchingService>();
+        builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();
 
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
 

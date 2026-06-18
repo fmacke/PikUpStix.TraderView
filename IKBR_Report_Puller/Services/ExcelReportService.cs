@@ -13,6 +13,10 @@ using System.Linq;
 
 namespace IKBR_Report_Puller.Services
 {
+    /// <summary>
+    /// Provides services for generating Excel reports from trading data including open positions, trade history, and visual analytics.
+    /// Implements the <see cref="IExcelReportService"/> interface.
+    /// </summary>
     public class ExcelReportService : IExcelReportService
     {
         private readonly ITradeExecutionRepository _tradeExecutionRepository;

@@ -153,7 +153,7 @@ namespace IKBR_Report_Puller.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching and saving economic calendar: {ex.Message}");
+                Console.WriteLine($"Error fetching and saving FMP: {ex.Message}");
                 throw;
             }
         }

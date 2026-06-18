@@ -10,7 +10,8 @@ using PikUpStix.TraderView.Interfaces;
 
 namespace IKBR_Report_Puller.Services
 {
-    public class ReportFetchingService : IReportFetchingService
+    
+    public class IKBRReportFetchingService : IReportFetchingService
     {
         private readonly IConfiguration _config;
         private readonly IHttpClientFactory _httpClientFactory;
@@ -21,7 +22,7 @@ namespace IKBR_Report_Puller.Services
         private readonly string _mainQueryId;
         private readonly string _todayQueryId;
 
-        public ReportFetchingService(IConfiguration config, IHttpClientFactory httpClientFactory)
+        public IKBRReportFetchingService(IConfiguration config, IHttpClientFactory httpClientFactory)
         {
             _config = config;
             _httpClientFactory = httpClientFactory;

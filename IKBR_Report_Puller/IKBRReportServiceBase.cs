@@ -26,18 +26,29 @@ public class IKBRReportServiceBase
     {
         string requestUrl = $"{_baseUrl}?t={_token}&q={_queryId}&v=3";
         Console.WriteLine("Pinging Flex Query API to request report...");
+        Console.WriteLine($"Request URL: {requestUrl}"); // Add logging
 
         string referenceCode = null;
         string statementUrl = null;
 
         // Retry logic for initial request (handles transient errors like 1001)
-        for (int attempt = 0; attempt < maxRetries; attempt++) 
+        for (int attempt = 0; attempt < maxRetries; attempt++)
         {
             try
             {
-                HttpResponseMessage initialResponse = await _client.GetAsync(requestUrl);
+                // Add null check and better error handling
+                if (_client == null)
+                {
+                    throw new InvalidOperationException("HttpClient is null. Ensure it's properly configured in dependency injection.");
+                }
+
+                Console.WriteLine($"Sending request (attempt {attempt + 1}/{maxRetries})...");
+                HttpResponseMessage initialResponse = await _client.GetAsync(requestUrl).ConfigureAwait(false);
+
+                Console.WriteLine($"Response status code: {initialResponse.StatusCode}");
                 initialResponse.EnsureSuccessStatusCode();
-                string initialResponseBody = await initialResponse.Content.ReadAsStringAsync();
+
+                string initialResponseBody = await initialResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 
                 Console.WriteLine("Initial API Response:");
                 Console.WriteLine(initialResponseBody);
@@ -73,7 +84,7 @@ public class IKBRReportServiceBase
                         int totalWaitMs = (waitTime * 1000) + jitter;
 
                         Console.WriteLine($"Retrying initial request in {totalWaitMs / 1000.0:F1} seconds... (Attempt {attempt + 1}/{maxRetries})");
-                        await Task.Delay(totalWaitMs);
+                        await Task.Delay(totalWaitMs).ConfigureAwait(false);
                         continue;
                     }
                 }
@@ -85,13 +96,41 @@ public class IKBRReportServiceBase
             {
                 throw; // Re-throw our own exception
             }
+            catch (HttpRequestException httpEx)
+            {
+                Console.WriteLine($"HTTP Request failed: {httpEx.Message}");
+                if (attempt < maxRetries - 1)
+                {
+                    int waitTime = delayInSeconds * (int)Math.Pow(2, Math.Min(attempt, 4));
+                    Console.WriteLine($"Retrying initial request in {waitTime} seconds... (Attempt {attempt + 1}/{maxRetries})");
+                    await Task.Delay(TimeSpan.FromSeconds(waitTime)).ConfigureAwait(false);
+                }
+                else
+                {
+                    throw new InvalidOperationException($"Failed to request report after {maxRetries} retries due to HTTP errors.", httpEx);
+                }
+            }
+            catch (TaskCanceledException tcEx)
+            {
+                Console.WriteLine($"Request timed out: {tcEx.Message}");
+                if (attempt < maxRetries - 1)
+                {
+                    int waitTime = delayInSeconds * (int)Math.Pow(2, Math.Min(attempt, 4));
+                    Console.WriteLine($"Retrying initial request in {waitTime} seconds... (Attempt {attempt + 1}/{maxRetries})");
+                    await Task.Delay(TimeSpan.FromSeconds(waitTime)).ConfigureAwait(false);
+                }
+                else
+                {
+                    throw new TimeoutException($"Request timed out after {maxRetries} retries.", tcEx);
+                }
+            }
             catch (Exception ex) when (attempt < maxRetries - 1)
             {
                 // Network errors or other exceptions - retry with exponential backoff
                 int waitTime = delayInSeconds * (int)Math.Pow(2, Math.Min(attempt, 4));
-                Console.WriteLine($"Request failed with exception: {ex.Message}");
+                Console.WriteLine($"Request failed with exception: {ex.GetType().Name} - {ex.Message}");
                 Console.WriteLine($"Retrying initial request in {waitTime} seconds... (Attempt {attempt + 1}/{maxRetries})");
-                await Task.Delay(TimeSpan.FromSeconds(waitTime));
+                await Task.Delay(TimeSpan.FromSeconds(waitTime)).ConfigureAwait(false);
             }
         }
 
@@ -103,12 +142,12 @@ public class IKBRReportServiceBase
         for (int i = 0; i < maxRetries; i++)
         {
             Console.WriteLine($"Attempt {i + 1} of {maxRetries}: Fetching the full report in {delayInSeconds} seconds...");
-            await Task.Delay(TimeSpan.FromSeconds(delayInSeconds));
+            await Task.Delay(TimeSpan.FromSeconds(delayInSeconds)).ConfigureAwait(false);
 
             string getStatementUrl = $"{statementUrl}?t={_token}&q={referenceCode}&v=3";
-            HttpResponseMessage reportResponse = await _client.GetAsync(getStatementUrl);
+            HttpResponseMessage reportResponse = await _client.GetAsync(getStatementUrl).ConfigureAwait(false);
             reportResponse.EnsureSuccessStatusCode();
-            string reportBody = await reportResponse.Content.ReadAsStringAsync();
+            string reportBody = await reportResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             XDocument reportXml;
             try
