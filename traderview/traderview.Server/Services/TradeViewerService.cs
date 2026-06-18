@@ -245,7 +245,7 @@ namespace traderview.Server.Services
             return candlesticks;
         }
 
-        public async Task<RSIndicatorDataDto?> GetRSIndicatorDataAsync(long tradeId, string benchmarkSymbol = "SPX", int daysBefore = 150, int daysAfter = 150)
+        public async Task<RSIndicatorDataDto?> GetRSIndicatorDataAsync(long tradeId, string benchmarkSymbol = "^GSPC", int daysBefore = 150, int daysAfter = 150)
         {
             try
             {

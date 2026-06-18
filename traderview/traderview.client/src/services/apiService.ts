@@ -41,7 +41,7 @@ export const apiService = {
     // Get RS indicator data for a specific trade
     async getRSIndicator(
         tradeId: number, 
-        benchmarkSymbol: string = 'SPX', 
+        benchmarkSymbol: string = '^GSPC', 
         daysBefore: number = 150, 
         daysAfter: number = 150
     ): Promise<RSIndicatorData> {

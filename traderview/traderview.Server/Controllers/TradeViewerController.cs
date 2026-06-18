@@ -90,7 +90,7 @@ namespace traderview.Server.Controllers
         /// Get RS (Relative Strength) indicator data for a specific trade
         /// </summary>
         /// <param name="tradeId">The trade ID</param>
-        /// <param name="benchmarkSymbol">Benchmark symbol (default: SPX)</param>
+        /// <param name="benchmarkSymbol">Benchmark symbol (default: ^GSPC)</param>
         /// <param name="daysBefore">Number of calendar days before trade entry to include (default: 150)</param>
         /// <param name="daysAfter">Number of calendar days after trade exit to include (default: 150)</param>
         /// <returns>RS indicator data with metrics</returns>
@@ -100,7 +100,7 @@ namespace traderview.Server.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RSIndicatorDataDto>> GetRSIndicatorAsync(
             long tradeId,
-            [FromQuery] string benchmarkSymbol = "SPX",
+            [FromQuery] string benchmarkSymbol = "^GSPC",
             [FromQuery] int daysBefore = 150,
             [FromQuery] int daysAfter = 150)
         {
