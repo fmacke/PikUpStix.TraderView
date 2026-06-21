@@ -12,12 +12,38 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:8080
       - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
-      # Overrides the appsettings json hierarchy for document storage
+      - AllowedHosts=*
+      
+      # Database Configurations (Using Environment Variables)
+      - ConnectionStrings__TradingDatabase=Server=host.docker.internal;Database=TradingBE;User Id=sa;Password=${SQL_PASSWORD};TrustServerCertificate=true;Encrypt=false;
+      - Database__User=sa
+      - Database__Password=${SQL_PASSWORD}
+      - Database__Host=host.docker.internal
+      - Database__DbName=TradingBE
+      
+      # IBKR API & Gateway Settings
+      - IBKR__Token=${IBKR_TOKEN}
+      - IBKR__QueryId=${IBKR_QUERY_ID}
+      - IBKR__QueryTodayExecutionsId=${IBKR_TODAY_EXEC_ID}
+      - IBKR__BaseUrl=https://ndcdyn.interactivebrokers.com/AccountManagement/FlexWebService/SendRequest
+      - IBKR__OutputFilePath=/app/documents
+      
+      - IBKRClient__SocketUrl=host.docker.internal
+      - IBKRClient__Port=4002
+      - IBKRClient__ClientId=10000
+      
+      # Financial Modeling Prep API Settings
+      - FinancialModelingPrep__ApiKey=${FMP_API_KEY}
+      - FinancialModelingPrep__BaseUrl=https://financialmodelingprep.com/stable
       - FinancialModelingPrep__OutputFilePath=/app/documents
+      
+      # Logging Levels
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft.AspNetCore=Warning
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      # Maps the named persistent volume to the container path
       - traderview-doc-storage:/app/documents
     networks:
       - traderview-network
@@ -38,7 +64,6 @@ networks:
   traderview-network:
     driver: bridge
 
-# Defined named volume to persist your documents outside container lifecycle
 volumes:
   traderview-doc-storage:
     driver: local
