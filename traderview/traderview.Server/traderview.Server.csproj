@@ -7,6 +7,7 @@
     <SpaRoot>..\traderview.client</SpaRoot>
     <SpaProxyLaunchCommand>npm run dev</SpaProxyLaunchCommand>
     <SpaProxyServerUrl>https://localhost:5173</SpaProxyServerUrl>
+    <UserSecretsId>ff3a21ae-059b-4f53-8589-8b474f460b89</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
