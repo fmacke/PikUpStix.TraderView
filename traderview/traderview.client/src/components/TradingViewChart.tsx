@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import type { IChartApi } from 'lightweight-charts';
-import type { Trade } from '../types/api';
+import type { Trade, RSDataPoint } from '../types/api';
 import { apiService } from '../services/apiService';
 import './TradingViewChart.css';
 
 interface TradingViewChartProps {
     trade: Trade;
+    rsData?: RSDataPoint[];
 }
 
-function TradingViewChart({ trade }: TradingViewChartProps) {
+function TradingViewChart({ trade, rsData }: TradingViewChartProps) {
     const chartContainerRef = useRef<HTMLDivElement>(null);
+    const rsChartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
+    const rsChartRef = useRef<IChartApi | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -233,6 +236,10 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                         chartRef.current.remove();
                         chartRef.current = null;
                     }
+                    if (rsChartRef.current) {
+                        rsChartRef.current.remove();
+                        rsChartRef.current = null;
+                    }
                 };
             } catch (err) {
                 console.error('Chart initialization error:', err);
@@ -254,6 +261,125 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
         };
     }, [trade.id, trade.symbol, trade.entryDate, trade.exitDate, trade.entryPrice, trade.exitPrice, trade.buySell, trade.pnl, trade.instrumentId]);
 
+    // Separate useEffect for RS Indicator chart
+    useEffect(() => {
+        if (!rsData || rsData.length === 0 || !rsChartContainerRef.current) {
+            // Clean up RS chart if no data
+            if (rsChartRef.current) {
+                rsChartRef.current.remove();
+                rsChartRef.current = null;
+            }
+            return;
+        }
+
+        console.log('Initializing RS chart with data:', rsData.length, 'points');
+
+        // Clean up existing RS chart
+        if (rsChartRef.current) {
+            rsChartRef.current.remove();
+            rsChartRef.current = null;
+        }
+
+        // Create RS chart
+        const rsChart = createChart(rsChartContainerRef.current, {
+            layout: {
+                background: { color: '#ffffff' },
+                textColor: '#333',
+            },
+            grid: {
+                vertLines: { color: '#e0e0e0' },
+                horzLines: { color: '#e0e0e0' },
+            },
+            width: rsChartContainerRef.current.clientWidth,
+            height: 200,
+            timeScale: {
+                timeVisible: true,
+                secondsVisible: false,
+                rightOffset: 5,
+                barSpacing: 10,
+            },
+            rightPriceScale: {
+                borderColor: '#cccccc',
+            },
+        });
+
+        rsChartRef.current = rsChart;
+
+        // Create RS Line series
+        const rsLineSeries = rsChart.addSeries(LineSeries, {
+            color: '#2962FF',
+            lineWidth: 2,
+            title: 'RS Line',
+            priceLineVisible: false,
+        });
+
+        // Create RS MA series
+        const rsMASeries = rsChart.addSeries(LineSeries, {
+            color: '#757575',
+            lineWidth: 1,
+            lineStyle: 2, // Dashed
+            title: 'RS MA (21)',
+            priceLineVisible: false,
+        });
+
+        // Convert RS data to chart format
+        const rsLineData = rsData.map(point => ({
+            time: point.date.split('T')[0] as any,
+            value: point.rsRatio,
+        }));
+
+        const rsMAData = rsData.map(point => ({
+            time: point.date.split('T')[0] as any,
+            value: point.rsma,
+        }));
+
+        console.log('RS Line data points:', rsLineData.length);
+        console.log('Sample RS data:', rsLineData.slice(0, 3));
+
+        rsLineSeries.setData(rsLineData);
+        rsMASeries.setData(rsMAData);
+
+        // Synchronize time scales between main chart and RS chart
+        if (chartRef.current) {
+            const mainTimeRangeHandler = () => {
+                const timeRange = chartRef.current?.timeScale().getVisibleRange();
+                if (timeRange && rsChartRef.current) {
+                    rsChartRef.current.timeScale().setVisibleRange(timeRange);
+                }
+            };
+
+            const rsTimeRangeHandler = () => {
+                const timeRange = rsChartRef.current?.timeScale().getVisibleRange();
+                if (timeRange && chartRef.current) {
+                    chartRef.current.timeScale().setVisibleRange(timeRange);
+                }
+            };
+
+            chartRef.current.timeScale().subscribeVisibleTimeRangeChange(mainTimeRangeHandler);
+            rsChart.timeScale().subscribeVisibleTimeRangeChange(rsTimeRangeHandler);
+        }
+
+        // Handle window resize for RS chart
+        const handleResize = () => {
+            if (rsChartContainerRef.current && rsChartRef.current) {
+                rsChartRef.current.applyOptions({
+                    width: rsChartContainerRef.current.clientWidth,
+                });
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+
+        // Cleanup
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            if (rsChartRef.current) {
+                rsChartRef.current.remove();
+                rsChartRef.current = null;
+            }
+        };
+    }, [rsData]);
+
     return (
         <div className="tradingview-chart-container">
             <div className="chart-header">
@@ -272,6 +398,26 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
             {loading && <div className="chart-loading">Loading chart data...</div>}
             {error && <div className="chart-error">Error: {error}</div>}
             <div ref={chartContainerRef} className="chart-wrapper" style={{ opacity: loading || error ? 0 : 1, visibility: loading || error ? 'hidden' : 'visible' }} />
+
+            {/* RS Indicator Chart */}
+            {rsData && rsData.length > 0 && !loading && !error && (
+                <div className="rs-chart-section">
+                    <div className="rs-chart-header">
+                        <h4>Relative Strength Indicator</h4>
+                        <div className="chart-legend">
+                            <span className="legend-item">
+                                <span className="legend-color" style={{ backgroundColor: '#2962FF' }}></span>
+                                RS Line
+                            </span>
+                            <span className="legend-item">
+                                <span className="legend-color" style={{ backgroundColor: '#757575' }}></span>
+                                RS MA (21)
+                            </span>
+                        </div>
+                    </div>
+                    <div ref={rsChartContainerRef} className="rs-chart-wrapper" />
+                </div>
+            )}
         </div>
     );
 }

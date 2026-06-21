@@ -238,7 +238,8 @@ namespace traderview.Server.Services
                     High = reader.GetDouble("HighPrice"),
                     Low = reader.GetDouble("LowPrice"),
                     Close = reader.GetDouble("ClosePrice"),
-                    Volume = reader.GetDouble("Volume")
+                    Volume = reader.GetDouble("Volume"),
+                    InstrumentId = instrumentId
                 });
             }
 
@@ -316,7 +317,7 @@ namespace traderview.Server.Services
             var instrumentQuery = @"
                 SELECT Id 
                 FROM Instruments 
-                WHERE Symbol = @Symbol OR DataName = @Symbol OR InstrumentName LIKE '%' + @Symbol + '%'";
+                WHERE InstrumentName = @Symbol";
 
             int? benchmarkInstrumentId = null;
 

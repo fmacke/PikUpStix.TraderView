@@ -60,7 +60,7 @@ function RSMetricsDashboard({ metrics }: RSMetricsDashboardProps) {
                         {metrics.isStage2Trend ? 'YES' : 'NO'}
                     </div>
                     <div className="metric-detail">
-                        SMA50: {metrics.sma50.toFixed(2)} | SMA150: {metrics.sma150.toFixed(2)} | SMA200: {metrics.sma200.toFixed(2)}
+                        SMA50: {metrics.sma50} | SMA150: {metrics.sma150} | SMA200: {metrics.sma200}
                     </div>
                 </div>
 

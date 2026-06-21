@@ -517,16 +517,23 @@ namespace IKBR_Report_Puller.Data.Repositories
                 {
                     return new TradeSummary
                     {
-                        Id = reader.GetInt64("Id"),
-                        InstrumentId = reader.GetInt32("InstrumentId"),
-                        Symbol = reader.GetString("Symbol"),
-                        EntryDate = reader.GetDateTime("EntryDate"),
-                        ExitDate = reader.IsDBNull(reader.GetOrdinal("ExitDate")) ? reader.GetDateTime("EntryDate") : reader.GetDateTime("ExitDate"),
-                        EntryPrice = reader.IsDBNull(reader.GetOrdinal("AvgEntryPrice")) ? 0 : reader.GetDecimal("AvgEntryPrice"),
-                        ExitPrice = reader.IsDBNull(reader.GetOrdinal("AvgExitPrice")) ? 0 : reader.GetDecimal("AvgExitPrice"),
-                        Quantity = reader.GetDecimal("TotalQuantity"),
-                        Pnl = reader.GetDecimal("TotalPnl"),
-                        BuySell = reader.GetString("BuySell")
+                        Id = reader.GetInt64(reader.GetOrdinal("Id")),
+                        InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                        Symbol = reader.GetString(reader.GetOrdinal("Symbol")),
+
+                        // Parse the 'yyyyMMdd' string into a native DateTime object
+                        EntryDate = DateTime.ParseExact(reader.GetString(reader.GetOrdinal("EntryDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
+
+                        // Safe check for null string, parse if present, fall back to EntryDate if missing
+                        ExitDate = reader.IsDBNull(reader.GetOrdinal("ExitDate"))
+        ? DateTime.ParseExact(reader.GetString(reader.GetOrdinal("EntryDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture)
+        : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("ExitDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
+
+                        EntryPrice = reader.IsDBNull(reader.GetOrdinal("AvgEntryPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("AvgEntryPrice")),
+                        ExitPrice = reader.IsDBNull(reader.GetOrdinal("AvgExitPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("AvgExitPrice")),
+                        Quantity = reader.GetDecimal(reader.GetOrdinal("TotalQuantity")),
+                        Pnl = reader.GetDecimal(reader.GetOrdinal("TotalPnl")),
+                        BuySell = reader.GetString(reader.GetOrdinal("BuySell"))
                     };
                 }
 

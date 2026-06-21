@@ -47,6 +47,7 @@ namespace traderview.Server.DTOs
         public double Low { get; set; }
         public double Close { get; set; }
         public double Volume { get; set; }
+        public int InstrumentId { get; set; }
     }
 
     public class TradeContextDto

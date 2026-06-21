@@ -3,7 +3,6 @@ import type { Trade, RSIndicatorData } from '../types/api';
 import { apiService } from '../services/apiService';
 import './TradeDetail.css';
 import TradingViewChart from './TradingViewChart';
-import RSIndicatorChart from './RSIndicatorChart';
 import RSMetricsDashboard from './RSMetricsDashboard';
 
 interface TradeDetailProps {
@@ -61,7 +60,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
             </div>
 
             <div className="chart-container">
-                <TradingViewChart trade={trade} />
+                <TradingViewChart trade={trade} rsData={rsData?.rsData} />
             </div>
 
             <div className="detail-sections">
@@ -112,7 +111,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
                             </span>
                         </div>
                         <div className="metric">
-                            <label>Total Value</label>
+                            <label>Total Valueeee</label>
                             <span>${(trade.quantity * trade.exitPrice).toFixed(2)}</span>
                         </div>
                     </div>
@@ -135,7 +134,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
 
                 {!rsLoading && !rsError && rsData && (
                     <>
-                        <RSIndicatorChart rsData={rsData.rsData} />
+                        {/* RS Chart is now integrated in TradingViewChart above */}
                         <RSMetricsDashboard metrics={rsData.metrics} />
                     </>
                 )}
