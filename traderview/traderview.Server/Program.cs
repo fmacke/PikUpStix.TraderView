@@ -58,6 +58,8 @@ public partial class Program
 
         builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();
 
+        builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
+
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
 
         builder.Services.AddScoped<IEconomicDataService>(provider =>
@@ -68,8 +70,8 @@ public partial class Program
             var economicRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
             var historicalRepo = provider.GetRequiredService<IHistoricalDataRepository>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-            var apiKey = config["FinancialModellingPrep:ApiKey"];
-            var baseUrl = config["FinancialModellingPrep:BaseUrl"];
+            var apiKey = config["FinancialModelingPrep:ApiKey"];
+            var baseUrl = config["FinancialModelingPrep:BaseUrl"];
             var outputFilePath = config["IBKR:OutputFilePath"];
             return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
         });

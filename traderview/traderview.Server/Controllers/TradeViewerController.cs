@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using traderview.Server.Services;
 using traderview.Server.DTOs;
+using PikUpStix.TraderView.Interfaces;
 
 namespace traderview.Server.Controllers
 {
@@ -9,13 +10,16 @@ namespace traderview.Server.Controllers
     public class TradeViewerController : ControllerBase
     {
         private readonly ITradeViewerService _tradeViewerService;
+        private readonly IReportRunnerService _reportRunnerService;
         private readonly ILogger<TradeViewerController> _logger;
 
         public TradeViewerController(
             ITradeViewerService tradeViewerService,
+            IReportRunnerService reportRunnerService,
             ILogger<TradeViewerController> logger)
         {
             _tradeViewerService = tradeViewerService;
+            _reportRunnerService = reportRunnerService;
             _logger = logger;
         }
 
@@ -145,8 +149,7 @@ namespace traderview.Server.Controllers
             {
                 _logger.LogInformation("Starting IBKR data sync...");
 
-                //THIS IS NO GOOD IT WAS RUNNING CONSOLE APP CODE IN THE WEB API, WHICH IS NOT IDEAL. NEED TO REFACTOR TO USE SERVICE LAYER.
-                //await _application.RunAsync();
+                await _reportRunnerService.RunReportAsync();
 
                 _logger.LogInformation("IBKR data sync completed successfully");
                 return Ok(new { message = "IBKR data sync completed successfully", timestamp = DateTime.UtcNow });

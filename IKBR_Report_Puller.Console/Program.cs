@@ -85,9 +85,17 @@ namespace IKBR_Report_Puller.Console
 
                         return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, instrumentRepository, apiKey, baseUrl, outputPath);
                     });
+                    services.AddSingleton<IReportFetchingService>(provider =>
+                    {
+                        // Resolve the factory itself, not an instance
+                        var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+                        var config = provider.GetRequiredService<IConfiguration>();
+
+                        // Pass the factory as the second argument
+                        return new IKBRReportFetchingService(config, httpClientFactory);
+                    });
                     services.AddSingleton<IReportRunnerService, ReportRunnerService>();
                     services.AddSingleton<IExcelReportService, ExcelReportService>();
-                    services.AddSingleton<IReportFetchingService, IKBRReportFetchingService>();
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddSingleton<Application>();

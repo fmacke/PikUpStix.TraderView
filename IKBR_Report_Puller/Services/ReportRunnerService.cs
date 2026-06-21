@@ -42,18 +42,18 @@ namespace IKBR_Report_Puller.Services
         {
             try
             {
-                //(IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
-                //// Upsert instruments first, then trade executions, then open positions
-                //_instrumentRepository.UpsertInstruments(mainReport.Trades);
-                //_tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-                //_openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
-                //var executions = _tradeExecutionRepository.GetTradeExecutions();
-                //_tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                //_excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
+                (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
+                // Upsert instruments first, then trade executions, then open positions
+                _instrumentRepository.UpsertInstruments(mainReport.Trades);
+                _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
+                _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
+                var executions = _tradeExecutionRepository.GetTradeExecutions();
+                _tradeHistoryReportService.CreateTradeHistoryReport(executions);
+                _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
 
-                //await WriteTodayReport(fileName);
-                //await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                //await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                await WriteTodayReport(fileName);
+                await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                 await marketDataService.FetchAndSaveChartData(new List<string>()
                     {
                         "^GSPC",//spx
