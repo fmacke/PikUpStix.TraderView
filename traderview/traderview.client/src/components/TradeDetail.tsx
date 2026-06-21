@@ -111,7 +111,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
                             </span>
                         </div>
                         <div className="metric">
-                            <label>Total Valueeee</label>
+                            <label>Total Value</label>
                             <span>${(trade.quantity * trade.exitPrice).toFixed(2)}</span>
                         </div>
                     </div>

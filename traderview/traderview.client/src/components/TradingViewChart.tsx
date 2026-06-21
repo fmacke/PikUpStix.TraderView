@@ -127,14 +127,14 @@ function TradingViewChart({ trade, rsData }: TradingViewChartProps) {
                     ]);
                 }
 
-                // Add price lines for entry and exit points
+                // Add price lines for entry and exit points (without titles on the lines)
                 candlestickSeries.createPriceLine({
                     price: trade.entryPrice,
                     color: trade.buySell === 'BUY' ? '#26a69a' : '#ef5350',
                     lineWidth: 2,
                     lineStyle: 2, // dashed
                     axisLabelVisible: true,
-                    title: `Entry: $${trade.entryPrice.toFixed(2)}`,
+                    title: '', // Remove title from line
                 });
 
                 candlestickSeries.createPriceLine({
@@ -143,8 +143,52 @@ function TradingViewChart({ trade, rsData }: TradingViewChartProps) {
                     lineWidth: 2,
                     lineStyle: 2, // dashed
                     axisLabelVisible: true,
-                    title: `Exit: $${trade.exitPrice.toFixed(2)}`,
+                    title: '', // Remove title from line
                 });
+
+                // Add custom labels on the left side of the chart
+                // Wait for chart to render, then position labels
+                setTimeout(() => {
+                    if (chartRef.current && chartContainerRef.current) {
+                        // Remove any existing labels
+                        const existingLabels = chartContainerRef.current.querySelectorAll('.custom-price-label');
+                        existingLabels.forEach(label => label.remove());
+
+                        // Get the y-coordinate for each price
+                        const entryY = candlestickSeries.priceToCoordinate(trade.entryPrice);
+                        const exitY = candlestickSeries.priceToCoordinate(trade.exitPrice);
+
+                        if (entryY !== null) {
+                            const entryLabel = document.createElement('div');
+                            entryLabel.className = 'custom-price-label';
+                            entryLabel.textContent = `Entry: $${trade.entryPrice.toFixed(2)}`;
+                            entryLabel.style.position = 'absolute';
+                            entryLabel.style.left = '10px';
+                            entryLabel.style.top = `${entryY - 25}px`;
+                            entryLabel.style.color = trade.buySell === 'BUY' ? '#26a69a' : '#ef5350';
+                            entryLabel.style.fontSize = '12px';
+                            entryLabel.style.fontWeight = 'bold';
+                            entryLabel.style.padding = '2px 6px';
+                            entryLabel.style.zIndex = '10';
+                            chartContainerRef.current.appendChild(entryLabel);
+                        }
+
+                        if (exitY !== null) {
+                            const exitLabel = document.createElement('div');
+                            exitLabel.className = 'custom-price-label';
+                            exitLabel.textContent = `Exit: $${trade.exitPrice.toFixed(2)}`;
+                            exitLabel.style.position = 'absolute';
+                            exitLabel.style.left = '10px';
+                            exitLabel.style.top = `${exitY - 10}px`;
+                            exitLabel.style.color = trade.buySell === 'BUY' ? '#ef5350' : '#26a69a';
+                            exitLabel.style.fontSize = '12px';
+                            exitLabel.style.fontWeight = 'bold';
+                            exitLabel.style.padding = '2px 6px';
+                            exitLabel.style.zIndex = '10';
+                            chartContainerRef.current.appendChild(exitLabel);
+                        }
+                    }
+                }, 100);
 
                 // Calculate price range including entry/exit points
                 const candleHighs = candlestickData.map(c => c.high);
@@ -218,16 +262,64 @@ function TradingViewChart({ trade, rsData }: TradingViewChartProps) {
                     setLoading(false);
                 }
 
-                // Handle window resize
+                // Handle window resize and update label positions
+                const updateLabelPositions = () => {
+                    if (chartRef.current && chartContainerRef.current) {
+                        // Remove any existing labels
+                        const existingLabels = chartContainerRef.current.querySelectorAll('.custom-price-label');
+                        existingLabels.forEach(label => label.remove());
+
+                        // Get the y-coordinate for each price
+                        const entryY = candlestickSeries.priceToCoordinate(trade.entryPrice);
+                        const exitY = candlestickSeries.priceToCoordinate(trade.exitPrice);
+
+                        if (entryY !== null) {
+                            const entryLabel = document.createElement('div');
+                            entryLabel.className = 'custom-price-label';
+                            entryLabel.textContent = `Entry: $${trade.entryPrice.toFixed(2)}`;
+                            entryLabel.style.position = 'absolute';
+                            entryLabel.style.left = '10px';
+                            entryLabel.style.top = `${entryY - 25}px`;
+                            entryLabel.style.color = trade.buySell === 'BUY' ? '#26a69a' : '#ef5350';
+                            entryLabel.style.fontSize = '12px';
+                            entryLabel.style.fontWeight = 'bold';
+                            entryLabel.style.padding = '2px 6px';
+                            entryLabel.style.zIndex = '10';
+                            chartContainerRef.current.appendChild(entryLabel);
+                        }
+
+                        if (exitY !== null) {
+                            const exitLabel = document.createElement('div');
+                            exitLabel.className = 'custom-price-label';
+                            exitLabel.textContent = `Exit: $${trade.exitPrice.toFixed(2)}`;
+                            exitLabel.style.position = 'absolute';
+                            exitLabel.style.left = '10px';
+                            exitLabel.style.top = `${exitY}px`;
+                            exitLabel.style.color = trade.buySell === 'BUY' ? '#ef5350' : '#26a69a';
+                            exitLabel.style.fontSize = '12px';
+                            exitLabel.style.fontWeight = 'bold';
+                            exitLabel.style.padding = '2px 6px';
+                            exitLabel.style.zIndex = '10';
+                            chartContainerRef.current.appendChild(exitLabel);
+                        }
+                    }
+                };
+
                 const handleResize = () => {
                     if (chartContainerRef.current && chartRef.current) {
                         chartRef.current.applyOptions({
                             width: chartContainerRef.current.clientWidth,
                         });
+                        updateLabelPositions();
                     }
                 };
 
                 window.addEventListener('resize', handleResize);
+
+                // Subscribe to price scale changes to update label positions
+                chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
+                    updateLabelPositions();
+                });
 
                 // Cleanup
                 return () => {
