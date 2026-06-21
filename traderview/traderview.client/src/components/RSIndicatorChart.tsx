@@ -63,17 +63,21 @@ function RSIndicatorChart({ rsData }: RSIndicatorChartProps) {
             priceLineVisible: false,
         });
 
-        // Convert RS data to chart format
-        // Parse dates as date strings to avoid timezone shifts
-        const rsLineData: LineData[] = rsData.map(point => ({
-            time: point.date.split('T')[0] as Time,
-            value: point.rsRatio,
-        }));
+        // Convert RS data to chart format safely
+        // Filters empty or malformed points and checks alternative naming casing (Pascal/snake)
+        const rsLineData: LineData[] = rsData
+            .filter(point => point && point.date)
+            .map(point => ({
+                time: point.date.split('T')[0] as Time,
+                value: point.rsRatio ?? (point as any).RsRatio ?? (point as any).rs_ratio ?? 0,
+            }));
 
-        const rsMAData: LineData[] = rsData.map(point => ({
-            time: point.date.split('T')[0] as Time,
-            value: point.rsma,
-        }));
+        const rsMAData: LineData[] = rsData
+            .filter(point => point && point.date)
+            .map(point => ({
+                time: point.date.split('T')[0] as Time,
+                value: point.rsma ?? (point as any).Rsma ?? (point as any).rs_ma ?? 0,
+            }));
 
         rsLineSeries.setData(rsLineData);
         rsMASeries.setData(rsMAData);

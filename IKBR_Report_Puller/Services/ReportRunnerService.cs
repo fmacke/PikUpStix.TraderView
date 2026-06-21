@@ -71,7 +71,7 @@ namespace IKBR_Report_Puller.Services
                 System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
             }
         }
-        private async Task<string> WriteTodayReport(string fileName)
+        private async Task<string> WriteTodayReport(string fileName) 
         {
             //// Fetch and process today's report
             XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);

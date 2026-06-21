@@ -12,8 +12,13 @@ services:
       - ASPNETCORE_ENVIRONMENT=Docker
       - ASPNETCORE_URLS=http://+:8080
       - CORS_ALLOWED_ORIGINS=http://localhost:3000,http://localhost:5173
+      # Overrides the appsettings json hierarchy for document storage
+      - FinancialModelingPrep__OutputFilePath=/app/documents
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      # Maps the named persistent volume to the container path
+      - traderview-doc-storage:/app/documents
     networks:
       - traderview-network
 
@@ -32,3 +37,8 @@ services:
 networks:
   traderview-network:
     driver: bridge
+
+# Defined named volume to persist your documents outside container lifecycle
+volumes:
+  traderview-doc-storage:
+    driver: local
