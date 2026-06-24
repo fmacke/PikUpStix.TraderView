@@ -402,7 +402,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             {
                 { "@instrumentName", symbol ?? "Unknown" },
                 { "@provider", provider ?? "Unknown" },
-                { "@dataName", assetCategory ?? "Unknown" },
+                { "@dataName", symbol ?? "Unknown" },
                 { "@dataSource", dataSource ?? "Unknown" },
                 { "@format", "Trade" },
                 { "@frequency", "Trade" },

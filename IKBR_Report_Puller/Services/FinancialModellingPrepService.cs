@@ -101,45 +101,74 @@ namespace IKBR_Report_Puller.Services
 
         public async Task FetchAndSaveChartData(List<HistoricalTrade> trades)
         {
-            try
+            await ExecuteWithErrorHandlingAsync(async () =>
             {
                 foreach (var trade in trades)
-                {                
-                    // Build API URL with date parameters
-                    var fromDateStr = trade.TradeOpened.AddDays(-200).ToString("yyyy-MM-dd");
+                {
+                    var fromDate = trade.TradeOpened.AddDays(-200);
                     var toDate = trade.TradeClosed.AddDays(200);
-                    if(toDate > DateTime.UtcNow)
+                    if (toDate > DateTime.UtcNow)
                     {
                         toDate = DateTime.UtcNow;
                     }
-                    var symbol = trade.Symbol.Replace("/", "").Replace("-", "").Replace(" ", "").Replace(".", "");
-                    var toDateStr = toDate.ToString("yyyy-MM-dd");
-                    var url = $"{_baseUrl}/historical-price-eod/full?symbol={symbol}&from={fromDateStr}&to={toDateStr}&apikey={_apiKey}";
-                    Console.WriteLine($"Fetching time series data from {fromDateStr} to {toDateStr}...");
 
-                    // Fetch data from API
-                    var response = await _httpClient.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-
-                    var content = await response.Content.ReadAsStringAsync();
-
-                    // Deserialize JSON response
-                    var barData = JsonSerializer.Deserialize<List<Bar>>(content, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
+                    var barData = await FetchChartDataFromApiAsync(trade.Symbol, fromDate, toDate);
 
                     if (barData == null || barData.Count == 0)
                     {
                         Console.WriteLine("No chart data found for the specified date range.");
+                        continue;
                     }
 
                     Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {trade.Symbol}.");
 
-                    // Save to database
                     _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), barData);
                 }
-                
+            });
+        }
+
+        public async Task FetchAndSaveChartData(List<string> symbols, int lookBackDays)
+        {
+            await ExecuteWithErrorHandlingAsync(async () =>
+            {
+                foreach (var symbol in symbols)
+                {
+                    var fromDate = DateTime.Now.AddDays(lookBackDays * -1);
+                    var toDate = DateTime.Now;
+                    if (toDate > DateTime.UtcNow)
+                    {
+                        toDate = DateTime.UtcNow;
+                    }
+                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(symbol);
+                    if (instrumentId == null)
+                    {
+                        Console.WriteLine($"No instrument found for symbol {symbol} so adding to database.");
+                        instrumentId = _instrumentRepository.InsertInstrument(symbol, symbol, "FinancialModellingPrep", "USD", "INDEX", "FinancialModellingPrep", "FinancialModellingPrep");
+                    }
+                    var instrument = _instrumentRepository.Get(instrumentId.Value);
+                    var barData = await FetchChartDataFromApiAsync(instrument.DataName, fromDate, toDate);
+
+                    if (barData == null || barData.Count == 0)
+                    {
+                        Console.WriteLine("No chart data found for the specified date range.");
+                        continue;
+                    }
+
+                    Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {symbol}.");
+
+                    _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), barData);
+                }
+            });
+        }
+
+        /// <summary>
+        /// Executes an async operation with standardized error handling
+        /// </summary>
+        private static async Task ExecuteWithErrorHandlingAsync(Func<Task> operation)
+        {
+            try
+            {
+                await operation();
             }
             catch (HttpRequestException ex)
             {
@@ -158,69 +187,38 @@ namespace IKBR_Report_Puller.Services
             }
         }
 
-        public async Task FetchAndSaveChartData(List<string> symbols, int lookBackDays)
+        /// <summary>
+        /// Normalizes a symbol by removing special characters for API requests
+        /// </summary>
+        private static string NormalizeSymbol(string symbol)
         {
-            try
+            return symbol.Replace("/", "").Replace("-", "").Replace(" ", "").Replace(".", "");
+        }
+
+        /// <summary>
+        /// Fetches chart data from the API for a given symbol and date range
+        /// </summary>
+        private async Task<List<Bar>> FetchChartDataFromApiAsync(string symbol, DateTime fromDate, DateTime toDate)
+        {
+
+            var fromDateStr = fromDate.ToString("yyyy-MM-dd");
+            var toDateStr = toDate.ToString("yyyy-MM-dd");
+            var normalizedSymbol = NormalizeSymbol(symbol);
+            var url = $"{_baseUrl}/historical-price-eod/full?symbol={normalizedSymbol}&from={fromDateStr}&to={toDateStr}&apikey={_apiKey}";
+
+            Console.WriteLine($"Fetching time series data from {fromDateStr} to {toDateStr}...");
+
+            var response = await _httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+
+            var content = await response.Content.ReadAsStringAsync();
+
+            var barData = JsonSerializer.Deserialize<List<Bar>>(content, new JsonSerializerOptions
             {
-                foreach (var symbol in symbols)
-                {
-                    // Build API URL with date parameters
-                    var fromDateStr = DateTime.Now.AddDays(lookBackDays*-1).ToString("yyyy-MM-dd");
-                    var toDate = DateTime.Now;
-                    if (toDate > DateTime.UtcNow)
-                    {
-                        toDate = DateTime.UtcNow;
-                    }
-                    var sym = symbol.Replace("/", "").Replace("-", "").Replace(" ", "").Replace(".", "");
-                    var toDateStr = toDate.ToString("yyyy-MM-dd");
-                    var url = $"{_baseUrl}/historical-price-eod/full?symbol={sym}&from={fromDateStr}&to={toDateStr}&apikey={_apiKey}";
-                    Console.WriteLine($"Fetching time series data from {fromDateStr} to {toDateStr}...");
+                PropertyNameCaseInsensitive = true
+            });
 
-                    // Fetch data from API
-                    var response = await _httpClient.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-
-                    var content = await response.Content.ReadAsStringAsync();
-
-                    // Deserialize JSON response
-                    var barData = JsonSerializer.Deserialize<List<Bar>>(content, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true
-                    });
-
-                    if (barData == null || barData.Count == 0)
-                    {
-                        Console.WriteLine("No chart data found for the specified date range.");
-                    }
-
-                    Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {symbol}.");
-
-                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(symbol);
-                    if(instrumentId == null)
-                    {
-                        Console.WriteLine($"No instrument found for symbol {symbol} so adding to database.");
-                        instrumentId = _instrumentRepository.InsertInstrument(symbol, symbol, "FMP","USD", "INDEX","FinancialModellingPrep", "FinancialModellingPrep");
-                    }
-                    // Save to database
-                    _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), barData);
-                }
-
-            }
-            catch (HttpRequestException ex)
-            {
-                Console.WriteLine($"HTTP error fetching economic calendar: {ex.Message}");
-                throw;
-            }
-            catch (JsonException ex)
-            {
-                Console.WriteLine($"JSON deserialization error: {ex.Message}");
-                throw;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error fetching and saving economic calendar: {ex.Message}");
-                throw;
-            }
+            return barData ?? new List<Bar>();
         }
 
         /// <summary>
