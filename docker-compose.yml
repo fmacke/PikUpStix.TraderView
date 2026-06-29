@@ -26,7 +26,7 @@ services:
       - IBKR__QueryId=${IBKR_QUERY_ID}
       - IBKR__QueryTodayExecutionsId=${IBKR_TODAY_EXEC_ID}
       - IBKR__BaseUrl=https://ndcdyn.interactivebrokers.com/AccountManagement/FlexWebService/SendRequest
-      - IBKR__OutputFilePath=/app/documents
+      - IBKR__OutputFilePath=/app/documents/[FILE_NAME]
       
       - IBKRClient__SocketUrl=host.docker.internal
       - IBKRClient__Port=4002
@@ -35,7 +35,7 @@ services:
       # Financial Modeling Prep API Settings
       - FinancialModelingPrep__ApiKey=${FMP_API_KEY}
       - FinancialModelingPrep__BaseUrl=https://financialmodelingprep.com/stable
-      - FinancialModelingPrep__OutputFilePath=/app/documents
+      - FinancialModelingPrep__OutputFilePath=/app/documents/[FILE_NAME]
       
       # Logging Levels
       - Logging__LogLevel__Default=Information

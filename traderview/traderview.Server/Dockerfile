@@ -29,6 +29,9 @@ EXPOSE 8081
 
 COPY --from=publish /app/publish .
 
+# Create the documents directory for IBKR reports
+RUN mkdir -p /app/documents && chmod -R 755 /app/documents
+
 # Set environment to Docker so it uses appsettings.Docker.json
 ENV ASPNETCORE_ENVIRONMENT=Docker
 

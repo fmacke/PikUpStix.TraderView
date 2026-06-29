@@ -63,7 +63,7 @@ namespace IKBR_Report_Puller.Services
                         "GCUSD",//gold
                         "XAGUSD",//silver
                         "QQQ",//nasdaq
-                        "^VIX"
+                        "^VIX" 
                      }, 200);
             }
             catch (Exception ex)
@@ -77,6 +77,15 @@ namespace IKBR_Report_Puller.Services
             XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
             fileName = DateTime.UtcNow.ToString("yyyyMMdd") + "_TraderSyncAccess_today.xml";
             string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
+
+            // Ensure directory exists
+            string directory = Path.GetDirectoryName(todayReportFilePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+                System.Console.WriteLine($"Created directory: {directory}");
+            }
+
             todayReportXml.Save(todayReportFilePath);
             System.Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
 
@@ -97,6 +106,15 @@ namespace IKBR_Report_Puller.Services
             XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
+
+            // Ensure directory exists
+            string directory = Path.GetDirectoryName(mainReportFilePath);
+            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+                System.Console.WriteLine($"Created directory: {directory}");
+            }
+
             mainReportXml.Save(mainReportFilePath);
             System.Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
 

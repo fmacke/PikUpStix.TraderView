@@ -145,9 +145,25 @@ public class IKBRReportServiceBase
             await Task.Delay(TimeSpan.FromSeconds(delayInSeconds)).ConfigureAwait(false);
 
             string getStatementUrl = $"{statementUrl}?t={_token}&q={referenceCode}&v=3";
-            HttpResponseMessage reportResponse = await _client.GetAsync(getStatementUrl).ConfigureAwait(false);
-            reportResponse.EnsureSuccessStatusCode();
-            string reportBody = await reportResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Console.WriteLine($"Fetching report from: {getStatementUrl}");
+
+            try
+            {
+                HttpResponseMessage reportResponse = await _client.GetAsync(getStatementUrl).ConfigureAwait(false);
+
+                // Check for 403 Forbidden - usually means report not ready yet
+                if (reportResponse.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    Console.WriteLine("Received 403 Forbidden - report may not be ready yet. Retrying...");
+                    if (i < maxRetries - 1)
+                    {
+                        continue;
+                    }
+                    throw new InvalidOperationException("Received 403 Forbidden from IBKR API. The report may not be accessible or requires different credentials.");
+                }
+
+                reportResponse.EnsureSuccessStatusCode();
+                string reportBody = await reportResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 
             XDocument reportXml;
             try
@@ -174,6 +190,17 @@ public class IKBRReportServiceBase
             }
 
             Console.WriteLine("Received an unexpected response format. Retrying...");
+            }
+            catch (HttpRequestException httpEx)
+            {
+                Console.WriteLine($"HTTP request failed: {httpEx.Message}");
+                if (i < maxRetries - 1)
+                {
+                    Console.WriteLine("Retrying...");
+                    continue;
+                }
+                throw;
+            }
         }
 
         throw new TimeoutException("Failed to retrieve the report after multiple retries.");
