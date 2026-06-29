@@ -185,7 +185,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         {
             const string updateQuery = @"
                 UPDATE dbo.TradeExecutions
-                SET InstrumentId = @instrumentId, symbol = @symbol, securityID = @securityID, tradeID = @tradeID, dateTime = @dateTime,
+                SET InstrumentId = @instrumentId, PositionId = @positionId, symbol = @symbol, securityID = @securityID, tradeID = @tradeID, dateTime = @dateTime,
                     tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice, ibCommission = @ibCommission,
                     ibCommissionCurrency = @ibCommissionCurrency, closePrice = @closePrice, cost = @cost,
                     fifoPnlRealized = @fifoPnlRealized, buySell = @buySell, transactionID = @transactionID,
@@ -224,7 +224,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         {
             const string insertQuery = @"
                 INSERT INTO [dbo].[TradeExecutions]
-                ([InstrumentId], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
+                ([InstrumentId], [PositionId], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
                  [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],
                  [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description],
                  [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash],
@@ -238,7 +238,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                  [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt],
                  [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight])
                 VALUES
-                (@instrumentId, @symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
+                (@instrumentId, @positionId, @symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
                  @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID,
                  @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description,
                  @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash,
