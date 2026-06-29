@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Trade, TradeContext, RSIndicatorData } from '../types/api';
+import type { Trade, TradeContext, RSIndicatorData, OpenPosition } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -77,6 +77,19 @@ export const apiService = {
             return response.data;
         } catch (error) {
             console.error('IBKR sync API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Get all open positions
+    async getOpenPositions(): Promise<OpenPosition[]> {
+        console.log('Making API call to /openpositions');
+        try {
+            const response = await apiClient.get<OpenPosition[]>('/openpositions');
+            console.log('Open positions API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Open positions API call failed:', error);
             throw error;
         }
     },

@@ -4,6 +4,9 @@ import { apiService } from './services/apiService';
 import type { Trade } from './types/api';
 import TradeList from './components/TradeList';
 import TradeDetail from './components/TradeDetail';
+import OpenPositionList from './components/OpenPositionList';
+
+type ViewMode = 'trades' | 'positions';
 
 function App() {
     const [trades, setTrades] = useState<Trade[]>([]);
@@ -12,6 +15,7 @@ function App() {
     const [error, setError] = useState<string | null>(null);
     const [syncing, setSyncing] = useState<boolean>(false);
     const [syncMessage, setSyncMessage] = useState<string | null>(null);
+    const [viewMode, setViewMode] = useState<ViewMode>('trades');
 
     useEffect(() => {
         populateTradeData();
@@ -75,7 +79,21 @@ function App() {
 
     return (
         <div className="app-container">
-            <div className="sync-header">
+            <div className="nav-header">
+                <div className="nav-buttons">
+                    <button 
+                        onClick={() => setViewMode('trades')} 
+                        className={`nav-button ${viewMode === 'trades' ? 'active' : ''}`}
+                    >
+                        Trades
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('positions')} 
+                        className={`nav-button ${viewMode === 'positions' ? 'active' : ''}`}
+                    >
+                        Open Positions
+                    </button>
+                </div>
                 <button 
                     onClick={handleSync} 
                     disabled={syncing}
@@ -86,18 +104,23 @@ function App() {
                 </button>
                 {syncMessage && <span className="sync-success">{syncMessage}</span>}
             </div>
-            <div className="master-detail-layout">
-                <div className="detail-pane">
-                    <TradeDetail trade={selectedTrade} />
+
+            {viewMode === 'trades' ? (
+                <div className="master-detail-layout">
+                    <div className="detail-pane">
+                        <TradeDetail trade={selectedTrade} />
+                    </div>
+                    <div className="list-pane">
+                        <TradeList 
+                            trades={trades} 
+                            selectedTradeId={selectedTrade?.id ?? null}
+                            onTradeSelect={handleTradeSelect}
+                        />
+                    </div>
                 </div>
-                <div className="list-pane">
-                    <TradeList 
-                        trades={trades} 
-                        selectedTradeId={selectedTrade?.id ?? null}
-                        onTradeSelect={handleTradeSelect}
-                    />
-                </div>
-            </div>
+            ) : (
+                <OpenPositionList />
+            )}
         </div>
     );
 

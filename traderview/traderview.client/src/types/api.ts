@@ -76,3 +76,20 @@ export interface RSMetrics {
     sma150: number;
     sma200: number;
 }
+
+export interface OpenPosition {
+    symbol: string;
+    description: string;
+    assetCategory: string;
+    currency: string;
+    position: number | null;
+    markPrice: number | null;
+    positionValue: number | null;
+    costBasisPrice: number | null;
+    costBasisMoney: number | null;
+    fifoPnlUnrealized: number | null;
+    percentOfNAV: number | null;
+    reportDate: string | null;
+    listingExchange: string;
+    accountId: string;
+}

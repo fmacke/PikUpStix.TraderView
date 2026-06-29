@@ -94,4 +94,22 @@ namespace traderview.Server.DTOs
         public double SMA150 { get; set; }
         public double SMA200 { get; set; }
     }
+
+    public class OpenPositionDto
+    {
+        public string Symbol { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string AssetCategory { get; set; } = string.Empty;
+        public string Currency { get; set; } = string.Empty;
+        public decimal? Position { get; set; }
+        public decimal? MarkPrice { get; set; }
+        public decimal? PositionValue { get; set; }
+        public decimal? CostBasisPrice { get; set; }
+        public decimal? CostBasisMoney { get; set; }
+        public decimal? FifoPnlUnrealized { get; set; }
+        public decimal? PercentOfNAV { get; set; }
+        public DateTime? ReportDate { get; set; }
+        public string ListingExchange { get; set; } = string.Empty;
+        public string AccountId { get; set; } = string.Empty;
+    }
 }

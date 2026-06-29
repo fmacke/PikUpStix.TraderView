@@ -10,6 +10,12 @@ namespace PikUpStix.TraderView.Interfaces
     public interface IOpenPositionRepository
     {
         /// <summary>
+        /// Gets all open positions from the database
+        /// </summary>
+        /// <returns>List of all open positions</returns>
+        List<OpenPosition> GetAllOpenPositions();
+
+        /// <summary>
         /// Inserts open positions from a report
         /// </summary>
         /// <param name="whenGenerated">Date when the report was generated</param>

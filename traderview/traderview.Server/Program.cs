@@ -80,6 +80,9 @@ public partial class Program
         // Register TradeViewer service
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
 
+        // Register OpenPosition service
+        builder.Services.AddScoped<IOpenPositionService, OpenPositionService>();
+
         builder.Services.AddControllers();
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
