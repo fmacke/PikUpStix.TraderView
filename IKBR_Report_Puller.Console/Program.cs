@@ -71,7 +71,7 @@ namespace IKBR_Report_Puller.Console
                         return new Data.Repositories.EconomicCalendarRepository(connectionString);
                     });
 
-                    services.AddSingleton<IEconomicDataService>(provider =>
+                    services.AddSingleton<IMarketDataService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
                         var repository = provider.GetRequiredService<IEconomicCalendarRepository>();

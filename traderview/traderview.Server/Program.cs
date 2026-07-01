@@ -62,7 +62,7 @@ public partial class Program
 
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
 
-        builder.Services.AddScoped<IEconomicDataService>(provider =>
+        builder.Services.AddScoped<IMarketDataService>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
             var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();

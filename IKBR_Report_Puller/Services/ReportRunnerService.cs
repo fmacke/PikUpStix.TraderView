@@ -14,7 +14,7 @@ namespace IKBR_Report_Puller.Services
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
-        private readonly IEconomicDataService marketDataService;
+        private readonly IMarketDataService marketDataService;
         const int maxRetries = 3;
         const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
@@ -25,7 +25,7 @@ namespace IKBR_Report_Puller.Services
             IOpenPositionRepository openPositionRepository,
             IExcelReportService excelReportService,
             ITradeHistoryReportService tradeHistoryReportService,
-            IEconomicDataService economicCalendarService,
+            IMarketDataService economicCalendarService,
             IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;

@@ -13,7 +13,7 @@ namespace IKBR_Report_Puller.Services
     /// <summary>
     /// Service for retrieving economic calendar data from Financial Modeling Prep API
     /// </summary>
-    public class FinancialModellingPrepService : IEconomicDataService
+    public class FinancialModellingPrepService : IMarketDataService
     {
         private readonly HttpClient _httpClient;
         private readonly IEconomicCalendarRepository _repository;

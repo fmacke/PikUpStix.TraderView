@@ -8,7 +8,7 @@ namespace PikUpStix.TraderView.Interfaces
     /// <summary>
     /// Service for retrieving and storing economic calendar data
     /// </summary>
-    public interface IEconomicDataService
+    public interface IMarketDataService
     {
         /// <summary>
         /// Retrieves economic calendar events for a date range, saves to file and database
