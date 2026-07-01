@@ -1,3 +1,4 @@
+using Microsoft.Identity.Client;
 using System;
 
 namespace IKBR_Report_Puller.Domain
@@ -5,6 +6,7 @@ namespace IKBR_Report_Puller.Domain
     public class OpenPosition
     {
         public string AccountId { get; set; }
+        public int PositionID { get; set; }
         public string AcctAlias { get; set; }
         public string Model { get; set; }
         public string Currency { get; set; }

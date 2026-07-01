@@ -13,6 +13,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         {
             return new Dictionary<string, object>
             {
+                { "@PositionID", position.PositionID },
                 { "@whenGenerated", whenGenerated },
                 { "@accountId", position.AccountId },
                 { "@acctAlias", position.AcctAlias },

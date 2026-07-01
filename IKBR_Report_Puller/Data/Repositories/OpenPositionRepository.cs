@@ -26,7 +26,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             ExecuteDatabaseOperation(connection =>
             {
                 const string query = @"
-                    SELECT [symbol], [description], [assetCategory], [currency], [position], 
+                    SELECT [PositionID], [symbol], [description], [assetCategory], [currency], [position], 
                            [markPrice], [positionValue], [costBasisPrice], [costBasisMoney], 
                            [fifoPnlUnrealized], [percentOfNAV], [reportDate], [listingExchange], [accountId]
                     FROM [dbo].[OpenPositions]
@@ -41,6 +41,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         openPositions.Add(new OpenPosition
                         {
                             Symbol = reader["symbol"]?.ToString() ?? string.Empty,
+                            PositionID = reader["PositionID"] as int? ?? 0,
                             Description = reader["description"]?.ToString() ?? string.Empty,
                             AssetCategory = reader["assetCategory"]?.ToString() ?? string.Empty,
                             Currency = reader["currency"]?.ToString() ?? string.Empty,
@@ -120,7 +121,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         {
             const string insertQuery = @"
                 INSERT INTO [dbo].[OpenPositions] 
-                ([whenGenerated], [accountId], [acctAlias], [model], [currency], [fxRateToBase], [assetCategory], 
+                ([PositionID], [whenGenerated], [accountId], [acctAlias], [model], [currency], [fxRateToBase], [assetCategory], 
                  [subCategory], [symbol], [description], [conid], [securityID], [securityIDType], [cusip], [isin], 
                  [figi], [listingExchange], [underlyingConid], [underlyingSymbol], [underlyingSecurityID], 
                  [underlyingListingExchange], [issuer], [issuerCountryCode], [multiplier], [strike], [expiry], 
@@ -129,7 +130,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                  [levelOfDetail], [openDateTime], [holdingPeriodDateTime], [vestingDate], [code], [originatingOrderID], 
                  [originatingTransactionID], [accruedInt], [serialNumber], [deliveryType], [commodityType], [fineness], [weight]) 
                 VALUES 
-                (@whenGenerated, @accountId, @acctAlias, @model, @currency, @fxRateToBase, @assetCategory, 
+                (@PositionID, @whenGenerated, @accountId, @acctAlias, @model, @currency, @fxRateToBase, @assetCategory, 
                  @subCategory, @symbol, @description, @conid, @securityID, @securityIDType, @cusip, @isin, 
                  @figi, @listingExchange, @underlyingConid, @underlyingSymbol, @underlyingSecurityID, 
                  @underlyingListingExchange, @issuer, @issuerCountryCode, @multiplier, @strike, @expiry, 
