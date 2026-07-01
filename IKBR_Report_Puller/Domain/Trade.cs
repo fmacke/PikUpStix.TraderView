@@ -4,6 +4,7 @@ namespace IKBR_Report_Puller.Domain
 {
     public class Trade
     {
+        public int Id { get; set; }
         public int InstrumentId { get; set; }
         public int PositionId { get; set; }
         public string AccountId { get; set; }

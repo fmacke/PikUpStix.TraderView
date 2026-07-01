@@ -7,6 +7,7 @@ namespace IKBR_Report_Puller.Domain
     {
         public long Id { get; set; }
         public int InstrumentId { get; set; }
+        public int PositionId { get; set; }
         public string Symbol { get; set; } = string.Empty;
         public DateTime EntryDate { get; set; }
         public DateTime ExitDate { get; set; }

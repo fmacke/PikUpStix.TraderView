@@ -283,11 +283,12 @@ namespace IKBR_Report_Puller.Data.Repositories
         private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
         {
             const string insertQuery = @"
-                INSERT INTO dbo.TradeExecutions (ibOrderID, ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid, instrumentId) 
-                VALUES (@ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid, @instrumentId)";
+                INSERT INTO dbo.TradeExecutions (positionId, ibOrderID, ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid, instrumentId) 
+                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid, @instrumentId)";
 
             var parameters = new Dictionary<string, object>
             {
+                { "@positionId", tradeConfirm.PositionID },
                 { "@ibOrderID", tradeConfirm.IbOrderID.ToString() },
                 { "@ibexecID", execID },
                 { "@symbol", tradeConfirm.Symbol },
@@ -311,7 +312,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             TradeExecution tradeExecution = null;
 
             using (var cmd = new SqlCommand(
-                @"SELECT InstrumentId, symbol, tradeDate, quantity, tradePrice, currency, conid, ibOrderID, 
+                @"SELECT Id, PositionId, InstrumentId, symbol, tradeDate, quantity, tradePrice, currency, conid, ibOrderID, 
                          securityID, tradeID, dateTime 
                   FROM dbo.TradeExecutions 
                   WHERE ibExecID = @ibExecID", 
@@ -327,7 +328,12 @@ namespace IKBR_Report_Puller.Data.Repositories
                         existingTrade.InstrumentId = reader.IsDBNull(reader.GetOrdinal("InstrumentId")) 
                             ? 0 
                             : reader.GetInt32(reader.GetOrdinal("InstrumentId"));
-
+                        existingTrade.PositionId = reader.IsDBNull(reader.GetOrdinal("PositionId"))
+                            ? 0
+                            : reader.GetInt32(reader.GetOrdinal("PositionId"));
+                        existingTrade.Id = reader.IsDBNull(reader.GetOrdinal("Id"))
+                            ? 0
+                            : reader.GetInt32(reader.GetOrdinal("Id"));
                         existingTrade.IbExecID = ibExecID;
                         existingTrade.Symbol = reader.IsDBNull(reader.GetOrdinal("symbol")) 
                             ? null 
@@ -380,48 +386,55 @@ namespace IKBR_Report_Puller.Data.Repositories
                 // First, get all executions for this order and subsequent related executions
                 var query = @"
                     WITH TradeChain AS (
-                        -- Get the opening trade details
+                            -- Get the opening trade details
+                            SELECT 
+                                te.ibOrderID,
+                                p.InstrumentId,        -- Retrieved from Positions instead of TradeExecutions
+                                te.PositionID,         -- Updated column name casing from diagram
+                                te.symbol,
+                                te.tradeDate,
+                                te.dateTime,
+                                te.quantity,
+                                te.tradePrice,
+                                te.buySell,
+                                te.fifoPnlRealized,
+                                SUM(te.quantity) OVER (PARTITION BY te.symbol, p.InstrumentId ORDER BY te.tradeDate, te.dateTime) as RunningQuantity
+                            FROM [TradingBE].[dbo].[TradeExecutions] te
+                            INNER JOIN [TradingBE].[dbo].[Positions] p ON te.PositionID = p.Id  -- Joined to get InstrumentId
+                            WHERE te.symbol = (SELECT TOP 1 symbol FROM [TradingBE].[dbo].[TradeExecutions] WHERE ibOrderID = @OrderId)
+                                AND p.InstrumentId = (
+                                    SELECT TOP 1 p2.InstrumentId 
+                                    FROM [TradingBE].[dbo].[TradeExecutions] te2
+                                    INNER JOIN [TradingBE].[dbo].[Positions] p2 ON te2.PositionID = p2.Id
+                                    WHERE te2.ibOrderID = @OrderId
+                                )
+                                AND te.tradeDate >= (SELECT MIN(tradeDate) FROM [TradingBE].[dbo].[TradeExecutions] WHERE ibOrderID = @OrderId)
+                        ),
+                        PositionLifecycle AS (
+                            SELECT *,
+                                ROW_NUMBER() OVER (ORDER BY tradeDate, dateTime) as RowNum,
+                                CASE WHEN RunningQuantity = 0 THEN 1 ELSE 0 END as IsClosed
+                            FROM TradeChain
+                            WHERE tradeDate >= (SELECT MIN(tradeDate) FROM TradeChain WHERE ibOrderID = @OrderId)
+                        )
                         SELECT 
-                            ibOrderID,
+                            @OrderId as Id,
                             InstrumentId,
-                            symbol,
-                            tradeDate,
-                            dateTime,
-                            quantity,
-                            tradePrice,
-                            buySell,
-                            fifoPnlRealized,
-                            SUM(quantity) OVER (PARTITION BY symbol, InstrumentId ORDER BY tradeDate, dateTime) as RunningQuantity
-                        FROM TradeExecutions
-                        WHERE symbol = (SELECT TOP 1 symbol FROM TradeExecutions WHERE ibOrderID = @OrderId)
-                            AND InstrumentId = (SELECT TOP 1 InstrumentId FROM TradeExecutions WHERE ibOrderID = @OrderId)
-                            AND tradeDate >= (SELECT MIN(tradeDate) FROM TradeExecutions WHERE ibOrderID = @OrderId)
-                    ),
-                    PositionLifecycle AS (
-                        SELECT *,
-                            ROW_NUMBER() OVER (ORDER BY tradeDate, dateTime) as RowNum,
-                            CASE WHEN RunningQuantity = 0 THEN 1 ELSE 0 END as IsClosed
-                        FROM TradeChain
-                        WHERE tradeDate >= (SELECT MIN(tradeDate) FROM TradeExecutions WHERE ibOrderID = @OrderId)
-                    )
-                    SELECT 
-                        @OrderId as Id,
-                        InstrumentId,
-                        symbol as Symbol,
-                        MIN(tradeDate) as EntryDate,
-                        MAX(CASE WHEN IsClosed = 1 THEN tradeDate END) as ExitDate,
-                        CASE 
-                            WHEN SUM(CASE WHEN buySell = 'BUY' THEN ABS(quantity) ELSE 0 END) > 
-                                 SUM(CASE WHEN buySell = 'SELL' THEN ABS(quantity) ELSE 0 END) THEN 'BUY'
-                            ELSE 'SELL'
-                        END as BuySell,
-                        AVG(CASE WHEN quantity > 0 THEN tradePrice ELSE NULL END) as AvgEntryPrice,
-                        AVG(CASE WHEN quantity < 0 THEN tradePrice ELSE NULL END) as AvgExitPrice,
-                        MAX(ABS(RunningQuantity)) as TotalQuantity,
-                        SUM(ISNULL(fifoPnlRealized, 0)) as TotalPnl
-                    FROM PositionLifecycle
-                    WHERE RowNum <= (SELECT MIN(RowNum) FROM PositionLifecycle WHERE IsClosed = 1)
-                    GROUP BY InstrumentId, symbol";
+                            symbol as Symbol,
+                            MIN(tradeDate) as EntryDate,
+                            MAX(CASE WHEN IsClosed = 1 THEN tradeDate END) as ExitDate,
+                            CASE 
+                                WHEN SUM(CASE WHEN buySell = 'BUY' THEN ABS(quantity) ELSE 0 END) > 
+                                     SUM(CASE WHEN buySell = 'SELL' THEN ABS(quantity) ELSE 0 END) THEN 'BUY'
+                                ELSE 'SELL'
+                            END as BuySell,
+                            AVG(CASE WHEN quantity > 0 THEN tradePrice ELSE NULL END) as AvgEntryPrice,
+                            AVG(CASE WHEN quantity < 0 THEN tradePrice ELSE NULL END) as AvgExitPrice,
+                            MAX(ABS(RunningQuantity)) as TotalQuantity,
+                            SUM(ISNULL(fifoPnlRealized, 0)) as TotalPnl
+                        FROM PositionLifecycle
+                        WHERE RowNum <= ISNULL((SELECT MIN(RowNum) FROM PositionLifecycle WHERE IsClosed = 1), (SELECT MAX(RowNum) FROM PositionLifecycle))
+                        GROUP BY InstrumentId, PositionId, symbol";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@OrderId", orderId);
@@ -433,6 +446,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                     {
                         Id = reader.GetInt64("Id"),
                         InstrumentId = reader.GetInt32("InstrumentId"),
+                        PositionId = reader.GetInt32("PositionId"),
                         Symbol = reader.GetString("Symbol"),
                         EntryDate = reader.GetDateTime("EntryDate"),
                         ExitDate = reader.IsDBNull(reader.GetOrdinal("ExitDate")) ? reader.GetDateTime("EntryDate") : reader.GetDateTime("ExitDate"),

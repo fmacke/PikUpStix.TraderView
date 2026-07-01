@@ -4,6 +4,7 @@ namespace IKBR_Report_Puller.Domain
 {
     public class TradeConfirm
     {
+        public int PositionID { get; set; }
         public string ExecID { get; set; }
         public string Symbol { get; set; }
         public string TradeDate { get; set; }
