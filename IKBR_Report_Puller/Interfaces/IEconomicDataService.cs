@@ -19,5 +19,6 @@ namespace PikUpStix.TraderView.Interfaces
         Task<List<EconomicCalendarEvent>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate);
         Task FetchAndSaveChartData(List<HistoricalTrade> trades);
         Task FetchAndSaveChartData(List<string> symbols, int lookBackDays);
+        string SourceName { get; }
     }
 }

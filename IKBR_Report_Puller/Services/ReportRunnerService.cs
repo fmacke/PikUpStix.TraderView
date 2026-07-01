@@ -44,7 +44,7 @@ namespace IKBR_Report_Puller.Services
             {
                 (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
                 // Upsert instruments first, then trade executions, then open positions
-                _instrumentRepository.UpsertInstruments(mainReport.Trades);
+                _instrumentRepository.UpsertInstruments(mainReport.Trades, marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
                 _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
                 var executions = _tradeExecutionRepository.GetTradeExecutions();
@@ -93,7 +93,7 @@ namespace IKBR_Report_Puller.Services
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
 
             // Upsert instruments first, then trade executions
-            _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms);
+            _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, marketDataService.SourceName);
             _tradeExecutionRepository.UpsertTodayExecutions(todayReport.TradeConfirms);
 
             return fileName;

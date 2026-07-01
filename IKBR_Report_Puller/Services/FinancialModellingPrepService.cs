@@ -23,6 +23,8 @@ namespace IKBR_Report_Puller.Services
         private readonly string _baseUrl;
         private readonly string _outputFilePath;
 
+        public string SourceName => "FinancialModellingPrep";
+
         public FinancialModellingPrepService(
             HttpClient httpClient,
             IEconomicCalendarRepository repository,

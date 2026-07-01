@@ -21,7 +21,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// Ensures instruments exist for the given trades
         /// Creates missing instruments automatically
         /// </summary>
-        public void UpsertInstruments(List<Trade> trades)
+        public void UpsertInstruments(List<Trade> trades, string source)
         {
             if (trades == null || !trades.Any())
                 return;
@@ -57,8 +57,8 @@ namespace IKBR_Report_Puller.Data.Repositories
                                     trade.ListingExchange,
                                     trade.Currency,
                                     trade.AssetCategory,
-                                    "IBKR",
-                                    "IBKR");
+                                    source,
+                                    source);
 
                                 createdCount++;
                             }
@@ -107,7 +107,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// Ensures instruments exist for the given trade confirmations
         /// Creates missing instruments automatically and populates InstrumentID on each trade confirm
         /// </summary>
-        public void UpsertInstruments(List<TradeConfirm> tradeConfirms)
+        public void UpsertInstruments(List<TradeConfirm> tradeConfirms, string source)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
                 return;
@@ -146,8 +146,8 @@ namespace IKBR_Report_Puller.Data.Repositories
                                     tradeConfirm.ListingExchange,
                                     tradeConfirm.Currency,
                                     tradeConfirm.AssetCategory,
-                                    "IBKR",
-                                    "IBKR");
+                                    source,
+                                    source);
 
                                 // Get the newly created instrument ID
                                 instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
