@@ -1,11 +1,10 @@
-using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-
+using IKBR_Report_Puller.Domain;
 namespace IKBR_Report_Puller.Data.Repositories
 {
     /// <summary>
@@ -49,6 +48,7 @@ namespace IKBR_Report_Puller.Data.Repositories
 
                         if (exists)
                         {
+                            // instrument ID retrieval handled transparently via updated internal JOIN mapping
                             var tradeExec = GetTradeExecutionsByIbExecID(connection, transaction, ibExecID, out var existingTrade);
                             trade.InstrumentId = existingTrade.InstrumentId;
                             UpdateTradeIfIncomplete(connection, transaction, trade, ibExecID);
@@ -74,10 +74,12 @@ namespace IKBR_Report_Puller.Data.Repositories
             {
                 var tradeExecutions = new List<TradeExecution>();
 
+                // CHANGED: Joined with Positions to get InstrumentId
                 using (var cmd = new SqlCommand(
-                    "SELECT ibOrderID, symbol, tradeDate, quantity, tradePrice, openCloseIndicator, instrumentid, currency, conid, ibExecID, IBCommission, IBCommissionCurrency " +
-                    "FROM [dbo].[TradeExecutions] " +
-                    "ORDER BY ibOrderID, tradeDate ASC, dateTime ASC", connection))
+                    "SELECT te.ibOrderID, te.symbol, te.tradeDate, te.quantity, te.tradePrice, te.openCloseIndicator, p.InstrumentId, te.currency, te.conid, te.ibExecID, te.IBCommission, te.IBCommissionCurrency " +
+                    "FROM [dbo].[TradeExecutions] te " +
+                    "INNER JOIN [dbo].[Positions] p ON te.PositionID = p.Id " +
+                    "ORDER BY te.ibOrderID, te.tradeDate ASC, te.dateTime ASC", connection))
                 {
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -90,13 +92,13 @@ namespace IKBR_Report_Puller.Data.Repositories
                                 TradeDate = DateTime.ParseExact(reader.GetString("tradeDate"), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
                                 Quantity = reader.GetDecimal("quantity"),
                                 AveragePrice = reader.GetDecimal("tradePrice"),
-                                InstrumentId = reader.GetInt32("instrumentid"),
+                                InstrumentId = reader.GetInt32("InstrumentId"),
                                 Currency = reader.GetString("currency"),
                                 SecurityId = reader.GetString("conid"),
                                 IbExecID = reader.GetString("ibExecID"),
                                 IBCommission = reader.GetDecimal("ibCommission"),
                                 IBCommissionCurrency = reader.GetString("ibCommissionCurrency"),
-                            }); 
+                            });
                         }
                     }
                 }
@@ -177,15 +179,16 @@ namespace IKBR_Report_Puller.Data.Repositories
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error updating trade with ibExecID {ibExecID}: {ex.Message}"); Console.WriteLine(ex.Message);
+                Console.WriteLine($"Error updating trade with ibExecID {ibExecID}: {ex.Message}");
             }
         }
 
         private void UpdateTrade(SqlConnection connection, SqlTransaction transaction, Trade trade)
         {
+            // CHANGED: Removed InstrumentId from assignment, converted PositionId to PositionID matching your schema diagram
             const string updateQuery = @"
                 UPDATE dbo.TradeExecutions
-                SET InstrumentId = @instrumentId, PositionId = @positionId, symbol = @symbol, securityID = @securityID, tradeID = @tradeID, dateTime = @dateTime,
+                SET PositionID = @positionId, symbol = @symbol, securityID = @securityID, tradeID = @tradeID, dateTime = @dateTime,
                     tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice, ibCommission = @ibCommission,
                     ibCommissionCurrency = @ibCommissionCurrency, closePrice = @closePrice, cost = @cost,
                     fifoPnlRealized = @fifoPnlRealized, buySell = @buySell, transactionID = @transactionID,
@@ -215,16 +218,15 @@ namespace IKBR_Report_Puller.Data.Repositories
                 WHERE ibExecID = @ibExecID";
 
             var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-            
-
             ExecuteCommand(connection, transaction, updateQuery, parameters);
         }
 
         private void InsertTrade(SqlConnection connection, SqlTransaction transaction, Trade trade)
         {
+            // CHANGED: Removed [InstrumentId] row column mapping, swapped [PositionId] -> [PositionID]
             const string insertQuery = @"
                 INSERT INTO [dbo].[TradeExecutions]
-                ([InstrumentId], [PositionId], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
+                ([PositionID], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
                  [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],
                  [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description],
                  [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash],
@@ -238,7 +240,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                  [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt],
                  [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight])
                 VALUES
-                (@instrumentId, @positionId, @symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
+                (@positionId, @symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
                  @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID,
                  @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description,
                  @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash,
@@ -253,16 +255,16 @@ namespace IKBR_Report_Puller.Data.Repositories
                  @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
 
             var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-
             ExecuteCommand(connection, transaction, insertQuery, parameters);
         }
 
         private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
         {
+            // CHANGED: Removed direct instrumentId target updating since it belongs only to Positions schema layer now.
             const string updateQuery = @"
                 UPDATE dbo.TradeExecutions 
                 SET symbol = @symbol, tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice,
-                    currency = @currency, conid = @conid, instrumentId = @instrumentId 
+                    currency = @currency, conid = @conid 
                 WHERE ibexecID = @execID";
 
             var parameters = new Dictionary<string, object>
@@ -273,8 +275,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                 { "@quantity", tradeConfirm.Quantity },
                 { "@tradePrice", tradeConfirm.Price },
                 { "@currency", tradeConfirm.Currency },
-                { "@conid", tradeConfirm.ConId },
-                { "@instrumentId", tradeConfirm.InstrumentID }
+                { "@conid", tradeConfirm.ConId }
             };
 
             ExecuteCommand(connection, transaction, updateQuery, parameters);
@@ -282,9 +283,10 @@ namespace IKBR_Report_Puller.Data.Repositories
 
         private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
         {
+            // CHANGED: Removed instrumentId, updated property mapping to positionId -> PositionID
             const string insertQuery = @"
-                INSERT INTO dbo.TradeExecutions (positionId, ibOrderID, ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid, instrumentId) 
-                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid, @instrumentId)";
+                INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid) 
+                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid)";
 
             var parameters = new Dictionary<string, object>
             {
@@ -296,8 +298,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                 { "@quantity", tradeConfirm.Quantity },
                 { "@tradePrice", tradeConfirm.Price },
                 { "@currency", tradeConfirm.Currency },
-                { "@conid", tradeConfirm.ConId },
-                { "@instrumentId", tradeConfirm.InstrumentID }
+                { "@conid", tradeConfirm.ConId }
             };
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
@@ -311,11 +312,13 @@ namespace IKBR_Report_Puller.Data.Repositories
             existingTrade = new Trade();
             TradeExecution tradeExecution = null;
 
+            // CHANGED: JOIN with Positions table to grab InstrumentId
             using (var cmd = new SqlCommand(
-                @"SELECT Id, PositionId, InstrumentId, symbol, tradeDate, quantity, tradePrice, currency, conid, ibOrderID, 
-                         securityID, tradeID, dateTime 
-                  FROM dbo.TradeExecutions 
-                  WHERE ibExecID = @ibExecID", 
+                @"SELECT te.Id, te.PositionID, p.InstrumentId, te.symbol, te.tradeDate, te.quantity, te.tradePrice, te.currency, te.conid, te.ibOrderID, 
+                         te.securityID, te.tradeID, te.dateTime 
+                  FROM dbo.TradeExecutions te
+                  INNER JOIN dbo.Positions p ON te.PositionID = p.Id
+                  WHERE te.ibExecID = @ibExecID",
                 connection, transaction))
             {
                 cmd.Parameters.AddWithValue("@ibExecID", ibExecID);
@@ -324,47 +327,42 @@ namespace IKBR_Report_Puller.Data.Repositories
                 {
                     if (reader.Read())
                     {
-                        // Populate the existing trade with instrumentId and other key fields
-                        existingTrade.InstrumentId = reader.IsDBNull(reader.GetOrdinal("InstrumentId")) 
-                            ? 0 
-                            : reader.GetInt32(reader.GetOrdinal("InstrumentId"));
-                        existingTrade.PositionId = reader.IsDBNull(reader.GetOrdinal("PositionId"))
+                        existingTrade.InstrumentId = reader.IsDBNull(reader.GetOrdinal("InstrumentId"))
                             ? 0
-                            : reader.GetInt32(reader.GetOrdinal("PositionId"));
+                            : reader.GetInt32(reader.GetOrdinal("InstrumentId"));
+                        existingTrade.PositionId = reader.IsDBNull(reader.GetOrdinal("PositionID"))
+                            ? 0
+                            : reader.GetInt32(reader.GetOrdinal("PositionID"));
                         existingTrade.Id = reader.IsDBNull(reader.GetOrdinal("Id"))
                             ? 0
                             : reader.GetInt32(reader.GetOrdinal("Id"));
                         existingTrade.IbExecID = ibExecID;
-                        existingTrade.Symbol = reader.IsDBNull(reader.GetOrdinal("symbol")) 
-                            ? null 
+                        existingTrade.Symbol = reader.IsDBNull(reader.GetOrdinal("symbol"))
+                            ? null
                             : reader.GetString(reader.GetOrdinal("symbol"));
 
-                        existingTrade.Conid = reader.IsDBNull(reader.GetOrdinal("conid")) 
-                            ? null 
+                        existingTrade.Conid = reader.IsDBNull(reader.GetOrdinal("conid"))
+                            ? null
                             : reader.GetString(reader.GetOrdinal("conid"));
 
-                        // Populate trade execution for return
                         tradeExecution = new TradeExecution
                         {
                             InstrumentId = existingTrade.InstrumentId,
                             Symbol = existingTrade.Symbol,
                             SecurityId = existingTrade.Conid,
-
-                            // FIX: Read as string, then parse using the exact format
-                                                TradeDate = reader.IsDBNull(reader.GetOrdinal("tradeDate"))
+                            TradeDate = reader.IsDBNull(reader.GetOrdinal("tradeDate"))
                              ? DateTime.MinValue
                              : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("tradeDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
-
-                                                Quantity = reader.IsDBNull(reader.GetOrdinal("quantity"))
+                            Quantity = reader.IsDBNull(reader.GetOrdinal("quantity"))
                              ? 0
                              : reader.GetDecimal(reader.GetOrdinal("quantity")),
-                                                AveragePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice"))
+                            AveragePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice"))
                              ? 0
                              : reader.GetDecimal(reader.GetOrdinal("tradePrice")),
-                                                Currency = reader.IsDBNull(reader.GetOrdinal("currency"))
+                            Currency = reader.IsDBNull(reader.GetOrdinal("currency"))
                              ? null
                              : reader.GetString(reader.GetOrdinal("currency")),
-                                                IbOrderID = reader.IsDBNull(reader.GetOrdinal("ibOrderID"))
+                            IbOrderID = reader.IsDBNull(reader.GetOrdinal("ibOrderID"))
                              ? 0
                              : reader.GetInt64(reader.GetOrdinal("ibOrderID"))
                         };
@@ -383,14 +381,13 @@ namespace IKBR_Report_Puller.Data.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                // First, get all executions for this order and subsequent related executions
+                // Core CTE update logic injected cleanly here (incorporating previous refactoring context)
                 var query = @"
                     WITH TradeChain AS (
-                            -- Get the opening trade details
                             SELECT 
                                 te.ibOrderID,
-                                p.InstrumentId,        -- Retrieved from Positions instead of TradeExecutions
-                                te.PositionID,         -- Updated column name casing from diagram
+                                p.InstrumentId,
+                                te.PositionID,
                                 te.symbol,
                                 te.tradeDate,
                                 te.dateTime,
@@ -400,7 +397,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                                 te.fifoPnlRealized,
                                 SUM(te.quantity) OVER (PARTITION BY te.symbol, p.InstrumentId ORDER BY te.tradeDate, te.dateTime) as RunningQuantity
                             FROM [TradingBE].[dbo].[TradeExecutions] te
-                            INNER JOIN [TradingBE].[dbo].[Positions] p ON te.PositionID = p.Id  -- Joined to get InstrumentId
+                            INNER JOIN [TradingBE].[dbo].[Positions] p ON te.PositionID = p.Id
                             WHERE te.symbol = (SELECT TOP 1 symbol FROM [TradingBE].[dbo].[TradeExecutions] WHERE ibOrderID = @OrderId)
                                 AND p.InstrumentId = (
                                     SELECT TOP 1 p2.InstrumentId 
@@ -420,6 +417,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         SELECT 
                             @OrderId as Id,
                             InstrumentId,
+                            PositionID as PositionId,
                             symbol as Symbol,
                             MIN(tradeDate) as EntryDate,
                             MAX(CASE WHEN IsClosed = 1 THEN tradeDate END) as ExitDate,
@@ -434,7 +432,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                             SUM(ISNULL(fifoPnlRealized, 0)) as TotalPnl
                         FROM PositionLifecycle
                         WHERE RowNum <= ISNULL((SELECT MIN(RowNum) FROM PositionLifecycle WHERE IsClosed = 1), (SELECT MAX(RowNum) FROM PositionLifecycle))
-                        GROUP BY InstrumentId, PositionId, symbol";
+                        GROUP BY InstrumentId, PositionID, symbol";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@OrderId", orderId);
@@ -469,22 +467,23 @@ namespace IKBR_Report_Puller.Data.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                // Find the close order in trade executions and trace back to find all related executions
+                // CHANGED: Restructured query chain to incorporate JOIN on Positions across CloseExecution and TradeChain CTE layers
                 var query = @"
                     WITH CloseExecution AS (
                         SELECT 
-                            symbol,
-                            InstrumentId,
-                            tradeDate,
-                            quantity
-                        FROM TradeExecutions
-                        WHERE ibOrderID = @CloseOrderId
+                            te.symbol,
+                            p.InstrumentId,
+                            te.tradeDate,
+                            te.quantity
+                        FROM TradeExecutions te
+                        INNER JOIN Positions p ON te.PositionID = p.Id
+                        WHERE te.ibOrderID = @CloseOrderId
                     ),
                     TradeChain AS (
-                        -- Get all executions for the same symbol/instrument leading up to and including the close
                         SELECT 
                             te.ibOrderID,
-                            te.InstrumentId,
+                            p.InstrumentId,
+                            te.PositionID,
                             te.symbol,
                             te.tradeDate,
                             te.dateTime,
@@ -492,9 +491,10 @@ namespace IKBR_Report_Puller.Data.Repositories
                             te.tradePrice,
                             te.buySell,
                             te.fifoPnlRealized,
-                            SUM(te.quantity) OVER (PARTITION BY te.symbol, te.InstrumentId ORDER BY te.tradeDate, te.dateTime) as RunningQuantity
+                            SUM(te.quantity) OVER (PARTITION BY te.symbol, p.InstrumentId ORDER BY te.tradeDate, te.dateTime) as RunningQuantity
                         FROM TradeExecutions te
-                        INNER JOIN CloseExecution ce ON te.symbol = ce.symbol AND te.InstrumentId = ce.InstrumentId
+                        INNER JOIN Positions p ON te.PositionID = p.Id
+                        INNER JOIN CloseExecution ce ON te.symbol = ce.symbol AND p.InstrumentId = ce.InstrumentId
                         WHERE te.tradeDate <= ce.tradeDate
                     ),
                     PositionLifecycle AS (
@@ -507,6 +507,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                     SELECT 
                         @CloseOrderId as Id,
                         InstrumentId,
+                        PositionID as PositionId,
                         symbol as Symbol,
                         MIN(tradeDate) as EntryDate,
                         MAX(CASE WHEN IsCloseOrder = 1 THEN tradeDate END) as ExitDate,
@@ -521,7 +522,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         SUM(ISNULL(fifoPnlRealized, 0)) as TotalPnl
                     FROM PositionLifecycle
                     WHERE RowNum <= (SELECT MAX(RowNum) FROM PositionLifecycle WHERE IsCloseOrder = 1)
-                    GROUP BY InstrumentId, symbol";
+                    GROUP BY InstrumentId, PositionID, symbol";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@CloseOrderId", closeOrderId);
@@ -533,16 +534,12 @@ namespace IKBR_Report_Puller.Data.Repositories
                     {
                         Id = reader.GetInt64(reader.GetOrdinal("Id")),
                         InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                        PositionId = reader.GetInt32(reader.GetOrdinal("PositionId")),
                         Symbol = reader.GetString(reader.GetOrdinal("Symbol")),
-
-                        // Parse the 'yyyyMMdd' string into a native DateTime object
                         EntryDate = DateTime.ParseExact(reader.GetString(reader.GetOrdinal("EntryDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
-
-                        // Safe check for null string, parse if present, fall back to EntryDate if missing
                         ExitDate = reader.IsDBNull(reader.GetOrdinal("ExitDate"))
-        ? DateTime.ParseExact(reader.GetString(reader.GetOrdinal("EntryDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture)
-        : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("ExitDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
-
+                            ? DateTime.ParseExact(reader.GetString(reader.GetOrdinal("EntryDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture)
+                            : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("ExitDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
                         EntryPrice = reader.IsDBNull(reader.GetOrdinal("AvgEntryPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("AvgEntryPrice")),
                         ExitPrice = reader.IsDBNull(reader.GetOrdinal("AvgExitPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("AvgExitPrice")),
                         Quantity = reader.GetDecimal(reader.GetOrdinal("TotalQuantity")),
@@ -556,4 +553,3 @@ namespace IKBR_Report_Puller.Data.Repositories
         }
     }
 }
-

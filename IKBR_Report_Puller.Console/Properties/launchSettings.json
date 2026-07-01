@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "IKBR_Report_Puller.Console": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

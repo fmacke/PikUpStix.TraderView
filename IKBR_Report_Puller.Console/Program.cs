@@ -13,7 +13,7 @@ namespace IKBR_Report_Puller.Console
             var host = Host.CreateDefaultBuilder(args)
                 .ConfigureAppConfiguration((context, config) =>
                 {
-                    config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+                    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
 
                     if (context.HostingEnvironment.IsDevelopment())
                     {
