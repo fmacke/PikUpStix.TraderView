@@ -13,7 +13,7 @@ namespace PikUpStix.TraderView.Interfaces
         /// Inserts a list of positions into the database
         /// </summary>
         /// <param name="positions">List of positions to insert</param>
-        void InsertPositions(List<Position> positions);
+        void UpsertPositions(List<Position> positions);
     }
 }
     
