@@ -47,7 +47,7 @@ namespace IKBR_Report_Puller.Console
                         var config = provider.GetRequiredService<IConfiguration>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         var connectionString = BuildConnectionString(config);
-                        return new Data.Repositories.TradeExecutionRepository(connectionString, instrumentRepo);
+                        return new Data.Repositories.TradeExecutionRepository(connectionString);
                     });
 
                     services.AddSingleton<IHistoricalDataRepository>(provider =>

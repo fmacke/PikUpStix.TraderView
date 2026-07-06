@@ -1,6 +1,6 @@
 ﻿namespace IKBR_Report_Puller.Domain
 {
-    public class HistoricalTrade : TradeBase
+    public class HistoricalTrade : Trade
     {
         public decimal MarketValue => ClosePrice * (decimal)Math.Sqrt((double)Quantity * (double)Quantity);
         public decimal RealizedPnL => MarketValue - TotalCost;
@@ -8,9 +8,9 @@
         public long OpenIbOrderID { get; set; }
         public long CloseIbOrderID { get; set; }
         public decimal ClosePrice { get; set; }
-        public decimal IBCommission { get; set; } = 0;
-        public string IBCommissionCurrency { get; set; }
-        public decimal TotalCost => AveragePrice * (decimal)Math.Sqrt((double)Quantity * (double)Quantity) - IBCommission;
+        public decimal IbCommission { get; set; } = 0;
+        public string IbCommissionCurrency { get; set; }
+        public decimal TotalCost => TradePrice * (decimal)Math.Sqrt((double)Quantity * (double)Quantity) - IbCommission;
         public DateTime TradeOpened{ get; set; }
         public DateTime TradeClosed { get; set; }
     }

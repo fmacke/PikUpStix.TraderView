@@ -38,7 +38,7 @@ namespace IKBR_Report_Puller.Services
             _connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
         }
 
-        public void CreateExcelFileReport(List<OpenPosition> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
+        public void CreateExcelFileReport(List<OpenPosition> openPositions, List<Trade> tradeExecutions, string outputFilePath)
         {
             try
             {
@@ -232,13 +232,13 @@ namespace IKBR_Report_Puller.Services
                 worksheet.Cells[currentRow, 4].Style.Numberformat.Format = "yyyy-MM-dd";
                 worksheet.Cells[currentRow, 5].Value = (historicalTrade.TradeClosed - historicalTrade.TradeOpened).TotalDays;
                 worksheet.Cells[currentRow, 6].Value = Math.Round(historicalTrade.Quantity, 2);
-                worksheet.Cells[currentRow, 7].Value = Math.Round(historicalTrade.AveragePrice, 2);
+                worksheet.Cells[currentRow, 7].Value = Math.Round(historicalTrade.TradePrice, 2);
                 worksheet.Cells[currentRow, 8].Value = Math.Round(historicalTrade.ClosePrice, 2);
                 worksheet.Cells[currentRow, 9].Value = Math.Round(historicalTrade.TotalCost, 2);
                 worksheet.Cells[currentRow, 10].Value = Math.Round(historicalTrade.MarketValue, 2);
-                worksheet.Cells[currentRow, 11].Value = Math.Round(historicalTrade.IBCommission, 2);
+                worksheet.Cells[currentRow, 11].Value = Math.Round(historicalTrade.IbCommission, 2);
                 worksheet.Cells[currentRow, 11].Style.Numberformat.Format = "#,##0.00";
-                worksheet.Cells[currentRow, 12].Value = historicalTrade.IBCommissionCurrency;
+                worksheet.Cells[currentRow, 12].Value = historicalTrade.IbCommissionCurrency;
                 worksheet.Cells[currentRow, 13].Value = Math.Round(historicalTrade.RealizedPnL, 2);
                 worksheet.Cells[currentRow, 13].Style.Numberformat.Format = "#,##0.00";
                 worksheet.Cells[currentRow, 14].Value = Math.Round(historicalTrade.RealizedPnLPercentage, 2);

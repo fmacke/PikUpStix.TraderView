@@ -18,13 +18,13 @@ namespace PikUpStix.TraderView.Interfaces
         /// Gets all trade executions ordered by order ID and date
         /// </summary>
         /// <returns>List of all trade executions</returns>
-        List<TradeExecution> GetTradeExecutions();
+        List<Trade> GetTradeExecutions();
 
         /// <summary>
         /// Inserts or updates today's trade confirmations
         /// </summary>
         /// <param name="tradeConfirms">List of trade confirmations to upsert</param>
-        void UpsertTodayExecutions(List<TradeConfirm> tradeConfirms);
+        void UpsertTodayExecutions(List<Trade> tradeConfirms);
 
         /// <summary>
         /// Gets aggregated trade summary for a specific order ID

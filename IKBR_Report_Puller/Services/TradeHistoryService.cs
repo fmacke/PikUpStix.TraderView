@@ -9,7 +9,7 @@ namespace IKBR_Report_Puller.Services
         public List<HistoricalTrade> TradeHistoryAggregated { get; set; } = new List<HistoricalTrade>();
         public List<HistoricalTrade> TradeHistory { get; set; } = new List<HistoricalTrade>();
         public List<Position> positions = new List<Position>();
-        public void CreateTradeHistoryReport(List<TradeExecution> rawExecutions)
+        public void CreateTradeHistoryReport(List<Trade> rawExecutions)
         {
             // Sort chronologically across the entire history to maintain structural FIFO consistency
             var executionGroups = rawExecutions
@@ -27,9 +27,9 @@ namespace IKBR_Report_Puller.Services
                 foreach (var exec in group)
                 {
                     decimal qtyRemaining = exec.Quantity;
-                    decimal execPrice = exec.AveragePrice;
+                    decimal execPrice = exec.TradePrice;
                     DateTime execTime = exec.TradeDate;
-                    long execOrderId = exec.IbOrderID;
+                    long ibOrderId = (long)(exec.IbOrderID ?? 0);
                     int instrumentId = exec.InstrumentId;
 
 
@@ -42,23 +42,23 @@ namespace IKBR_Report_Puller.Services
                             decimal matchQty = Math.Min(shortMatch.Quantity, qtyRemaining);
 
                             // Calculate prorated commission for this closing execution
-                            decimal closingCommission = exec.IBCommission * (matchQty / Math.Abs(exec.Quantity));
+                            decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(exec.Quantity));
                             // Calculate prorated commission from the opening execution
                             decimal openingCommission = shortMatch.Commission * (matchQty / shortMatch.Quantity);
 
-                            TradeHistory.Add(new HistoricalTrade
+                            TradeHistory.Add(new HistoricalTrade    
                             {
                                 Symbol = symbol,
                                 Quantity = -matchQty, // Kept negative to reflect original Short position orientation
-                                AveragePrice = shortMatch.Price, // Short entry price
+                                TradePrice = shortMatch.Price, // Short entry price
                                 ClosePrice = execPrice,          // Cost to buy back and cover
                                 OpenIbOrderID = shortMatch.IbOrderID,
-                                CloseIbOrderID = execOrderId,
+                                CloseIbOrderID = shortMatch.IbOrderID,
                                 TradeOpened = shortMatch.Timestamp,
                                 TradeClosed = execTime,
-                                IBCommission = openingCommission + closingCommission,
-                                IBCommissionCurrency = exec.IBCommissionCurrency,
-                                InstrumentId = instrumentId
+                                IbCommission = openingCommission + closingCommission,
+                                IbCommissionCurrency = exec.IbCommissionCurrency,
+                                InstrumentId = instrumentId     
                             });
 
                             qtyRemaining -= matchQty;
@@ -76,8 +76,8 @@ namespace IKBR_Report_Puller.Services
                                 Timestamp = execTime,
                                 Quantity = qtyRemaining,
                                 Price = execPrice,
-                                IbOrderID = execOrderId,
-                                Commission = exec.IBCommission * (qtyRemaining / Math.Abs(exec.Quantity))
+                                IbOrderID = ibOrderId,
+                                Commission = (exec.IbCommission ?? 0) * (qtyRemaining / Math.Abs(exec.Quantity))
                             });
                         }
                     }
@@ -92,7 +92,7 @@ namespace IKBR_Report_Puller.Services
                             decimal matchQty = Math.Min(longMatch.Quantity, sellQtyAbs);
 
                             // Calculate prorated commission for this closing execution
-                            decimal closingCommission = exec.IBCommission * (matchQty / Math.Abs(exec.Quantity));
+                            decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(exec.Quantity));
                             // Calculate prorated commission from the opening execution
                             decimal openingCommission = longMatch.Commission * (matchQty / longMatch.Quantity);
 
@@ -100,14 +100,14 @@ namespace IKBR_Report_Puller.Services
                             {
                                 Symbol = symbol,
                                 Quantity = matchQty, // Positive for Long positions
-                                AveragePrice = longMatch.Price, // Entry buy price
+                                TradePrice = longMatch.Price, // Entry buy price
                                 ClosePrice = execPrice,         // Exit liquidation price
                                 OpenIbOrderID = longMatch.IbOrderID,
-                                CloseIbOrderID = execOrderId,
+                                CloseIbOrderID = ibOrderId,
                                 TradeOpened = longMatch.Timestamp,
                                 TradeClosed = execTime,
-                                IBCommission = openingCommission + closingCommission,
-                                IBCommissionCurrency = exec.IBCommissionCurrency,
+                                IbCommission = openingCommission + closingCommission,
+                                IbCommissionCurrency = exec.IbCommissionCurrency,
                                 InstrumentId = instrumentId
                             });
 
@@ -126,8 +126,8 @@ namespace IKBR_Report_Puller.Services
                                 Timestamp = execTime,
                                 Quantity = sellQtyAbs,
                                 Price = execPrice,
-                                IbOrderID = execOrderId,
-                                Commission = exec.IBCommission * (sellQtyAbs / Math.Abs(exec.Quantity))
+                                IbOrderID = ibOrderId,
+                                Commission = (exec.IbCommission ?? 0) * (sellQtyAbs / Math.Abs(exec.Quantity))
                             });
                         }
                     }
@@ -139,7 +139,7 @@ namespace IKBR_Report_Puller.Services
                 .Select(group => new HistoricalTrade
                 {
                     Symbol = group.First().Symbol,
-                    AveragePrice = group.Average(trade => trade.AveragePrice), // Taking the average of average prices
+                    TradePrice = group.Average(trade => trade.TradePrice), // Taking the average of trade prices
                     ClosePrice = group.Average(trade => trade.ClosePrice), // Taking the average of close prices
                     OpenIbOrderID = group.First().OpenIbOrderID,
                     CloseIbOrderID = group.Key,
@@ -148,9 +148,9 @@ namespace IKBR_Report_Puller.Services
                     Currency = group.First().Currency,
                     InstrumentId = group.First().InstrumentId,
                     Quantity = group.Sum(trade => trade.Quantity),
-                    SecurityId = group.First().SecurityId,
-                    IBCommission = group.Sum(trade => trade.IBCommission),
-                    IBCommissionCurrency = group.First().IBCommissionCurrency
+                    //SecurityId = group.First().sSecurityId,
+                    IbCommission = group.Sum(trade => trade.IbCommission),
+                    IbCommissionCurrency = group.First().IbCommissionCurrency
                 })
                 .OrderByDescending(trade => trade.Quantity)
                 .ToList();

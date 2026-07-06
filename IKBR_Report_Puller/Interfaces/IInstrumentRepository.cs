@@ -42,14 +42,6 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="trades">List of trades to process</param>
         /// <param name="source">Source of the trades</param>
         void UpsertInstruments(List<Trade> trades, string source);
-
-        /// <summary>
-        /// Ensures instruments exist for the given trade confirmations.
-        /// Creates missing instruments automatically and populates InstrumentID on each trade confirm
-        /// </summary>
-        /// <param name="tradeConfirms">List of trade confirmations to process</param>
-        /// <param name="source">Source of the trade confirmations</param>
-        void UpsertInstruments(List<TradeConfirm> tradeConfirms, string source);
     }
 }
     

@@ -87,15 +87,15 @@ namespace IKBR_Report_Puller.Services
                 Expiry = trade.Attribute("expiry")?.Value,
                 PutCall = trade.Attribute("putCall")?.Value,
                 PrincipalAdjustFactor = ConvertToDecimal(trade.Attribute("principalAdjustFactor")?.Value),
-                ReportDate = trade.Attribute("reportDate")?.Value,
-                TradeID = ConvertToLong(trade.Attribute("tradeID")?.Value),
-                TradeDate = trade.Attribute("tradeDate")?.Value,
-                DateTime = trade.Attribute("dateTime")?.Value,
-                SettleDateTarget = trade.Attribute("settleDateTarget")?.Value,
+                ReportDate = (DateTime)Convert.ToDateTime(trade.Attribute("reportDate")?.Value),
+                TradeID = (long)ConvertToLong(trade.Attribute("tradeID")?.Value),
+                TradeDate = (DateTime)Convert.ToDateTime(trade.Attribute("tradeDate")?.Value),
+                DateTime = (DateTime)Convert.ToDateTime(trade.Attribute("dateTime")?.Value),
+                SettleDateTarget = (DateTime)Convert.ToDateTime(trade.Attribute("settleDateTarget")?.Value),
                 TransactionType = trade.Attribute("transactionType")?.Value,
                 Exchange = trade.Attribute("exchange")?.Value,
-                Quantity = ConvertToDecimal(trade.Attribute("quantity")?.Value),
-                TradePrice = ConvertToDecimal(trade.Attribute("tradePrice")?.Value),
+                Quantity = (decimal)ConvertToDecimal(trade.Attribute("quantity")?.Value),
+                TradePrice = (decimal)ConvertToDecimal(trade.Attribute("tradePrice")?.Value),
                 TradeMoney = ConvertToDecimal(trade.Attribute("tradeMoney")?.Value),
                 Proceeds = ConvertToDecimal(trade.Attribute("proceeds")?.Value),
                 Taxes = ConvertToDecimal(trade.Attribute("taxes")?.Value),
@@ -206,20 +206,19 @@ namespace IKBR_Report_Puller.Services
             };
         }
 
-        private static TradeConfirm ParseTradeConfirm(XElement tradeConfirm)
+        private static Trade ParseTradeConfirm(XElement tradeConfirm)
         {
-            return new TradeConfirm
+            return new Trade
             {
-                ExecID = tradeConfirm.Attribute("execID")?.Value,
+                IbExecID = tradeConfirm.Attribute("execID")?.Value,
                 Symbol = tradeConfirm.Attribute("symbol")?.Value,
-                TradeDate = tradeConfirm.Attribute("tradeDate")?.Value,
+                TradeDate = (DateTime)Convert.ToDateTime(tradeConfirm.Attribute("tradeDate")?.Value),
                 AssetCategory = tradeConfirm.Attribute("assetCategory")?.Value,
-                ListingExchange = tradeConfirm.Attribute("listingExchange")?.Value,
-                Quantity = ConvertToDecimal(tradeConfirm.Attribute("quantity")?.Value),
-                Price = ConvertToDecimal(tradeConfirm.Attribute("price")?.Value),
-                ConId = tradeConfirm.Attribute("conid")?.Value,
+                ListingExchange = tradeConfirm.Attribute("listingExchange").Value,
+                Quantity = (decimal)ConvertToDecimal(tradeConfirm.Attribute("quantity").Value),
+                TradePrice = (decimal)ConvertToDecimal(tradeConfirm.Attribute("price").Value),
+                Conid = tradeConfirm.Attribute("conid")?.Value,
                 Currency = tradeConfirm.Attribute("currency")?.Value,
-                InstrumentID = tradeConfirm.Attribute("instrumentID")?.Value,
                 IbOrderID = ConvertToLong(tradeConfirm.Attribute("ibOrderID")?.Value),
             };
         }

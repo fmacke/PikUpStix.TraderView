@@ -34,12 +34,10 @@ namespace IKBR_Report_Puller.Data.Repositories
                         {
                             positions.Add(new Position
                             {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                Symbol = reader.GetString(reader.GetOrdinal("Symbol")),
-                                Currency = reader.GetString(reader.GetOrdinal("Currency")),
-                                SecurityId = reader.GetString(reader.GetOrdinal("SecurityId")),
-                                TradeDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                                IsClosed = reader.GetString(reader.GetOrdinal("Status")).Equals("Closed", StringComparison.OrdinalIgnoreCase)
+                                OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
+                                Status = reader.GetString(reader.GetOrdinal("Status")),
                             });
                         }
                     }
@@ -72,7 +70,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         // Ensure instrument exists before upserting position
                         if (position.InstrumentId == 0)
                         {
-                            Console.WriteLine($"Position for {position.Symbol} missing InstrumentId. Skipping.");
+                            Console.WriteLine($"Position for {position.Id} missing InstrumentId. Skipping.");
                             continue;
                         }
 
@@ -82,7 +80,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                             new Dictionary<string, object> 
                             { 
                                 { "@instrumentId", position.InstrumentId },
-                                { "@openDate", position.TradeDate }
+                                { "@openDate", position.OpenDate }
                             });
 
                         if (exists)
@@ -96,9 +94,9 @@ namespace IKBR_Report_Puller.Data.Repositories
 
                             var updateParameters = new Dictionary<string, object>
                             {
-                                { "@status", position.IsClosed ? "Closed" : "Open" },
+                                { "@status", position.Status },
                                 { "@instrumentId", position.InstrumentId },
-                                { "@openDate", position.TradeDate }
+                                { "@openDate", position.OpenDate }
                             };
 
                             ExecuteCommand(connection, transaction, updateQuery, updateParameters);
@@ -113,8 +111,8 @@ namespace IKBR_Report_Puller.Data.Repositories
 
                             var insertParameters = new Dictionary<string, object>
                             {
-                                { "@openDate", position.TradeDate },
-                                { "@status", position.IsClosed ? "Closed" : "Open" },
+                                { "@openDate", position.OpenDate },
+                                { "@status", position.Status },
                                 { "@instrumentId", position.InstrumentId }
                             };
 

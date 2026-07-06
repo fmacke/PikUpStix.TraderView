@@ -29,7 +29,7 @@ public partial class Program
             var config = provider.GetRequiredService<IConfiguration>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
             var connectionString = BuildConnectionString(config);
-            return new TradeExecutionRepository(connectionString, instrumentRepo);
+            return new TradeExecutionRepository(connectionString);
         });
 
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>

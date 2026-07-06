@@ -66,11 +66,11 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Gets all trade executions ordered by order ID and date
         /// </summary>
-        public List<TradeExecution> GetTradeExecutions()
+        public List<Trade> GetTradeExecutions()
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var tradeExecutions = new List<TradeExecution>();
+                var tradeExecutions = new List<Trade>();
 
                 // CHANGED: Joined with Positions to get InstrumentId
                 using (var cmd = new SqlCommand(
@@ -83,19 +83,19 @@ namespace IKBR_Report_Puller.Data.Repositories
                     {
                         while (reader.Read())
                         {
-                            tradeExecutions.Add(new TradeExecution
+                            tradeExecutions.Add(new Trade
                             {
                                 IbOrderID = reader.GetInt64("ibOrderID"),
                                 Symbol = reader.GetString("symbol"),
                                 TradeDate = DateTime.ParseExact(reader.GetString("tradeDate"), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
                                 Quantity = reader.GetDecimal("quantity"),
-                                AveragePrice = reader.GetDecimal("tradePrice"),
+                                TradePrice = reader.GetDecimal("tradePrice"),
                                 InstrumentId = reader.GetInt32("InstrumentId"),
                                 Currency = reader.GetString("currency"),
-                                SecurityId = reader.GetString("conid"),
+                                Conid = reader.GetString("conid"),
                                 IbExecID = reader.GetString("ibExecID"),
-                                IBCommission = reader.GetDecimal("ibCommission"),
-                                IBCommissionCurrency = reader.GetString("ibCommissionCurrency"),
+                                IbCommission = reader.GetDecimal("ibCommission"),
+                                IbCommissionCurrency = reader.GetString("ibCommissionCurrency"),
                             });
                         }
                     }
@@ -108,7 +108,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Inserts or updates today's trade confirmations
         /// </summary>
-        public void UpsertTodayExecutions(List<TradeConfirm> tradeConfirms)
+        public void UpsertTodayExecutions(List<Trade> tradeConfirms)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
             {
@@ -122,7 +122,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                 {
                     foreach (var tradeConfirm in tradeConfirms)
                     {
-                        string execID = tradeConfirm.ExecID;
+                        string execID = tradeConfirm.IbExecID;
                         if (string.IsNullOrEmpty(execID))
                         {
                             Console.WriteLine("Trade confirmation missing execID. Skipping.");
@@ -130,7 +130,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         }
 
                         bool exists = RecordExists(connection, transaction,
-                            "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibexecID = @execID",
+                            "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @execID",
                             new Dictionary<string, object> { { "@execID", execID } });
 
                         if (exists)
@@ -256,7 +256,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             ExecuteCommand(connection, transaction, insertQuery, parameters);
         }
 
-        private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
+        private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, Trade tradeConfirm, string execID)
         {
             // CHANGED: Removed direct instrumentId target updating since it belongs only to Positions schema layer now.
             const string updateQuery = @"
@@ -271,15 +271,15 @@ namespace IKBR_Report_Puller.Data.Repositories
                 { "@symbol", tradeConfirm.Symbol },
                 { "@tradeDate", tradeConfirm.TradeDate },
                 { "@quantity", tradeConfirm.Quantity },
-                { "@tradePrice", tradeConfirm.Price },
+                { "@tradePrice", tradeConfirm.TradePrice },
                 { "@currency", tradeConfirm.Currency },
-                { "@conid", tradeConfirm.ConId }
+                { "@conid", tradeConfirm.Conid }
             };
 
             ExecuteCommand(connection, transaction, updateQuery, parameters);
         }
 
-        private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
+        private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, Trade tradeConfirm, string execID)
         {
             // CHANGED: Removed instrumentId, updated property mapping to positionId -> PositionID
             const string insertQuery = @"
@@ -288,15 +288,15 @@ namespace IKBR_Report_Puller.Data.Repositories
 
             var parameters = new Dictionary<string, object>
             {
-                { "@positionId", tradeConfirm.PositionID },
+                { "@positionId", tradeConfirm.PositionId },
                 { "@ibOrderID", tradeConfirm.IbOrderID.ToString() },
                 { "@ibexecID", execID },
                 { "@symbol", tradeConfirm.Symbol },
                 { "@tradeDate", tradeConfirm.TradeDate },
                 { "@quantity", tradeConfirm.Quantity },
-                { "@tradePrice", tradeConfirm.Price },
-                { "@currency", tradeConfirm.Currency },
-                { "@conid", tradeConfirm.ConId }
+                { "@tradePrice", tradeConfirm.TradePrice },
+                { "@currency", tradeConfirm.Currency }, 
+                { "@conid", tradeConfirm.Conid }
             };
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
@@ -305,10 +305,10 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Gets trade execution data by ibExecID and returns the existing trade information
         /// </summary>
-        private TradeExecution GetTradeExecutionsByIbExecID(SqlConnection connection, SqlTransaction transaction, string ibExecID, out Trade existingTrade)
+        private Trade GetTradeExecutionsByIbExecID(SqlConnection connection, SqlTransaction transaction, string ibExecID, out Trade existingTrade)
         {
             existingTrade = new Trade();
-            TradeExecution tradeExecution = null;
+            Trade tradeExecution = null;
 
             // CHANGED: JOIN with Positions table to grab InstrumentId
             using (var cmd = new SqlCommand(
@@ -343,18 +343,18 @@ namespace IKBR_Report_Puller.Data.Repositories
                             ? null
                             : reader.GetString(reader.GetOrdinal("conid"));
 
-                        tradeExecution = new TradeExecution
+                        tradeExecution = new Trade
                         {
                             InstrumentId = existingTrade.InstrumentId,
                             Symbol = existingTrade.Symbol,
-                            SecurityId = existingTrade.Conid,
+                            Conid = existingTrade.Conid,
                             TradeDate = reader.IsDBNull(reader.GetOrdinal("tradeDate"))
                              ? DateTime.MinValue
                              : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("tradeDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
                             Quantity = reader.IsDBNull(reader.GetOrdinal("quantity"))
                              ? 0
                              : reader.GetDecimal(reader.GetOrdinal("quantity")),
-                            AveragePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice"))
+                            TradePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice"))
                              ? 0
                              : reader.GetDecimal(reader.GetOrdinal("tradePrice")),
                             Currency = reader.IsDBNull(reader.GetOrdinal("currency"))

@@ -32,15 +32,15 @@ namespace IKBR_Report_Puller.Domain
         public string Expiry { get; set; }
         public string PutCall { get; set; }
         public decimal? PrincipalAdjustFactor { get; set; }
-        public string ReportDate { get; set; }
+        public DateTime ReportDate { get; set; }
         public long? TradeID { get; set; }
-        public string TradeDate { get; set; }
-        public string DateTime { get; set; }
-        public string SettleDateTarget { get; set; }
+        public DateTime TradeDate { get; set; }
+        public DateTime DateTime { get; set; }
+        public DateTime SettleDateTarget { get; set; }
         public string TransactionType { get; set; }
         public string Exchange { get; set; }
-        public decimal? Quantity { get; set; }
-        public decimal? TradePrice { get; set; }
+        public decimal Quantity { get; set; }
+        public decimal TradePrice { get; set; }
         public decimal? TradeMoney { get; set; }
         public decimal? Proceeds { get; set; }
         public decimal? Taxes { get; set; }

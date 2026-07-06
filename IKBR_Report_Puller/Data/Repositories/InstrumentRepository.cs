@@ -107,90 +107,90 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// Ensures instruments exist for the given trade confirmations
         /// Creates missing instruments automatically and populates InstrumentID on each trade confirm
         /// </summary>
-        public void UpsertInstruments(List<TradeConfirm> tradeConfirms, string source)
-        {
-            if (tradeConfirms == null || !tradeConfirms.Any())
-                return;
+        //public void UpsertInstruments(List<Trade> tradeConfirms, string source)
+        //{
+        //    if (tradeConfirms == null || !tradeConfirms.Any())
+        //        return;
 
-            ExecuteDatabaseOperation(connection =>
-            {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    try
-                    {
-                        var uniqueConids = tradeConfirms
-                            .Where(t => !string.IsNullOrEmpty(t.ConId))
-                            .Select(t => t.ConId)
-                            .Distinct()
-                            .ToList();
+        //    ExecuteDatabaseOperation(connection =>
+        //    {
+        //        using (var transaction = connection.BeginTransaction())
+        //        {
+        //            try
+        //            {
+        //                var uniqueConids = tradeConfirms
+        //                    .Where(t => !string.IsNullOrEmpty(t.Conid))
+        //                    .Select(t => t.Conid)
+        //                    .Distinct()
+        //                    .ToList();
 
-                        int createdCount = 0;
-                        int existingCount = 0;
+        //                int createdCount = 0;
+        //                int existingCount = 0;
 
-                        // Dictionary to cache conid -> instrumentId mappings
-                        var conidToInstrumentIdMap = new Dictionary<string, int>();
+        //                // Dictionary to cache conid -> instrumentId mappings
+        //                var conidToInstrumentIdMap = new Dictionary<string, int>();
 
-                        foreach (var conid in uniqueConids)
-                        {
-                            int? instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
+        //                foreach (var conid in uniqueConids)
+        //                {
+        //                    int? instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
 
-                            if (!instrumentId.HasValue)
-                            {
-                                var tradeConfirm = tradeConfirms.First(t => t.ConId == conid);
+        //                    if (!instrumentId.HasValue)
+        //                    {
+        //                        var tradeConfirm = tradeConfirms.First(t => t.Conid == conid);
 
-                                InsertInstrument(
-                                    connection,
-                                    transaction,
-                                    conid,
-                                    tradeConfirm.Symbol,
-                                    tradeConfirm.ListingExchange,
-                                    tradeConfirm.Currency,
-                                    tradeConfirm.AssetCategory,
-                                    source,
-                                    source);
+        //                        InsertInstrument(
+        //                            connection,
+        //                            transaction,
+        //                            conid,
+        //                            tradeConfirm.Symbol,
+        //                            tradeConfirm.ListingExchange,
+        //                            tradeConfirm.Currency,
+        //                            tradeConfirm.AssetCategory,
+        //                            source,
+        //                            source);
 
-                                // Get the newly created instrument ID
-                                instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
-                                createdCount++;
-                            }
-                            else
-                            {
-                                existingCount++;
-                            }
+        //                        // Get the newly created instrument ID
+        //                        instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
+        //                        createdCount++;
+        //                    }
+        //                    else
+        //                    {
+        //                        existingCount++;
+        //                    }
 
-                            // Store the mapping
-                            if (instrumentId.HasValue)
-                            {
-                                conidToInstrumentIdMap[conid] = instrumentId.Value;
-                            }
-                        }
+        //                    // Store the mapping
+        //                    if (instrumentId.HasValue)
+        //                    {
+        //                        conidToInstrumentIdMap[conid] = instrumentId.Value;
+        //                    }
+        //                }
 
-                        // Populate InstrumentID on all trade confirms
-                        foreach (var tradeConfirm in tradeConfirms)
-                        {
-                            if (!string.IsNullOrEmpty(tradeConfirm.ConId) && 
-                                conidToInstrumentIdMap.TryGetValue(tradeConfirm.ConId, out int instrumentId))
-                            {
-                                tradeConfirm.InstrumentID = instrumentId.ToString();
-                            }
-                        }
+        //                // Populate InstrumentID on all trade confirms
+        //                foreach (var tradeConfirm in tradeConfirms)
+        //                {
+        //                    if (!string.IsNullOrEmpty(tradeConfirm.Conid) && 
+        //                        conidToInstrumentIdMap.TryGetValue(tradeConfirm.Conid, out int instrumentId))
+        //                    {
+        //                        //tradeConfirm.InstrumentID = instrumentId.ToString();
+        //                    }
+        //                }
 
-                        transaction.Commit();
+        //                transaction.Commit();
 
-                        if (createdCount > 0)
-                        {
-                            Console.WriteLine($"Created {createdCount} new instrument(s) from trade confirmations, {existingCount} already existed");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        Console.WriteLine($"Error upserting instruments from trade confirmations: {ex.Message}");
-                        throw;
-                    }
-                }
-            });
-        }
+        //                if (createdCount > 0)
+        //                {
+        //                    Console.WriteLine($"Created {createdCount} new instrument(s) from trade confirmations, {existingCount} already existed");
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                transaction.Rollback();
+        //                Console.WriteLine($"Error upserting instruments from trade confirmations: {ex.Message}");
+        //                throw;
+        //            }
+        //        }
+        //    });
+        //}
 
         #region Private Helper Methods
         public Instrument Get(int instrumentId)

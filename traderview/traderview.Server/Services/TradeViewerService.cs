@@ -42,11 +42,11 @@ namespace traderview.Server.Services
                     Symbol = trade.Symbol,
                     EntryDate = trade.TradeOpened,
                     ExitDate = trade.TradeClosed,
-                    EntryPrice = trade.AveragePrice,
+                    EntryPrice = trade.TradePrice,
                     ExitPrice = trade.ClosePrice,
                     Quantity = Math.Abs(trade.Quantity),
                     Pnl = trade.RealizedPnL,
-                    BuySell = trade.IsLong ? "BUY" : "SELL"
+                    BuySell = trade.Quantity > 0 ? "BUY" : "SELL"
                 }).ToList());
             }
             catch (Exception ex)
