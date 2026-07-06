@@ -42,12 +42,20 @@ namespace IKBR_Report_Puller.Console
                         return new Data.Repositories.InstrumentRepository(connectionString);
                     });
 
-                    services.AddSingleton<ITradeExecutionRepository>(provider =>
+                    services.AddSingleton<IPositionRepository>(provider =>
                     {
                         var config = provider.GetRequiredService<IConfiguration>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         var connectionString = BuildConnectionString(config);
-                        return new Data.Repositories.TradeExecutionRepository(connectionString);
+                        return new Data.Repositories.PositionRepository(connectionString, instrumentRepo);
+                    });
+
+                    services.AddSingleton<ITradeExecutionRepository>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var positionRepo = provider.GetRequiredService<IPositionRepository>();
+                        var connectionString = BuildConnectionString(config);
+                        return new Data.Repositories.TradeExecutionRepository(connectionString, positionRepo);
                     });
 
                     services.AddSingleton<IHistoricalDataRepository>(provider =>

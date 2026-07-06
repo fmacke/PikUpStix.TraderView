@@ -24,12 +24,20 @@ public partial class Program
             return new InstrumentRepository(connectionString);
         });
 
-        builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
+        builder.Services.AddScoped<IPositionRepository>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
             var connectionString = BuildConnectionString(config);
-            return new TradeExecutionRepository(connectionString);
+            return new PositionRepository(connectionString, instrumentRepo);
+        });
+
+        builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var positionRepo = provider.GetRequiredService<IPositionRepository>();
+            var connectionString = BuildConnectionString(config);
+            return new TradeExecutionRepository(connectionString, positionRepo);
         });
 
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>

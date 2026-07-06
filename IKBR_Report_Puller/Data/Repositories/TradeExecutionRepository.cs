@@ -11,10 +11,12 @@ namespace IKBR_Report_Puller.Data.Repositories
     /// Repository for Trade-related database operations
     /// </summary>
     public class TradeExecutionRepository : BaseRepository, ITradeExecutionRepository
-    {      
-        public TradeExecutionRepository(string connectionString) : base(connectionString)
+    {
+        private readonly IPositionRepository _positionRepository;
+
+        public TradeExecutionRepository(string connectionString, IPositionRepository positionRepository) : base(connectionString)
         {
-           
+            _positionRepository = positionRepository;
         }
 
         /// <summary>
@@ -53,6 +55,12 @@ namespace IKBR_Report_Puller.Data.Repositories
                         }
                         else
                         {
+                            // Ensure trade has a PositionId before inserting
+                            if (trade.PositionId == 0)
+                            {
+                                trade.PositionId = GetOrCreatePosition(connection, transaction, trade);
+                            }
+
                             InsertTrade(connection, transaction, trade);
                         }
                     }
@@ -250,13 +258,59 @@ namespace IKBR_Report_Puller.Data.Repositories
                  @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID,
                  @rtn, @orderReference, @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized,
                  @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt,
-                 @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
+                           @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
 
-            var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-            ExecuteCommand(connection, transaction, insertQuery, parameters);
-        }
+                     var parameters = TradeParameterBuilder.GetTradeParameters(trade);
+                     ExecuteCommand(connection, transaction, insertQuery, parameters);
+                 }
 
-        private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, Trade tradeConfirm, string execID)
+                 /// <summary>
+                 /// Gets or creates a Position for the trade
+                 /// </summary>
+                 private int GetOrCreatePosition(SqlConnection connection, SqlTransaction transaction, Trade trade)
+                 {
+                     // First, try to find an existing open position for this instrument and date
+                     const string selectQuery = @"
+                         SELECT Id 
+                         FROM [dbo].[Positions] 
+                         WHERE InstrumentId = @instrumentId 
+                         AND CAST(OpenDate AS DATE) = CAST(@openDate AS DATE)
+                         AND Status = 'Open'";
+
+                     var selectParameters = new Dictionary<string, object>
+                     {
+                         { "@instrumentId", trade.InstrumentId },
+                         { "@openDate", trade.TradeDate }
+                     };
+
+                     int existingPositionId = ExecuteScalar<int>(connection, transaction, selectQuery, selectParameters);
+
+                     if (existingPositionId > 0)
+                     {
+                         return existingPositionId;
+                     }
+
+                     // If no existing position found, create a new one
+                     const string insertQuery = @"
+                         INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId)
+                         VALUES (@openDate, @status, @instrumentId);
+                         SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+                     var insertParameters = new Dictionary<string, object>
+                     {
+                         { "@openDate", trade.TradeDate },
+                         { "@status", "Open" },
+                         { "@instrumentId", trade.InstrumentId }
+                     };
+
+                     int newPositionId = ExecuteScalar<int>(connection, transaction, insertQuery, insertParameters);
+
+                     Console.WriteLine($"Created new Position (Id: {newPositionId}) for InstrumentId {trade.InstrumentId} on {trade.TradeDate:yyyy-MM-dd}");
+
+                     return newPositionId;
+                 }
+
+                 private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, Trade tradeConfirm, string execID)
         {
             // CHANGED: Removed direct instrumentId target updating since it belongs only to Positions schema layer now.
             const string updateQuery = @"
