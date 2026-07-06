@@ -50,7 +50,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         {
                             // instrument ID retrieval handled transparently via updated internal JOIN mapping
                             var tradeExec = GetTradeExecutionsByIbExecID(connection, transaction, ibExecID, out var existingTrade);
-                            trade.InstrumentId = existingTrade.InstrumentId;
+                            //trade.InstrumentId = existingTrade.InstrumentId;
                             UpdateTradeIfIncomplete(connection, transaction, trade, ibExecID);
                         }
                         else
@@ -262,53 +262,53 @@ namespace IKBR_Report_Puller.Data.Repositories
 
                      var parameters = TradeParameterBuilder.GetTradeParameters(trade);
                      ExecuteCommand(connection, transaction, insertQuery, parameters);
-                 }
+        }
 
-                 /// <summary>
-                 /// Gets or creates a Position for the trade
-                 /// </summary>
-                 private int GetOrCreatePosition(SqlConnection connection, SqlTransaction transaction, Trade trade)
-                 {
-                     // First, try to find an existing open position for this instrument and date
-                     const string selectQuery = @"
+        /// <summary>
+        /// Gets or creates a Position for the trade
+        /// </summary>
+        private int GetOrCreatePosition(SqlConnection connection, SqlTransaction transaction, Trade trade)
+        {
+            // First, try to find an existing open position for this instrument and date
+            const string selectQuery = @"
                          SELECT Id 
                          FROM [dbo].[Positions] 
                          WHERE InstrumentId = @instrumentId 
                          AND CAST(OpenDate AS DATE) = CAST(@openDate AS DATE)
                          AND Status = 'Open'";
 
-                     var selectParameters = new Dictionary<string, object>
+            var selectParameters = new Dictionary<string, object>
                      {
                          { "@instrumentId", trade.InstrumentId },
                          { "@openDate", trade.TradeDate }
                      };
 
-                     int existingPositionId = ExecuteScalar<int>(connection, transaction, selectQuery, selectParameters);
+            int existingPositionId = ExecuteScalar<int>(connection, transaction, selectQuery, selectParameters);
 
-                     if (existingPositionId > 0)
-                     {
-                         return existingPositionId;
-                     }
+            if (existingPositionId > 0)
+            {
+                return existingPositionId;
+            }
 
-                     // If no existing position found, create a new one
-                     const string insertQuery = @"
+            // If no existing position found, create a new one
+            const string insertQuery = @"
                          INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId)
                          VALUES (@openDate, @status, @instrumentId);
                          SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-                     var insertParameters = new Dictionary<string, object>
+            var insertParameters = new Dictionary<string, object>
                      {
                          { "@openDate", trade.TradeDate },
                          { "@status", "Open" },
                          { "@instrumentId", trade.InstrumentId }
                      };
 
-                     int newPositionId = ExecuteScalar<int>(connection, transaction, insertQuery, insertParameters);
+            int newPositionId = ExecuteScalar<int>(connection, transaction, insertQuery, insertParameters);
 
-                     Console.WriteLine($"Created new Position (Id: {newPositionId}) for InstrumentId {trade.InstrumentId} on {trade.TradeDate:yyyy-MM-dd}");
+            Console.WriteLine($"Created new Position (Id: {newPositionId}) for InstrumentId {trade.InstrumentId} on {trade.TradeDate:yyyy-MM-dd}");
 
-                     return newPositionId;
-                 }
+            return newPositionId;
+        }
 
                  private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, Trade tradeConfirm, string execID)
         {
@@ -400,6 +400,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         tradeExecution = new Trade
                         {
                             InstrumentId = existingTrade.InstrumentId,
+                            PositionId = existingTrade.PositionId,
                             Symbol = existingTrade.Symbol,
                             Conid = existingTrade.Conid,
                             TradeDate = reader.IsDBNull(reader.GetOrdinal("tradeDate"))
