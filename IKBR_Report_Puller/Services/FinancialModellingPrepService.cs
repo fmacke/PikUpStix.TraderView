@@ -103,9 +103,9 @@ namespace IKBR_Report_Puller.Services
 
         public async Task FetchAndSaveChartData(List<HistoricalTrade> trades)
         {
-            await ExecuteWithErrorHandlingAsync(async () =>
+            foreach (var trade in trades)
             {
-                foreach (var trade in trades)
+                await ExecuteWithErrorHandlingAsync(async () =>
                 {
                     var fromDate = trade.TradeOpened.AddDays(-200);
                     var toDate = trade.TradeClosed.AddDays(200);
@@ -119,21 +119,21 @@ namespace IKBR_Report_Puller.Services
                     if (barData == null || barData.Count == 0)
                     {
                         Console.WriteLine("No chart data found for the specified date range.");
-                        continue;
+                        return;
                     }
 
                     Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {trade.Symbol}.");
 
                     _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), barData);
-                }
-            });
+                }, $"Symbol: {trade.Symbol}, InstrumentId: {trade.InstrumentId}");
+            }
         }
 
         public async Task FetchAndSaveChartData(List<string> symbols, int lookBackDays)
         {
-            await ExecuteWithErrorHandlingAsync(async () =>
+            foreach (var symbol in symbols)
             {
-                foreach (var symbol in symbols)
+                await ExecuteWithErrorHandlingAsync(async () =>
                 {
                     var fromDate = DateTime.Now.AddDays(lookBackDays * -1);
                     var toDate = DateTime.Now;
@@ -153,20 +153,20 @@ namespace IKBR_Report_Puller.Services
                     if (barData == null || barData.Count == 0)
                     {
                         Console.WriteLine("No chart data found for the specified date range.");
-                        continue;
+                        return;
                     }
 
                     Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {symbol}.");
 
                     _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), barData);
-                }
-            });
+                }, $"Symbol: {symbol}");
+            }
         }
 
         /// <summary>
         /// Executes an async operation with standardized error handling
         /// </summary>
-        private static async Task ExecuteWithErrorHandlingAsync(Func<Task> operation)
+        private static async Task ExecuteWithErrorHandlingAsync(Func<Task> operation, string context = null)
         {
             try
             {
@@ -174,18 +174,21 @@ namespace IKBR_Report_Puller.Services
             }
             catch (HttpRequestException ex)
             {
-                Console.WriteLine($"HTTP error fetching economic calendar: {ex.Message}");
-                throw;
+                var contextInfo = !string.IsNullOrEmpty(context) ? $" [{context}]" : "";
+                Console.WriteLine($"HTTP error fetching data{contextInfo}: {ex.Message}");
+                throw new HttpRequestException($"HTTP error fetching data{contextInfo}: {ex.Message}", ex);
             }
             catch (JsonException ex)
             {
-                Console.WriteLine($"JSON deserialization error: {ex.Message}");
-                throw;
+                var contextInfo = !string.IsNullOrEmpty(context) ? $" [{context}]" : "";
+                Console.WriteLine($"JSON deserialization error{contextInfo}: {ex.Message}");
+                throw new JsonException($"JSON deserialization error{contextInfo}: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching and saving FMP: {ex.Message}");
-                throw;
+                var contextInfo = !string.IsNullOrEmpty(context) ? $" [{context}]" : "";
+                Console.WriteLine($"Error fetching and saving FMP{contextInfo}: {ex.Message}");
+                throw new Exception($"Error fetching and saving FMP{contextInfo}: {ex.Message}", ex);
             }
         }
 

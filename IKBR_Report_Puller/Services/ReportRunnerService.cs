@@ -58,12 +58,12 @@ namespace IKBR_Report_Puller.Services
                     {
                         "^GSPC",//spx
                         "^RUT",//iwm
-                        "CLUSD",//wti crude oil
+                        //"CLUSD",//wti crude oil
                         "BTCUSD",//bitcoin
                         "GCUSD",//gold
                         "XAGUSD",//silver
                         "QQQ",//nasdaq
-                        "^VIX" 
+                        "^VIX"
                      }, 200);
             }
             catch (Exception ex)
@@ -102,8 +102,8 @@ namespace IKBR_Report_Puller.Services
         private async Task<(IKBRReport mainReport, string fileName)> GetReportDataFromInteractiveBrokers()
         {
             //// Fetch and process main report
-            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260607_153253_TraderSyncAccess.xml");
-            XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260708_190402_TraderSyncAccess.xml");
+            //XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
 

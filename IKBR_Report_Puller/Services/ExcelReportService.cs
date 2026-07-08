@@ -120,7 +120,7 @@ namespace IKBR_Report_Puller.Services
                         while (reader.Read())
                         {
                             trades.Add((
-                                reader.GetDateTime(0),
+                                DateTime.ParseExact(reader.GetString(0), "yyyyMMdd", CultureInfo.InvariantCulture),
                                 reader.GetDecimal(1),
                                 reader.IsDBNull(2) ? "" : reader.GetString(2)
                             ));
