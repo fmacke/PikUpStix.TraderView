@@ -48,6 +48,8 @@ namespace IKBR_Report_Puller.Services
 
                             TradeHistory.Add(new HistoricalTrade    
                             {
+                                PositionId = exec.PositionId,
+                                IbExecID = exec.IbExecID,
                                 Symbol = symbol,
                                 Quantity = -matchQty, // Kept negative to reflect original Short position orientation
                                 TradePrice = shortMatch.Price, // Short entry price
@@ -58,7 +60,7 @@ namespace IKBR_Report_Puller.Services
                                 TradeClosed = execTime,
                                 IbCommission = openingCommission + closingCommission,
                                 IbCommissionCurrency = exec.IbCommissionCurrency,
-                                InstrumentId = instrumentId     
+                                InstrumentId = instrumentId
                             });
 
                             qtyRemaining -= matchQty;
@@ -90,7 +92,7 @@ namespace IKBR_Report_Puller.Services
                         {
                             var longMatch = longInventory.Peek();
                             decimal matchQty = Math.Min(longMatch.Quantity, sellQtyAbs);
-
+                            
                             // Calculate prorated commission for this closing execution
                             decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(exec.Quantity));
                             // Calculate prorated commission from the opening execution
@@ -98,6 +100,8 @@ namespace IKBR_Report_Puller.Services
 
                             TradeHistory.Add(new HistoricalTrade
                             {
+                                PositionId = exec.PositionId,
+                                IbExecID = exec.IbExecID,
                                 Symbol = symbol,
                                 Quantity = matchQty, // Positive for Long positions
                                 TradePrice = longMatch.Price, // Entry buy price

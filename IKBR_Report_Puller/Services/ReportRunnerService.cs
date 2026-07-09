@@ -51,20 +51,20 @@ namespace IKBR_Report_Puller.Services
                 _tradeHistoryReportService.CreateTradeHistoryReport(executions);
                 _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
 
-                await WriteTodayReport(fileName);
-                await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                await marketDataService.FetchAndSaveChartData(new List<string>()
-                    {
-                        "^GSPC",//spx
-                        "^RUT",//iwm
-                        //"CLUSD",//wti crude oil
-                        "BTCUSD",//bitcoin
-                        "GCUSD",//gold
-                        "XAGUSD",//silver
-                        "QQQ",//nasdaq
-                        "^VIX"
-                     }, 200);
+                //await WriteTodayReport(fileName);
+                //await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                //await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                //await marketDataService.FetchAndSaveChartData(new List<string>()
+                //    {
+                //        "^GSPC",//spx
+                //        "^RUT",//iwm
+                //        //"CLUSD",//wti crude oil
+                //        "BTCUSD",//bitcoin
+                //        "GCUSD",//gold
+                //        "XAGUSD",//silver
+                //        "QQQ",//nasdaq
+                //        "^VIX"
+                //     }, 200);
             }
             catch (Exception ex)
             {

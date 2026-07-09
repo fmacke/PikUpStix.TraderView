@@ -201,12 +201,12 @@ namespace IKBR_Report_Puller.Services
             }
         }
 
-        private void CreateTradeHistoryWorksheet(ExcelPackage package, List<HistoricalTrade> historicalData, string worksheetName)
+        private void CreateTradeHistoryWorksheet(ExcelPackage package, List<HistoricalTrade> trades, string worksheetName)
         {
             var worksheet = package.Workbook.Worksheets.Add(worksheetName);
 
             // Add headers
-            worksheet.Cells[1, 1].Value = "ibOrderID";
+            worksheet.Cells[1, 1].Value = "ibExecId";
             worksheet.Cells[1, 2].Value = "Symbol";
             worksheet.Cells[1, 3].Value = "Date Opened";
             worksheet.Cells[1, 4].Value = "Date Closed";
@@ -222,16 +222,17 @@ namespace IKBR_Report_Puller.Services
             worksheet.Cells[1, 14].Value = "MarginPercent";
 
             int currentRow = 2;
-            foreach (var historicalTrade in historicalData.OrderByDescending(x => x.TradeClosed))
+            foreach (var historicalTrade in trades.OrderByDescending(x => x.TradeClosed))
             {
-                worksheet.Cells[currentRow, 1].Value = historicalTrade.CloseIbOrderID;
+                var quant = Math.Round(historicalTrade.Quantity, 2);
+                worksheet.Cells[currentRow, 1].Value = historicalTrade.IbExecID;
                 worksheet.Cells[currentRow, 2].Value = historicalTrade.Symbol;
                 worksheet.Cells[currentRow, 3].Value = historicalTrade.TradeOpened;
                 worksheet.Cells[currentRow, 3].Style.Numberformat.Format = "yyyy-MM-dd";
                 worksheet.Cells[currentRow, 4].Value = historicalTrade.TradeClosed;
                 worksheet.Cells[currentRow, 4].Style.Numberformat.Format = "yyyy-MM-dd";
                 worksheet.Cells[currentRow, 5].Value = (historicalTrade.TradeClosed - historicalTrade.TradeOpened).TotalDays;
-                worksheet.Cells[currentRow, 6].Value = Math.Round(historicalTrade.Quantity, 2);
+                worksheet.Cells[currentRow, 6].Value = quant;
                 worksheet.Cells[currentRow, 7].Value = Math.Round(historicalTrade.TradePrice, 2);
                 worksheet.Cells[currentRow, 8].Value = Math.Round(historicalTrade.ClosePrice, 2);
                 worksheet.Cells[currentRow, 9].Value = Math.Round(historicalTrade.TotalCost, 2);
