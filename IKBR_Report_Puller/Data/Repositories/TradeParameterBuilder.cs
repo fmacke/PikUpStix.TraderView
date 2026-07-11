@@ -12,6 +12,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         {
             return new Dictionary<string, object>
             {
+                { "@PositionId", trade.PositionId },
                 { "@InstrumentId", trade.InstrumentId },
                 { "@symbol", trade.Symbol },
                 { "@conID", trade.Conid },

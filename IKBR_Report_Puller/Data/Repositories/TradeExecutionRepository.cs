@@ -48,20 +48,34 @@ namespace IKBR_Report_Puller.Data.Repositories
 
                         if (exists)
                         {
-                            // instrument ID retrieval handled transparently via updated internal JOIN mapping
-                            var tradeExec = GetTradeExecutionsByIbExecID(connection, transaction, ibExecID, out var existingTrade);
-                            //trade.InstrumentId = existingTrade.InstrumentId;
-                            UpdateTradeIfIncomplete(connection, transaction, trade, ibExecID);
+                            try
+                            {
+                                // instrument ID retrieval handled transparently via updated internal JOIN mapping
+                                var tradeExec = GetTradeExecutionsByIbExecID(connection, transaction, ibExecID, out var existingTrade);
+                                //trade.InstrumentId = existingTrade.InstrumentId;
+                                UpdateTradeIfIncomplete(connection, transaction, trade, ibExecID);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error updating trade with ibExecID {ibExecID}: {ex.Message}");
+                            }
                         }
                         else
                         {
-                            // Ensure trade has a PositionId before inserting
-                            if (trade.PositionId == 0)
+                            try
                             {
-                                trade.PositionId = GetOrCreatePosition(connection, transaction, trade);
-                            }
+                                // Ensure trade has a PositionId before inserting
+                                if (trade.PositionId == 0)
+                                {
+                                    trade.PositionId = GetOrCreatePosition(connection, transaction, trade);
+                                }
 
-                            InsertTrade(connection, transaction, trade);
+                                InsertTrade(connection, transaction, trade);
+                            }
+                            catch (Exception ex)
+                            {
+                                Console.WriteLine($"Error inserting trade with ibExecID {ibExecID}: {ex.Message}");
+                            }
                         }
                     }
                     transaction.Commit();
@@ -393,10 +407,29 @@ namespace IKBR_Report_Puller.Data.Repositories
                         existingTrade.Symbol = reader.IsDBNull(reader.GetOrdinal("symbol"))
                             ? null
                             : reader.GetString(reader.GetOrdinal("symbol"));
-
                         existingTrade.Conid = reader.IsDBNull(reader.GetOrdinal("conid"))
                             ? null
                             : reader.GetString(reader.GetOrdinal("conid"));
+
+                        existingTrade.DateTime = reader.IsDBNull(reader.GetOrdinal("tradeDate"))
+                             ? DateTime.MinValue
+                             : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("tradeDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+
+                        existingTrade.Quantity = reader.IsDBNull(reader.GetOrdinal("quantity"))
+                             ? 0
+                             : reader.GetDecimal(reader.GetOrdinal("quantity"));
+
+                        existingTrade.TradePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice"))
+                             ? 0
+                             : reader.GetDecimal(reader.GetOrdinal("tradePrice"));
+
+                        existingTrade.Currency = reader.IsDBNull(reader.GetOrdinal("currency"))
+                             ? null
+                             : reader.GetString(reader.GetOrdinal("currency"));
+
+                        existingTrade.IbOrderID = reader.IsDBNull(reader.GetOrdinal("ibOrderID"))
+                             ? 0
+                             : reader.GetInt64(reader.GetOrdinal("ibOrderID"));
 
                         tradeExecution = new TradeExecution
                         {
@@ -404,21 +437,11 @@ namespace IKBR_Report_Puller.Data.Repositories
                             PositionId = existingTrade.PositionId,
                             Symbol = existingTrade.Symbol,
                             Conid = existingTrade.Conid,
-                            TradeDate = reader.IsDBNull(reader.GetOrdinal("tradeDate"))
-                             ? DateTime.MinValue
-                             : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("tradeDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
-                            Quantity = reader.IsDBNull(reader.GetOrdinal("quantity"))
-                             ? 0
-                             : reader.GetDecimal(reader.GetOrdinal("quantity")),
-                            TradePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice"))
-                             ? 0
-                             : reader.GetDecimal(reader.GetOrdinal("tradePrice")),
-                            Currency = reader.IsDBNull(reader.GetOrdinal("currency"))
-                             ? null
-                             : reader.GetString(reader.GetOrdinal("currency")),
-                            IbOrderID = reader.IsDBNull(reader.GetOrdinal("ibOrderID"))
-                             ? 0
-                             : reader.GetInt64(reader.GetOrdinal("ibOrderID"))
+                            TradeDate = existingTrade.DateTime,
+                            Quantity = existingTrade.Quantity,
+                            TradePrice = existingTrade.TradePrice,
+                            Currency = existingTrade.Currency,
+                            IbOrderID = existingTrade.IbOrderID
                         };
                     }
                 }
