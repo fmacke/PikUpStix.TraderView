@@ -24,7 +24,7 @@ namespace IKBR_Report_Puller.Services
                 report.AccountId = flexStatement.Attribute("accountId")?.Value;
             }
 
-            report.Trades = reportXml.Descendants("Trade")
+            report.Trades = reportXml.Descendants("TradeExecution")
                 .Select(ParseTrade)
                 .ToList();
 
@@ -58,9 +58,9 @@ namespace IKBR_Report_Puller.Services
             return report;
         }
 
-        private static Trade ParseTrade(XElement trade)
+        private static TradeExecution ParseTrade(XElement trade)
         {
-            return new Trade
+            return new TradeExecution
             {
                 AccountId = trade.Attribute("accountId")?.Value,
                 AcctAlias = trade.Attribute("acctAlias")?.Value,
@@ -206,9 +206,9 @@ namespace IKBR_Report_Puller.Services
             };
         }
 
-        private static Trade ParseTradeConfirm(XElement tradeConfirm)
+        private static TradeExecution ParseTradeConfirm(XElement tradeConfirm)
         {
-            return new Trade
+            return new TradeExecution
             {
                 IbExecID = tradeConfirm.Attribute("execID")?.Value,
                 Symbol = tradeConfirm.Attribute("symbol")?.Value,

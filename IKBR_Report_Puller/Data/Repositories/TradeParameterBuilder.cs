@@ -4,11 +4,11 @@ using IKBR_Report_Puller.Domain;
 namespace IKBR_Report_Puller.Data.Repositories
 {
     /// <summary>
-    /// Builds parameter dictionaries for Trade database operations
+    /// Builds parameter dictionaries for TradeExecution database operations
     /// </summary>
     public static class TradeParameterBuilder
     {
-        public static Dictionary<string, object> GetTradeParameters(Trade trade)
+        public static Dictionary<string, object> GetTradeParameters(TradeExecution trade)
         {
             return new Dictionary<string, object>
             {

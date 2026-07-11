@@ -8,7 +8,7 @@ using IKBR_Report_Puller.Domain;
 namespace IKBR_Report_Puller.Data.Repositories
 {
     /// <summary>
-    /// Repository for Trade-related database operations
+    /// Repository for TradeExecution-related database operations
     /// </summary>
     public class TradeExecutionRepository : BaseRepository, ITradeExecutionRepository
     {
@@ -22,7 +22,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Inserts or updates trade executions from a report
         /// </summary>
-        public void UpsertTradeExecutions(List<Trade> trades)
+        public void UpsertTradeExecutions(List<TradeExecution> trades)
         {
             if (trades == null || !trades.Any())
             {
@@ -74,15 +74,15 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Gets all trade executions ordered by order ID and date
         /// </summary>
-        public List<Trade> GetTradeExecutions()
+        public List<TradeExecution> GetTradeExecutions()
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var tradeExecutions = new List<Trade>();
+                var tradeExecutions = new List<TradeExecution>();
 
-                // CHANGED: Joined with Positions to get InstrumentId
+                // CHANGED: Joined with Positions to get InstrumentId and PositionID
                 using (var cmd = new SqlCommand(
-                    "SELECT te.ibOrderID, te.symbol, te.tradeDate, te.quantity, te.tradePrice, te.openCloseIndicator, p.InstrumentId, te.currency, te.conid, te.ibExecID, te.IBCommission, te.IBCommissionCurrency " +
+                    "SELECT te.PositionID, te.ibOrderID, te.symbol, te.tradeDate, te.quantity, te.tradePrice, te.openCloseIndicator, p.InstrumentId, te.currency, te.conid, te.ibExecID, te.IBCommission, te.IBCommissionCurrency " +
                     "FROM [dbo].[TradeExecutions] te " +
                     "INNER JOIN [dbo].[Positions] p ON te.PositionID = p.Id " +
                     "ORDER BY te.ibOrderID, te.tradeDate ASC, te.dateTime ASC", connection))
@@ -91,8 +91,9 @@ namespace IKBR_Report_Puller.Data.Repositories
                     {
                         while (reader.Read())
                         {
-                            tradeExecutions.Add(new Trade
+                            tradeExecutions.Add(new TradeExecution
                             {
+                                PositionId = reader.GetInt32("PositionID"),
                                 IbOrderID = reader.GetInt64("ibOrderID"),
                                 Symbol = reader.GetString("symbol"),
                                 TradeDate = DateTime.ParseExact(reader.GetString("tradeDate"), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
@@ -116,7 +117,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Inserts or updates today's trade confirmations
         /// </summary>
-        public void UpsertTodayExecutions(List<Trade> tradeConfirms)
+        public void UpsertTodayExecutions(List<TradeExecution> tradeConfirms)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
             {
@@ -133,7 +134,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         string execID = tradeConfirm.IbExecID;
                         if (string.IsNullOrEmpty(execID))
                         {
-                            Console.WriteLine("Trade confirmation missing execID. Skipping.");
+                            Console.WriteLine("TradeExecution confirmation missing execID. Skipping.");
                             continue;
                         }
 
@@ -157,7 +158,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             });
         }
 
-        private void UpdateTradeIfIncomplete(SqlConnection connection, SqlTransaction transaction, Trade trade, string ibExecID)
+        private void UpdateTradeIfIncomplete(SqlConnection connection, SqlTransaction transaction, TradeExecution trade, string ibExecID)
         {
             try
             {
@@ -189,7 +190,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             }
         }
 
-        private void UpdateTrade(SqlConnection connection, SqlTransaction transaction, Trade trade)
+        private void UpdateTrade(SqlConnection connection, SqlTransaction transaction, TradeExecution trade)
         {
             // CHANGED: Removed InstrumentId from assignment, converted PositionId to PositionID matching your schema diagram
             const string updateQuery = @"
@@ -227,7 +228,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             ExecuteCommand(connection, transaction, updateQuery, parameters);
         }
 
-        private void InsertTrade(SqlConnection connection, SqlTransaction transaction, Trade trade)
+        private void InsertTrade(SqlConnection connection, SqlTransaction transaction, TradeExecution trade)
         {
             // CHANGED: Removed [InstrumentId] row column mapping, swapped [PositionId] -> [PositionID]
             const string insertQuery = @"
@@ -267,7 +268,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Gets or creates a Position for the trade
         /// </summary>
-        private int GetOrCreatePosition(SqlConnection connection, SqlTransaction transaction, Trade trade)
+        private int GetOrCreatePosition(SqlConnection connection, SqlTransaction transaction, TradeExecution trade)
         {
             // First, try to find an existing open position for this instrument and date
             const string selectQuery = @"
@@ -310,7 +311,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             return newPositionId;
         }
 
-                 private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, Trade tradeConfirm, string execID)
+                 private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
         {
             // CHANGED: Removed direct instrumentId target updating since it belongs only to Positions schema layer now.
             const string updateQuery = @"
@@ -333,7 +334,7 @@ namespace IKBR_Report_Puller.Data.Repositories
             ExecuteCommand(connection, transaction, updateQuery, parameters);
         }
 
-        private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, Trade tradeConfirm, string execID)
+        private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
         {
             // CHANGED: Removed instrumentId, updated property mapping to positionId -> PositionID
             const string insertQuery = @"
@@ -359,10 +360,10 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// <summary>
         /// Gets trade execution data by ibExecID and returns the existing trade information
         /// </summary>
-        private Trade GetTradeExecutionsByIbExecID(SqlConnection connection, SqlTransaction transaction, string ibExecID, out Trade existingTrade)
+        private TradeExecution GetTradeExecutionsByIbExecID(SqlConnection connection, SqlTransaction transaction, string ibExecID, out TradeExecution existingTrade)
         {
-            existingTrade = new Trade();
-            Trade tradeExecution = null;
+            existingTrade = new TradeExecution();
+            TradeExecution tradeExecution = null;
 
             // CHANGED: JOIN with Positions table to grab InstrumentId
             using (var cmd = new SqlCommand(
@@ -397,7 +398,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                             ? null
                             : reader.GetString(reader.GetOrdinal("conid"));
 
-                        tradeExecution = new Trade
+                        tradeExecution = new TradeExecution
                         {
                             InstrumentId = existingTrade.InstrumentId,
                             PositionId = existingTrade.PositionId,

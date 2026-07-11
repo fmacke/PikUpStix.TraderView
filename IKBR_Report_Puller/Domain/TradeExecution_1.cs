@@ -2,7 +2,7 @@ using System;
 
 namespace IKBR_Report_Puller.Domain
 {
-    public class Trade
+    public class TradeExecution
     {
         public int Id { get; set; }
         public int InstrumentId { get; set; }

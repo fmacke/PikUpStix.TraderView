@@ -1,6 +1,6 @@
 ﻿namespace IKBR_Report_Puller.Domain
 {
-    public class HistoricalTrade : Trade
+    public class HistoricalTrade : TradeExecution
     {
         public decimal MarketValue => ClosePrice * (decimal)Math.Sqrt((double)Quantity * (double)Quantity);
         public decimal RealizedPnL => MarketValue - TotalCost;

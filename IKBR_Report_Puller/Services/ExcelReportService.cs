@@ -38,7 +38,7 @@ namespace IKBR_Report_Puller.Services
             _connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
         }
 
-        public void CreateExcelFileReport(List<OpenPosition> openPositions, List<Trade> tradeExecutions, string outputFilePath)
+        public void CreateExcelFileReport(List<OpenPosition> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
         {
             try
             {
@@ -54,9 +54,9 @@ namespace IKBR_Report_Puller.Services
                 {
                     CreateOpenPositionsWorkSheet(package, openPositions);                   
                     _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
-                    CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "Trade History");
-                    CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "Trade History Aggregated");
-                    CreateVisualReport(package, _tradeHistoryReportService.TradeHistoryAggregated, "Trade Report");
+                    CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "TradeExecution History");
+                    CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution History Aggregated");
+                    CreateVisualReport(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution Report");
 
                     // Save the workbook
                     string whenGeneratedStr = DateTime.Now.ToString("yyyyMMddHHmmss");
@@ -271,7 +271,7 @@ namespace IKBR_Report_Puller.Services
             var worksheet = package.Workbook.Worksheets.Add(worksheetName);
 
             // Add data for graphs
-            worksheet.Cells[1, 1].Value = "Trade Date";
+            worksheet.Cells[1, 1].Value = "TradeExecution Date";
             worksheet.Cells[1, 2].Value = "Cumulative P/L";
             worksheet.Cells[1, 3].Value = "Profit/Loss";
             worksheet.Cells[1, 4].Value = "Win/Loss";

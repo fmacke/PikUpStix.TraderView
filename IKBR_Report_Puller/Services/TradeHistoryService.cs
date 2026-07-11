@@ -9,7 +9,7 @@ namespace IKBR_Report_Puller.Services
         public List<HistoricalTrade> TradeHistoryAggregated { get; set; } = new List<HistoricalTrade>();
         public List<HistoricalTrade> TradeHistory { get; set; } = new List<HistoricalTrade>();
         public List<Position> positions = new List<Position>();
-        public void CreateTradeHistoryReport(List<Trade> rawExecutions)
+        public void CreateTradeHistoryReport(List<TradeExecution> rawExecutions)
         {
             // Sort chronologically across the entire history to maintain structural FIFO consistency
             var executionGroups = rawExecutions

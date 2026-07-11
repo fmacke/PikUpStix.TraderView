@@ -53,7 +53,7 @@ namespace traderview.Server.Controllers
         /// <param name="tradeId">The trade ID</param>
         /// <param name="daysBefore">Number of calendar days before trade entry to include (default: 150, which typically provides ~100 trading days)</param>
         /// <param name="daysAfter">Number of calendar days after trade exit to include (default: 150, which typically provides ~100 trading days)</param>
-        /// <returns>Trade context with candlestick data</returns>
+        /// <returns>TradeExecution context with candlestick data</returns>
         [HttpGet("trades/{tradeId}/candlesticks")]
         [ProducesResponseType(typeof(TradeContextDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -71,8 +71,8 @@ namespace traderview.Server.Controllers
 
                 if (tradeContext == null)
                 {
-                    _logger.LogWarning("Trade {TradeId} not found", tradeId);
-                    return NotFound(new { message = $"Trade with ID {tradeId} not found" });
+                    _logger.LogWarning("TradeExecution {TradeId} not found", tradeId);
+                    return NotFound(new { message = $"TradeExecution with ID {tradeId} not found" });
                 }
 
                 _logger.LogInformation("Found {Count} candlesticks for trade {TradeId}", 

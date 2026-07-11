@@ -41,7 +41,7 @@ namespace PikUpStix.TraderView.Interfaces
         /// </summary>
         /// <param name="trades">List of trades to process</param>
         /// <param name="source">Source of the trades</param>
-        void UpsertInstruments(List<Trade> trades, string source);
+        void UpsertInstruments(List<TradeExecution> trades, string source);
     }
 }
     

@@ -21,9 +21,9 @@ namespace IKBR_Report_Puller.Tests.Services
         public void CreateTradeHistoryReport_NoOpenPositions_OpensNewPosition()
         {
             // Arrange
-            var tradeExecutions = new List<Trade>
+            var tradeExecutions = new List<TradeExecution>
             {
-                new Trade
+                new TradeExecution
                 {
                     Symbol = "AAPL",
                     Quantity = 100,
@@ -58,9 +58,9 @@ namespace IKBR_Report_Puller.Tests.Services
                 //IsClosed = false
             });
 
-            var tradeExecutions = new List<Trade>
+            var tradeExecutions = new List<TradeExecution>
             {
-                new Trade
+                new TradeExecution
                 {
                     Symbol = "AAPL",
                     Quantity = 50,
@@ -82,9 +82,9 @@ namespace IKBR_Report_Puller.Tests.Services
         public void CreateTradeHistoryReport_MultipleExecutions_ProcessesAll()
         {
             // Arrange
-            var tradeExecutions = new List<Trade>
+            var tradeExecutions = new List<TradeExecution>
             {
-                new Trade
+                new TradeExecution
                 {
                     Symbol = "AAPL",
                     Quantity = 100,
@@ -92,7 +92,7 @@ namespace IKBR_Report_Puller.Tests.Services
                     IbOrderID = 1,
                     TradeDate = DateTime.Now
                 },
-                new Trade       
+                new TradeExecution       
                 {
                     Symbol = "MSFT",
                     Quantity = 50,

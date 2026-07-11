@@ -23,6 +23,6 @@ namespace IKBR_Report_Puller.Models
     {
         public string ApiKey { get; set; }
         public string BaseUrl { get; set; } = "https://financialmodelingprep.com/stable";
-        public string OutputFilePath { get; set; } = @"C:\Users\finn\OneDrive\Documents\Wealth\Business\trading\Trade Diaries";
+        public string OutputFilePath { get; set; } = @"C:\Users\finn\OneDrive\Documents\Wealth\Business\trading\TradeExecution Diaries";
     }
 }

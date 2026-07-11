@@ -21,7 +21,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// Ensures instruments exist for the given trades
         /// Creates missing instruments automatically
         /// </summary>
-        public void UpsertInstruments(List<Trade> trades, string source)
+        public void UpsertInstruments(List<TradeExecution> trades, string source)
         {
             if (trades == null || !trades.Any())
                 return;
@@ -107,7 +107,7 @@ namespace IKBR_Report_Puller.Data.Repositories
         /// Ensures instruments exist for the given trade confirmations
         /// Creates missing instruments automatically and populates InstrumentID on each trade confirm
         /// </summary>
-        //public void UpsertInstruments(List<Trade> tradeConfirms, string source)
+        //public void UpsertInstruments(List<TradeExecution> tradeConfirms, string source)
         //{
         //    if (tradeConfirms == null || !tradeConfirms.Any())
         //        return;
@@ -404,8 +404,8 @@ namespace IKBR_Report_Puller.Data.Repositories
                 { "@provider", provider ?? "Unknown" },
                 { "@dataName", symbol ?? "Unknown" },
                 { "@dataSource", dataSource ?? "Unknown" },
-                { "@format", "Trade" },
-                { "@frequency", "Trade" },
+                { "@format", "TradeExecution" },
+                { "@frequency", "TradeExecution" },
                 { "@contractUnit", DBNull.Value },
                 { "@contractUnitType", assetCategory },
                 { "@priceQuotation", DBNull.Value },
