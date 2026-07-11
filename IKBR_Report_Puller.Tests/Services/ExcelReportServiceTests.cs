@@ -28,8 +28,7 @@ namespace IKBR_Report_Puller.Tests.Services
 
             _service = new ExcelReportService(
                 _mockTradeExecutionRepository.Object, 
-                _mockTradeHistoryReportService.Object,
-                _mockConfiguration.Object);
+                _mockTradeHistoryReportService.Object);
         }
     }
 }

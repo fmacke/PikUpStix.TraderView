@@ -39,5 +39,13 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="closeOrderId">The closing order ID to retrieve</param>
         /// <returns>TradeExecution summary, or null if not found</returns>
         TradeSummary? GetTradeSummaryByCloseOrderId(long closeOrderId);
+
+        /// <summary>
+        /// Gets trade executions for a specific ConId and AccountId, ordered by trade date and time
+        /// </summary>
+        /// <param name="conid">The contract ID</param>
+        /// <param name="accountId">The account ID</param>
+        /// <returns>List of trade executions with date, quantity, and open/close indicator</returns>
+        List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)> GetTradeExecutionsByConIdAndAccount(long? conid, string accountId);
     }
 }

@@ -51,20 +51,20 @@ namespace IKBR_Report_Puller.Services
                 _tradeHistoryReportService.CreateTradeHistoryReport(executions);
                 _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
 
-                //await WriteTodayReport(fileName);
-                //await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                //await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                //await marketDataService.FetchAndSaveChartData(new List<string>()
-                //    {
-                //        "^GSPC",//spx
-                //        "^RUT",//iwm
-                //        //"CLUSD",//wti crude oil
-                //        "BTCUSD",//bitcoin
-                //        "GCUSD",//gold
-                //        "XAGUSD",//silver
-                //        "QQQ",//nasdaq
-                //        "^VIX"
-                //     }, 300);
+                await WriteTodayReport(fileName);
+                await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                await marketDataService.FetchAndSaveChartData(new List<string>()
+                    {
+                        "^GSPC",//spx
+                        "^RUT",//iwm
+                        //"CLUSD",//wti crude oil
+                        "BTCUSD",//bitcoin
+                        "GCUSD",//gold
+                        "XAGUSD",//silver
+                        "QQQ",//nasdaq
+                        "^VIX"
+                     }, 300);
             }
             catch (Exception ex)
             {
@@ -101,9 +101,9 @@ namespace IKBR_Report_Puller.Services
 
         private async Task<(IKBRReport mainReport, string fileName)> GetReportDataFromInteractiveBrokers()
         {
-            //// Fetch and process main report
-            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\TraderSyncAccess_main.xml");
-            //XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            // Fetch and process main report
+            //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\TraderSyncAccess_main.xml");
+            XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
 

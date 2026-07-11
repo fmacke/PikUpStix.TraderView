@@ -3,6 +3,7 @@ using PikUpStix.TraderView.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Globalization;
 using System.Linq;
 using IKBR_Report_Puller.Domain;
 namespace IKBR_Report_Puller.Data.Repositories
@@ -13,10 +14,12 @@ namespace IKBR_Report_Puller.Data.Repositories
     public class TradeExecutionRepository : BaseRepository, ITradeExecutionRepository
     {
         private readonly IPositionRepository _positionRepository;
+        private readonly IInstrumentRepository _instrumentRepository;
 
-        public TradeExecutionRepository(string connectionString, IPositionRepository positionRepository) : base(connectionString)
+        public TradeExecutionRepository(string connectionString, IPositionRepository positionRepository, IInstrumentRepository instrumentRepository) : base(connectionString)
         {
             _positionRepository = positionRepository;
+            _instrumentRepository = instrumentRepository;
         }
 
         /// <summary>
@@ -46,31 +49,43 @@ namespace IKBR_Report_Puller.Data.Repositories
                             "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID",
                             new Dictionary<string, object> { { "@ibExecID", ibExecID } });
 
-                        if (exists)
+                        if (!exists)
                         {
                             try
                             {
-                                // instrument ID retrieval handled transparently via updated internal JOIN mapping
-                                var tradeExec = GetTradeExecutionsByIbExecID(connection, transaction, ibExecID, out var existingTrade);
-                                //trade.InstrumentId = existingTrade.InstrumentId;
-                                UpdateTradeIfIncomplete(connection, transaction, trade, ibExecID);
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error updating trade with ibExecID {ibExecID}: {ex.Message}");
-                            }
-                        }
-                        else
-                        {
-                            try
-                            {
-                                // Ensure trade has a PositionId before inserting
-                                if (trade.PositionId == 0)
+                                // Get InstrumentId for the trade's symbol
+                                int? instrumentId = _instrumentRepository.GetInstrumentIdFromConId(trade.Conid);
+                                if (!instrumentId.HasValue || instrumentId.Value == 0)
                                 {
-                                    trade.PositionId = GetOrCreatePosition(connection, transaction, trade);
+                                    throw new InvalidOperationException($"Instrument not found for symbol {trade.Symbol} with Conid {trade.Conid}. Instruments must be upserted before trade executions.");
+                                }
+                                trade.InstrumentId = instrumentId.Value;
+
+                                // Check for open position for the trade's symbol and instrument (within the same transaction)
+                                var openPosition = _positionRepository.GetOpenPosition(connection, transaction, trade.Symbol, instrumentId.Value);
+
+                                // If no open position exists, create a new position and get its ID
+                                // If Open Position exists, trade.PositionId = openPosition.Id
+                                if (openPosition == null)
+                                {
+                                    trade.PositionId = _positionRepository.CreatePosition(connection, transaction, instrumentId.Value, trade.Symbol, trade.TradeDate);
+                                }
+                                else
+                                {
+                                    trade.PositionId = openPosition.Id;
                                 }
 
+                                // Add trade to TradeExecutions table with the correct PositionId
                                 InsertTrade(connection, transaction, trade);
+
+                                // Check if latest trade execution closes out the position (i.e., if the sum of quantities for that position is zero)
+                                decimal totalQuantity = GetTotalQuantityForPosition(connection, transaction, trade.PositionId);
+
+                                // If position is closed, update the Positions table to mark it as closed and set the close date
+                                if (totalQuantity == 0)
+                                {
+                                    _positionRepository.ClosePosition(connection, transaction, trade.PositionId, trade.TradeDate);
+                                }
                             }
                             catch (Exception ex)
                             {
@@ -86,6 +101,24 @@ namespace IKBR_Report_Puller.Data.Repositories
         }
 
         /// <summary>
+        /// Gets the total quantity for a position by summing all trade executions
+        /// </summary>
+        private decimal GetTotalQuantityForPosition(SqlConnection connection, SqlTransaction transaction, int positionId)
+        {
+            const string query = @"
+                SELECT ISNULL(SUM(quantity), 0) as TotalQuantity
+                FROM [dbo].[TradeExecutions]
+                WHERE PositionID = @positionId";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@positionId", positionId }
+            };
+
+            return ExecuteScalar<decimal>(connection, transaction, query, parameters);
+        }
+
+        /// <summary>
         /// Gets all trade executions ordered by order ID and date
         /// </summary>
         public List<TradeExecution> GetTradeExecutions()
@@ -94,9 +127,8 @@ namespace IKBR_Report_Puller.Data.Repositories
             {
                 var tradeExecutions = new List<TradeExecution>();
 
-                // CHANGED: Joined with Positions to get InstrumentId and PositionID
                 using (var cmd = new SqlCommand(
-                    "SELECT te.PositionID, te.ibOrderID, te.symbol, te.tradeDate, te.quantity, te.tradePrice, te.openCloseIndicator, p.InstrumentId, te.currency, te.conid, te.ibExecID, te.IBCommission, te.IBCommissionCurrency " +
+                    "SELECT te.PositionID, te.ibOrderID, te.symbol, CONVERT(varchar(8), TRY_CAST(te.tradeDate AS datetime), 112) AS tradeDate, te.quantity, te.tradePrice, te.openCloseIndicator, p.InstrumentId, te.currency, te.conid, te.ibExecID, te.IBCommission, te.IBCommissionCurrency " +
                     "FROM [dbo].[TradeExecutions] te " +
                     "INNER JOIN [dbo].[Positions] p ON te.PositionID = p.Id " +
                     "ORDER BY te.ibOrderID, te.tradeDate ASC, te.dateTime ASC", connection))
@@ -105,6 +137,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                     {
                         while (reader.Read())
                         {
+                            var dd = reader.GetString("tradeDate");
                             tradeExecutions.Add(new TradeExecution
                             {
                                 PositionId = reader.GetInt32("PositionID"),
@@ -118,7 +151,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                                 Conid = reader.GetString("conid"),
                                 IbExecID = reader.GetString("ibExecID"),
                                 IbCommission = reader.GetDecimal("ibCommission"),
-                                IbCommissionCurrency = reader.GetString("ibCommissionCurrency"),
+                                IbCommissionCurrency = reader.GetString("ibCommissionCurrency")
                             });
                         }
                     }
@@ -244,7 +277,6 @@ namespace IKBR_Report_Puller.Data.Repositories
 
         private void InsertTrade(SqlConnection connection, SqlTransaction transaction, TradeExecution trade)
         {
-            // CHANGED: Removed [InstrumentId] row column mapping, swapped [PositionId] -> [PositionID]
             const string insertQuery = @"
                 INSERT INTO [dbo].[TradeExecutions]
                 ([PositionID], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
@@ -274,60 +306,19 @@ namespace IKBR_Report_Puller.Data.Repositories
                  @rtn, @orderReference, @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized,
                  @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt,
                            @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
-
-                     var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-                     ExecuteCommand(connection, transaction, insertQuery, parameters);
-        }
-
-        /// <summary>
-        /// Gets or creates a Position for the trade
-        /// </summary>
-        private int GetOrCreatePosition(SqlConnection connection, SqlTransaction transaction, TradeExecution trade)
-        {
-            // First, try to find an existing open position for this instrument and date
-            const string selectQuery = @"
-                         SELECT Id 
-                         FROM [dbo].[Positions] 
-                         WHERE InstrumentId = @instrumentId 
-                         AND CAST(OpenDate AS DATE) = CAST(@openDate AS DATE)
-                         AND Status = 'Open'";
-
-            var selectParameters = new Dictionary<string, object>
-                     {
-                         { "@instrumentId", trade.InstrumentId },
-                         { "@openDate", trade.TradeDate }
-                     };
-
-            int existingPositionId = ExecuteScalar<int>(connection, transaction, selectQuery, selectParameters);
-
-            if (existingPositionId > 0)
+            try
             {
-                return existingPositionId;
+                var parameters = TradeParameterBuilder.GetTradeParameters(trade);
+                ExecuteCommand(connection, transaction, insertQuery, parameters);
             }
-
-            // If no existing position found, create a new one
-            const string insertQuery = @"
-                         INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId)
-                         VALUES (@openDate, @status, @instrumentId);
-                         SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-            var insertParameters = new Dictionary<string, object>
-                     {
-                         { "@openDate", trade.TradeDate },
-                         { "@status", "Open" },
-                         { "@instrumentId", trade.InstrumentId }
-                     };
-
-            int newPositionId = ExecuteScalar<int>(connection, transaction, insertQuery, insertParameters);
-
-            Console.WriteLine($"Created new Position (Id: {newPositionId}) for InstrumentId {trade.InstrumentId} on {trade.TradeDate:yyyy-MM-dd}");
-
-            return newPositionId;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error inserting trade with ibExecID {trade.IbExecID}: {ex.Message}");
+            }
         }
 
-                 private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
+        private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
         {
-            // CHANGED: Removed direct instrumentId target updating since it belongs only to Positions schema layer now.
             const string updateQuery = @"
                 UPDATE dbo.TradeExecutions 
                 SET symbol = @symbol, tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice,
@@ -350,7 +341,6 @@ namespace IKBR_Report_Puller.Data.Repositories
 
         private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
         {
-            // CHANGED: Removed instrumentId, updated property mapping to positionId -> PositionID
             const string insertQuery = @"
                 INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid) 
                 VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid)";
@@ -367,88 +357,16 @@ namespace IKBR_Report_Puller.Data.Repositories
                 { "@currency", tradeConfirm.Currency }, 
                 { "@conid", tradeConfirm.Conid }
             };
-
-            ExecuteCommand(connection, transaction, insertQuery, parameters);
-        }
-
-        /// <summary>
-        /// Gets trade execution data by ibExecID and returns the existing trade information
-        /// </summary>
-        private TradeExecution GetTradeExecutionsByIbExecID(SqlConnection connection, SqlTransaction transaction, string ibExecID, out TradeExecution existingTrade)
-        {
-            existingTrade = new TradeExecution();
-            TradeExecution tradeExecution = null;
-
-            // CHANGED: JOIN with Positions table to grab InstrumentId
-            using (var cmd = new SqlCommand(
-                @"SELECT te.Id, te.PositionID, p.InstrumentId, te.symbol, te.tradeDate, te.quantity, te.tradePrice, te.currency, te.conid, te.ibOrderID, 
-                         te.securityID, te.tradeID, te.dateTime 
-                  FROM dbo.TradeExecutions te
-                  INNER JOIN dbo.Positions p ON te.PositionID = p.Id
-                  WHERE te.ibExecID = @ibExecID",
-                connection, transaction))
+            try
             {
-                cmd.Parameters.AddWithValue("@ibExecID", ibExecID);
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        existingTrade.InstrumentId = reader.IsDBNull(reader.GetOrdinal("InstrumentId"))
-                            ? 0
-                            : reader.GetInt32(reader.GetOrdinal("InstrumentId"));
-                        existingTrade.PositionId = reader.IsDBNull(reader.GetOrdinal("PositionID"))
-                            ? 0
-                            : reader.GetInt32(reader.GetOrdinal("PositionID"));
-                        existingTrade.Id = reader.IsDBNull(reader.GetOrdinal("Id"))
-                            ? 0
-                            : reader.GetInt32(reader.GetOrdinal("Id"));
-                        existingTrade.IbExecID = ibExecID;
-                        existingTrade.Symbol = reader.IsDBNull(reader.GetOrdinal("symbol"))
-                            ? null
-                            : reader.GetString(reader.GetOrdinal("symbol"));
-                        existingTrade.Conid = reader.IsDBNull(reader.GetOrdinal("conid"))
-                            ? null
-                            : reader.GetString(reader.GetOrdinal("conid"));
-
-                        existingTrade.DateTime = reader.IsDBNull(reader.GetOrdinal("tradeDate"))
-                             ? DateTime.MinValue
-                             : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("tradeDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture);
-
-                        existingTrade.Quantity = reader.IsDBNull(reader.GetOrdinal("quantity"))
-                             ? 0
-                             : reader.GetDecimal(reader.GetOrdinal("quantity"));
-
-                        existingTrade.TradePrice = reader.IsDBNull(reader.GetOrdinal("tradePrice"))
-                             ? 0
-                             : reader.GetDecimal(reader.GetOrdinal("tradePrice"));
-
-                        existingTrade.Currency = reader.IsDBNull(reader.GetOrdinal("currency"))
-                             ? null
-                             : reader.GetString(reader.GetOrdinal("currency"));
-
-                        existingTrade.IbOrderID = reader.IsDBNull(reader.GetOrdinal("ibOrderID"))
-                             ? 0
-                             : reader.GetInt64(reader.GetOrdinal("ibOrderID"));
-
-                        tradeExecution = new TradeExecution
-                        {
-                            InstrumentId = existingTrade.InstrumentId,
-                            PositionId = existingTrade.PositionId,
-                            Symbol = existingTrade.Symbol,
-                            Conid = existingTrade.Conid,
-                            TradeDate = existingTrade.DateTime,
-                            Quantity = existingTrade.Quantity,
-                            TradePrice = existingTrade.TradePrice,
-                            Currency = existingTrade.Currency,
-                            IbOrderID = existingTrade.IbOrderID
-                        };
-                    }
-                }
+                ExecuteCommand(connection, transaction, insertQuery, parameters);
             }
-
-            return tradeExecution;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error inserting trade confirmation with ibExecID {execID}: {ex.Message}");
+            }
         }
+        
 
         /// <summary>
         /// Gets aggregated trade summary by order ID
@@ -626,6 +544,46 @@ namespace IKBR_Report_Puller.Data.Repositories
                 }
 
                 return null;
+            });
+        }
+
+        /// <summary>
+        /// Gets trade executions for a specific ConId and AccountId, ordered by trade date and time
+        /// </summary>
+        public List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)> GetTradeExecutionsByConIdAndAccount(long? conid, string accountId)
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                var trades = new List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>();
+
+                const string query = @"
+                    SELECT CONVERT(varchar(8), TRY_CAST(tradeDate AS datetime), 112) AS tradeDate, 
+                           quantity, 
+                           openCloseIndicator 
+                    FROM [dbo].[TradeExecutions] 
+                    WHERE [conid] = @conid 
+                      AND [accountId] = @accountId 
+                    ORDER BY tradeDate ASC, dateTime ASC";
+
+                using (var cmd = new SqlCommand(query, connection))
+                {
+                    cmd.Parameters.AddWithValue("@conid", conid ?? (object)DBNull.Value);
+                    cmd.Parameters.AddWithValue("@accountId", accountId ?? (object)DBNull.Value);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            trades.Add((
+                                DateTime.ParseExact(reader.GetString("tradeDate"), "yyyyMMdd", CultureInfo.InvariantCulture),
+                                reader.GetDecimal("quantity"),
+                                reader.IsDBNull(reader.GetOrdinal("openCloseIndicator")) ? string.Empty : reader.GetString("openCloseIndicator")
+                            ));
+                        }
+                    }
+                }
+
+                return trades;
             });
         }
     }

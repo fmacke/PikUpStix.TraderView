@@ -1,7 +1,5 @@
 using DocumentFormat.OpenXml.Bibliography;
 using IKBR_Report_Puller.Domain;
-using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing.Chart;
 using PikUpStix.TraderView.Interfaces;
@@ -21,21 +19,13 @@ namespace IKBR_Report_Puller.Services
     {
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
-        private readonly string _connectionString;
 
         public ExcelReportService(
             ITradeExecutionRepository tradeExecutionRepository,
-            ITradeHistoryReportService tradeHistoryReportService,
-            IConfiguration configuration)
+            ITradeHistoryReportService tradeHistoryReportService)
         {
             _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
-
-            var dbUser = configuration["Database:User"];
-            var dbPassword = configuration["Database:Password"];
-            var dbHost = configuration["Database:Host"];
-            var dbName = configuration["Database:DbName"];
-            _connectionString = $"Server={dbHost};Database={dbName};User ID={dbUser};Password={dbPassword};TrustServerCertificate=True;";
         }
 
         public void CreateExcelFileReport(List<OpenPosition> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
@@ -94,8 +84,6 @@ namespace IKBR_Report_Puller.Services
 
             // Populate data
             int currentRow = 2;
-            using SqlConnection connection = new SqlConnection(_connectionString);
-            connection.Open();
 
             foreach (var position in openPositions)
             {
@@ -107,37 +95,19 @@ namespace IKBR_Report_Puller.Services
                 worksheet.Cells[currentRow, 1].Value = accountId;
                 worksheet.Cells[currentRow, 2].Value = symbol;
 
-                // TODO: This data call should be optimized to avoid multiple database calls for each position. Consider fetching all trades once and caching them for processing.
-                // TODO: Move this data call to a repository and use dependency injection to get the data. This will make the code cleaner and easier to test.
-                // Fetch all trades for the given conid and apply FIFO logic
-                var trades = new List<(DateTime tradeDate, decimal quantity, string openClose)>();
-                using (SqlCommand cmd = new SqlCommand("SELECT tradeDate, quantity, openCloseIndicator FROM [dbo].[TradeExecutions] WHERE [conid] = @conid AND [accountId] = @accountId ORDER BY tradeDate ASC, dateTime ASC", connection))
-                {
-                    cmd.Parameters.AddWithValue("@conid", conid ?? (object)DBNull.Value);
-                    cmd.Parameters.AddWithValue("@accountId", accountId ?? (object)DBNull.Value);
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            trades.Add((
-                                DateTime.ParseExact(reader.GetString(0), "yyyyMMdd", CultureInfo.InvariantCulture),
-                                reader.GetDecimal(1),
-                                reader.IsDBNull(2) ? "" : reader.GetString(2)
-                            ));
-                        }
-                    }
-                }
+                // Fetch all trades for the given conid and accountId using the repository
+                var trades = _tradeExecutionRepository.GetTradeExecutionsByConIdAndAccount(conid, accountId);
 
                 var openTrades = new Queue<(DateTime tradeDate, decimal quantity)>();
                 foreach (var trade in trades)
                 {
-                    if (trade.openClose.Contains("O")) // Opening trade
+                    if (trade.OpenCloseIndicator.Contains("O")) // Opening trade
                     {
-                        openTrades.Enqueue((trade.tradeDate, trade.quantity));
+                        openTrades.Enqueue((trade.TradeDate, trade.Quantity));
                     }
-                    else if (trade.openClose.Contains("C")) // Closing trade
+                    else if (trade.OpenCloseIndicator.Contains("C")) // Closing trade
                     {
-                        decimal closingQuantity = Math.Abs(trade.quantity);
+                        decimal closingQuantity = Math.Abs(trade.Quantity);
                         while (closingQuantity > 0 && openTrades.Any())
                         {
                             var (openDate, openQuantity) = openTrades.Dequeue();
