@@ -1,7 +1,8 @@
-using traderview.Server.Services;
-using IKBR_Report_Puller.Services;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using IKBR_Report_Puller.Data.Repositories;
+using IKBR_Report_Puller.Services;
 using PikUpStix.TraderView.Interfaces;
+using traderview.Server.Services;
 
 
 public partial class Program
@@ -10,12 +11,10 @@ public partial class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Add services to the container.
-
         // Register HttpClient and HttpClientFactory
         builder.Services.AddHttpClient();
 
-        // Register repositories (following Repository Pattern with DI)
+        // Register repositories 
         // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
         builder.Services.AddScoped<IInstrumentRepository>(provider =>
         {
@@ -61,16 +60,24 @@ public partial class Program
             var connectionString = BuildConnectionString(config);
             return new EconomicCalendarRepository(connectionString);
         });
+        builder.Services.AddScoped<INoteRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new NoteRepository(connectionString);
+        });
+        builder.Services.AddScoped<IListRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new ListRepository(connectionString);
+        });
 
-        // Register IKBR services
+        // Register custom services
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
-
         builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();
-
         builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
-
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
-
         builder.Services.AddScoped<IMarketDataService>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
@@ -84,16 +91,11 @@ public partial class Program
             var outputFilePath = config["IBKR:OutputFilePath"];
             return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
         });
-
-
-        // Register TradeViewer service
+        builder.Services.AddScoped<IListService, ListService>();
+        builder.Services.AddScoped<INoteService, NoteService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
-
-        // Register OpenPosition service
         builder.Services.AddScoped<IOpenPositionService, OpenPositionService>();
-
         builder.Services.AddControllers();
-        // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
         builder.Services.AddOpenApi();
 
         var app = builder.Build();
