@@ -149,7 +149,7 @@ namespace traderview.Server.Controllers
             {
                 _logger.LogInformation("Starting IBKR data sync...");
 
-                await _reportRunnerService.RunReportAsync(false);
+                await _reportRunnerService.RunReportAsync(false, true);
 
                 _logger.LogInformation("IBKR data sync completed successfully");
                 return Ok(new { message = "IBKR data sync completed successfully", timestamp = DateTime.UtcNow });

@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Drawing;
 using IKBR_Report_Puller.Domain;
 using Microsoft.Extensions.Configuration;
 using PikUpStix.TraderView.Interfaces;
@@ -38,7 +39,7 @@ namespace IKBR_Report_Puller.Services
             _config = config;
             outputFilePath = _config["IBKR:OutputFilePath"];
         }
-        public async Task RunReportAsync(bool writeOutputtoExcel)
+        public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData)
         {
             try
             {
@@ -47,15 +48,18 @@ namespace IKBR_Report_Puller.Services
                 _instrumentRepository.UpsertInstruments(mainReport.Trades, marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
                 _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
-                var executions = _tradeExecutionRepository.GetTradeExecutions();                
+                             
                 if (writeOutputtoExcel)
                 {
+                    var executions = _tradeExecutionRepository.GetTradeExecutions();
                     _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
                     await WriteTodayReport(fileName);
                 }
-                await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                await marketDataService.FetchAndSaveChartData(new List<string>()
+                if (updateMarketData)
+                {
+                    await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                    await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                    await marketDataService.FetchAndSaveChartData(new List<string>()
                     {
                         "^GSPC",//spx
                         "^RUT",//iwm
@@ -66,6 +70,7 @@ namespace IKBR_Report_Puller.Services
                         "QQQ",//nasdaq
                         "^VIX"
                      }, 300);
+                }
             }
             catch (Exception ex)
             {
@@ -80,7 +85,7 @@ namespace IKBR_Report_Puller.Services
             string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
 
             // Ensure directory exists
-            string directory = Path.GetDirectoryName(todayReportFilePath);
+            string directory = System.IO.Path.GetDirectoryName(todayReportFilePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
@@ -109,7 +114,7 @@ namespace IKBR_Report_Puller.Services
             string mainReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
 
             // Ensure directory exists
-            string directory = Path.GetDirectoryName(mainReportFilePath);
+            string directory = System.IO.Path.GetDirectoryName(mainReportFilePath);
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
