@@ -1,5 +1,5 @@
-using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
+using PikUpStix.TraderView.Domain;
 
 namespace PikUpStix.TraderView.Interfaces
 {
@@ -10,6 +10,11 @@ namespace PikUpStix.TraderView.Interfaces
         /// </summary>
         /// <returns>List of positions</returns>
         List<Position> GetAllPositions();
+        /// <summary>
+        /// Gets all open positions from the database
+        /// </summary>
+        /// <returns>List of open positions</returns>
+        List<Position> GetAllOpenPositions();
         /// <summary>
         /// Inserts a list of positions into the database
         /// </summary>

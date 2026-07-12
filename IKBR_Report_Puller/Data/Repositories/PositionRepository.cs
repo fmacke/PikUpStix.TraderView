@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Interfaces;
+using PikUpStix.TraderView.Domain;
 using IKBR_Report_Puller.Domain;
 namespace IKBR_Report_Puller.Data.Repositories
 {
@@ -39,6 +40,46 @@ namespace IKBR_Report_Puller.Data.Repositories
                                 OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
                                 CloseDate = reader.GetDateTime(reader.GetOrdinal("CloseDate")),
                                 Status = reader.GetString(reader.GetOrdinal("Status")),
+                            });
+                        }
+                    }
+                }
+
+                return positions;
+            });
+        }
+        List<Position> IPositionRepository.GetAllOpenPositions()
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                var positions = new List<Position>();
+
+                using (var cmd = new SqlCommand(
+                    "SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, " +
+                    "i.InstrumentName, i.Currency, i.ConId " +
+                    "FROM [dbo].[Positions] p " +
+                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
+                    "WHERE p.CloseDate IS NULL " +
+                    "ORDER BY p.OpenDate DESC", connection))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            positions.Add(new Position
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                                OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
+                                CloseDate = reader.IsDBNull(reader.GetOrdinal("CloseDate")) ? (DateTime?)null : reader. GetDateTime(reader.GetOrdinal("CloseDate")),
+                                Status = reader.GetString(reader.GetOrdinal("Status")),
+                                Instrument = new Instrument
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                                    InstrumentName = reader.GetString(reader.GetOrdinal("InstrumentName")),
+                                    Currency = reader.GetString(reader.GetOrdinal("Currency")),
+                                    ConId = reader.GetString(reader.GetOrdinal("ConId"))
+                                }
                             });
                         }
                     }

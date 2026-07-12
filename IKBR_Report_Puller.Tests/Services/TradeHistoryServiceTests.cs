@@ -48,15 +48,15 @@ namespace IKBR_Report_Puller.Tests.Services
         public void CreateTradeHistoryReport_WithOpenPositions_ModifiesPosition()
         {
             // Arrange
-            _service.positions.Add(new Position
-            {
-                //Symbol = "AAPL",
-                //Quantity = 100,
-                //TradePrice = 150.00m,
-                //IbOrderID = 1,
-                //TradeDate = DateTime.Now,
-                //IsClosed = false
-            });
+            //_service.positions.Add(new Position
+            //{
+            //    //Symbol = "AAPL",
+            //    //Quantity = 100,
+            //    //TradePrice = 150.00m,
+            //    //IbOrderID = 1,
+            //    //TradeDate = DateTime.Now,
+            //    //IsClosed = false
+            //});
 
             var tradeExecutions = new List<TradeExecution>
             {
