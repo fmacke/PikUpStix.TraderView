@@ -4,11 +4,11 @@ import './TradeList.css';
 
 interface TradeListProps {
     trades: Trade[];
-    selectedTradeId: number | null;
+    selectedPositionId: number | null;
     onTradeSelect: (trade: Trade) => void;
 }
 
-function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
+function TradeList({ trades, selectedPositionId, onTradeSelect }: TradeListProps) {
     const listRef = useRef<HTMLDivElement>(null);
     const selectedItemRef = useRef<HTMLDivElement>(null);
 
@@ -32,12 +32,12 @@ function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
                 block: 'nearest',
             });
         }
-    }, [selectedTradeId]);
+    }, [selectedPositionId]);
 
     const handleKeyDown = (event: React.KeyboardEvent) => {
         if (sortedTrades.length === 0) return;
 
-        const currentIndex = sortedTrades.findIndex(trade => trade.id === selectedTradeId);
+        const currentIndex = sortedTrades.findIndex(trade => trade.positionId === selectedPositionId);
 
         if (event.key === 'ArrowDown') {
             event.preventDefault();
@@ -62,8 +62,8 @@ function TradeList({ trades, selectedTradeId, onTradeSelect }: TradeListProps) {
                 {sortedTrades.map((trade) => (
                     <div
                         key={trade.id}
-                        ref={selectedTradeId === trade.id ? selectedItemRef : null}
-                        className={`trade-item ${selectedTradeId === trade.id ? 'selected' : ''}`}
+                        ref={selectedPositionId === trade.id ? selectedItemRef : null}
+                        className={`trade-item ${selectedPositionId === trade.positionId ? 'selected' : ''}`}
                         onClick={() => onTradeSelect(trade)}
                     >
                         <div className="trade-symbol">{trade.symbol}</div>

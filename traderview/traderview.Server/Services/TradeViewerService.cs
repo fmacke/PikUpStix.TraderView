@@ -37,7 +37,7 @@ namespace traderview.Server.Services
                 // Map HistoricalTrade to TradeDto
                 return await Task.FromResult(trades.Select(trade => new TradeDto
                 {
-                    Id = trade.CloseIbOrderID,
+                    PositionId = trade.PositionId,
                     InstrumentId = trade.InstrumentId,
                     Symbol = trade.Symbol,
                     EntryDate = trade.TradeOpened,
@@ -56,12 +56,12 @@ namespace traderview.Server.Services
             }
         }
 
-        public async Task<TradeDetailDto?> GetTradeDetailAsync(long tradeId)
+        public async Task<TradeDetailDto?> GetTradeDetailAsync(int positionId)
         {
             try
             {
-                // Get trade summary using repository (tradeId is the close order ID)
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByCloseOrderId(tradeId));
+                // Get trade summary using repository (positionId is the close order ID)
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByPositionId(positionId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -74,7 +74,7 @@ namespace traderview.Server.Services
                 if (instrument == null) return null;
 
                 // Get trade executions
-                var executions = await GetTradeExecutionsAsync(connection, tradeId);
+                var executions = await GetTradeExecutionsAsync(connection, positionId);
 
                 return new TradeDetailDto
                 {
@@ -85,17 +85,17 @@ namespace traderview.Server.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching trade detail for trade {TradeId}", tradeId);
+                _logger.LogError(ex, "Error fetching trade detail for position {PositionId}", positionId);
                 throw;
             }
         }
 
-        public async Task<TradeContextDto?> GetTradeContextAsync(long tradeId, int daysBefore = 150, int daysAfter = 150)
+        public async Task<TradeContextDto?> GetTradeContextAsync(int positionId, int daysBefore = 150, int daysAfter = 150)
         {
             try
             {
-                // Get trade summary using repository (tradeId is the close order ID)
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByCloseOrderId(tradeId));
+                // Get trade summary using repository (positionId is the close order ID)
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByPositionId(positionId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -121,7 +121,7 @@ namespace traderview.Server.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching trade context for trade {TradeId}", tradeId);
+                _logger.LogError(ex, "Error fetching trade context for position {PositionId}", positionId);
                 throw;
             }
         }
@@ -130,7 +130,7 @@ namespace traderview.Server.Services
         {
             return new TradeDto
             {
-                Id = tradeSummary.Id,
+                PositionId = tradeSummary.PositionId,
                 InstrumentId = tradeSummary.InstrumentId,
                 Symbol = tradeSummary.Symbol,
                 EntryDate = tradeSummary.EntryDate,
@@ -170,7 +170,7 @@ namespace traderview.Server.Services
             return null;
         }
 
-        private async Task<List<TradeExecutionDto>> GetTradeExecutionsAsync(SqlConnection connection, long tradeId)
+        private async Task<List<TradeExecutionDto>> GetTradeExecutionsAsync(SqlConnection connection, int positionId)
         {
             var executions = new List<TradeExecutionDto>();
 
@@ -179,11 +179,11 @@ namespace traderview.Server.Services
                     id, InstrumentId, symbol, tradeID, dateTime, tradeDate, 
                     quantity, tradePrice, buySell, fifoPnlRealized, ibCommission
                 FROM TradeExecutions
-                WHERE ibOrderID = @TradeId
+                WHERE PositionID = @PositionId
                 ORDER BY tradeDate, dateTime";
 
             using var command = new SqlCommand(query, connection);
-            command.Parameters.AddWithValue("@TradeId", tradeId);
+            command.Parameters.AddWithValue("@PositionId", positionId);
 
             using var reader = await command.ExecuteReaderAsync();
             while (await reader.ReadAsync())
@@ -192,6 +192,7 @@ namespace traderview.Server.Services
                 {
                     Id = reader.GetInt32("id"),
                     InstrumentId = reader.GetInt32("InstrumentId"),
+                    PositionId = positionId,
                     Symbol = reader.IsDBNull("symbol") ? null : reader.GetString("symbol"),
                     TradeID = reader.IsDBNull("tradeID") ? null : reader.GetInt64("tradeID"),
                     DateTime = reader.IsDBNull("dateTime") ? null : reader.GetString("dateTime"),
@@ -246,12 +247,12 @@ namespace traderview.Server.Services
             return candlesticks;
         }
 
-        public async Task<RSIndicatorDataDto?> GetRSIndicatorDataAsync(long tradeId, string benchmarkSymbol = "^GSPC", int daysBefore = 150, int daysAfter = 150)
+        public async Task<RSIndicatorDataDto?> GetRSIndicatorDataAsync(int positionId, string benchmarkSymbol = "^GSPC", int daysBefore = 150, int daysAfter = 150)
         {
             try
             {
-                // Get trade summary (tradeId is the close order ID)
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByCloseOrderId(tradeId));
+                // Get trade summary (positionId )
+                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByPositionId(positionId));
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -269,7 +270,7 @@ namespace traderview.Server.Services
 
                 if (stockCandlesticks.Count == 0)
                 {
-                    _logger.LogWarning("No stock price data available for trade {TradeId}", tradeId);
+                    _logger.LogWarning("No stock price data available for trade {TradeId}", positionId);
                     return null;
                 }
 
@@ -302,7 +303,7 @@ namespace traderview.Server.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error calculating RS indicator for trade {TradeId}", tradeId);
+                _logger.LogError(ex, "Error calculating RS indicator for trade {TradeId}", positionId);
                 throw;
             }
         }

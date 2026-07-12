@@ -151,6 +151,7 @@ namespace IKBR_Report_Puller.Services
                     TradeClosed = group.First().TradeClosed,
                     Currency = group.First().Currency,
                     InstrumentId = group.First().InstrumentId,
+                    PositionId = group.First().PositionId,
                     Quantity = group.Sum(trade => trade.Quantity),
                     //SecurityId = group.First().sSecurityId,
                     IbCommission = group.Sum(trade => trade.IbCommission),

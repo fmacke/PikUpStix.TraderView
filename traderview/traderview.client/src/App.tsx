@@ -113,7 +113,7 @@ function App() {
                     <div className="list-pane">
                         <TradeList 
                             trades={trades} 
-                            selectedTradeId={selectedTrade?.id ?? null}
+                            selectedPositionId={selectedTrade?.positionId ?? null}
                             onTradeSelect={handleTradeSelect}
                         />
                     </div>

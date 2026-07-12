@@ -26,7 +26,7 @@ function TradingViewChart({ trade, rsData }: TradingViewChartProps) {
                 setLoading(true);
                 setError(null);
 
-                console.log('Fetching candlesticks for trade:', trade.id);
+                console.log('Fetching candlesticks for trade with positionId:', trade.positionId);
 
                 // Clean up existing chart before creating a new one
                 if (chartRef.current) {
@@ -36,7 +36,7 @@ function TradingViewChart({ trade, rsData }: TradingViewChartProps) {
 
                 // Fetch candlestick data with up to 100 bars before entry and 100 bars after exit
                 // Using 150 calendar days to approximately get 100 trading days (accounting for weekends/holidays)
-                const tradeContext = await apiService.getTradeCandlesticks(trade.id, 150, 150);
+                const tradeContext = await apiService.getTradeCandlesticks(trade.positionId, 150, 150);
 
                 console.log('Received candlestick data:', tradeContext);
 
@@ -351,7 +351,7 @@ function TradingViewChart({ trade, rsData }: TradingViewChartProps) {
                 chartRef.current = null;
             }
         };
-    }, [trade.id, trade.symbol, trade.entryDate, trade.exitDate, trade.entryPrice, trade.exitPrice, trade.buySell, trade.pnl, trade.instrumentId]);
+    }, [trade.id, trade.positionId, trade.symbol, trade.entryDate, trade.exitDate, trade.entryPrice, trade.exitPrice, trade.buySell, trade.pnl, trade.instrumentId]);
 
     // Separate useEffect for RS Indicator chart
     useEffect(() => {

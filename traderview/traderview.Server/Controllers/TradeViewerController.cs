@@ -50,39 +50,39 @@ namespace traderview.Server.Controllers
         /// <summary>
         /// Get candlestick data for a specific trade
         /// </summary>
-        /// <param name="tradeId">The trade ID</param>
+        /// <param name="positionId">The trade ID</param>
         /// <param name="daysBefore">Number of calendar days before trade entry to include (default: 150, which typically provides ~100 trading days)</param>
         /// <param name="daysAfter">Number of calendar days after trade exit to include (default: 150, which typically provides ~100 trading days)</param>
         /// <returns>TradeExecution context with candlestick data</returns>
-        [HttpGet("trades/{tradeId}/candlesticks")]
+        [HttpGet("trades/{positionId}/candlesticks")]
         [ProducesResponseType(typeof(TradeContextDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TradeContextDto>> GetTradeCandlesticksAsync(
-            long tradeId,
+            int positionId,
             [FromQuery] int daysBefore = 150,
             [FromQuery] int daysAfter = 150)
         {
             try
             {
-                _logger.LogInformation("Fetching candlesticks for trade {TradeId}", tradeId);
+                _logger.LogInformation("Fetching candlesticks for trade {positionId}", positionId);
 
-                var tradeContext = await _tradeViewerService.GetTradeContextAsync(tradeId, daysBefore, daysAfter);
+                var tradeContext = await _tradeViewerService.GetTradeContextAsync(positionId, daysBefore, daysAfter);
 
                 if (tradeContext == null)
                 {
-                    _logger.LogWarning("TradeExecution {TradeId} not found", tradeId);
-                    return NotFound(new { message = $"TradeExecution with ID {tradeId} not found" });
+                    _logger.LogWarning("Position {positionId} not found", positionId);
+                    return NotFound(new { message = $"Position with ID {positionId} not found" });
                 }
 
-                _logger.LogInformation("Found {Count} candlesticks for trade {TradeId}", 
-                    tradeContext.Candlesticks.Count, tradeId);
+                _logger.LogInformation("Found {Count} candlesticks for position {positionId}", 
+                    tradeContext.Candlesticks.Count, positionId);
 
                 return Ok(tradeContext);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching candlesticks for trade {TradeId}", tradeId);
+                _logger.LogError(ex, "Error fetching candlesticks for position {positionId}", positionId);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { message = "Error fetching candlestick data", detail = ex.Message }
@@ -93,17 +93,17 @@ namespace traderview.Server.Controllers
         /// <summary>
         /// Get RS (Relative Strength) indicator data for a specific trade
         /// </summary>
-        /// <param name="tradeId">The trade ID</param>
+        /// <param name="positionId">The trade ID</param>
         /// <param name="benchmarkSymbol">Benchmark symbol (default: ^GSPC)</param>
         /// <param name="daysBefore">Number of calendar days before trade entry to include (default: 150)</param>
         /// <param name="daysAfter">Number of calendar days after trade exit to include (default: 150)</param>
         /// <returns>RS indicator data with metrics</returns>
-        [HttpGet("trades/{tradeId}/rs-indicator")]
+        [HttpGet("trades/{positionId}/rs-indicator")]
         [ProducesResponseType(typeof(RSIndicatorDataDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RSIndicatorDataDto>> GetRSIndicatorAsync(
-            long tradeId,
+            int positionId,
             [FromQuery] string benchmarkSymbol = "^GSPC",
             [FromQuery] int daysBefore = 150,
             [FromQuery] int daysAfter = 150)
@@ -111,24 +111,24 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("Fetching RS indicator for trade {TradeId} with benchmark {BenchmarkSymbol}", 
-                    tradeId, benchmarkSymbol);
+                    positionId, benchmarkSymbol);
 
-                var rsData = await _tradeViewerService.GetRSIndicatorDataAsync(tradeId, benchmarkSymbol, daysBefore, daysAfter);
+                var rsData = await _tradeViewerService.GetRSIndicatorDataAsync(positionId, benchmarkSymbol, daysBefore, daysAfter);
 
                 if (rsData == null)
                 {
-                    _logger.LogWarning("RS indicator data not available for trade {TradeId}", tradeId);
-                    return NotFound(new { message = $"RS indicator data not available for trade {tradeId}. Ensure both stock and benchmark data exist." });
+                    _logger.LogWarning("RS indicator data not available for trade {TradeId}", positionId);
+                    return NotFound(new { message = $"RS indicator data not available for trade {positionId}. Ensure both stock and benchmark data exist." });
                 }
 
                 _logger.LogInformation("Found {Count} RS data points for trade {TradeId}",
-                    rsData.RSData.Count, tradeId);
+                    rsData.RSData.Count, positionId);
 
                 return Ok(rsData);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching RS indicator for trade {TradeId}", tradeId);
+                _logger.LogError(ex, "Error fetching RS indicator for trade {TradeId}", positionId);
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { message = "Error fetching RS indicator data", detail = ex.Message }

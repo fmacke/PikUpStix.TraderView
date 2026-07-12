@@ -27,18 +27,11 @@ namespace PikUpStix.TraderView.Interfaces
         void UpsertTodayExecutions(List<TradeExecution> tradeConfirms);
 
         /// <summary>
-        /// Gets aggregated trade summary for a specific order ID
+        /// Gets aggregated trade summary for a specific position ID
         /// </summary>
-        /// <param name="orderId">The order ID to retrieve</param>
+        /// <param name="positionId">The position ID to retrieve</param>
         /// <returns>TradeExecution summary, or null if not found</returns>
-        TradeSummary? GetTradeSummaryByOrderId(long orderId);
-
-        /// <summary>
-        /// Gets aggregated trade summary for a specific closing order ID
-        /// </summary>
-        /// <param name="closeOrderId">The closing order ID to retrieve</param>
-        /// <returns>TradeExecution summary, or null if not found</returns>
-        TradeSummary? GetTradeSummaryByCloseOrderId(long closeOrderId);
+        TradeSummary? GetTradeSummaryByPositionId(int positionId);
 
         /// <summary>
         /// Gets trade executions for a specific ConId and AccountId, ordered by trade date and time

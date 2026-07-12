@@ -5,7 +5,6 @@ namespace IKBR_Report_Puller.Domain
     /// </summary>
     public class TradeSummary
     {
-        public long Id { get; set; }
         public int InstrumentId { get; set; }
         public int PositionId { get; set; }
         public string Symbol { get; set; } = string.Empty;

@@ -2,7 +2,7 @@ namespace traderview.Server.DTOs
 {
     public class TradeDto
     {
-        public long Id { get; set; }
+        public int PositionId { get; set; }
         public int InstrumentId { get; set; }
         public string Symbol { get; set; } = string.Empty;
         public DateTime EntryDate { get; set; }
@@ -27,6 +27,7 @@ namespace traderview.Server.DTOs
     public class TradeExecutionDto
     {
         public int Id { get; set; }
+        public int PositionId { get; set; }
         public int InstrumentId { get; set; }
         public string? Symbol { get; set; }
         public long? TradeID { get; set; }

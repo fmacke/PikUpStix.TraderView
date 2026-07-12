@@ -1,5 +1,6 @@
 export interface Trade {
     id: number;
+    positionId: number;
     instrumentId: number;
     symbol: string;
     entryDate: string;

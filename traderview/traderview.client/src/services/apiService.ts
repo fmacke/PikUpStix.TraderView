@@ -20,11 +20,11 @@ export const apiService = {
 
     // Get candlestick data for a specific trade
     // Uses calendar days to fetch data - ~150 days typically provides ~100 trading days
-    async getTradeCandlesticks(tradeId: number, daysBefore: number = 150, daysAfter: number = 150): Promise<TradeContext> {
-        console.log(`Making API call to /tradeviewer/trades/${tradeId}/candlesticks`);
+    async getTradeCandlesticks(positionId: number, daysBefore: number = 150, daysAfter: number = 150): Promise<TradeContext> {
+        console.log(`Making API call to /tradeviewer/trades/${positionId}/candlesticks`);
         try {
             const response = await apiClient.get<TradeContext>(
-                `/tradeviewer/trades/${tradeId}/candlesticks`,
+                `/tradeviewer/trades/${positionId}/candlesticks`,
                 {
                     params: { daysBefore, daysAfter },
                     timeout: 30000 // 30 second timeout
