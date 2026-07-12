@@ -468,7 +468,7 @@ namespace IKBR_Report_Puller.Data.Repositories
                         SELECT 
                             te.symbol,
                             p.InstrumentId,
-                            te.tradeDate,
+                            CONVERT(varchar(8), TRY_CAST(te.tradeDate AS datetime), 112) AS tradeDate,
                             te.quantity
                         FROM TradeExecutions te
                         INNER JOIN Positions p ON te.PositionID = p.Id
