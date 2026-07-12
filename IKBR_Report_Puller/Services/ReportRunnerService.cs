@@ -38,7 +38,7 @@ namespace IKBR_Report_Puller.Services
             _config = config;
             outputFilePath = _config["IBKR:OutputFilePath"];
         }
-        public async Task RunReportAsync()
+        public async Task RunReportAsync(bool writeOutputtoExcel)
         {
             try
             {
@@ -47,11 +47,12 @@ namespace IKBR_Report_Puller.Services
                 _instrumentRepository.UpsertInstruments(mainReport.Trades, marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
                 _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
-                var executions = _tradeExecutionRepository.GetTradeExecutions();
-                _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
-
-                await WriteTodayReport(fileName);
+                var executions = _tradeExecutionRepository.GetTradeExecutions();                
+                if (writeOutputtoExcel)
+                {
+                    _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
+                    await WriteTodayReport(fileName);
+                }
                 await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
                 await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                 await marketDataService.FetchAndSaveChartData(new List<string>()
