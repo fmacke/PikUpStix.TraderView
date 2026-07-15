@@ -62,6 +62,11 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="positionId">The position ID to close</param>
         /// <param name="closeDate">The close date</param>
         void ClosePosition(SqlConnection connection, SqlTransaction transaction, int positionId, DateTime closeDate);
+        /// <summary>
+        /// Gets all positions with Status = 'Open' and their associated trade executions
+        /// </summary>
+        /// <returns>List of open positions with populated TradeExecutions</returns>
+        List<Position> GetOpenPositions();
     }
 }
     

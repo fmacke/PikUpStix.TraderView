@@ -4,7 +4,6 @@ using IKBR_Report_Puller.Services;
 using PikUpStix.TraderView.Interfaces;
 using traderview.Server.Services;
 
-
 public partial class Program
 {
     private static void Main(string[] args)
@@ -87,6 +86,7 @@ public partial class Program
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
+        builder.Services.AddScoped<IPositionService, PositionService>();
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
 

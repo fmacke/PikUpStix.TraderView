@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Mvc;
-using traderview.Server.Services;
 using traderview.Server.DTOs;
 
 namespace traderview.Server.Controllers

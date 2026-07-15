@@ -1,6 +1,6 @@
 using PikUpStix.TraderView.Domain;
 
-namespace traderview.Server.Services
+namespace PikUpStix.TraderView.Interfaces
 {
     /// <summary>
     /// Service interface for Position operations

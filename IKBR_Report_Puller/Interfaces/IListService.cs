@@ -1,6 +1,6 @@
 using IKBR_Report_Puller.Domain;
 
-namespace traderview.Server.Services
+namespace PikUpStix.TraderView.Interfaces
 {
     /// <summary>
     /// Service interface for List operations

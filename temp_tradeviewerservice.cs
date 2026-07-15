@@ -7,7 +7,7 @@ namespace traderview.Server.Services
 {
     public class TradeViewerService : ITradeViewerService
     {
-        
+        private readonly ILogger<TradeViewerService> _logger;
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly IInstrumentRepository _instrumentRepository;
@@ -20,7 +20,7 @@ namespace traderview.Server.Services
             IInstrumentRepository instrumentRepository,
             IHistoricalDataRepository historicalDataRepository)
         {
-            
+            _logger = logger;
             _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
             _instrumentRepository = instrumentRepository;
@@ -53,7 +53,7 @@ namespace traderview.Server.Services
             }
             catch (Exception ex)
             {
-                // Logging removed
+                _logger.LogError(ex, "Error fetching trades");
                 throw;
             }
         }
@@ -109,7 +109,7 @@ namespace traderview.Server.Services
             }
             catch (Exception ex)
             {
-                // Logging removed
+                _logger.LogError(ex, "Error fetching trade detail for position {PositionId}", positionId);
                 throw;
             }
         }
@@ -152,7 +152,7 @@ namespace traderview.Server.Services
             }
             catch (Exception ex)
             {
-                // Logging removed
+                _logger.LogError(ex, "Error fetching trade context for position {PositionId}", positionId);
                 throw;
             }
         }
@@ -308,7 +308,7 @@ namespace traderview.Server.Services
 
                 if (stockCandlesticks.Count == 0)
                 {
-                    // Logging removed
+                    _logger.LogWarning("No stock price data available for trade {TradeId}", positionId);
                     return null;
                 }
 
@@ -316,7 +316,7 @@ namespace traderview.Server.Services
                 var benchmarkInstrumentId = await _historicalDataRepository.GetInstrumentIdBySymbolAsync(benchmarkSymbol);
                 if (benchmarkInstrumentId == null)
                 {
-                    // Logging removed
+                    _logger.LogWarning("Benchmark instrument {BenchmarkSymbol} not found in database", benchmarkSymbol);
                     return null;
                 }
 
@@ -339,7 +339,7 @@ namespace traderview.Server.Services
 
                 if (benchmarkCandlesticks.Count == 0)
                 {
-                    // Logging removed
+                    _logger.LogWarning("No benchmark data available for {BenchmarkSymbol}", benchmarkSymbol);
                     // Return null or stub data - for now return null
                     return null;
                 }
@@ -358,7 +358,7 @@ namespace traderview.Server.Services
             }
             catch (Exception ex)
             {
-                // Logging removed
+                _logger.LogError(ex, "Error calculating RS indicator for trade {TradeId}", positionId);
                 throw;
             }
         }
@@ -389,7 +389,7 @@ namespace traderview.Server.Services
 
             if (benchmarkInstrumentId == null)
             {
-                // Logging removed
+                _logger.LogWarning("Benchmark instrument {BenchmarkSymbol} not found in database", benchmarkSymbol);
                 return new List<CandlestickDto>();
             }
 
@@ -535,4 +535,3 @@ namespace traderview.Server.Services
         }
     }
 }
-
