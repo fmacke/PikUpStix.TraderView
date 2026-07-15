@@ -11,7 +11,6 @@ namespace IKBR_Report_Puller.Services
         private readonly IReportFetchingService _reportFetchingService;
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
         private readonly IInstrumentRepository _instrumentRepository;
-        private readonly IOpenPositionRepository _openPositionRepository;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
@@ -23,7 +22,6 @@ namespace IKBR_Report_Puller.Services
             IReportFetchingService reportFetchingService,
             ITradeExecutionRepository tradeExecutionRepository,
             IInstrumentRepository instrumentRepository,
-            IOpenPositionRepository openPositionRepository,
             IExcelReportService excelReportService,
             ITradeHistoryReportService tradeHistoryReportService,
             IMarketDataService economicCalendarService,
@@ -32,7 +30,6 @@ namespace IKBR_Report_Puller.Services
             _reportFetchingService = reportFetchingService;
             _tradeExecutionRepository = tradeExecutionRepository;
             _instrumentRepository = instrumentRepository;
-            _openPositionRepository = openPositionRepository;
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
             marketDataService = economicCalendarService;
@@ -47,7 +44,6 @@ namespace IKBR_Report_Puller.Services
                 // Upsert instruments first, then trade executions, then open positions
                 _instrumentRepository.UpsertInstruments(mainReport.Trades, marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-                _openPositionRepository.InsertOpenPositions(mainReport.WhenGenerated, mainReport.OpenPositions);
                              
                 if (writeOutputtoExcel)
                 {

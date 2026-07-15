@@ -47,13 +47,6 @@ public partial class Program
             return new HistoricalDataRepository(connectionString);
         });
 
-        builder.Services.AddScoped<IOpenPositionRepository>(provider =>
-        {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
-            return new OpenPositionRepository(connectionString);
-        });
-
         builder.Services.AddScoped<IEconomicCalendarRepository>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
@@ -94,7 +87,6 @@ public partial class Program
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
-        builder.Services.AddScoped<IOpenPositionService, OpenPositionService>();
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
 

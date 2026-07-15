@@ -66,13 +66,6 @@ namespace IKBR_Report_Puller.Console
                         return new Data.Repositories.HistoricalDataRepository(connectionString);
                     });
 
-                    services.AddSingleton<IOpenPositionRepository>(provider =>
-                    {
-                        var config = provider.GetRequiredService<IConfiguration>();
-                        var connectionString = BuildConnectionString(config);
-                        return new Data.Repositories.OpenPositionRepository(connectionString);
-                    });
-
                     services.AddSingleton<IEconomicCalendarRepository>(provider =>
                     {
                         var config = provider.GetRequiredService<IConfiguration>();

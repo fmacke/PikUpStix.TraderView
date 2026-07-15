@@ -8,14 +8,11 @@ namespace traderview.Server.Controllers
     [Route("api/openpositions")]
     public class OpenPositionController : ControllerBase
     {
-        private readonly IOpenPositionService _openPositionService;
         private readonly ILogger<OpenPositionController> _logger;
 
         public OpenPositionController(
-            IOpenPositionService openPositionService,
             ILogger<OpenPositionController> logger)
         {
-            _openPositionService = openPositionService;
             _logger = logger;
         }
 
@@ -31,9 +28,9 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("Fetching all open positions");
-                var openPositions = await _openPositionService.GetAllOpenPositionsAsync();
-                _logger.LogInformation("Found {Count} open positions", openPositions.Count);
-                return Ok(openPositions);
+                //var openPositions = await _openPositionService.GetAllOpenPositionsAsync();
+                //_logger.LogInformation("Found {Count} open positions", openPositions.Count);
+                return Ok();//openPositions);
             }
             catch (Exception ex)
             {
