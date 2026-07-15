@@ -238,6 +238,75 @@ namespace IKBR_Report_Puller.Data.Repositories
             }
         }
 
+        /// <summary>
+        /// Gets candlestick data for a given instrument and date range asynchronously
+        /// </summary>
+        public async Task<List<Bar>> GetCandlesticksAsync(int instrumentId, DateTime startDate, DateTime endDate)
+        {
+            return await Task.Run(() =>
+            {
+                var candlesticks = new List<Bar>();
+                ExecuteDatabaseOperation(connection =>
+                {
+                    const string query = @"
+                        SELECT Date, OpenPrice, HighPrice, LowPrice, ClosePrice, Volume
+                        FROM HistoricalData
+                        WHERE InstrumentId = @InstrumentId
+                            AND Date >= @StartDate
+                            AND Date <= @EndDate
+                        ORDER BY Date ASC";
+
+                    using var command = new SqlCommand(query, connection);
+                    command.Parameters.AddWithValue("@InstrumentId", instrumentId);
+                    command.Parameters.AddWithValue("@StartDate", startDate);
+                    command.Parameters.AddWithValue("@EndDate", endDate);
+
+                    using var reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        candlesticks.Add(new Bar
+                        {
+                            Date = reader.GetDateTime(reader.GetOrdinal("Date")),
+                            OpenPrice = reader.GetDouble(reader.GetOrdinal("OpenPrice")),
+                            HighPrice = reader.GetDouble(reader.GetOrdinal("HighPrice")),
+                            LowPrice = reader.GetDouble(reader.GetOrdinal("LowPrice")),
+                            ClosePrice = reader.GetDouble(reader.GetOrdinal("ClosePrice")),
+                            Volume = reader.GetDouble(reader.GetOrdinal("Volume"))
+                        });
+                    }
+                });
+                return candlesticks;
+            });
+        }
+
+        /// <summary>
+        /// Gets instrument ID by symbol name asynchronously
+        /// </summary>
+        public async Task<int?> GetInstrumentIdBySymbolAsync(string symbol)
+        {
+            return await Task.Run(() =>
+            {
+                int? instrumentId = null;
+                ExecuteDatabaseOperation(connection =>
+                {
+                    const string query = @"
+                        SELECT Id 
+                        FROM Instruments 
+                        WHERE InstrumentName = @Symbol";
+
+                    using var command = new SqlCommand(query, connection);
+                    command.Parameters.AddWithValue("@Symbol", symbol);
+
+                    var result = command.ExecuteScalar();
+                    if (result != null)
+                    {
+                        instrumentId = Convert.ToInt32(result);
+                    }
+                });
+                return instrumentId;
+            });
+        }
+
         #endregion
     }
 }

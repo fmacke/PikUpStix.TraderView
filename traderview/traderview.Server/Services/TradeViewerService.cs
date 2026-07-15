@@ -7,22 +7,24 @@ namespace traderview.Server.Services
 {
     public class TradeViewerService : ITradeViewerService
     {
-        private readonly string _connectionString;
         private readonly ILogger<TradeViewerService> _logger;
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
+        private readonly IInstrumentRepository _instrumentRepository;
+        private readonly IHistoricalDataRepository _historicalDataRepository;
 
         public TradeViewerService(
-            IConfiguration configuration, 
             ILogger<TradeViewerService> logger,
             ITradeExecutionRepository tradeExecutionRepository,
-            ITradeHistoryReportService tradeHistoryReportService)
+            ITradeHistoryReportService tradeHistoryReportService,
+            IInstrumentRepository instrumentRepository,
+            IHistoricalDataRepository historicalDataRepository)
         {
-            _connectionString = configuration.GetConnectionString("TradingDatabase") 
-                ?? throw new InvalidOperationException("Connection string 'TradingDatabase' not found.");
             _logger = logger;
             _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
+            _instrumentRepository = instrumentRepository;
+            _historicalDataRepository = historicalDataRepository;
         }
 
         public async Task<List<TradeDto>> GetAllTradesAsync()
@@ -66,15 +68,37 @@ namespace traderview.Server.Services
 
                 var trade = MapToTradeDto(tradeSummary);
 
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
+                // Get instrument details using repository
+                var instrumentDomain = await _instrumentRepository.GetByIdAsync(trade.InstrumentId);
+                if (instrumentDomain == null) return null;
 
-                // Get instrument details
-                var instrument = await GetInstrumentAsync(connection, trade.InstrumentId);
-                if (instrument == null) return null;
+                var instrument = new InstrumentDto
+                {
+                    Id = instrumentDomain.Id,
+                    InstrumentName = instrumentDomain.InstrumentName ?? string.Empty,
+                    Provider = instrumentDomain.Provider ?? string.Empty,
+                    DataName = instrumentDomain.DataName ?? string.Empty,
+                    Currency = instrumentDomain.Currency ?? string.Empty,
+                    ListingExchange = instrumentDomain.ListingExchange
+                };
 
-                // Get trade executions
-                var executions = await GetTradeExecutionsAsync(connection, positionId);
+                // Get trade executions using repository
+                var executionsDomain = await _tradeExecutionRepository.GetByPositionIdAsync(positionId);
+                var executions = executionsDomain.Select(e => new TradeExecutionDto
+                {
+                    Id = e.Id,
+                    PositionId = positionId,
+                    InstrumentId = e.InstrumentId,
+                    Symbol = e.Symbol,
+                    TradeID = e.TradeID,
+                    DateTime = e.DateTime.ToString("yyyyMMdd"),
+                    TradeDate = e.TradeDate,  
+                    Quantity = e.Quantity,  
+                    TradePrice = e.TradePrice,
+                    BuySell = e.BuySell,
+                    FifoPnlRealized = e.FifoPnlRealized,
+                    IbCommission = e.IbCommission
+                }).ToList();
 
                 return new TradeDetailDto
                 {
@@ -100,16 +124,23 @@ namespace traderview.Server.Services
 
                 var trade = MapToTradeDto(tradeSummary);
 
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                // Get candlestick data around the trade dates
-                var candlesticks = await GetCandlesticksAsync(
-                    connection, 
-                    trade.InstrumentId, 
-                    trade.EntryDate.AddDays(-daysBefore), 
+                // Get candlestick data around the trade dates using repository
+                var candlesticksDomain = await _historicalDataRepository.GetCandlesticksAsync(
+                    trade.InstrumentId,
+                    trade.EntryDate.AddDays(-daysBefore),
                     trade.ExitDate.AddDays(daysAfter)
                 );
+
+                var candlesticks = candlesticksDomain.Select(c => new CandlestickDto
+                {
+                    Date = c.Date,
+                    Open = c.OpenPrice,
+                    High = c.HighPrice,
+                    Low = c.LowPrice,
+                    Close = c.ClosePrice,
+                    Volume = c.Volume,
+                    InstrumentId = trade.InstrumentId
+                }).ToList();
 
                 return new TradeContextDto
                 {
@@ -257,16 +288,23 @@ namespace traderview.Server.Services
 
                 var trade = MapToTradeDto(tradeSummary);
 
-                using var connection = new SqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                // Get stock candlestick data
-                var stockCandlesticks = await GetCandlesticksAsync(
-                    connection,
+                // Get stock candlestick data using repository
+                var stockCandlesticksDomain = await _historicalDataRepository.GetCandlesticksAsync(
                     trade.InstrumentId,
                     trade.EntryDate.AddDays(-daysBefore),
                     trade.ExitDate.AddDays(daysAfter)
                 );
+
+                var stockCandlesticks = stockCandlesticksDomain.Select(c => new CandlestickDto
+                {
+                    Date = c.Date,
+                    Open = c.OpenPrice,
+                    High = c.HighPrice,
+                    Low = c.LowPrice,
+                    Close = c.ClosePrice,
+                    Volume = c.Volume,
+                    InstrumentId = trade.InstrumentId
+                }).ToList();
 
                 if (stockCandlesticks.Count == 0)
                 {
@@ -274,13 +312,30 @@ namespace traderview.Server.Services
                     return null;
                 }
 
-                // Get benchmark candlestick data (SPX or similar)
-                var benchmarkCandlesticks = await GetBenchmarkCandlesticksAsync(
-                    connection,
-                    benchmarkSymbol,
+                // Get benchmark candlestick data (SPX or similar) using repository
+                var benchmarkInstrumentId = await _historicalDataRepository.GetInstrumentIdBySymbolAsync(benchmarkSymbol);
+                if (benchmarkInstrumentId == null)
+                {
+                    _logger.LogWarning("Benchmark instrument {BenchmarkSymbol} not found in database", benchmarkSymbol);
+                    return null;
+                }
+
+                var benchmarkCandlesticksDomain = await _historicalDataRepository.GetCandlesticksAsync(
+                    benchmarkInstrumentId.Value,
                     trade.EntryDate.AddDays(-daysBefore),
                     trade.ExitDate.AddDays(daysAfter)
                 );
+
+                var benchmarkCandlesticks = benchmarkCandlesticksDomain.Select(c => new CandlestickDto
+                {
+                    Date = c.Date,
+                    Open = c.OpenPrice,
+                    High = c.HighPrice,
+                    Low = c.LowPrice,
+                    Close = c.ClosePrice,
+                    Volume = c.Volume,
+                    InstrumentId = benchmarkInstrumentId.Value
+                }).ToList();
 
                 if (benchmarkCandlesticks.Count == 0)
                 {

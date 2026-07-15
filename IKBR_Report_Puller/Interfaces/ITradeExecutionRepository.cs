@@ -40,5 +40,12 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="accountId">The account ID</param>
         /// <returns>List of trade executions with date, quantity, and open/close indicator</returns>
         List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)> GetTradeExecutionsByConIdAndAccount(long? conid, string accountId);
+
+        /// <summary>
+        /// Gets trade executions for a specific position ID asynchronously
+        /// </summary>
+        /// <param name="positionId">The position ID</param>
+        /// <returns>List of trade executions for the position</returns>
+        Task<List<TradeExecution>> GetByPositionIdAsync(int positionId);
     }
 }

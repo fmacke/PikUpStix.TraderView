@@ -24,5 +24,21 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="endDate">End date of the range</param>
         /// <returns>List of date ranges that are missing data</returns>
         List<(DateTime startDate, DateTime endDate)> GetMissingDateRanges(int instrumentId, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Gets candlestick data for a given instrument and date range asynchronously
+        /// </summary>
+        /// <param name="instrumentId">The instrument ID</param>
+        /// <param name="startDate">Start date of the range</param>
+        /// <param name="endDate">End date of the range</param>
+        /// <returns>List of candlestick/bar data</returns>
+        Task<List<Bar>> GetCandlesticksAsync(int instrumentId, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// Gets instrument ID by symbol name asynchronously
+        /// </summary>
+        /// <param name="symbol">The instrument symbol or name</param>
+        /// <returns>The instrument ID, or null if not found</returns>
+        Task<int?> GetInstrumentIdBySymbolAsync(string symbol);
     }
 }

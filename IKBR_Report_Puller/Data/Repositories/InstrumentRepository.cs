@@ -417,6 +417,47 @@ namespace IKBR_Report_Puller.Data.Repositories
 
             ExecuteCommand(connection, transaction, insertQuery, parameters);
         }
+
+        /// <summary>
+        /// Gets an instrument by its ID asynchronously
+        /// </summary>
+        public async Task<Instrument?> GetByIdAsync(int instrumentId)
+        {
+            return await Task.Run(() =>
+            {
+                Instrument? instrument = null;
+                ExecuteDatabaseOperation(connection =>
+                {
+                    const string query = @"
+                        SELECT Id, InstrumentName, Provider, DataName, Currency, ListingExchange
+                        FROM dbo.Instruments
+                        WHERE Id = @InstrumentId";
+
+                    using var command = new SqlCommand(query, connection);
+                    command.Parameters.AddWithValue("@InstrumentId", instrumentId);
+
+                    using var reader = command.ExecuteReader();
+                    if (reader.Read())
+                    {
+                        instrument = new Instrument
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            InstrumentName = reader.IsDBNull(reader.GetOrdinal("InstrumentName"))
+                                ? string.Empty : reader.GetString(reader.GetOrdinal("InstrumentName")),
+                            Provider = reader.IsDBNull(reader.GetOrdinal("Provider"))
+                                ? string.Empty : reader.GetString(reader.GetOrdinal("Provider")),
+                            DataName = reader.IsDBNull(reader.GetOrdinal("DataName"))
+                                ? string.Empty : reader.GetString(reader.GetOrdinal("DataName")),
+                            Currency = reader.IsDBNull(reader.GetOrdinal("Currency"))
+                                ? string.Empty : reader.GetString(reader.GetOrdinal("Currency")),
+                            ListingExchange = reader.IsDBNull(reader.GetOrdinal("ListingExchange"))
+                                ? string.Empty : reader.GetString(reader.GetOrdinal("ListingExchange"))
+                        };
+                    }
+                });
+                return instrument;
+            });
+        }
         #endregion
     }
 }

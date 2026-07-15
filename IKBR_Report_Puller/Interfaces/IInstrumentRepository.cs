@@ -42,6 +42,13 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="trades">List of trades to process</param>
         /// <param name="source">Source of the trades</param>
         void UpsertInstruments(List<TradeExecution> trades, string source);
+
+        /// <summary>
+        /// Gets an instrument by its ID asynchronously
+        /// </summary>
+        /// <param name="instrumentId">The instrument ID</param>
+        /// <returns>The instrument, or null if not found</returns>
+        Task<Instrument?> GetByIdAsync(int instrumentId);
     }
 }
     

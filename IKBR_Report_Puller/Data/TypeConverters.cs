@@ -36,13 +36,17 @@ namespace IKBR_Report_Puller.Data
             return null;
         }
 
-        public static DateTime? ConvertToDate(string value)
-        {
-            if (DateTime.TryParseExact(value, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
+        public static DateTime? ConvertToNullableDate(string dateString)
+        {            
+            if (DateTime.TryParseExact(dateString, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var result))
             {
                 return result;
             }
             return null;
+        }
+       public static DateTime ConvertStringToDate(string dateString)
+        {
+            return DateTime.ParseExact(dateString, "yyyyMMdd", CultureInfo.InvariantCulture);
         }
     }
 }

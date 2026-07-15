@@ -19,7 +19,7 @@ namespace IKBR_Report_Puller.Console
 
         public async Task RunAsync()
         {
-            await _reportRunnerService.RunReportAsync(true, false);
+            await _reportRunnerService.RunReportAsync(true, true);
         }
     }
 }
