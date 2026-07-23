@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using PikUpStix.TraderView.Interfaces;
 using traderview.Server.DTOs;
 
 namespace traderview.Server.Controllers
@@ -8,11 +9,14 @@ namespace traderview.Server.Controllers
     public class OpenPositionController : ControllerBase
     {
         private readonly ILogger<OpenPositionController> _logger;
+        private readonly IPositionService _positionService;
 
         public OpenPositionController(
-            ILogger<OpenPositionController> logger)
+            ILogger<OpenPositionController> logger,
+            IPositionService positionService)
         {
             _logger = logger;
+            _positionService = positionService;
         }
 
         /// <summary>
@@ -27,8 +31,8 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("Fetching all open positions");
-                //var openPositions = await _openPositionService.GetAllOpenPositionsAsync();
-                //_logger.LogInformation("Found {Count} open positions", openPositions.Count);
+                var openPositions = await _positionService.GetAllOpenPositionsAsync();
+                _logger.LogInformation("Found {Count} open positions", openPositions.Count);
                 return Ok();//openPositions);
             }
             catch (Exception ex)

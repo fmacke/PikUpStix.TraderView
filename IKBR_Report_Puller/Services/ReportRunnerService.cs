@@ -44,15 +44,16 @@ namespace IKBR_Report_Puller.Services
                 // Upsert instruments first, then trade executions, then open positions
                 _instrumentRepository.UpsertInstruments(mainReport.Trades, marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-                             
+                var executions = _tradeExecutionRepository.GetTradeExecutions();                
+
                 if (writeOutputtoExcel)
                 {
-                    var executions = _tradeExecutionRepository.GetTradeExecutions();
                     _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
                     await WriteTodayReport(fileName);
                 }
                 if (updateMarketData)
                 {
+                    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
                     await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
                     await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                     await marketDataService.FetchAndSaveChartData(new List<string>()
