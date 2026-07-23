@@ -3,7 +3,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace IKBR_Report_Puller.Data
+namespace PikUpStix.TraderView.Data
 {
     /// <summary>
     /// Custom JSON converter for DateTime that handles the Financial Modeling Prep API date format

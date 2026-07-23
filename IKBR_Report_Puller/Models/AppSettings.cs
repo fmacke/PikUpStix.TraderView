@@ -1,4 +1,4 @@
-namespace IKBR_Report_Puller.Models
+namespace PikUpStix.TraderView.Models
 {
     public class IbkrSettings
     {

@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 
-namespace IKBR_Report_Puller.Data.Repositories
+namespace PikUpStix.TraderView.Data.Repositories
 {
     /// <summary>
     /// Repository for economic calendar database operations

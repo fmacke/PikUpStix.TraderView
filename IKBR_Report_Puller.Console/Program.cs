@@ -1,8 +1,10 @@
-using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using PikUpStix.TraderView.Data.Repositories;
 using PikUpStix.TraderView.Interfaces;
+using PikUpStix.TraderView.Services.MarketData;
+using PikUpStix.TraderView.Services;
 
 namespace IKBR_Report_Puller.Console
 {
@@ -39,7 +41,7 @@ namespace IKBR_Report_Puller.Console
                     {
                         var config = provider.GetRequiredService<IConfiguration>();
                         var connectionString = BuildConnectionString(config);
-                        return new Data.Repositories.InstrumentRepository(connectionString);
+                        return new InstrumentRepository(connectionString);
                     });
 
                     services.AddSingleton<IPositionRepository>(provider =>
@@ -47,7 +49,7 @@ namespace IKBR_Report_Puller.Console
                         var config = provider.GetRequiredService<IConfiguration>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         var connectionString = BuildConnectionString(config);
-                        return new Data.Repositories.PositionRepository(connectionString, instrumentRepo);
+                        return new PositionRepository(connectionString, instrumentRepo);
                     });
 
                     services.AddSingleton<ITradeExecutionRepository>(provider =>
@@ -56,21 +58,21 @@ namespace IKBR_Report_Puller.Console
                         var positionRepo = provider.GetRequiredService<IPositionRepository>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         var connectionString = BuildConnectionString(config);
-                        return new Data.Repositories.TradeExecutionRepository(connectionString, positionRepo, instrumentRepo);
+                        return new TradeExecutionRepository(connectionString, positionRepo, instrumentRepo);
                     });
 
                     services.AddSingleton<IHistoricalDataRepository>(provider =>
                     {
                         var config = provider.GetRequiredService<IConfiguration>();
                         var connectionString = BuildConnectionString(config);
-                        return new Data.Repositories.HistoricalDataRepository(connectionString);
+                        return new HistoricalDataRepository(connectionString);
                     });
 
                     services.AddSingleton<IEconomicCalendarRepository>(provider =>
                     {
                         var config = provider.GetRequiredService<IConfiguration>();
                         var connectionString = BuildConnectionString(config);
-                        return new Data.Repositories.EconomicCalendarRepository(connectionString);
+                        return new EconomicCalendarRepository(connectionString);
                     });
 
                     services.AddSingleton<IMarketDataService>(provider =>

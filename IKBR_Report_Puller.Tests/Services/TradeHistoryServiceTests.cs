@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using IKBR_Report_Puller.Domain;
-using IKBR_Report_Puller.Services;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+﻿using IKBR_Report_Puller.Domain;
+using PikUpStix.TraderView.Services;
 
 namespace IKBR_Report_Puller.Tests.Services
 {

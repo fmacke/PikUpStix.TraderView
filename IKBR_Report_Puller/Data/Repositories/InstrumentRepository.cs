@@ -6,7 +6,7 @@ using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Interfaces;
 
-namespace IKBR_Report_Puller.Data.Repositories
+namespace PikUpStix.TraderView.Data.Repositories
 {
     /// <summary>
     /// Repository for Instrument-related database operations

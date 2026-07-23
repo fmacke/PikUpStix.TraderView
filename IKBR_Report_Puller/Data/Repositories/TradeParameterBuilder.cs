@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using IKBR_Report_Puller.Domain;
 
-namespace IKBR_Report_Puller.Data.Repositories
+namespace PikUpStix.TraderView.Data.Repositories
 {
     /// <summary>
     /// Builds parameter dictionaries for TradeExecution database operations

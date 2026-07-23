@@ -6,7 +6,9 @@ using System.Data;
 using System.Globalization;
 using System.Linq;
 using IKBR_Report_Puller.Domain;
-namespace IKBR_Report_Puller.Data.Repositories
+using IKBR_Report_Puller.Data;
+
+namespace PikUpStix.TraderView.Data.Repositories
 {
     /// <summary>
     /// Repository for TradeExecution-related database operations

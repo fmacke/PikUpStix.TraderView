@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 using System.Xml.Linq;
 using IKBR_Report_Puller.Domain;
 
-namespace IKBR_Report_Puller.Services
+namespace PikUpStix.TraderView.Services
 {
     public static class IKBRReportParser
     {

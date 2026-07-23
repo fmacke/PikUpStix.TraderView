@@ -9,7 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 
-namespace IKBR_Report_Puller.Services
+namespace PikUpStix.TraderView.Services
 {
     /// <summary>
     /// Provides services for generating Excel reports from trading data including open positions, trade history, and visual analytics.

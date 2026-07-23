@@ -4,7 +4,7 @@ using Microsoft.Extensions.Configuration;
 using PikUpStix.TraderView.Interfaces;
 using System.Xml.Linq;
 
-namespace IKBR_Report_Puller.Services
+namespace PikUpStix.TraderView.Services
 {
     public class ReportRunnerService : IReportRunnerService
     {

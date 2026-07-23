@@ -8,7 +8,7 @@ using IBApi; // Ensure TwsClient is referenced
 using System.Net.Http;
 using PikUpStix.TraderView.Interfaces;
 
-namespace IKBR_Report_Puller.Services
+namespace PikUpStix.TraderView.Services
 {
     
     public class IKBRReportFetchingService : IReportFetchingService

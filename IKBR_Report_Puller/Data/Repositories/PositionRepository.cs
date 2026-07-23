@@ -2,7 +2,8 @@ using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Domain;
 using IKBR_Report_Puller.Domain;
-namespace IKBR_Report_Puller.Data.Repositories
+
+namespace PikUpStix.TraderView.Data.Repositories
 {
     public class PositionRepository : BaseRepository, IPositionRepository
     {

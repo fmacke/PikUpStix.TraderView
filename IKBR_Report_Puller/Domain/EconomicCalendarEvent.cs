@@ -1,6 +1,6 @@
 using System;
 using System.Text.Json.Serialization;
-using IKBR_Report_Puller.Data;
+using PikUpStix.TraderView.Data;
 
 namespace IKBR_Report_Puller.Domain
 {

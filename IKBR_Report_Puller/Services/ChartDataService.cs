@@ -9,7 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace IKBR_Report_Puller.Services
+namespace PikUpStix.TraderView.Services
 {
     /// <summary>
     /// Inherits from DefaultWrapper to hide the 60+ unused IBKR API methods.

@@ -1,10 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using IKBR_Report_Puller.Services;
 using Microsoft.Extensions.Configuration;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Moq;
+using PikUpStix.TraderView.Services;
 
 namespace IKBR_Report_Puller.Tests.Services
 {

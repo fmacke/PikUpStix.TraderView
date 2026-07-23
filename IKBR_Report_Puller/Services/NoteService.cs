@@ -1,7 +1,7 @@
 using IKBR_Report_Puller.Domain;
 using PikUpStix.TraderView.Interfaces;
 
-namespace IKBR_Report_Puller.Services
+namespace PikUpStix.TraderView.Services
 {
     /// <summary>
     /// Service for Note operations

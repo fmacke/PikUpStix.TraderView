@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using Microsoft.Data.SqlClient;
 
-namespace IKBR_Report_Puller.Data
+namespace PikUpStix.TraderView.Data.Repositories
 {
     /// <summary>
     /// Base repository class providing common database operations

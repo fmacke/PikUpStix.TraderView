@@ -1,14 +1,8 @@
-using IKBR_Report_Puller.Data.Repositories;
 using IKBR_Report_Puller.Domain;
 using PikUpStix.TraderView.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net.Http;
 using System.Text.Json;
-using System.Threading.Tasks;
 
-namespace IKBR_Report_Puller.Services
+namespace PikUpStix.TraderView.Services.MarketData
 {
     /// <summary>
     /// Service for retrieving economic calendar data from Financial Modeling Prep API

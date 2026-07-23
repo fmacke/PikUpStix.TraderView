@@ -3,7 +3,7 @@ using System.Text;
 using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Domain;
 
-namespace IKBR_Report_Puller.Services
+namespace PikUpStix.TraderView.Services
 {
     public class TradeHistoryService : ITradeHistoryReportService
     {
