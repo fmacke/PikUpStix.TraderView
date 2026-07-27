@@ -130,9 +130,10 @@ namespace PikUpStix.TraderView.Data.Repositories
                 var tradeExecutions = new List<TradeExecution>();
 
                 using (var cmd = new SqlCommand(
-                    "SELECT te.PositionID, te.ibOrderID, te.symbol, CONVERT(varchar(8), TRY_CAST(te.tradeDate AS datetime), 112) AS tradeDate, te.quantity, te.tradePrice, te.openCloseIndicator, p.InstrumentId, te.currency, te.conid, te.ibExecID, te.IBCommission, te.IBCommissionCurrency " +
+                    "SELECT te.PositionID, te.ibOrderID, te.symbol, CONVERT(varchar(8), TRY_CAST(te.tradeDate AS datetime), 112) AS tradeDate, te.quantity, te.tradePrice, te.openCloseIndicator, p.InstrumentId, te.currency, te.conid, te.ibExecID, te.IBCommission, te.IBCommissionCurrency, i.ListingExchange " +
                     "FROM [dbo].[TradeExecutions] te " +
                     "INNER JOIN [dbo].[Positions] p ON te.PositionID = p.Id " +
+                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
                     "ORDER BY te.ibOrderID, te.tradeDate ASC, te.dateTime ASC", connection))
                 {
                     using (var reader = cmd.ExecuteReader())
@@ -153,7 +154,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 Conid = reader.GetString("conid"),
                                 IbExecID = reader.GetString("ibExecID"),
                                 IbCommission = reader.GetDecimal("ibCommission"),
-                                IbCommissionCurrency = reader.GetString("ibCommissionCurrency")
+                                IbCommissionCurrency = reader.GetString("ibCommissionCurrency"),
+                                ListingExchange = reader.GetString("ListingExchange")
                             });
                         }
                     }

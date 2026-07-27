@@ -2,6 +2,7 @@ using DocumentFormat.OpenXml.Drawing;
 using IKBR_Report_Puller.Domain;
 using Microsoft.Extensions.Configuration;
 using PikUpStix.TraderView.Interfaces;
+using PikUpStix.TraderView.Services.MarketData;
 using System.Xml.Linq;
 
 namespace PikUpStix.TraderView.Services
@@ -15,6 +16,8 @@ namespace PikUpStix.TraderView.Services
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly IMarketDataService marketDataService;
+        private readonly YahooFinanceService _yahooFinanceService;
+        private readonly FinancialModellingPrepService _fmpService;
         const int maxRetries = 3;
         const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
@@ -25,6 +28,8 @@ namespace PikUpStix.TraderView.Services
             IExcelReportService excelReportService,
             ITradeHistoryReportService tradeHistoryReportService,
             IMarketDataService economicCalendarService,
+            YahooFinanceService yahooFinanceService,
+            FinancialModellingPrepService fmpService,
             IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
@@ -33,6 +38,8 @@ namespace PikUpStix.TraderView.Services
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
             marketDataService = economicCalendarService;
+            _yahooFinanceService = yahooFinanceService;
+            _fmpService = fmpService;
             _config = config;
             outputFilePath = _config["IBKR:OutputFilePath"];
         }
@@ -54,7 +61,45 @@ namespace PikUpStix.TraderView.Services
                 if (updateMarketData)
                 {
                     _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                    await marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+
+                    // Split trades by exchange: American exchanges (NYSE, NASDAQ) use FMP, others use Yahoo
+                    var americanExchanges = new HashSet<string>(StringComparer.OrdinalIgnoreCase) 
+                    { 
+                        "NYSE", "NASDAQ", "AMEX", "ARCA", "BATS", "IEX", "NYSEARCA", "NYSEMKT" 
+                    };
+
+                    var americanTrades = new List<HistoricalTrade>();
+                    var internationalTrades = new List<HistoricalTrade>();
+
+                    foreach (var trade in _tradeHistoryReportService.TradeHistoryAggregated)
+                    {
+                        // Check if the listing exchange is American
+                        bool isAmericanExchange = !string.IsNullOrEmpty(trade.ListingExchange) && 
+                                                  americanExchanges.Contains(trade.ListingExchange);
+
+                        if (isAmericanExchange)
+                        {
+                            americanTrades.Add(trade);
+                        }
+                        else
+                        {
+                            internationalTrades.Add(trade);
+                        }
+                    }
+
+                    // Fetch chart data using appropriate service for each group
+                    if (americanTrades.Count > 0)
+                    {
+                        System.Console.WriteLine($"Fetching {americanTrades.Count} American exchange trades using Financial Modeling Prep...");
+                        await _fmpService.FetchAndSaveChartData(americanTrades);
+                    }
+
+                    if (internationalTrades.Count > 0)
+                    {
+                        System.Console.WriteLine($"Fetching {internationalTrades.Count} international exchange trades using Yahoo Finance...");
+                        await _yahooFinanceService.FetchAndSaveChartData(internationalTrades);
+                    }
+
                     await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                     await marketDataService.FetchAndSaveChartData(new List<string>()
                     {

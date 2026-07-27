@@ -75,7 +75,8 @@ namespace IKBR_Report_Puller.Console
                         return new EconomicCalendarRepository(connectionString);
                     });
 
-                    services.AddSingleton<IMarketDataService>(provider =>
+                    // Register both market data services
+                    services.AddSingleton<FinancialModellingPrepService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
                         var repository = provider.GetRequiredService<IEconomicCalendarRepository>();
@@ -88,6 +89,34 @@ namespace IKBR_Report_Puller.Console
                         var outputPath = config["FinancialModelingPrep:OutputFilePath"];
 
                         return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, instrumentRepository, apiKey, baseUrl, outputPath);
+                    });
+
+                    services.AddSingleton<YahooFinanceService>(provider =>
+                    {
+                        var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
+                        var repository = provider.GetRequiredService<IEconomicCalendarRepository>();
+                        var historicalDataRepository = provider.GetRequiredService<IHistoricalDataRepository>();
+                        var instrumentRepository = provider.GetRequiredService<IInstrumentRepository>();
+                        var config = provider.GetRequiredService<IConfiguration>();
+
+                        var baseUrl = config["YahooFinance:BaseUrl"] ?? "https://query1.finance.yahoo.com";
+                        var outputPath = config["YahooFinance:OutputFilePath"] ?? config["FinancialModelingPrep:OutputFilePath"];
+
+                        return new YahooFinanceService(httpClient, repository, historicalDataRepository, instrumentRepository, baseUrl, outputPath);
+                    });
+
+                    // Register the default IMarketDataService (use Yahoo Finance by default, or configure via settings)
+                    services.AddSingleton<IMarketDataService>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var preferredService = config["MarketData:PreferredService"];
+
+                        return preferredService?.ToLower() switch
+                        {
+                            "yahoo" => provider.GetRequiredService<YahooFinanceService>(),
+                            "fmp" => provider.GetRequiredService<FinancialModellingPrepService>(),
+                            _ => provider.GetRequiredService<FinancialModellingPrepService>() // Default to FMP for backwards compatibility
+                        };
                     });
                     services.AddSingleton<IReportFetchingService>(provider =>
                     {

@@ -32,11 +32,18 @@ services:
       - IBKRClient__Port=4002
       - IBKRClient__ClientId=10000
       
+      # Market Data Service Selection (yahoo or fmp)
+      - MarketData__PreferredService=${MARKET_DATA_SERVICE:-fmp}
+
       # Financial Modeling Prep API Settings
       - FinancialModelingPrep__ApiKey=${FMP_API_KEY}
       - FinancialModelingPrep__BaseUrl=https://financialmodelingprep.com/stable
       - FinancialModelingPrep__OutputFilePath=/app/documents/[FILE_NAME]
-      
+
+      # Yahoo Finance API Settings
+      - YahooFinance__BaseUrl=${YAHOO_FINANCE_BASE_URL:-https://query1.finance.yahoo.com}
+      - YahooFinance__OutputFilePath=/app/documents/[FILE_NAME]
+
       # Logging Levels
       - Logging__LogLevel__Default=Information
       - Logging__LogLevel__Microsoft.AspNetCore=Warning

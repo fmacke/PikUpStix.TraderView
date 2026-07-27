@@ -61,7 +61,8 @@ namespace PikUpStix.TraderView.Services
                                 TradeClosed = execTime,
                                 IbCommission = openingCommission + closingCommission,
                                 IbCommissionCurrency = exec.IbCommissionCurrency,
-                                InstrumentId = instrumentId
+                                InstrumentId = instrumentId,
+                                ListingExchange = exec.ListingExchange
                             });
 
                             qtyRemaining -= matchQty;
@@ -113,7 +114,8 @@ namespace PikUpStix.TraderView.Services
                                 TradeClosed = execTime,
                                 IbCommission = openingCommission + closingCommission,
                                 IbCommissionCurrency = exec.IbCommissionCurrency,
-                                InstrumentId = instrumentId
+                                InstrumentId = instrumentId,
+                                ListingExchange = exec.ListingExchange
                             });
 
                             sellQtyAbs -= matchQty;
@@ -156,7 +158,8 @@ namespace PikUpStix.TraderView.Services
                     Quantity = group.Sum(trade => trade.Quantity),
                     //SecurityId = group.First().sSecurityId,
                     IbCommission = group.Sum(trade => trade.IbCommission),
-                    IbCommissionCurrency = group.First().IbCommissionCurrency
+                    IbCommissionCurrency = group.First().IbCommissionCurrency,
+                    ListingExchange = group.First().ListingExchange
                 })
                 .OrderByDescending(trade => trade.Quantity)
                 .ToList();

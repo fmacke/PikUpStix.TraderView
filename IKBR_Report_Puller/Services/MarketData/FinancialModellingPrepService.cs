@@ -105,7 +105,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                     var toDate = trade.TradeClosed.AddDays(200);
                     if (toDate > DateTime.UtcNow)
                     {
-                        toDate = DateTime.UtcNow;
+                        toDate = DateTime.UtcNow.AddDays(-1); // don't pull today's data as it's not complete
                     }
 
                     var barData = await FetchChartDataFromApiAsync(trade.Symbol, fromDate, toDate);
