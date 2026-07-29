@@ -9,6 +9,8 @@ namespace PikUpStix.TraderView.Domain
         public DateTime? CloseDate { get; set; }
         public string Status { get; set; } = string.Empty;
         public int InstrumentId { get; set; }
+        public decimal LastReportedPrice { get; set; }
+        public DateTime? LastReportedDate { get; set; }
         public List<TradeExecution> TradeExecutions { get; set; } = new List<TradeExecution>();
         public Instrument Instrument { get; set; }
     }

@@ -1,4 +1,6 @@
-﻿namespace IKBR_Report_Puller.Domain
+﻿using PikUpStix.TraderView.Domain;
+
+namespace IKBR_Report_Puller.Domain
 {
     public class HistoricalTrade : TradeExecution
     {

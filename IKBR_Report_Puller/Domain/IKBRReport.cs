@@ -1,3 +1,4 @@
+using PikUpStix.TraderView.Domain;
 using System;
 using System.Collections.Generic;
 

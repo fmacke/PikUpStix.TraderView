@@ -7,6 +7,7 @@ using System.Globalization;
 using System.Linq;
 using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Data;
+using PikUpStix.TraderView.Domain;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {
@@ -70,7 +71,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 // If Open Position exists, trade.PositionId = openPosition.Id
                                 if (openPosition == null)
                                 {
-                                    trade.PositionId = _positionRepository.CreatePosition(connection, transaction, instrumentId.Value, trade.Symbol, trade.TradeDate);
+                                    trade.PositionId = _positionRepository.CreatePosition(connection, transaction, instrumentId.Value, trade.Symbol, trade.TradeDate, trade.TradePrice);
                                 }
                                 else
                                 {
@@ -214,7 +215,7 @@ namespace PikUpStix.TraderView.Data.Repositories
             const string insertQuery = @"
                 INSERT INTO [dbo].[TradeExecutions]
                 ([PositionID], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
-                 [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],
+                 [ibCommissionCurrency], [closePrice], [lastReportedPrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],
                  [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description],
                  [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash],
                  [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID],
@@ -228,7 +229,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                  [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight])
                 VALUES
                 (@positionId, @symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
-                 @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID,
+                 @ibCommissionCurrency, @closePrice, @lastReportedPrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID,
                  @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description,
                  @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash,
                  @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID,
@@ -277,7 +278,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         {
             const string insertQuery = @"
                 INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid) 
-                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid)";
+                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid, @lastReportedPrice)";
 
             var parameters = new Dictionary<string, object>
             {
@@ -310,7 +311,6 @@ namespace PikUpStix.TraderView.Data.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                // Core CTE update logic injected cleanly here (incorporating previous refactoring context)
                 var query = @"
                     WITH TradeChain AS (
                             SELECT 
@@ -382,98 +382,7 @@ namespace PikUpStix.TraderView.Data.Repositories
             });
         }
 
-        ///// <summary>
-        ///// Gets aggregated trade summary by the position ID
-        ///// </summary>
-        //public TradeSummary? GetTradeSummaryByPositionId(int positionId)
-        //{
-        //    return ExecuteDatabaseOperation(connection =>
-        //    {
-        //        // CHANGED: Modified to use PositionID to tie trade executions together instead of ibOrderID
-        //        var query = @"
-        //            WITH CloseExecution AS (
-        //                SELECT 
-        //                    te.PositionID,
-        //                    te.symbol,
-        //                    p.InstrumentId,
-        //                    CONVERT(varchar(8), TRY_CAST(te.tradeDate AS datetime), 112) AS tradeDate,
-        //                    te.quantity
-        //                FROM TradeExecutions te
-        //                INNER JOIN Positions p ON te.PositionID = p.Id
-        //                WHERE te.PositionId = @PositionId
-        //            ),
-        //            TradeChain AS (
-        //                SELECT 
-        //                    te.ibOrderID,
-        //                    p.InstrumentId,
-        //                    te.PositionID,
-        //                    te.symbol,
-        //                    te.tradeDate,
-        //                    te.dateTime,
-        //                    te.quantity,
-        //                    te.tradePrice,
-        //                    te.buySell,
-        //                    te.fifoPnlRealized,
-        //                    SUM(te.quantity) OVER (PARTITION BY te.PositionID ORDER BY te.tradeDate, te.dateTime) as RunningQuantity
-        //                FROM TradeExecutions te
-        //                INNER JOIN Positions p ON te.PositionID = p.Id
-        //                INNER JOIN CloseExecution ce ON te.PositionID = ce.PositionID
-        //                WHERE te.tradeDate <= ce.tradeDate
-        //            ),
-        //            PositionLifecycle AS (
-        //                SELECT *,
-        //                    ROW_NUMBER() OVER (ORDER BY tradeDate, dateTime) as RowNum,
-        //                    CASE WHEN RunningQuantity = 0 THEN 1 ELSE 0 END as IsClosed,
-        //                    CASE WHEN PositionID = @PositionId THEN 1 ELSE 0 END as IsCloseOrder
-        //                FROM TradeChain
-        //            )
-        //            SELECT 
-        //                @CloseOrderId as Id,
-        //                InstrumentId,
-        //                PositionID as PositionId,
-        //                symbol as Symbol,
-        //                MIN(tradeDate) as EntryDate,
-        //                MAX(CASE WHEN IsCloseOrder = 1 THEN tradeDate END) as ExitDate,
-        //                CASE 
-        //                    WHEN SUM(CASE WHEN buySell = 'BUY' THEN ABS(quantity) ELSE 0 END) > 
-        //                         SUM(CASE WHEN buySell = 'SELL' THEN ABS(quantity) ELSE 0 END) THEN 'BUY'
-        //                    ELSE 'SELL'
-        //                END as BuySell,
-        //                AVG(CASE WHEN quantity > 0 THEN tradePrice ELSE NULL END) as AvgEntryPrice,
-        //                AVG(CASE WHEN quantity < 0 THEN tradePrice ELSE NULL END) as AvgExitPrice,
-        //                MAX(ABS(RunningQuantity)) as TotalQuantity,
-        //                SUM(ISNULL(fifoPnlRealized, 0)) as TotalPnl
-        //            FROM PositionLifecycle
-        //            WHERE RowNum <= (SELECT MAX(RowNum) FROM PositionLifecycle WHERE IsCloseOrder = 1)
-        //            GROUP BY InstrumentId, PositionID, symbol";
-
-        //        using var command = new SqlCommand(query, connection);
-        //        command.Parameters.AddWithValue("@PositionId", positionId);
-
-        //        using var reader = command.ExecuteReader();
-        //        if (reader.Read())
-        //        {
-        //            return new TradeSummary
-        //            {
-        //                Id = reader.GetInt64(reader.GetOrdinal("Id")),
-        //                InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-        //                PositionId = reader.GetInt32(reader.GetOrdinal("PositionId")),
-        //                Symbol = reader.GetString(reader.GetOrdinal("Symbol")),
-        //                EntryDate = DateTime.ParseExact(reader.GetString(reader.GetOrdinal("EntryDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
-        //                ExitDate = reader.IsDBNull(reader.GetOrdinal("ExitDate"))
-        //                    ? DateTime.ParseExact(reader.GetString(reader.GetOrdinal("EntryDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture)
-        //                    : DateTime.ParseExact(reader.GetString(reader.GetOrdinal("ExitDate")), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
-        //                EntryPrice = reader.IsDBNull(reader.GetOrdinal("AvgEntryPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("AvgEntryPrice")),
-        //                ExitPrice = reader.IsDBNull(reader.GetOrdinal("AvgExitPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("AvgExitPrice")),
-        //                Quantity = reader.GetDecimal(reader.GetOrdinal("TotalQuantity")),
-        //                Pnl = reader.GetDecimal(reader.GetOrdinal("TotalPnl")),
-        //                BuySell = reader.GetString(reader.GetOrdinal("BuySell"))
-        //            };
-        //        }
-
-        //        return null;
-        //    });
-        //}
+        
 
         /// <summary>
         /// Gets trade executions for a specific ConId and AccountId, ordered by trade date and time

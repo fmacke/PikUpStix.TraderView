@@ -33,8 +33,9 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="instrumentId">The instrument ID</param>
         /// <param name="symbol">The symbol</param>
         /// <param name="openDate">The open date</param>
+        /// <param name="openPrice">The open price</param>
         /// <returns>The ID of the newly created position</returns>
-        Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate);
+        Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice);
 
         /// <summary>
         /// Inserts or updates a list of positions asynchronously

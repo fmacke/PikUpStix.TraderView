@@ -2,6 +2,7 @@ using DocumentFormat.OpenXml.Bibliography;
 using IKBR_Report_Puller.Domain;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing.Chart;
+using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using System;
 using System.Collections.Generic;

@@ -33,7 +33,7 @@ namespace traderview.Server.Controllers
                 _logger.LogInformation("Fetching all open positions");
                 var openPositions = await _positionService.GetAllOpenPositionsAsync();
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
-                return Ok();//openPositions);
+                return Ok(openPositions);
             }
             catch (Exception ex)
             {

@@ -24,8 +24,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                 var positions = new List<Position>();
 
                 using (var cmd = new SqlCommand(
-                    "SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, " +
-                    "i.Symbol, i.Currency, i.SecurityId " +
+                    "SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedDate, " +
+                    "i.InstrumentName, i.Currency, i.ConId " +
                     "FROM [dbo].[Positions] p " +
                     "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
                     "ORDER BY p.OpenDate DESC", connection))
@@ -41,6 +41,13 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
                                 CloseDate = reader.GetDateTime(reader.GetOrdinal("CloseDate")),
                                 Status = reader.GetString(reader.GetOrdinal("Status")),
+                                Instrument = new Instrument
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                                    InstrumentName = reader.GetString(reader.GetOrdinal("InstrumentName")),
+                                    Currency = reader.GetString(reader.GetOrdinal("Currency")),
+                                    ConId = reader.GetString(reader.GetOrdinal("ConId"))
+                                }
                             });
                         }
                     }
@@ -57,7 +64,7 @@ namespace PikUpStix.TraderView.Data.Repositories
 
                 using (var cmd = new SqlCommand(
                     "SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, " +
-                    "i.InstrumentName, i.Currency, i.ConId " +
+                    "i.InstrumentName, i.Currency, i.ConId, p.LastReportedPrice, p.LastReportedDate " +
                     "FROM [dbo].[Positions] p " +
                     "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
                     "WHERE p.CloseDate IS NULL " +
@@ -74,7 +81,9 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
                                 CloseDate = reader.IsDBNull(reader.GetOrdinal("CloseDate")) ? (DateTime?)null : reader. GetDateTime(reader.GetOrdinal("CloseDate")),
                                 Status = reader.GetString(reader.GetOrdinal("Status")),
+            
                                 Instrument = new Instrument
+
                                 {
                                     Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
                                     InstrumentName = reader.GetString(reader.GetOrdinal("InstrumentName")),
@@ -131,7 +140,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                             // Update existing position
                             string updateQuery = @"
                                 UPDATE [dbo].[Positions]
-                                SET Status = @status
+                                SET Status = @status, LastReportedPrice = @lastReportedPrice, LastReportedDate = @lastReportedDate
                                 WHERE InstrumentId = @instrumentId 
                                 AND CAST(OpenDate AS DATE) = CAST(@openDate AS DATE)";
 
@@ -139,7 +148,9 @@ namespace PikUpStix.TraderView.Data.Repositories
                             {
                                 { "@status", position.Status },
                                 { "@instrumentId", position.InstrumentId },
-                                { "@openDate", position.OpenDate }
+                                { "@openDate", position.OpenDate },
+                                { "@lastReportedPrice", position.LastReportedPrice },
+                                { "@lastReportedDate", position.LastReportedDate ?? (object)DBNull.Value }
                             };
 
                             ExecuteCommand(connection, transaction, updateQuery, updateParameters);
@@ -149,14 +160,16 @@ namespace PikUpStix.TraderView.Data.Repositories
                         {
                             // Insert new position
                             string insertQuery = @"
-                                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId)
-                                VALUES (@openDate, @status, @instrumentId)";
+                                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedDate)
+                                VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @lastReportedDate)";
 
                             var insertParameters = new Dictionary<string, object>
                             {
                                 { "@openDate", position.OpenDate },
                                 { "@status", position.Status },
-                                { "@instrumentId", position.InstrumentId }
+                                { "@instrumentId", position.InstrumentId },
+                                { "@lastReportedPrice", position.LastReportedPrice },
+                                { "@lastReportedDate", position.LastReportedDate ?? (object)DBNull.Value }
                             };
 
                             ExecuteCommand(connection, transaction, insertQuery, insertParameters);
@@ -187,7 +200,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         Position? IPositionRepository.GetOpenPosition(SqlConnection connection, SqlTransaction transaction, string symbol, int instrumentId)
         {
             const string query = @"
-                SELECT p.Id, p.InstrumentId, p.OpenDate, p.Status
+                SELECT p.Id, p.InstrumentId, p.OpenDate, p.Status, p.LastReportedPrice, p.LastReportedDate
                 FROM [dbo].[Positions] p WITH (UPDLOCK, ROWLOCK)
                 WHERE p.InstrumentId = @instrumentId
                 AND p.Status = 'Open'";
@@ -213,7 +226,9 @@ namespace PikUpStix.TraderView.Data.Repositories
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
                             OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                            Status = reader.GetString(reader.GetOrdinal("Status"))
+                            Status = reader.GetString(reader.GetOrdinal("Status")),
+                            LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
+                            LastReportedDate = reader.IsDBNull(reader.GetOrdinal("LastReportedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedDate"))
                         };
                     }
                 }
@@ -225,13 +240,13 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Creates a new position and returns its ID
         /// </summary>
-        int IPositionRepository.CreatePosition(int instrumentId, string symbol, DateTime openDate)
+        int IPositionRepository.CreatePosition(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
         {
             return ExecuteDatabaseOperation(connection =>
             {
                 using (var transaction = connection.BeginTransaction())
                 {
-                    int positionId = ((IPositionRepository)this).CreatePosition(connection, transaction, instrumentId, symbol, openDate);
+                    int positionId = ((IPositionRepository)this).CreatePosition(connection, transaction, instrumentId, symbol, openDate, openPrice);
                     transaction.Commit();
                     return positionId;
                 }
@@ -241,18 +256,20 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Creates a new position and returns its ID within a transaction
         /// </summary>
-        int IPositionRepository.CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate)
+        int IPositionRepository.CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate, decimal openPrice)
         {
             const string insertQuery = @"
-                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId)
-                VALUES (@openDate, @status, @instrumentId);
+                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedDate)
+                VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @lastReportedDate);
                 SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
             var parameters = new Dictionary<string, object>
             {
                 { "@openDate", openDate },
                 { "@status", "Open" },
-                { "@instrumentId", instrumentId }
+                { "@instrumentId", instrumentId },
+                { "@lastReportedPrice", openPrice },
+                { "@lastReportedDate", openDate}
             };
 
             using (var cmd = new SqlCommand(insertQuery, connection, transaction))
@@ -318,7 +335,7 @@ namespace PikUpStix.TraderView.Data.Repositories
 
                 // First, get all open positions
                 using (var cmd = new SqlCommand(
-                    @"SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId,
+                    @"SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedDate,
                              i.InstrumentName, i.Currency, i.ConId
                       FROM [dbo].[Positions] p
                       INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id
@@ -336,6 +353,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
                                 CloseDate = reader.IsDBNull(reader.GetOrdinal("CloseDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CloseDate")),
                                 Status = reader.GetString(reader.GetOrdinal("Status")),
+                                LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
+                                LastReportedDate = reader.IsDBNull(reader.GetOrdinal("LastReportedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedDate")),
                                 Instrument = new Instrument
                                 {
                                     Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),

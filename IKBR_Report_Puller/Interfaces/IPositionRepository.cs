@@ -42,8 +42,9 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="instrumentId">The instrument ID</param>
         /// <param name="symbol">The symbol</param>
         /// <param name="openDate">The open date</param>
+        /// <param name="openPrice">The open price</param>
         /// <returns>The ID of the newly created position</returns>
-        int CreatePosition(int instrumentId, string symbol, DateTime openDate);
+        int CreatePosition(int instrumentId, string symbol, DateTime openDate, decimal openPrice);
         /// <summary>
         /// Creates a new position and returns its ID within a transaction
         /// </summary>
@@ -52,8 +53,9 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="instrumentId">The instrument ID</param>
         /// <param name="symbol">The symbol</param>
         /// <param name="openDate">The open date</param>
+        /// <param name="openPrice">The open price</param>
         /// <returns>The ID of the newly created position</returns>
-        int CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate);
+        int CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate, decimal openPrice);
         /// <summary>
         /// Closes a position by setting its status to 'Closed' and close date
         /// </summary>
