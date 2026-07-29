@@ -64,7 +64,7 @@ namespace PikUpStix.TraderView.Data.Repositories
 
                 using (var cmd = new SqlCommand(
                     "SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, " +
-                    "i.InstrumentName, i.Currency, i.ConId, p.LastReportedPrice, p.LastReportedDate " +
+                    "i.InstrumentName, i.Currency, i.ConId, p.LastReportedPrice, p.LastReportedPriceUpdated " +
                     "FROM [dbo].[Positions] p " +
                     "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
                     "WHERE p.CloseDate IS NULL " +
@@ -81,7 +81,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
                                 CloseDate = reader.IsDBNull(reader.GetOrdinal("CloseDate")) ? (DateTime?)null : reader. GetDateTime(reader.GetOrdinal("CloseDate")),
                                 Status = reader.GetString(reader.GetOrdinal("Status")),
-            
+                                LastReportedDate = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")) ? (DateTime?)null : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated")),
+                                LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
                                 Instrument = new Instrument
 
                                 {
