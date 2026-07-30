@@ -18,6 +18,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{EEE00A96-C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{F2EB0427-6000-48A7-B445-F2E03E6C228D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PineScripts", "PineScripts", "{F96080A3-73F3-45AB-BEF1-F8265B6AD653}"
+	ProjectSection(SolutionItems) = preProject
+		PineScripts\CS Distribution.js = PineScripts\CS Distribution.js
+		PineScripts\CS FTD Tracker.js = PineScripts\CS FTD Tracker.js
+		PineScripts\CS Relative Strength.js = PineScripts\CS Relative Strength.js
+		PineScripts\CS SMAs.js = PineScripts\CS SMAs.js
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
