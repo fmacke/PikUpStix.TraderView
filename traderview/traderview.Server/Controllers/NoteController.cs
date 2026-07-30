@@ -59,11 +59,8 @@ namespace traderview.Server.Controllers
 
                 _logger.LogInformation("Note created with ID {NoteId}", noteId);
 
-                return CreatedAtAction(
-                    nameof(GetNoteByIdAsync),
-                    new { id = noteId },
-                    createdNote
-                );
+                // Return 201 Created with the created note
+                return StatusCode(StatusCodes.Status201Created, createdNote);
             }
             catch (Exception ex)
             {

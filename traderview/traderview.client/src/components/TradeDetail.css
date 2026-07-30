@@ -81,7 +81,7 @@
 
 .detail-sections {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     gap: 2rem;
     position: relative;
     z-index: 2;
@@ -93,6 +93,12 @@
     padding: 1.5rem;
     border-radius: 0.5rem;
     border: 1px solid #e5e7eb;
+    flex: 1;
+    min-width: 0;
+}
+
+.detail-section.compact {
+    padding: 1rem;
 }
 
 .detail-section h3 {
@@ -100,6 +106,42 @@
     font-size: 1.25rem;
     font-weight: 600;
     color: #374151;
+}
+
+.detail-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+}
+
+.detail-table thead th {
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    background-color: #f3f4f6;
+}
+
+.detail-table td {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-table tr:last-child td {
+    border-bottom: none;
+}
+
+.detail-table td.label {
+    font-weight: 500;
+    color: #6b7280;
+    white-space: nowrap;
+    width: 1%;
+}
+
+.detail-table td:not(.label) {
+    font-weight: 600;
+    color: #1f2937;
 }
 
 .detail-grid {
@@ -196,4 +238,11 @@
 
 .rs-error p {
     color: #dc2626;
+}
+
+/* Responsive: Stack detail sections on smaller screens */
+@media (max-width: 1024px) {
+    .detail-sections {
+        flex-direction: column;
+    }
 }

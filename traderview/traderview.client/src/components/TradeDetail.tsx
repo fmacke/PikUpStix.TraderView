@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Trade, RSIndicatorData, CreateNoteRequest } from '../types/api';
+import type { Trade, RSIndicatorData, CreateNoteRequest, Note } from '../types/api';
 import { apiService } from '../services/apiService';
 import './TradeDetail.css';
 import TradingViewChart from './TradingViewChart';
@@ -15,6 +15,8 @@ function TradeDetail({ trade }: TradeDetailProps) {
     const [rsLoading, setRsLoading] = useState<boolean>(false);
     const [rsError, setRsError] = useState<string | null>(null);
     const [isNoteModalOpen, setIsNoteModalOpen] = useState<boolean>(false);
+    const [notes, setNotes] = useState<Note[]>([]);
+    const [notesLoading, setNotesLoading] = useState<boolean>(false);
 
     // Fetch RS indicator data when trade changes
     useEffect(() => {
@@ -41,6 +43,29 @@ function TradeDetail({ trade }: TradeDetailProps) {
         fetchRSData();
     }, [trade?.id]);
 
+    // Fetch notes when trade changes
+    useEffect(() => {
+        if (!trade) {
+            setNotes([]);
+            return;
+        }
+
+        const fetchNotes = async () => {
+            try {
+                setNotesLoading(true);
+                const notesData = await apiService.getNotesByPositionId(trade.positionId);
+                setNotes(notesData);
+            } catch (error) {
+                console.error('Error fetching notes:', error);
+                setNotes([]);
+            } finally {
+                setNotesLoading(false);
+            }
+        };
+
+        fetchNotes();
+    }, [trade?.positionId]);
+
     const handleAddNoteClick = () => {
         setIsNoteModalOpen(true);
     };
@@ -50,7 +75,9 @@ function TradeDetail({ trade }: TradeDetailProps) {
     };
 
     const handleSubmitNote = async (comment: string) => {
-        if (!trade) return;
+        if (!trade) {
+            throw new Error('No trade selected');
+        }
 
         const noteRequest: CreateNoteRequest = {
             positionId: trade.positionId,
@@ -60,8 +87,14 @@ function TradeDetail({ trade }: TradeDetailProps) {
             tradeTypeId: 1 // Default trade type, can be made configurable
         };
 
-        await apiService.createNote(noteRequest);
-        console.log('Note created successfully');
+        const result = await apiService.createNote(noteRequest);
+        console.log('Note created successfully', result);
+
+        // Refresh notes list after adding a new note
+        const notesData = await apiService.getNotesByPositionId(trade.positionId);
+        setNotes(notesData);
+
+        return result;
     };
 
     if (!trade) {
@@ -92,57 +125,77 @@ function TradeDetail({ trade }: TradeDetailProps) {
             </div>
 
             <div className="detail-sections">
-                <div className="detail-section">
-                    <h3>Trade Summary</h3>
-                    <div className="detail-grid">
-                        <div className="detail-item">
-                            <label>Entry Date</label>
-                            <span>{new Date(trade.entryDate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="detail-item">
-                            <label>Exit Date</label>
-                            <span>{new Date(trade.exitDate).toLocaleDateString()}</span>
-                        </div>
-                        <div className="detail-item">
-                            <label>Entry Price</label>
-                            <span>${trade.entryPrice.toFixed(2)}</span>
-                        </div>
-                        <div className="detail-item">
-                            <label>Exit Price</label>
-                            <span>${trade.exitPrice.toFixed(2)}</span>
-                        </div>
-                        <div className="detail-item">
-                            <label>Quantity</label>
-                            <span>{trade.quantity.toFixed(2)}</span>
-                        </div>
-                        <div className="detail-item">
-                            <label>Instrument ID</label>
-                            <span>{trade.instrumentId}</span>
-                        </div>
-                    </div>
+                <div className="detail-section compact">
+                    <h3>Trade Summary & Performance</h3>
+                    <table className="detail-table">
+                        <tbody>
+                            <tr>
+                                <td className="label">Entry Date</td>
+                                <td>{new Date(trade.entryDate).toLocaleDateString()}</td>
+                            </tr>
+                            <tr>
+                                <td className="label">Exit Date</td>
+                                <td>{new Date(trade.exitDate).toLocaleDateString()}</td>
+                            </tr>
+                            <tr>
+                                <td className="label">Quantity</td>
+                                <td>{trade.quantity.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td className="label">Entry Price</td>
+                                <td>${trade.entryPrice.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td className="label">Exit Price</td>
+                                <td>${trade.exitPrice.toFixed(2)}</td>
+                            </tr>
+                            <tr>
+                                <td className="label">Instrument ID</td>
+                                <td>{trade.instrumentId}</td>
+                            </tr>
+                            <tr>
+                                <td className="label">P&L</td>
+                                <td className={trade.pnl >= 0 ? 'positive' : 'negative'}>
+                                    ${trade.pnl.toFixed(2)}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="label">Price Change</td>
+                                <td className={trade.exitPrice - trade.entryPrice >= 0 ? 'positive' : 'negative'}>
+                                    ${(trade.exitPrice - trade.entryPrice).toFixed(2)} ({((trade.exitPrice - trade.entryPrice) / trade.entryPrice * 100).toFixed(2)}%)
+                                </td>
+                            </tr>
+                            <tr>
+                                <td className="label">Total Value</td>
+                                <td>${(trade.quantity * trade.exitPrice).toFixed(2)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-
-                <div className="detail-section">
-                    <h3>Performance</h3>
-                    <div className="pnl-display">
-                        <label>Profit & Loss</label>
-                        <span className={`pnl-value ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
-                            ${trade.pnl.toFixed(2)}
-                        </span>
-                    </div>
-                    <div className="pnl-metrics">
-                        <div className="metric">
-                            <label>Price Change</label>
-                            <span className={trade.exitPrice - trade.entryPrice >= 0 ? 'positive' : 'negative'}>
-                                ${(trade.exitPrice - trade.entryPrice).toFixed(2)} 
-                                ({((trade.exitPrice - trade.entryPrice) / trade.entryPrice * 100).toFixed(2)}%)
-                            </span>
-                        </div>
-                        <div className="metric">
-                            <label>Total Value</label>
-                            <span>${(trade.quantity * trade.exitPrice).toFixed(2)}</span>
-                        </div>
-                    </div>
+                <div id="notesHolder" className="detail-section compact">
+                    <h3>Notes</h3>
+                    {notesLoading ? (
+                        <p>Loading notes...</p>
+                    ) : notes.length === 0 ? (
+                        <p>No notes available for this position.</p>
+                    ) : (
+                        <table className="detail-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {notes.map((note) => (
+                                    <tr key={note.id}>
+                                        <td>{new Date(note.entryDate).toLocaleDateString()}</td>
+                                        <td>{note.comment}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
                 </div>
             </div>
 

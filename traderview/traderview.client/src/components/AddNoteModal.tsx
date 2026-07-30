@@ -4,7 +4,7 @@ import './AddNoteModal.css';
 interface AddNoteModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (comment: string) => void;
+    onSubmit: (comment: string) => Promise<void> | Promise<any>;
     positionId: number;
 }
 
@@ -26,11 +26,17 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
 
         setIsSubmitting(true);
         try {
-            await onSubmit(comment);
+            console.log('AddNoteModal: About to call onSubmit with comment:', comment);
+            const result = await onSubmit(comment);
+            console.log('AddNoteModal: onSubmit returned successfully:', result);
             setComment(''); // Clear the form
             onClose(); // Close the modal
         } catch (error) {
-            console.error('Error submitting note:', error);
+            console.error('AddNoteModal: Error submitting note:', error);
+            if (error instanceof Error) {
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+            }
             alert('Failed to create note. Please try again.');
         } finally {
             setIsSubmitting(false);

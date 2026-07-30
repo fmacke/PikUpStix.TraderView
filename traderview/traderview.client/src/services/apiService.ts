@@ -9,7 +9,33 @@ const apiClient = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    validateStatus: (status) => {
+        // Accept any status code from 200-299
+        return status >= 200 && status < 300;
+    },
 });
+
+// Add response interceptor for debugging
+apiClient.interceptors.response.use(
+    (response) => {
+        console.log('API Response interceptor - Success:', {
+            status: response.status,
+            statusText: response.statusText,
+            url: response.config.url,
+            data: response.data
+        });
+        return response;
+    },
+    (error) => {
+        console.error('API Response interceptor - Error:', {
+            message: error.message,
+            response: error.response,
+            status: error.response?.status,
+            data: error.response?.data
+        });
+        return Promise.reject(error);
+    }
+);
 
 export const apiService = {
     // Get all trades from the new controller endpoint
