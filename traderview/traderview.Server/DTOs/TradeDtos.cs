@@ -111,6 +111,5 @@ namespace traderview.Server.DTOs
         public decimal? PercentOfNAV { get; set; }
         public DateTime? ReportDate { get; set; }
         public string ListingExchange { get; set; } = string.Empty;
-        public string AccountId { get; set; } = string.Empty;
     }
 }

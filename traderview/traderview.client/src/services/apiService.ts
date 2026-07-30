@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Trade, TradeContext, RSIndicatorData, OpenPosition } from '../types/api';
+import type { Trade, TradeContext, RSIndicatorData, OpenPosition, Note, CreateNoteRequest } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -93,5 +93,30 @@ export const apiService = {
             throw error;
         }
     },
-};
 
+    // Create a new note
+    async createNote(noteRequest: CreateNoteRequest): Promise<Note> {
+        console.log('Making API call to /notes', noteRequest);
+        try {
+            const response = await apiClient.post<Note>('/notes', noteRequest);
+            console.log('Create note API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Create note API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Get notes for a specific position
+    async getNotesByPositionId(positionId: number): Promise<Note[]> {
+        console.log(`Making API call to /notes/position/${positionId}`);
+        try {
+            const response = await apiClient.get<Note[]>(`/notes/position/${positionId}`);
+            console.log('Get notes API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Get notes API call failed:', error);
+            throw error;
+        }
+    },
+};

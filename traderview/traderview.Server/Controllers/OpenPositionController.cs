@@ -33,7 +33,23 @@ namespace traderview.Server.Controllers
                 _logger.LogInformation("Fetching all open positions");
                 var openPositions = await _positionService.GetAllOpenPositionsAsync();
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
-                return Ok(openPositions);
+
+                return Ok(openPositions.Select(p => new OpenPositionDto
+                {
+                    Symbol = p.Instrument.InstrumentName,
+                    Description  = p.Instrument.InstrumentName,
+                    AssetCategory  = p.Instrument.ListingExchange,
+                    Currency  = p.Instrument.Currency,
+                    Position = p.TradeExecutions.Sum(te => te.Quantity),
+                    MarkPrice = p.LastReportedPrice,
+                    PositionValue = p.TradeExecutions.Sum(te => te.Quantity) * p.LastReportedPrice,
+                    CostBasisPrice = p.TradeExecutions.Sum(te => te.Quantity * te.TradePrice) / (p.TradeExecutions.Sum(te => te.Quantity) == 0 ? 1 : p.TradeExecutions.Sum(te => te.Quantity)),
+                    CostBasisMoney = p.TradeExecutions.Sum(te => te.Quantity * te.TradePrice),
+                    FifoPnlUnrealized = p.TradeExecutions.Sum(te => te.Quantity * (p.LastReportedPrice - te.TradePrice)),
+                    PercentOfNAV = p.TradeExecutions.Sum(te => te.Quantity * p.LastReportedPrice) / (p.TradeExecutions.Sum(te => te.Quantity * p.LastReportedPrice) == 0 ? 1 : p.TradeExecutions.Sum(te => te.Quantity * p.LastReportedPrice)),
+                    ReportDate = DateTime.UtcNow,
+                    ListingExchange = p.Instrument.ListingExchange
+                }).ToList());
             }
             catch (Exception ex)
             {

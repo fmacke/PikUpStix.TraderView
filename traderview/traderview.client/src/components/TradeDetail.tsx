@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { Trade, RSIndicatorData } from '../types/api';
+import type { Trade, RSIndicatorData, CreateNoteRequest } from '../types/api';
 import { apiService } from '../services/apiService';
 import './TradeDetail.css';
 import TradingViewChart from './TradingViewChart';
 import RSMetricsDashboard from './RSMetricsDashboard';
+import AddNoteModal from './AddNoteModal';
 
 interface TradeDetailProps {
     trade: Trade | null;
@@ -13,6 +14,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
     const [rsData, setRsData] = useState<RSIndicatorData | null>(null);
     const [rsLoading, setRsLoading] = useState<boolean>(false);
     const [rsError, setRsError] = useState<string | null>(null);
+    const [isNoteModalOpen, setIsNoteModalOpen] = useState<boolean>(false);
 
     // Fetch RS indicator data when trade changes
     useEffect(() => {
@@ -39,6 +41,29 @@ function TradeDetail({ trade }: TradeDetailProps) {
         fetchRSData();
     }, [trade?.id]);
 
+    const handleAddNoteClick = () => {
+        setIsNoteModalOpen(true);
+    };
+
+    const handleCloseNoteModal = () => {
+        setIsNoteModalOpen(false);
+    };
+
+    const handleSubmitNote = async (comment: string) => {
+        if (!trade) return;
+
+        const noteRequest: CreateNoteRequest = {
+            positionId: trade.positionId,
+            tradeExecutionId: null, // Can be extended later to link to specific executions
+            comment: comment,
+            entryDate: new Date().toISOString(),
+            tradeTypeId: 1 // Default trade type, can be made configurable
+        };
+
+        await apiService.createNote(noteRequest);
+        console.log('Note created successfully');
+    };
+
     if (!trade) {
         return (
             <div className="trade-detail">
@@ -57,6 +82,9 @@ function TradeDetail({ trade }: TradeDetailProps) {
                 <span className={`trade-side ${trade.buySell.toLowerCase()}`}>
                     {trade.buySell}
                 </span>
+                <button className="add-note-button" onClick={handleAddNoteClick}>
+                    Add Note
+                </button>
             </div>
 
             <div className="chart-container">
@@ -139,6 +167,14 @@ function TradeDetail({ trade }: TradeDetailProps) {
                     </>
                 )}
             </div>
+
+            {/* Add Note Modal */}
+            <AddNoteModal
+                isOpen={isNoteModalOpen}
+                onClose={handleCloseNoteModal}
+                onSubmit={handleSubmitNote}
+                positionId={trade.positionId}
+            />
         </div>
     );
 }

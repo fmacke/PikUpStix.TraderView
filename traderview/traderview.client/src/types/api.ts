@@ -94,3 +94,20 @@ export interface OpenPosition {
     listingExchange: string;
     accountId: string;
 }
+
+export interface Note {
+    id: number;
+    positionId: number;
+    tradeExecutionId: number | null;
+    comment: string;
+    entryDate: string;
+    tradeTypeId: number;
+}
+
+export interface CreateNoteRequest {
+    positionId: number;
+    tradeExecutionId: number | null;
+    comment: string;
+    entryDate: string;
+    tradeTypeId: number;
+}
