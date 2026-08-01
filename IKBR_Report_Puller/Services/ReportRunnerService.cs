@@ -15,7 +15,7 @@ namespace PikUpStix.TraderView.Services
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
-        private readonly IMarketDataService marketDataService;
+        private readonly IMarketDataService _marketDataService;
         private readonly YahooFinanceService _yahooFinanceService;
         private readonly FinancialModellingPrepService _fmpService;
         const int maxRetries = 3;
@@ -37,7 +37,7 @@ namespace PikUpStix.TraderView.Services
             _instrumentRepository = instrumentRepository;
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
-            marketDataService = economicCalendarService;
+            _marketDataService = economicCalendarService;
             _yahooFinanceService = yahooFinanceService;
             _fmpService = fmpService;
             _config = config;
@@ -49,7 +49,7 @@ namespace PikUpStix.TraderView.Services
             {
                 (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
                 // Upsert instruments first, then trade executions, then open positions
-                _instrumentRepository.UpsertInstruments(mainReport.Trades, marketDataService.SourceName);
+                _instrumentRepository.UpsertInstruments(mainReport.Trades, _marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
                 var executions = _tradeExecutionRepository.GetTradeExecutions();                
 
@@ -100,8 +100,8 @@ namespace PikUpStix.TraderView.Services
                         await _yahooFinanceService.FetchAndSaveChartData(internationalTrades);
                     }
 
-                    await marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                    await marketDataService.FetchAndSaveChartData(new List<string>()
+                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                    await _marketDataService.FetchAndSaveChartData(new List<string>()
                     {
                         "^GSPC",//spx
                         "^RUT",//iwm
@@ -141,7 +141,7 @@ namespace PikUpStix.TraderView.Services
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
 
             // Upsert instruments first, then trade executions
-            _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, marketDataService.SourceName);
+            _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, _marketDataService.SourceName);
             _tradeExecutionRepository.UpsertTodayExecutions(todayReport.TradeConfirms);
 
             return fileName;

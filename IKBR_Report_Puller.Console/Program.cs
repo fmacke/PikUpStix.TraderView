@@ -50,7 +50,7 @@ namespace IKBR_Report_Puller.Console
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
                         var connectionString = BuildConnectionString(config);
-                        return new PositionRepository(connectionString, instrumentRepo, tradeExecutionRepo);
+                        return new PositionRepository(connectionString, instrumentRepo);
                     });
 
                     services.AddSingleton<ITradeExecutionRepository>(provider =>
@@ -59,7 +59,7 @@ namespace IKBR_Report_Puller.Console
                         var positionRepo = provider.GetRequiredService<IPositionRepository>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         var connectionString = BuildConnectionString(config);
-                        return new TradeExecutionRepository(connectionString, positionRepo, instrumentRepo);
+                        return new TradeExecutionRepository(connectionString, instrumentRepo);
                     });
 
                     services.AddSingleton<IHistoricalDataRepository>(provider =>

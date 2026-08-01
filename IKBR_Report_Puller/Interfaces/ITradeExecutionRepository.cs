@@ -10,6 +10,11 @@ namespace PikUpStix.TraderView.Interfaces
     public interface ITradeExecutionRepository
     {
         /// <summary>
+        /// Gets all positions from the database
+        /// </summary>
+        /// <returns>List of all positions</returns>
+        List<Position> GetAllPositions();
+        /// <summary>
         /// Inserts or updates trade executions from a report
         /// </summary>
         /// <param name="trades">List of trades to upsert</param>

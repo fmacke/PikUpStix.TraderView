@@ -16,14 +16,6 @@ namespace PikUpStix.TraderView.Services
         }
 
         /// <summary>
-        /// Gets all positions asynchronously
-        /// </summary>
-        public async Task<List<Position>> GetAllPositionsAsync()
-        {
-            return await Task.Run(() => _positionRepository.GetAllPositions());
-        }
-
-        /// <summary>
         /// Gets all open positions asynchronously
         /// </summary>
         public async Task<List<Position>> GetAllOpenPositionsAsync()
@@ -45,14 +37,6 @@ namespace PikUpStix.TraderView.Services
         public async Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
         {
             return await Task.Run(() => _positionRepository.CreatePosition(instrumentId, symbol, openDate, openPrice));
-        }
-
-        /// <summary>
-        /// Inserts or updates a list of positions asynchronously
-        /// </summary>
-        public async Task UpsertPositionsAsync(List<Position> positions)
-        {
-            await Task.Run(() => _positionRepository.UpsertPositions(positions));
         }
     }
 }

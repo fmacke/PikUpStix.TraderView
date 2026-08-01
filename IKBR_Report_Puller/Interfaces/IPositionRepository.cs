@@ -5,15 +5,7 @@ namespace PikUpStix.TraderView.Interfaces
 {
     public interface IPositionRepository
     {
-        /// <summary>
-        /// Gets all positions from the database
-        /// </summary>
-        /// <returns>List of positions</returns>
-        List<Position> GetAllPositions();
-        /// <summary>
-        /// Gets all open positions from the database
-        /// </summary>
-        /// <returns>List of open positions</returns>
+
         List<Position> GetAllOpenPositions();
         /// <summary>
         /// Inserts a list of positions into the database
@@ -63,11 +55,6 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="transaction">SQL transaction</param>
         /// <param name="positionId">The position ID to close</param>
         /// <param name="closeDate">The close date</param>
-        void ClosePosition(SqlConnection connection, SqlTransaction transaction, int positionId, DateTime closeDate);
-        /// <summary>
-        /// Gets all positions with Status = 'Open' and their associated trade executions
-        /// </summary>
-        /// <returns>List of open positions with populated TradeExecutions</returns>
         List<Position> GetOpenPositions();
     }
 }

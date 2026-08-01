@@ -16,12 +16,10 @@ namespace PikUpStix.TraderView.Data.Repositories
     /// </summary>
     public class TradeExecutionRepository : BaseRepository, ITradeExecutionRepository
     {
-        private readonly IPositionRepository _positionRepository;
         private readonly IInstrumentRepository _instrumentRepository;
 
-        public TradeExecutionRepository(string connectionString, IPositionRepository positionRepository, IInstrumentRepository instrumentRepository) : base(connectionString)
+        public TradeExecutionRepository(string connectionString, IInstrumentRepository instrumentRepository) : base(connectionString)
         {
-            _positionRepository = positionRepository;
             _instrumentRepository = instrumentRepository;
         }
 
@@ -65,13 +63,13 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 trade.InstrumentId = instrumentId.Value;
 
                                 // Check for open position for the trade's symbol and instrument (within the same transaction)
-                                var openPosition = _positionRepository.GetOpenPosition(connection, transaction, trade.Symbol, instrumentId.Value);
+                                var openPosition = GetOpenPosition(connection, transaction, trade.Symbol, instrumentId.Value);
 
                                 // If no open position exists, create a new position and get its ID
                                 // If Open Position exists, trade.PositionId = openPosition.Id
                                 if (openPosition == null)
                                 {
-                                    trade.PositionId = _positionRepository.CreatePosition(connection, transaction, instrumentId.Value, trade.Symbol, trade.TradeDate, trade.TradePrice);
+                                    trade.PositionId = CreatePosition(connection, transaction, instrumentId.Value, trade.Symbol, trade.TradeDate, trade.TradePrice);
                                 }
                                 else
                                 {
@@ -84,10 +82,10 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 // Check if latest trade execution closes out the position (i.e., if the sum of quantities for that position is zero)
                                 decimal totalQuantity = GetTotalQuantityForPosition(connection, transaction, trade.PositionId);
 
-                                // If position is closed, update the Positions table to mark it as closed and set the close date
+                                // If position is closed, update the Psitions table to mark it as closed and set the close date
                                 if (totalQuantity == 0)
                                 {
-                                    _positionRepository.ClosePosition(connection, transaction, trade.PositionId, trade.TradeDate);
+                                    ClosePosition(connection, transaction, trade.PositionId, trade.TradeDate);
                                 }
                             }
                             catch (Exception ex)
@@ -101,6 +99,158 @@ namespace PikUpStix.TraderView.Data.Repositories
 
                 Console.WriteLine($"Successfully processed {trades.Count} trades.");
             });
+        }
+        /// <summary>
+        /// Gets all positions from the database
+        /// </summary>
+        public List<Position> GetAllPositions()
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                var positions = new List<Position>();
+
+                using (var cmd = new SqlCommand(
+                    "SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedDate, " +
+                    "i.InstrumentName, i.Currency, i.ConId " +
+                    "FROM [dbo].[Positions] p " +
+                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
+                    "ORDER BY p.OpenDate DESC", connection))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            positions.Add(new Position
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                                OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
+                                CloseDate = reader.GetDateTime(reader.GetOrdinal("CloseDate")),
+                                Status = reader.GetString(reader.GetOrdinal("Status")),
+                                Instrument = new Instrument
+                                {
+                                    Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                                    InstrumentName = reader.GetString(reader.GetOrdinal("InstrumentName")),
+                                    Currency = reader.GetString(reader.GetOrdinal("Currency")),
+                                    ConId = reader.GetString(reader.GetOrdinal("ConId"))
+                                }
+                            });
+                        }
+                    }
+                }
+                foreach (var position in positions)
+                {
+                    position.TradeExecutions = GetTradeExecutionsByPosition(position.Id);
+                }
+                return positions;
+            });
+        }
+        /// <summary>
+        /// Closes a position by setting its status to 'Closed' and close date
+        /// </summary>
+        private void ClosePosition(SqlConnection connection, SqlTransaction transaction, int positionId, DateTime closeDate)
+        {
+            const string updateQuery = @"
+                UPDATE [dbo].[Positions]
+                SET Status = 'Closed', CloseDate = @closeDate
+                WHERE Id = @positionId";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@positionId", positionId },
+                { "@closeDate", closeDate }
+            };
+
+            using (var cmd = new SqlCommand(updateQuery, connection, transaction))
+            {
+                try
+                {
+                    foreach (var param in parameters)
+                    {
+                        cmd.Parameters.AddWithValue(param.Key, param.Value);
+                    }
+
+                    cmd.ExecuteNonQuery();
+                    Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
+                }
+                catch
+                {
+                    Console.WriteLine("Error closing position with Id: {positionId}. Please check if the position exists and is open.");
+                }
+            }
+        }
+        /// <summary>
+        /// Gets an open position by symbol and instrument ID within a transaction
+        /// </summary>
+        private Position? GetOpenPosition(SqlConnection connection, SqlTransaction transaction, string symbol, int instrumentId)
+        {
+            const string query = @"
+                SELECT p.Id, p.InstrumentId, p.OpenDate, p.Status, p.LastReportedPrice, p.LastReportedDate
+                FROM [dbo].[Positions] p WITH (UPDLOCK, ROWLOCK)
+                WHERE p.InstrumentId = @instrumentId
+                AND p.Status = 'Open'";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@instrumentId", instrumentId }
+            };
+
+            using (var cmd = new SqlCommand(query, connection, transaction))
+            {
+                foreach (var param in parameters)
+                {
+                    cmd.Parameters.AddWithValue(param.Key, param.Value);
+                }
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        return new Position
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                            OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
+                            Status = reader.GetString(reader.GetOrdinal("Status")),
+                            LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
+                            LastReportedDate = reader.IsDBNull(reader.GetOrdinal("LastReportedDate")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedDate"))
+                        };
+                    }
+                }
+            }
+
+            return null;
+        }
+        private int CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate, decimal openPrice)
+        {
+            const string insertQuery = @"
+                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedDate)
+                VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @lastReportedDate);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
+
+            var parameters = new Dictionary<string, object>
+            {
+                { "@openDate", openDate },
+                { "@status", "Open" },
+                { "@instrumentId", instrumentId },
+                { "@lastReportedPrice", openPrice },
+                { "@lastReportedDate", openDate}
+            };
+
+            using (var cmd = new SqlCommand(insertQuery, connection, transaction))
+            {
+                foreach (var param in parameters)
+                {
+                    cmd.Parameters.AddWithValue(param.Key, param.Value);
+                }
+
+                var result = cmd.ExecuteScalar();
+                int newPositionId = Convert.ToInt32(result);
+
+                Console.WriteLine($"Created new Position (Id: {newPositionId}) for symbol {symbol}, InstrumentId {instrumentId} on {openDate:yyyy-MM-dd}");
+
+                return newPositionId;
+            }
         }
 
         /// <summary>

@@ -8,59 +8,14 @@ namespace PikUpStix.TraderView.Data.Repositories
     public class PositionRepository : BaseRepository, IPositionRepository
     {
         private readonly IInstrumentRepository _instrumentRepository;
-        private readonly ITradeExecutionRepository _tradeExecutionRepository;
 
-        public PositionRepository(string connectionString, IInstrumentRepository instrumentRepository, ITradeExecutionRepository tradeExecutionRepository) : base(connectionString)
+        public PositionRepository(string connectionString, IInstrumentRepository instrumentRepository) : base(connectionString)
         {
             _instrumentRepository = instrumentRepository;
-            _tradeExecutionRepository = tradeExecutionRepository;
+            //_tradeExecutionRepository = tradeExecutionRepository;
         }
 
-        /// <summary>
-        /// Gets all positions from the database
-        /// </summary>
-        List<Position> IPositionRepository.GetAllPositions()
-        {
-            return ExecuteDatabaseOperation(connection =>
-            {
-                var positions = new List<Position>();
-
-                using (var cmd = new SqlCommand(
-                    "SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedDate, " +
-                    "i.InstrumentName, i.Currency, i.ConId " +
-                    "FROM [dbo].[Positions] p " +
-                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
-                    "ORDER BY p.OpenDate DESC", connection))
-                {
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            positions.Add(new Position
-                            {
-                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                                CloseDate = reader.GetDateTime(reader.GetOrdinal("CloseDate")),
-                                Status = reader.GetString(reader.GetOrdinal("Status")),
-                                Instrument = new Instrument
-                                {
-                                    Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                    InstrumentName = reader.GetString(reader.GetOrdinal("InstrumentName")),
-                                    Currency = reader.GetString(reader.GetOrdinal("Currency")),
-                                    ConId = reader.GetString(reader.GetOrdinal("ConId"))
-                                }
-                            });
-                        }
-                    }
-                }
-                foreach(var position in positions)
-                {
-                    position.TradeExecutions = _tradeExecutionRepository.GetTradeExecutionsByPosition(position.Id);
-                }
-                return positions;
-            });
-        }
+        
         List<Position> IPositionRepository.GetAllOpenPositions()
         {
             return ExecuteDatabaseOperation(connection =>
@@ -294,40 +249,8 @@ namespace PikUpStix.TraderView.Data.Repositories
             }
         }
 
-        /// <summary>
-        /// Closes a position by setting its status to 'Closed' and close date
-        /// </summary>
-        void IPositionRepository.ClosePosition(SqlConnection connection, SqlTransaction transaction, int positionId, DateTime closeDate)
-        {
-            const string updateQuery = @"
-                UPDATE [dbo].[Positions]
-                SET Status = 'Closed', CloseDate = @closeDate
-                WHERE Id = @positionId";
-
-            var parameters = new Dictionary<string, object>
-            {
-                { "@positionId", positionId },
-                { "@closeDate", closeDate }
-            };
-
-            using (var cmd = new SqlCommand(updateQuery, connection, transaction))
-            {
-                try
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-
-                    cmd.ExecuteNonQuery();
-                    Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
-                }
-                catch
-                {
-                    Console.WriteLine("Error closing position with Id: {positionId}. Please check if the position exists and is open.");
-                }
-            }
-        }
+        
+        
 
         /// <summary>
         /// Gets all positions with Status = 'Open' and their associated trade executions

@@ -8,12 +8,6 @@ namespace PikUpStix.TraderView.Interfaces
     public interface IPositionService
     {
         /// <summary>
-        /// Gets all positions asynchronously
-        /// </summary>
-        /// <returns>List of all positions</returns>
-        Task<List<Position>> GetAllPositionsAsync();
-
-        /// <summary>
         /// Gets all open positions asynchronously
         /// </summary>
         /// <returns>List of all open positions</returns>
@@ -36,11 +30,5 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="openPrice">The open price</param>
         /// <returns>The ID of the newly created position</returns>
         Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice);
-
-        /// <summary>
-        /// Inserts or updates a list of positions asynchronously
-        /// </summary>
-        /// <param name="positions">List of positions to upsert</param>
-        Task UpsertPositionsAsync(List<Position> positions);
     }
 }
