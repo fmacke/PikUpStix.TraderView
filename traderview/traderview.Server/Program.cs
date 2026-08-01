@@ -26,8 +26,9 @@ public partial class Program
         {
             var config = provider.GetRequiredService<IConfiguration>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
+            var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
             var connectionString = BuildConnectionString(config);
-            return new PositionRepository(connectionString, instrumentRepo);
+            return new PositionRepository(connectionString, instrumentRepo, tradeExecutionRepo);
         });
 
         builder.Services.AddScoped<ITradeExecutionRepository>(provider =>

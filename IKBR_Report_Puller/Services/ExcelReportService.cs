@@ -29,7 +29,7 @@ namespace PikUpStix.TraderView.Services
             _tradeHistoryReportService = tradeHistoryReportService;
         }
 
-        public void CreateExcelFileReport(List<OpenPosition> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
+        public void CreateExcelFileReport(List<Position> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
         {
             try
             {
@@ -65,7 +65,7 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private void CreateOpenPositionsWorkSheet(ExcelPackage package, List<OpenPosition> openPositions)
+        private void CreateOpenPositionsWorkSheet(ExcelPackage package, List<Position> openPositions)
         {
             // Create Open Positions worksheet
             var worksheet = package.Workbook.Worksheets.Add("Open Positions");
@@ -91,7 +91,7 @@ namespace PikUpStix.TraderView.Services
                 string accountId = position.AccountId;
                 string symbol = position.Symbol;
                 long? conid = position.Conid;
-                decimal currentPositionQuantity = position.Position ?? 0;
+                decimal currentPositionQuantity = position.Quantity;
 
                 worksheet.Cells[currentRow, 1].Value = accountId;
                 worksheet.Cells[currentRow, 2].Value = symbol;

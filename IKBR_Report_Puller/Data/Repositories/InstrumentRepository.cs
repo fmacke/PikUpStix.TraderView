@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DocumentFormat.OpenXml.Math;
-using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;

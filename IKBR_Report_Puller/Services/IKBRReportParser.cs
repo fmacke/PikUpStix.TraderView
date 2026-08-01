@@ -157,9 +157,9 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private static OpenPosition ParseOpenPosition(XElement position)
+        private static Position ParseOpenPosition(XElement position)
         {
-            return new OpenPosition
+            return new Position
             {
                 AccountId = position.Attribute("accountId")?.Value,
                 AcctAlias = position.Attribute("acctAlias")?.Value,
@@ -189,7 +189,7 @@ namespace PikUpStix.TraderView.Services
                 PutCall = position.Attribute("putCall")?.Value,
                 PrincipalAdjustFactor = ConvertToDecimal(position.Attribute("principalAdjustFactor")?.Value),
                 ReportDate = ConvertToDate(position.Attribute("reportDate")?.Value),
-                Position = ConvertToDecimal(position.Attribute("position")?.Value),
+                Quantity = Convert.ToDecimal(position.Attribute("position")?.Value),
                 MarkPrice = ConvertToDecimal(position.Attribute("markPrice")?.Value),
                 PositionValue = ConvertToDecimal(position.Attribute("positionValue")?.Value),
                 OpenPrice = ConvertToDecimal(position.Attribute("openPrice")?.Value),

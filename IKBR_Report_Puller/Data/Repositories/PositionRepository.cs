@@ -8,10 +8,12 @@ namespace PikUpStix.TraderView.Data.Repositories
     public class PositionRepository : BaseRepository, IPositionRepository
     {
         private readonly IInstrumentRepository _instrumentRepository;
+        private readonly ITradeExecutionRepository _tradeExecutionRepository;
 
-        public PositionRepository(string connectionString, IInstrumentRepository instrumentRepository) : base(connectionString)
+        public PositionRepository(string connectionString, IInstrumentRepository instrumentRepository, ITradeExecutionRepository tradeExecutionRepository) : base(connectionString)
         {
             _instrumentRepository = instrumentRepository;
+            _tradeExecutionRepository = tradeExecutionRepository;
         }
 
         /// <summary>
@@ -52,7 +54,10 @@ namespace PikUpStix.TraderView.Data.Repositories
                         }
                     }
                 }
-
+                foreach(var position in positions)
+                {
+                    position.TradeExecutions = _tradeExecutionRepository.GetTradeExecutionsByPosition(position.Id);
+                }
                 return positions;
             });
         }
@@ -95,7 +100,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                         }
                     }
                 }
-
+                
                 return positions;
             });
         }

@@ -18,7 +18,7 @@
 }
 
 .positions-table {
-    width: 100%;
+    width: 80%;
     border-collapse: collapse;
     min-width: 1200px;
 }
@@ -48,6 +48,7 @@
 .positions-table td {
     padding: 12px 16px;
     font-size: 14px;
+    text-align: left;
 }
 
 .symbol-cell {

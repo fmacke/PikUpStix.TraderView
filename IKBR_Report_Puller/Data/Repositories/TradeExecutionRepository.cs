@@ -468,5 +468,44 @@ namespace PikUpStix.TraderView.Data.Repositories
                 return executions;
             });
         }
+        public List<TradeExecution> GetTradeExecutionsByPosition(int positionId)
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                var executions = new List<TradeExecution>();
+
+                using (var cmd = new SqlCommand(@"
+                        SELECT 
+                            id, InstrumentId, symbol, tradeID, dateTime, tradeDate, 
+                            quantity, tradePrice, buySell, fifoPnlRealized, ibCommission
+                        FROM TradeExecutions
+                        WHERE PositionID = @PositionId
+                        ORDER BY tradeDate, dateTime", connection))
+                {
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            executions.Add(new TradeExecution
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("id")),
+                                InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                                PositionId = positionId,
+                                Symbol = reader.GetString("symbol"),
+                                TradeID = reader.GetInt64("tradeID"),
+                                DateTime = TypeConverters.ConvertStringToDate(reader.GetString("dateTime")),
+                                TradeDate = TypeConverters.ConvertStringToDate(reader.GetString("tradeDate")),
+                                Quantity = reader.GetDecimal("quantity"),
+                                TradePrice = reader.GetDecimal("tradePrice"),
+                                BuySell = reader.GetString("buySell"),
+                                FifoPnlRealized = reader.GetDecimal("fifoPnlRealized"),
+                                IbCommission = reader.GetDecimal("ibCommission")
+                            });
+                        }
+                    }
+                }
+                return executions;
+            });
+        }
     }
 }

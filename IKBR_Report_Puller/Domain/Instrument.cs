@@ -1,4 +1,4 @@
-namespace IKBR_Report_Puller.Domain
+namespace PikUpStix.TraderView.Domain
 {
     /// <summary>
     /// Represents an instrument in the trading system

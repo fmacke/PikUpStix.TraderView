@@ -48,5 +48,11 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="positionId">The position ID</param>
         /// <returns>List of trade executions for the position</returns>
         Task<List<TradeExecution>> GetByPositionIdAsync(int positionId);
+        /// <summary>
+        /// Gets trade executions for a specific position ID
+        /// </summary>
+        /// <param name="positionId">The position ID</param>
+        /// <returns>List of trade executions for the position</returns>
+        public List<TradeExecution> GetTradeExecutionsByPosition(int positionId);
     }
 }
