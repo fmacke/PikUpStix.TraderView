@@ -51,7 +51,7 @@ namespace PikUpStix.TraderView.Services
                 // Upsert instruments first, then trade executions, then open positions
                 _instrumentRepository.UpsertInstruments(mainReport.Trades, _marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-                var executions = _tradeExecutionRepository.GetTradeExecutions();                
+                var executions = _tradeExecutionRepository.GetTradeExecutions();
 
                 if (writeOutputtoExcel)
                 {
@@ -63,9 +63,9 @@ namespace PikUpStix.TraderView.Services
                     _tradeHistoryReportService.CreateTradeHistoryReport(executions);
 
                     // Split trades by exchange: American exchanges (NYSE, NASDAQ) use FMP, others use Yahoo
-                    var americanExchanges = new HashSet<string>(StringComparer.OrdinalIgnoreCase) 
-                    { 
-                        "NYSE", "NASDAQ", "AMEX", "ARCA", "BATS", "IEX", "NYSEARCA", "NYSEMKT" 
+                    var americanExchanges = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        "NYSE", "NASDAQ", "AMEX", "ARCA", "BATS", "IEX", "NYSEARCA", "NYSEMKT"
                     };
 
                     var americanTrades = new List<HistoricalTrade>();
@@ -74,7 +74,7 @@ namespace PikUpStix.TraderView.Services
                     foreach (var trade in _tradeHistoryReportService.TradeHistoryAggregated)
                     {
                         // Check if the listing exchange is American
-                        bool isAmericanExchange = !string.IsNullOrEmpty(trade.ListingExchange) && 
+                        bool isAmericanExchange = !string.IsNullOrEmpty(trade.ListingExchange) &&
                                                   americanExchanges.Contains(trade.ListingExchange);
 
                         if (isAmericanExchange)
@@ -91,7 +91,7 @@ namespace PikUpStix.TraderView.Services
                     if (americanTrades.Count > 0)
                     {
                         System.Console.WriteLine($"Fetching {americanTrades.Count} American exchange trades using Financial Modeling Prep...");
-                        await _fmpService.FetchAndSaveChartData(americanTrades);
+                        await ((IMarketDataService)_fmpService).FetchAndSaveChartData(americanTrades);
                     }
 
                     if (internationalTrades.Count > 0)
@@ -112,6 +112,7 @@ namespace PikUpStix.TraderView.Services
                         "QQQ",//nasdaq
                         "^VIX"
                      }, 300);
+                    UpdateOpenPositionPrices();
                 }
             }
             catch (Exception ex)
@@ -119,6 +120,14 @@ namespace PikUpStix.TraderView.Services
                 System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
             }
         }
+
+        private async Task UpdateOpenPositionPrices()
+        {
+            var openPositions = _tradeExecutionRepository.GetOpenPositions();
+            await _marketDataService.FetchLatestPrices(openPositions);
+            _tradeExecutionRepository.UpsertPositions(openPositions);
+        }
+
         private async Task<string> WriteTodayReport(string fileName) 
         {
             //// Fetch and process today's report

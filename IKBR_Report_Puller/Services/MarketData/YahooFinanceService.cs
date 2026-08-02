@@ -1,4 +1,5 @@
 using IKBR_Report_Puller.Domain;
+using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -256,6 +257,11 @@ namespace PikUpStix.TraderView.Services.MarketData
             // - Indices (e.g., ^GSPC for S&P 500, ^DJI for Dow Jones)
             // - International stocks (e.g., append exchange like .L for London)
             return symbol.Trim();
+        }
+
+        Task IMarketDataService.FetchLatestPrices(List<Position> positions)
+        {
+            throw new NotImplementedException();
         }
 
         #region Yahoo Finance Response DTOs

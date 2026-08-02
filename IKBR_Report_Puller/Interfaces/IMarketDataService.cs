@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using IKBR_Report_Puller.Domain;
+using PikUpStix.TraderView.Domain;
 
 namespace PikUpStix.TraderView.Interfaces
 {
@@ -19,6 +20,7 @@ namespace PikUpStix.TraderView.Interfaces
         Task<List<EconomicCalendarEvent>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate);
         Task FetchAndSaveChartData(List<HistoricalTrade> trades);
         Task FetchAndSaveChartData(List<string> symbols, int lookBackDays);
+        Task FetchLatestPrices(List<Position> positions);
         string SourceName { get; }
     }
 }

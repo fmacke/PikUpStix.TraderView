@@ -1,4 +1,5 @@
 using IKBR_Report_Puller.Domain;
+using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using System.Text.Json;
 
@@ -40,7 +41,7 @@ namespace PikUpStix.TraderView.Services.MarketData
         /// <summary>
         /// Fetches economic calendar data from API, saves to file and database
         /// </summary>
-        public async Task<List<EconomicCalendarEvent>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate)
+        async Task<List<EconomicCalendarEvent>> IMarketDataService.FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate)
         {
             try
             {
@@ -95,7 +96,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             }
         }
 
-        public async Task FetchAndSaveChartData(List<HistoricalTrade> trades)
+        async Task IMarketDataService.FetchAndSaveChartData(List<HistoricalTrade> trades)
         {
             foreach (var trade in trades)
             {
@@ -123,7 +124,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             }
         }
 
-        public async Task FetchAndSaveChartData(List<string> symbols, int lookBackDays)
+        async Task IMarketDataService.FetchAndSaveChartData(List<string> symbols, int lookBackDays)
         {
             foreach (var symbol in symbols)
             {
@@ -138,7 +139,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                     var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(symbol);
                     if (instrumentId == null)
                     {
-                        Console.WriteLine($"No instrument found for symbol {symbol} so adding to database.");
+                        Console.WriteLine($"No position found for symbol {symbol} so adding to database.");
                         instrumentId = _instrumentRepository.InsertInstrument(symbol, symbol, "FinancialModellingPrep", "USD", "INDEX", "FinancialModellingPrep", "FinancialModellingPrep");
                     }
                     var instrument = _instrumentRepository.Get(instrumentId.Value);
@@ -154,6 +155,29 @@ namespace PikUpStix.TraderView.Services.MarketData
 
                     _historicalDataRepository.UpdateHistoricalData(instrumentId.ToString(), barData);
                 }, $"Symbol: {symbol}");
+            }
+        }
+
+        async Task IMarketDataService.FetchLatestPrices(List<Position> positions)
+        {
+            foreach (var position in positions)
+            {
+                await ExecuteWithErrorHandlingAsync(async () =>
+                {
+                    var barData = await FetchChartDataFromApiAsync(position.Instrument.DataName, DateTime.UtcNow.AddDays(-3), DateTime.UtcNow);
+                    if (barData == null || barData.Count == 0)
+                    {
+                        Console.WriteLine($"No latest price data found for {position.Instrument.DataName}.");
+                        return;
+                    }
+                    var latestBar = barData.OrderByDescending(b => b.Date).FirstOrDefault();
+                    if (latestBar != null)
+                    {
+                        Console.WriteLine($"Updated latest price for {position.Instrument.DataName}: {latestBar.ClosePrice}");
+                        position.LastReportedDate = DateTime.UtcNow;
+                        position.LastReportedPrice = (decimal)latestBar.ClosePrice;
+                    }
+                }, $"InstrumentId: {position.Id}, Symbol: {position.Instrument.DataName}");
             }
         }
 

@@ -38,7 +38,7 @@ namespace traderview.Server.Controllers
                 {
                     Symbol = p.Instrument.InstrumentName,
                     Description  = p.Instrument.InstrumentName,
-                    AssetCategory  = p.Instrument.ListingExchange,
+                    AssetCategory  = p.Instrument.ContractUnitType,
                     Currency  = p.Instrument.Currency,
                     Position = p.TradeExecutions.Sum(te => te.Quantity),
                     MarkPrice = p.LastReportedPrice,

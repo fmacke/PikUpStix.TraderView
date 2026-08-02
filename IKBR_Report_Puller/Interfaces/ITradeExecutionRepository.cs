@@ -54,6 +54,11 @@ namespace PikUpStix.TraderView.Interfaces
         /// </summary>
         /// <param name="tradeConfirms">List of trade confirmations to upsert</param>
         void UpsertTodayExecutions(List<TradeExecution> tradeConfirms);
+        /// <summary>
+        /// Inserts or updates positions
+        /// </summary>
+        /// <param name="positions">List of positions to upsert</param>
+        void UpsertPositions(List<Position> positions);
         TradeSummary? GetTradeSummaryByPositionId(int positionId);
     }
 }

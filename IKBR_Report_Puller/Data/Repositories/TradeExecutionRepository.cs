@@ -102,7 +102,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         List<Position> ITradeExecutionRepository.GetAllPositions()
         {
             return GetPositions("SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedDate, " +
-                    "i.InstrumentName, i.Currency, i.ConId " +
+                    "i.InstrumentName, i.DataName,i.Currency, i.ConId " +
                     "FROM [dbo].[Positions] p " +
                     "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
                     "ORDER BY p.OpenDate DESC");
@@ -113,9 +113,10 @@ namespace PikUpStix.TraderView.Data.Repositories
         List<Position> ITradeExecutionRepository.GetOpenPositions()
         {
             return GetPositions("SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedPriceUpdated, " +
-                    "i.InstrumentName, i.Currency, i.ConId " +
+                    "i.InstrumentName, i.DataName, i.Currency, i.ConId, i.ContractUnitType " +
                     "FROM [dbo].[Positions] p " +
                     "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
+                    "WHERE p.Status = 'Open' " +
                     "ORDER BY p.OpenDate DESC");
         }
 
@@ -143,8 +144,10 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 {
                                     Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
                                     InstrumentName = reader.GetString(reader.GetOrdinal("InstrumentName")),
+                                    DataName = reader.GetString(reader.GetOrdinal("DataName")),
                                     Currency = reader.GetString(reader.GetOrdinal("Currency")),
-                                    ConId = reader.GetString(reader.GetOrdinal("ConId"))
+                                    ConId = reader.GetString(reader.GetOrdinal("ConId")),
+                                    ContractUnitType = reader.GetString(reader.GetOrdinal("ContractUnitType"))
                                 }
                             });
                         }
@@ -667,6 +670,85 @@ namespace PikUpStix.TraderView.Data.Repositories
                     }
                 }
                 return executions;
+            });
+        }
+
+        /// <summary>
+        /// Inserts or updates positions in the database
+        /// </summary>
+        void ITradeExecutionRepository.UpsertPositions(List<Position> positions)
+        {
+            if (positions == null || !positions.Any())
+            {
+                Console.WriteLine("No positions to upsert.");
+                return;
+            }
+
+            ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    int insertedCount = 0;
+                    int updatedCount = 0;
+
+                    foreach (var position in positions)
+                    {
+                        // Ensure instrument exists before upserting position
+                        if (position.Id == 0)
+                        {
+                            // New Position
+                            // Insert new position
+                            string insertQuery = @"
+                                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated)
+                                VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @lastReportedPriceUpdated)";
+
+                            var insertParameters = new Dictionary<string, object>
+                            {
+                                { "@openDate", position.OpenDate },
+                                { "@status", position.Status },
+                                { "@instrumentId", position.InstrumentId },
+                                { "@lastReportedPrice", position.LastReportedPrice },
+                                { "@lastReportedPriceUpdated", position.LastReportedDate ?? (object)DBNull.Value }
+                            };
+
+                            ExecuteCommand(connection, transaction, insertQuery, insertParameters);
+                            insertedCount++;
+                        }
+                        else
+                        {
+                            // Check if position already exists for the same InstrumentId and OpenDate
+                            bool exists = RecordExists(connection, transaction,
+                                "SELECT COUNT(*) FROM dbo.Positions WHERE Id = @positionId",
+                                new Dictionary<string, object>
+                                {
+                                { "@positionId", position.Id }
+                                });
+
+                            if (exists)
+                            {
+                                // Update existing position
+                                string updateQuery = @"
+                                UPDATE [dbo].[Positions]
+                                SET Status = @status, LastReportedPrice = @lastReportedPrice, LastReportedPriceUpdated = @lastReportedPriceUpdated
+                                WHERE Id = @positionId";
+
+                                var updateParameters = new Dictionary<string, object>
+                            {
+                                { "@status", position.Status },
+                                { "@positionId", position.Id },
+                                { "@lastReportedPrice", position.LastReportedPrice },
+                                { "@lastReportedPriceUpdated", position.LastReportedDate ?? (object)DBNull.Value }
+                            };
+
+                                ExecuteCommand(connection, transaction, updateQuery, updateParameters);
+                                updatedCount++;
+                            }
+                        }
+                    }
+                    transaction.Commit();
+
+                    Console.WriteLine($"Successfully processed {positions.Count} positions: {insertedCount} inserted, {updatedCount} updated.");
+                }
             });
         }
     }
