@@ -1,10 +1,6 @@
 using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Interfaces;
-using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Globalization;
-using System.Linq;
 using IKBR_Report_Puller.Domain;
 using IKBR_Report_Puller.Data;
 using PikUpStix.TraderView.Domain;
@@ -26,7 +22,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Inserts or updates trade executions from a report
         /// </summary>
-        public void UpsertTradeExecutions(List<TradeExecution> trades)
+        void ITradeExecutionRepository.UpsertTradeExecutions(List<TradeExecution> trades)
         {
             if (trades == null || !trades.Any())
             {
@@ -103,18 +99,34 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Gets all positions from the database
         /// </summary>
-        public List<Position> GetAllPositions()
+        List<Position> ITradeExecutionRepository.GetAllPositions()
+        {
+            return GetPositions("SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedDate, " +
+                    "i.InstrumentName, i.Currency, i.ConId " +
+                    "FROM [dbo].[Positions] p " +
+                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
+                    "ORDER BY p.OpenDate DESC");
+        }
+        /// <summary>
+        /// Gets all positions from the database
+        /// </summary>
+        List<Position> ITradeExecutionRepository.GetOpenPositions()
+        {
+            return GetPositions("SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedPriceUpdated, " +
+                    "i.InstrumentName, i.Currency, i.ConId " +
+                    "FROM [dbo].[Positions] p " +
+                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
+                    "ORDER BY p.OpenDate DESC");
+        }
+
+        private List<Position> GetPositions(string sqlCommand)
         {
             return ExecuteDatabaseOperation(connection =>
             {
                 var positions = new List<Position>();
 
                 using (var cmd = new SqlCommand(
-                    "SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedDate, " +
-                    "i.InstrumentName, i.Currency, i.ConId " +
-                    "FROM [dbo].[Positions] p " +
-                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
-                    "ORDER BY p.OpenDate DESC", connection))
+                    sqlCommand, connection))
                 {
                     using (var reader = cmd.ExecuteReader())
                     {
@@ -124,8 +136,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                                CloseDate = reader.GetDateTime(reader.GetOrdinal("CloseDate")),
+                                //OpenDate = TypeConverters.ConvertStringToDate(reader.GetString("OpenDate")),
+                                //CloseDate = TypeConverters.ConvertToNullableDate(reader.GetString("CloseDate")),
                                 Status = reader.GetString(reader.GetOrdinal("Status")),
                                 Instrument = new Instrument
                                 {
@@ -140,11 +152,13 @@ namespace PikUpStix.TraderView.Data.Repositories
                 }
                 foreach (var position in positions)
                 {
-                    position.TradeExecutions = GetTradeExecutionsByPosition(position.Id);
+                    position.TradeExecutions = ((ITradeExecutionRepository)this).GetByPositionId(position.Id);
                 }
                 return positions;
             });
         }
+
+        
         /// <summary>
         /// Closes a position by setting its status to 'Closed' and close date
         /// </summary>
@@ -274,7 +288,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Gets all trade executions ordered by order ID and date
         /// </summary>
-        public List<TradeExecution> GetTradeExecutions()
+        List<TradeExecution> ITradeExecutionRepository.GetTradeExecutions()
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -319,7 +333,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Inserts or updates today's trade confirmations
         /// </summary>
-        public void UpsertTodayExecutions(List<TradeExecution> tradeConfirms)
+        void ITradeExecutionRepository.UpsertTodayExecutions(List<TradeExecution> tradeConfirms)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
             {
@@ -457,7 +471,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// Gets aggregated trade summary by position ID
         /// Tracks the position from opening through closing executions
         /// </summary>
-        public TradeSummary? GetTradeSummaryByPositionId(int positionId)
+        TradeSummary? ITradeExecutionRepository.GetTradeSummaryByPositionId(int positionId)
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -537,7 +551,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Gets trade executions for a specific ConId and AccountId, ordered by trade date and time
         /// </summary>
-        public List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)> GetTradeExecutionsByConIdAndAccount(long? conid, string accountId)
+        List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)> ITradeExecutionRepository.GetTradeExecutionsByConIdAndAccount(long? conid, string accountId)
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -575,20 +589,19 @@ namespace PikUpStix.TraderView.Data.Repositories
         }
 
         /// <summary>
-        /// Gets trade executions for a specific position ID asynchronously
+        /// Gets trade executions for a specific position ID
         /// </summary>
-        public async Task<List<TradeExecution>> GetByPositionIdAsync(int positionId)
+        List<TradeExecution> ITradeExecutionRepository.GetByPositionId(int positionId)
         {
-            return await Task.Run(() =>
-            {
-                var executions = new List<TradeExecution>();
-                ExecuteDatabaseOperation(connection =>
+            var executions = new List<TradeExecution>();
+            ExecuteDatabaseOperation(connection =>
                 {
                     const string query = @"
                         SELECT 
-                            id, InstrumentId, symbol, tradeID, dateTime, tradeDate, 
-                            quantity, tradePrice, buySell, fifoPnlRealized, ibCommission
-                        FROM TradeExecutions
+                            te.Id, p.InstrumentId, te.symbol, te.tradeID, te.dateTime, te.tradeDate, 
+                            te.quantity, te.tradePrice, te.buySell, te.fifoPnlRealized, te.ibCommission
+                        FROM TradeExecutions te
+                        INNER JOIN [dbo].[Positions] p ON te.PositionID = p.Id 
                         WHERE PositionID = @PositionId
                         ORDER BY tradeDate, dateTime";
 
@@ -600,13 +613,13 @@ namespace PikUpStix.TraderView.Data.Repositories
                     {
                         executions.Add(new TradeExecution
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("id")),
-                            InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            InstrumentId = reader.GetInt32("InstrumentId"),
                             PositionId = positionId,
                             Symbol = reader.GetString("symbol"),
                             TradeID = reader.GetInt64("tradeID"),
-                            DateTime = TypeConverters.ConvertStringToDate(reader.GetString("dateTime")),
-                            TradeDate = TypeConverters.ConvertStringToDate(reader.GetString("tradeDate")),
+                            DateTime = reader.GetDateTime("dateTime"),
+                            TradeDate = reader.GetDateTime("tradeDate"),
                             Quantity = reader.GetDecimal("quantity"),
                             TradePrice = reader.GetDecimal("tradePrice"),
                             BuySell = reader.GetString("buySell"),
@@ -615,10 +628,9 @@ namespace PikUpStix.TraderView.Data.Repositories
                         });
                     }
                 });
-                return executions;
-            });
+            return executions;
         }
-        public List<TradeExecution> GetTradeExecutionsByPosition(int positionId)
+        List<TradeExecution> ITradeExecutionRepository.GetTradeExecutionsByPosition(int positionId)
         {
             return ExecuteDatabaseOperation(connection =>
             {

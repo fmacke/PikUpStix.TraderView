@@ -2,17 +2,8 @@ using PikUpStix.TraderView.Domain;
 
 namespace PikUpStix.TraderView.Interfaces
 {
-    /// <summary>
-    /// Service interface for Position operations
-    /// </summary>
-    public interface IPositionService
+    public interface ITradeExecutionService
     {
-        /// <summary>
-        /// Gets all open positions asynchronously
-        /// </summary>
-        /// <returns>List of all open positions</returns>
-        Task<List<Position>> GetAllOpenPositionsAsync();
-
         /// <summary>
         /// Gets an open position by symbol and instrument ID asynchronously
         /// </summary>
@@ -30,5 +21,10 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="openPrice">The open price</param>
         /// <returns>The ID of the newly created position</returns>
         Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice);
+        /// <summary>
+        /// Gets all open positions from the database
+        /// </summary>
+        /// <returns>List of all open positions</returns>
+        Task<List<Position>> GetOpenPositionsAsync();
     }
 }

@@ -64,11 +64,17 @@ public partial class Program
             return new ListRepository(connectionString);
         });
 
-        // Register custom services
+        // Register custom services        
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
         builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();
         builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
+        builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>(provider =>
+        {
+            var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
+            var positionRepo = provider.GetRequiredService<IPositionRepository>();
+            return new TradeExecutionService(tradeExecutionRepo, positionRepo);
+        });
 
         // Register YahooFinanceService
         builder.Services.AddScoped<YahooFinanceService>(provider =>
@@ -115,7 +121,6 @@ public partial class Program
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
-        builder.Services.AddScoped<IPositionService, PositionService>();
         builder.Services.AddControllers();
         builder.Services.AddOpenApi();
 

@@ -83,7 +83,7 @@ namespace traderview.Server.Services
                 };
 
                 // Get trade executions using repository
-                var executionsDomain = await _tradeExecutionRepository.GetByPositionIdAsync(positionId);
+                var executionsDomain = _tradeExecutionRepository.GetByPositionId(positionId);
                 var executions = executionsDomain.Select(e => new TradeExecutionDto
                 {
                     Id = e.Id,

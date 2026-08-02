@@ -5,12 +5,6 @@ namespace PikUpStix.TraderView.Interfaces
 {
     public interface IPositionRepository
     {
-
-        List<Position> GetAllOpenPositions();
-        /// <summary>
-        /// Inserts a list of positions into the database
-        /// </summary>
-        /// <param name="positions">List of positions to insert</param>
         void UpsertPositions(List<Position> positions);
         /// <summary>
         /// Gets an open position by symbol and instrument ID

@@ -9,14 +9,14 @@ namespace traderview.Server.Controllers
     public class OpenPositionController : ControllerBase
     {
         private readonly ILogger<OpenPositionController> _logger;
-        private readonly IPositionService _positionService;
+        private readonly ITradeExecutionService _tradeExecutionService;
 
         public OpenPositionController(
             ILogger<OpenPositionController> logger,
-            IPositionService positionService)
+            ITradeExecutionService tradeExecutionService)
         {
             _logger = logger;
-            _positionService = positionService;
+            _tradeExecutionService = tradeExecutionService;
         }
 
         /// <summary>
@@ -31,7 +31,7 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("Fetching all open positions");
-                var openPositions = await _positionService.GetAllOpenPositionsAsync();
+                var openPositions = await _tradeExecutionService.GetOpenPositionsAsync();
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
 
                 return Ok(openPositions.Select(p => new OpenPositionDto

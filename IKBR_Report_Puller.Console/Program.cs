@@ -128,6 +128,12 @@ namespace IKBR_Report_Puller.Console
                     });
                     services.AddSingleton<IReportRunnerService, ReportRunnerService>();
                     services.AddSingleton<IExcelReportService, ExcelReportService>();
+                    services.AddScoped<ITradeExecutionService, TradeExecutionService>(provider =>
+                    {
+                        var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
+                        var positionRepo = provider.GetRequiredService<IPositionRepository>();
+                        return new TradeExecutionService(tradeExecutionRepo, positionRepo);
+                    });
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddSingleton<Application>();

@@ -1,32 +1,28 @@
+using PikUpStix.TraderView.Data.Repositories;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 
 namespace PikUpStix.TraderView.Services
 {
-    /// <summary>
-    /// Service for Position operations
-    /// </summary>
-    public class PositionService : IPositionService
+    public class TradeExecutionService : ITradeExecutionService
     {
+        private readonly ITradeExecutionRepository _tradeExecutionRepository;
         private readonly IPositionRepository _positionRepository;
 
-        public PositionService(IPositionRepository positionRepository)
+        public TradeExecutionService(ITradeExecutionRepository tradeExecutionRepository, IPositionRepository positionRepository)
         {
+            _tradeExecutionRepository = tradeExecutionRepository;
             _positionRepository = positionRepository;
         }
 
-        /// <summary>
-        /// Gets all open positions asynchronously
-        /// </summary>
-        public async Task<List<Position>> GetAllOpenPositionsAsync()
+        async Task<List<Position>> ITradeExecutionService.GetOpenPositionsAsync()
         {
-            return await Task.Run(() => _positionRepository.GetAllOpenPositions());
+            return await Task.Run(() => _tradeExecutionRepository.GetOpenPositions());
         }
-
         /// <summary>
         /// Gets an open position by symbol and instrument ID asynchronously
         /// </summary>
-        public async Task<Position?> GetOpenPositionAsync(string symbol, int instrumentId)
+        async Task<Position?> ITradeExecutionService.GetOpenPositionAsync(string symbol, int instrumentId)
         {
             return await Task.Run(() => _positionRepository.GetOpenPosition(symbol, instrumentId));
         }
@@ -34,7 +30,7 @@ namespace PikUpStix.TraderView.Services
         /// <summary>
         /// Creates a new position asynchronously
         /// </summary>
-        public async Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
+        async Task<int> ITradeExecutionService.CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
         {
             return await Task.Run(() => _positionRepository.CreatePosition(instrumentId, symbol, openDate, openPrice));
         }
