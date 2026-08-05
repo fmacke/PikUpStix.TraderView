@@ -174,7 +174,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                     if (latestBar != null)
                     {
                         Console.WriteLine($"Updated latest price for {position.Instrument.DataName}: {latestBar.ClosePrice}");
-                        position.LastReportedDate = DateTime.UtcNow;
+                        position.LastReportedPriceUpdated = DateTime.UtcNow;
                         position.LastReportedPrice = (decimal)latestBar.ClosePrice;
                     }
                 }, $"InstrumentId: {position.Id}, Symbol: {position.Instrument.DataName}");

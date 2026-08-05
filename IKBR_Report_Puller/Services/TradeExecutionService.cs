@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Drawing.Charts;
 using PikUpStix.TraderView.Data.Repositories;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
@@ -17,8 +18,21 @@ namespace PikUpStix.TraderView.Services
 
         async Task<List<Position>> ITradeExecutionService.GetOpenPositionsAsync()
         {
-            return await Task.Run(() => _tradeExecutionRepository.GetOpenPositions());
+            return await Task.Run(() => GetOpenPositions());
         }
+
+        private async Task<List<Position>>? GetOpenPositions()
+        {
+            var positions = _tradeExecutionRepository.GetOpenPositions();
+            foreach (var position in positions)
+            {
+                position.Quantity = position.TradeExecutions.Sum(te => te.Quantity);
+                position.PositionValue = position.Quantity * position.LastReportedPrice;
+                //position.CostBasisPrice = position.Quantity / position.;
+            }
+            return positions;
+        }
+
         /// <summary>
         /// Gets an open position by symbol and instrument ID asynchronously
         /// </summary>
