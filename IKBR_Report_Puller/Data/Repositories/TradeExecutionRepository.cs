@@ -1,9 +1,11 @@
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office.Word;
+using IKBR_Report_Puller.Data;
+using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
+using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using System.Data;
-using IKBR_Report_Puller.Domain;
-using IKBR_Report_Puller.Data;
-using PikUpStix.TraderView.Domain;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {
@@ -30,71 +32,109 @@ namespace PikUpStix.TraderView.Data.Repositories
                 return;
             }
 
-            ExecuteDatabaseOperation(connection =>
+            foreach (var trade in trades)
             {
-                using (var transaction = connection.BeginTransaction())
+                string ibExecID = trade.IbExecID;
+                bool exists = false;
+                if (string.IsNullOrEmpty(ibExecID))
                 {
-                    foreach (var trade in trades)
+                    continue;
+                }
+                ExecuteDatabaseOperation(connection =>
+                {
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        string ibExecID = trade.IbExecID;
-                        if (string.IsNullOrEmpty(ibExecID))
+                        exists = RecordExists(connection, transaction,
+                    "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID",
+                    new Dictionary<string, object> { { "@ibExecID", ibExecID } });
+                        transaction.Commit();
+                    }
+                });
+
+                if (!exists)
+                {
+                    try
+                    {
+                        // Get InstrumentId for the trade's symbol
+                        int? instrumentId = _instrumentRepository.GetInstrumentIdFromConId(trade.Conid);
+                        if (!instrumentId.HasValue || instrumentId.Value == 0)
                         {
-                            continue;
+                            throw new InvalidOperationException($"Instrument not found for symbol {trade.Symbol} with Conid {trade.Conid}. Instruments must be upserted before trade executions.");
                         }
+                        trade.InstrumentId = instrumentId.Value;
 
-                        bool exists = RecordExists(connection, transaction,
-                            "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID",
-                            new Dictionary<string, object> { { "@ibExecID", ibExecID } });
-
-                        if (!exists)
+                        Position? openPosition = null;
+                        ExecuteDatabaseOperation(connection =>
                         {
-                            try
+                            using (var transaction = connection.BeginTransaction())
                             {
-                                // Get InstrumentId for the trade's symbol
-                                int? instrumentId = _instrumentRepository.GetInstrumentIdFromConId(trade.Conid);
-                                if (!instrumentId.HasValue || instrumentId.Value == 0)
-                                {
-                                    throw new InvalidOperationException($"Instrument not found for symbol {trade.Symbol} with Conid {trade.Conid}. Instruments must be upserted before trade executions.");
-                                }
-                                trade.InstrumentId = instrumentId.Value;
-
                                 // Check for open position for the trade's symbol and instrument (within the same transaction)
-                                var openPosition = GetOpenPosition(connection, transaction, trade.Symbol, instrumentId.Value);
-
-                                // If no open position exists, create a new position and get its ID
-                                // If Open Position exists, trade.PositionId = openPosition.Id
-                                if (openPosition == null)
+                                openPosition = GetOpenPosition(connection, transaction, trade.Symbol, instrumentId.Value);
+                                transaction.Commit();
+                            }
+                        });
+                        // If no open position exists, create a new position and get its ID
+                        // If Open Position exists, trade.PositionId = openPosition.Id
+                        if (openPosition == null)
+                        {
+                            ExecuteDatabaseOperation(connection =>
+                            {
+                                using (var transaction = connection.BeginTransaction())
                                 {
                                     trade.PositionId = CreatePosition(connection, transaction, instrumentId.Value, trade.Symbol, trade.TradeDate, trade.TradePrice);
+                                    transaction.Commit();
                                 }
-                                else
-                                {
-                                    trade.PositionId = openPosition.Id;
-                                }
+                            });
+                            
+                        }
+                        else
+                        {
+                            trade.PositionId = openPosition.Id;
+                        }
 
-                                // Add trade to TradeExecutions table with the correct PositionId
-                                InsertTrade(connection, transaction, trade);
+                        ExecuteDatabaseOperation(connection =>
+                        {
+                            using (var transaction = connection.BeginTransaction())
+                            {
+                                trade.TradeID = InsertTrade(connection, transaction, trade);
+                                transaction.Commit();
+                            }
+                        });
 
-                                // Check if latest trade execution closes out the position (i.e., if the sum of quantities for that position is zero)
-                                decimal totalQuantity = GetTotalQuantityForPosition(connection, transaction, trade.PositionId);
 
-                                // If position is closed, update the Psitions table to mark it as closed and set the close date
-                                if (totalQuantity == 0)
+                        // Check if latest trade execution closes out the position (i.e., if the sum of quantities for that position is zero)
+                        var totalQuantity = 0m;
+                        ExecuteDatabaseOperation(connection =>
+                        {
+                            using (var transaction = connection.BeginTransaction())
+                            {
+                                totalQuantity = GetTotalQuantityForPosition(connection, transaction, trade.PositionId);
+                                transaction.Commit();
+                            }
+
+                        });
+                        
+
+                        // If position is closed, update the Psitions table to mark it as closed and set the close date
+                        if (totalQuantity == 0)
+                        {
+                            ExecuteDatabaseOperation(connection =>
+                            {
+                                using (var transaction = connection.BeginTransaction())
                                 {
                                     ClosePosition(connection, transaction, trade.PositionId, trade.TradeDate);
+                                    transaction.Commit();
                                 }
-                            }
-                            catch (Exception ex)
-                            {
-                                Console.WriteLine($"Error inserting trade with ibExecID {ibExecID}: {ex.Message}");
-                            }
+                            });
+                            
                         }
                     }
-                    transaction.Commit();
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error inserting trade with ibExecID {ibExecID}: {ex.Message}");
+                    }
                 }
-
-                Console.WriteLine($"Successfully processed {trades.Count} trades.");
-            });
+            }
         }
         /// <summary>
         /// Gets all positions from the database
@@ -240,37 +280,7 @@ namespace PikUpStix.TraderView.Data.Repositories
 
             return null;
         }
-        private int CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate, decimal openPrice)
-        {
-            const string insertQuery = @"
-                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated)
-                VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @LastReportedPriceUpdated);
-                SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-            var parameters = new Dictionary<string, object>
-            {
-                { "@openDate", openDate },
-                { "@status", "Open" },
-                { "@instrumentId", instrumentId },
-                { "@lastReportedPrice", openPrice },
-                { "@LastReportedPriceUpdated", DateTime.Now}
-            };
-
-            using (var cmd = new SqlCommand(insertQuery, connection, transaction))
-            {
-                foreach (var param in parameters)
-                {
-                    cmd.Parameters.AddWithValue(param.Key, param.Value);
-                }
-
-                var result = cmd.ExecuteScalar();
-                int newPositionId = Convert.ToInt32(result);
-
-                Console.WriteLine($"Created new Position (Id: {newPositionId}) for symbol {symbol}, InstrumentId {instrumentId} on {openDate:yyyy-MM-dd}");
-
-                return newPositionId;
-            }
-        }
+        
 
         /// <summary>
         /// Gets the total quantity for a position by summing all trade executions
@@ -378,13 +388,43 @@ namespace PikUpStix.TraderView.Data.Repositories
                 }
             });
         }
+        private int CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate, decimal openPrice)
+        {
+            const string insertQuery = @"
+                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated)
+                VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @LastReportedPriceUpdated);
+                SELECT CAST(SCOPE_IDENTITY() AS INT);";
 
-        private void InsertTrade(SqlConnection connection, SqlTransaction transaction, TradeExecution trade)
+            var parameters = new Dictionary<string, object>
+            {
+                { "@openDate", openDate },
+                { "@status", "Open" },
+                { "@instrumentId", instrumentId },
+                { "@lastReportedPrice", openPrice },
+                { "@LastReportedPriceUpdated", DateTime.Now}
+            };
+
+            using (var cmd = new SqlCommand(insertQuery, connection, transaction))
+            {
+                foreach (var param in parameters)
+                {
+                    cmd.Parameters.AddWithValue(param.Key, param.Value);
+                }
+
+                var result = cmd.ExecuteScalar();
+                int newPositionId = Convert.ToInt32(result);
+
+                Console.WriteLine($"Created new Position (Id: {newPositionId}) for symbol {symbol}, InstrumentId {instrumentId} on {openDate:yyyy-MM-dd}");
+
+                return newPositionId;
+            }
+        }
+        private int InsertTrade(SqlConnection connection, SqlTransaction transaction, TradeExecution trade)
         {
             const string insertQuery = @"
                 INSERT INTO [dbo].[TradeExecutions]
                 ([PositionID], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
-                 [ibCommissionCurrency], [closePrice], [lastReportedPrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],
+                 [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],
                  [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description],
                  [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash],
                  [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID],
@@ -398,7 +438,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                  [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight])
                 VALUES
                 (@positionId, @symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
-                 @ibCommissionCurrency, @closePrice, @lastReportedPrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID,
+                 @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID,
                  @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description,
                  @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash,
                  @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID,
@@ -412,12 +452,32 @@ namespace PikUpStix.TraderView.Data.Repositories
                            @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
             try
             {
-                var parameters = TradeParameterBuilder.GetTradeParameters(trade);
-                ExecuteCommand(connection, transaction, insertQuery, parameters);
+                using (var cmd = new SqlCommand(insertQuery, connection, transaction))
+                {
+                    var parameters = TradeParameterBuilder.GetTradeParameters(trade);
+                    foreach (var param in parameters)
+                    {
+                        if(param.Value == null)
+                        {
+                            cmd.Parameters.AddWithValue(param.Key, DBNull.Value);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue(param.Key, param.Value);
+                        }
+                    }
+                    var result = cmd.ExecuteScalar();
+                    int newTradeId = Convert.ToInt32(result);
+
+                    Console.WriteLine($"Created new Trade (Id: {newTradeId}) for symbol {trade.Symbol}, InstrumentId {trade.InstrumentId} on {trade.TradeDate:yyyy-MM-dd}");
+
+                    return newTradeId;
+                }
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error inserting trade with ibExecID {trade.IbExecID}: {ex.Message}");
+                return 0;
             }
         }
 

@@ -50,7 +50,7 @@ namespace PikUpStix.TraderView.Services
                 (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
                 // Upsert instruments first, then trade executions, then open positions
                 _instrumentRepository.UpsertInstruments(mainReport.Trades, _marketDataService.SourceName);
-                _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades); this is closing open positions for some reason
+                _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades); 
                 var executions = _tradeExecutionRepository.GetTradeExecutions();
 
                 if (writeOutputtoExcel)
@@ -112,7 +112,7 @@ namespace PikUpStix.TraderView.Services
                         "QQQ",//nasdaq
                         "^VIX"
                      }, 300);
-                    UpdateOpenPositionPrices();
+                    //UpdateOpenPositionPrices();
                 }
             }
             catch (Exception ex)
