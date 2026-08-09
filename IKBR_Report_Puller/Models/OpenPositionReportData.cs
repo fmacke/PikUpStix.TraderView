@@ -9,6 +9,7 @@ namespace PikUpStix.TraderView.Models
     /// </summary>
     public class OpenPositionReportData
     {
+        public int PositionId { get; set; }
         public string AccountId { get; set; } = string.Empty;
         public string Symbol { get; set; } = string.Empty;
         public DateTime? DateOpened { get; set; }

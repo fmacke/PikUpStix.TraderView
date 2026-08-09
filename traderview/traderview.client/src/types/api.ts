@@ -79,6 +79,7 @@ export interface RSMetrics {
 }
 
 export interface OpenPosition {
+    positionId: number;
     accountId: string;
     symbol: string;
     dateOpened: string | null;

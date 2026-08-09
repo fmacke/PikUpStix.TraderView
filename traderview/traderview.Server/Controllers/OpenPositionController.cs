@@ -43,6 +43,7 @@ namespace traderview.Server.Controllers
                 // Convert to DTOs
                 var openPositionDtos = reportData.Select(data => new OpenPositionDto
                 {
+                    PositionId = data.PositionId,
                     AccountId = data.AccountId,
                     Symbol = data.Symbol,
                     DateOpened = data.DateOpened,
