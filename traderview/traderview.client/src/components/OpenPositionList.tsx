@@ -27,19 +27,25 @@ function OpenPositionList() {
         }
     };
 
-    const formatCurrency = (value: number | null, currency: string = 'USD') => {
+    const formatCurrency = (value: number | null, decimals: number = 2) => {
         if (value === null || value === undefined) return '-';
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currency,
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        }).format(value);
+        return value.toLocaleString('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        });
     };
 
     const formatNumber = (value: number | null, decimals: number = 2) => {
         if (value === null || value === undefined) return '-';
-        return value.toFixed(decimals);
+        return value.toLocaleString('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals,
+        });
+    };
+
+    const formatPercent = (value: number | null, decimals: number = 2) => {
+        if (value === null || value === undefined) return '-';
+        return (value * 100).toFixed(decimals) + '%';
     };
 
     const formatDate = (date: string | null) => {
@@ -88,32 +94,36 @@ function OpenPositionList() {
                     <thead>
                         <tr>
                             <th>Symbol</th>
-                            <th>Description</th>
-                            <th>Category</th>
-                            <th>Position</th>
-                            <th>Mark Price</th>
-                            <th>Position Value</th>
-                            <th>Cost Basis</th>
-                            <th>Unrealized P&L</th>
-                            <th>% of NAV</th>
-                            <th>Report Date</th>
+                            <th>Date Opened</th>
+                            <th>Days Opened</th>
+                            <th>Quantity</th>
+                            <th>Cost Price</th>
+                            <th>Average Price</th>
+                            <th>Value</th>
+                            <th>Unrealized P/L</th>
+                            <th>% Change</th>
+                            <th>Current Margin</th>
                         </tr>
                     </thead>
                     <tbody>
                         {openPositions.map((position, index) => (
                             <tr key={`${position.symbol}-${position.accountId}-${index}`}>
                                 <td className="symbol-cell">{position.symbol}</td>
-                                <td className="description-cell">{position.description}</td>
-                                <td>{position.assetCategory}</td>
-                                <td className="number-cell">{formatNumber(position.position, 4)}</td>
-                                <td className="number-cell">{formatCurrency(position.markPrice, position.currency)}</td>
-                                <td className="number-cell">{formatCurrency(position.positionValue, position.currency)}</td>
-                                <td className="number-cell">{formatCurrency(position.costBasisMoney, position.currency)}</td>
-                                <td className={`number-cell ${(position.fifoPnlUnrealized ?? 0) >= 0 ? 'positive' : 'negative'}`}>
-                                    {formatCurrency(position.fifoPnlUnrealized, position.currency)}
+                                <td>{formatDate(position.dateOpened)}</td>
+                                <td className="number-cell">{position.daysOpened ?? '-'}</td>
+                                <td className="number-cell">{formatNumber(position.quantity, 4)}</td>
+                                <td className="number-cell">{formatCurrency(position.costPrice)}</td>
+                                <td className="number-cell">{formatCurrency(position.averagePrice)}</td>
+                                <td className="number-cell">{formatCurrency(position.value)}</td>
+                                <td className={`number-cell ${(position.unrealizedPnL ?? 0) >= 0 ? 'positive' : 'negative'}`}>
+                                    {formatCurrency(position.unrealizedPnL)}
                                 </td>
-                                <td className="number-cell">{formatNumber(position.percentOfNAV, 2)}%</td>
-                                <td>{formatDate(position.reportDate)}</td>
+                                <td className={`number-cell ${(position.percentChange ?? 0) >= 0 ? 'positive' : 'negative'}`}>
+                                    {formatPercent(position.percentChange)}
+                                </td>
+                                <td className={`number-cell ${(position.currentMargin ?? 0) >= 0 ? 'positive' : 'negative'}`}>
+                                    {formatCurrency(position.currentMargin)}
+                                </td>
                             </tr>
                         ))}
                     </tbody>

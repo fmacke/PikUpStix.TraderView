@@ -177,8 +177,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                             {
                                 Id = reader.GetInt32(reader.GetOrdinal("Id")),
                                 InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                //OpenDate = TypeConverters.ConvertStringToDate(reader.GetString("OpenDate")),
-                                //CloseDate = TypeConverters.ConvertToNullableDate(reader.GetString("CloseDate")),
+                                OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
+                                CloseDate = reader.IsDBNull(reader.GetOrdinal("CloseDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CloseDate")),
                                 LastReportedPriceUpdated = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated")),
                                 LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
                                 Status = reader.GetString(reader.GetOrdinal("Status")),
@@ -664,7 +664,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                     const string query = @"
                         SELECT 
                             te.Id, p.InstrumentId, te.symbol, te.tradeID, te.dateTime, te.tradeDate, 
-                            te.quantity, te.tradePrice, te.buySell, te.fifoPnlRealized, te.ibCommission
+                            te.quantity, te.tradePrice, te.buySell, te.fifoPnlRealized, te.ibCommission,
+                            te.openCloseIndicator
                         FROM TradeExecutions te
                         INNER JOIN [dbo].[Positions] p ON te.PositionID = p.Id 
                         WHERE PositionID = @PositionId
@@ -689,7 +690,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                             TradePrice = reader.GetDecimal("tradePrice"),
                             BuySell = reader.GetString("buySell"),
                             FifoPnlRealized = reader.GetDecimal("fifoPnlRealized"),
-                            IbCommission = reader.GetDecimal("ibCommission")
+                            IbCommission = reader.GetDecimal("ibCommission"),
+                            OpenCloseIndicator = reader.GetString("openCloseIndicator")
                         });
                     }
                 });

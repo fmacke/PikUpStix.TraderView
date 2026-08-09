@@ -79,7 +79,19 @@ export interface RSMetrics {
 }
 
 export interface OpenPosition {
+    accountId: string;
     symbol: string;
+    dateOpened: string | null;
+    daysOpened: number | null;
+    quantity: number | null;
+    costPrice: number | null;
+    averagePrice: number | null;
+    value: number | null;
+    unrealizedPnL: number | null;
+    percentChange: number | null;
+    currentMargin: number | null;
+
+    // Keep for backward compatibility
     description: string;
     assetCategory: string;
     currency: string;
@@ -92,7 +104,6 @@ export interface OpenPosition {
     percentOfNAV: number | null;
     reportDate: string | null;
     listingExchange: string;
-    accountId: string;
 }
 
 export interface Note {

@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using PikUpStix.TraderView.Domain;
+using PikUpStix.TraderView.Models;
 
 namespace PikUpStix.TraderView.Interfaces
 {
@@ -8,9 +9,17 @@ namespace PikUpStix.TraderView.Interfaces
         /// <summary>
         /// Creates an Excel report based on the provided IKBRReport data and saves it to the specified file path.
         /// </summary>
-        /// <param name="report">The IKBRReport containing the data to be included in the Excel report.</param>
+        /// <param name="openPositions">The list of open positions to include in the report.</param>
+        /// <param name="tradeExecutions">The list of trade executions to include in the report.</param>
         /// <param name="outputFilePath">The file path where the Excel report will be saved.</param>    
-        /// </summary>
         void CreateExcelFileReport(List<Position> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath);
+
+        /// <summary>
+        /// Prepares the open position report data by calculating all necessary values.
+        /// This method can be reused for different report formats (Excel, Web, etc.)
+        /// </summary>
+        /// <param name="openPositions">List of open positions to process</param>
+        /// <returns>List of calculated open position report data</returns>
+        List<OpenPositionReportData> PrepareOpenPositionReportData(List<Position> openPositions);
     }
 }

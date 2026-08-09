@@ -10,13 +10,16 @@ namespace traderview.Server.Controllers
     {
         private readonly ILogger<OpenPositionController> _logger;
         private readonly ITradeExecutionService _tradeExecutionService;
+        private readonly IExcelReportService _excelReportService;
 
         public OpenPositionController(
             ILogger<OpenPositionController> logger,
-            ITradeExecutionService tradeExecutionService)
+            ITradeExecutionService tradeExecutionService,
+            IExcelReportService excelReportService)
         {
             _logger = logger;
             _tradeExecutionService = tradeExecutionService;
+            _excelReportService = excelReportService;
         }
 
         /// <summary>
@@ -34,22 +37,40 @@ namespace traderview.Server.Controllers
                 var openPositions = await _tradeExecutionService.GetOpenPositionsAsync();
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
 
-                return Ok(openPositions.Select(p => new OpenPositionDto
+                // Use the shared report data preparation method
+                var reportData = _excelReportService.PrepareOpenPositionReportData(openPositions);
+
+                // Convert to DTOs
+                var openPositionDtos = reportData.Select(data => new OpenPositionDto
                 {
-                    Symbol = p.Instrument.InstrumentName,
-                    Description  = p.Instrument.InstrumentName,
-                    AssetCategory  = p.Instrument.ContractUnitType,
-                    Currency  = p.Instrument.Currency,
-                    Position = p.TradeExecutions.Sum(te => te.Quantity),
-                    MarkPrice = p.LastReportedPrice,
-                    PositionValue = p.TradeExecutions.Sum(te => te.Quantity) * p.LastReportedPrice,
-                    CostBasisPrice = p.TradeExecutions.Sum(te => te.Quantity * te.TradePrice) / (p.TradeExecutions.Sum(te => te.Quantity) == 0 ? 1 : p.TradeExecutions.Sum(te => te.Quantity)),
-                    CostBasisMoney = p.TradeExecutions.Sum(te => te.Quantity * te.TradePrice),
-                    FifoPnlUnrealized = p.TradeExecutions.Sum(te => te.Quantity * (p.LastReportedPrice - te.TradePrice)),
-                    PercentOfNAV = p.TradeExecutions.Sum(te => te.Quantity * p.LastReportedPrice) / (p.TradeExecutions.Sum(te => te.Quantity * p.LastReportedPrice) == 0 ? 1 : p.TradeExecutions.Sum(te => te.Quantity * p.LastReportedPrice)),
+                    AccountId = data.AccountId,
+                    Symbol = data.Symbol,
+                    DateOpened = data.DateOpened,
+                    DaysOpened = data.DaysOpened,
+                    Quantity = data.Quantity,
+                    CostPrice = data.CostPrice,
+                    AveragePrice = data.AveragePrice,
+                    Value = data.Value,
+                    UnrealizedPnL = data.UnrealizedPnL,
+                    PercentChange = data.PercentChange,
+                    CurrentMargin = data.CurrentMargin,
+
+                    // Keep existing fields for backward compatibility
+                    Description = string.Empty,
+                    AssetCategory = string.Empty,
+                    Currency = string.Empty,
+                    Position = data.Quantity,
+                    MarkPrice = data.AveragePrice,
+                    PositionValue = data.Value,
+                    CostBasisPrice = data.CostPrice,
+                    CostBasisMoney = data.Quantity * data.CostPrice,
+                    FifoPnlUnrealized = data.UnrealizedPnL,
+                    PercentOfNAV = null,
                     ReportDate = DateTime.UtcNow,
-                    ListingExchange = p.Instrument.ListingExchange
-                }).ToList());
+                    ListingExchange = string.Empty
+                }).ToList();
+
+                return Ok(openPositionDtos);
             }
             catch (Exception ex)
             {

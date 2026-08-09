@@ -1,9 +1,11 @@
 using DocumentFormat.OpenXml.Bibliography;
+using IKBR_Report_Puller.Data;
 using IKBR_Report_Puller.Domain;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing.Chart;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
+using PikUpStix.TraderView.Models;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -67,36 +69,33 @@ namespace PikUpStix.TraderView.Services
 
         private void CreateOpenPositionsWorkSheet(ExcelPackage package, List<Position> openPositions)
         {
-            // Create Open Positions worksheet
-            var worksheet = package.Workbook.Worksheets.Add("Open Positions");
+            // Prepare the report data
+            var reportData = PrepareOpenPositionReportData(openPositions);
 
-            // Add headers
-            worksheet.Cells[1, 1].Value = "Account";
-            worksheet.Cells[1, 2].Value = "Symbol";
-            worksheet.Cells[1, 3].Value = "Date Opened";
-            worksheet.Cells[1, 4].Value = "Days Opened";
-            worksheet.Cells[1, 5].Value = "Quantity";
-            worksheet.Cells[1, 6].Value = "Cost Price";
-            worksheet.Cells[1, 7].Value = "Average Price";
-            worksheet.Cells[1, 8].Value = "Value";
-            worksheet.Cells[1, 9].Value = "Unrealized P/L";
-            worksheet.Cells[1, 10].Value = "% Change";
-            worksheet.Cells[1, 11].Value = "Current Margin";
+            // Write data to worksheet
+            WriteOpenPositionsToWorksheet(package, reportData);
+        }
 
-            // Populate data
-            int currentRow = 2;
+        /// <summary>
+        /// Prepares the open position report data by calculating all necessary values.
+        /// This method can be reused for different report formats (Excel, Web, etc.)
+        /// </summary>
+        /// <param name="openPositions">List of open positions to process</param>
+        /// <returns>List of calculated open position report data</returns>
+        public List<OpenPositionReportData> PrepareOpenPositionReportData(List<Position> openPositions)
+        {
+            var reportDataList = new List<OpenPositionReportData>();
 
             foreach (var position in openPositions)
             {
-                string accountId = position.AccountId;
-                string symbol = position.Symbol;
-                long? conid = position.Conid;
-                decimal currentPositionQuantity = position.Quantity;
-
-                worksheet.Cells[currentRow, 1].Value = accountId;
-                worksheet.Cells[currentRow, 2].Value = symbol;
-
-                // Fetch all trades for the given conid and accountId using the repository
+                string accountId = position.TradeExecutions.First().AccountId;
+                string symbol = position.TradeExecutions.First().Symbol;
+                long? conid = TypeConverters.ConvertToLong(position.TradeExecutions.First().Conid);
+                decimal currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
+                decimal costBasisPrice = position.TradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Average(x => x.TradePrice);
+                decimal positionValue =  position.LastReportedPrice * currentPositionQuantity;
+                decimal unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
+                DateTime? dateOpened = position.OpenDate;
                 var trades = _tradeExecutionRepository.GetTradeExecutionsByConIdAndAccount(conid, accountId);
 
                 var openTrades = new Queue<(DateTime tradeDate, decimal quantity)>();
@@ -127,40 +126,111 @@ namespace PikUpStix.TraderView.Services
                     }
                 }
 
-                var dateOpenedCell = worksheet.Cells[currentRow, 3];
-                var daysOpenedCell = worksheet.Cells[currentRow, 4];
+                // The remaining trades in openTrades are the ones making up the current position
+                // The last one is the most recent opening date based on FIFO
+                //if (openTrades.Any())
+                //{
+                //    var (mostRecentOpenDate, _) = openTrades.Last();
+                //    dateOpened = mostRecentOpenDate;
+                //}
 
-                // The remaining trades in openTrades are the ones making up the current position.
-                // The last one is the most recent opening date based on FIFO.
-                if (openTrades.Any())
+                // Calculate Days Opened
+                int? daysOpened = dateOpened.HasValue
+                    ? (int)(DateTime.Today - dateOpened.Value.Date).TotalDays
+                    : null;
+
+                // Calculate Average Price
+                decimal averagePrice = currentPositionQuantity != 0
+                    ? positionValue / currentPositionQuantity
+                    : 0;
+
+                // Calculate % Change
+                decimal percentChange = costBasisPrice != 0
+                    ? (averagePrice - costBasisPrice) / costBasisPrice
+                    : 0;
+
+                // Calculate Current Margin
+                decimal currentMargin = positionValue - (currentPositionQuantity * costBasisPrice);
+
+                reportDataList.Add(new OpenPositionReportData
                 {
-                    var (mostRecentOpenDate, _) = openTrades.Last();
-                    dateOpenedCell.Value = mostRecentOpenDate;
-                    dateOpenedCell.Style.Numberformat.Format = "yyyy-MM-dd";
-                    daysOpenedCell.Formula = $"TODAY() - {dateOpenedCell.Address}";
+                    AccountId = accountId,
+                    Symbol = symbol,
+                    DateOpened = dateOpened,
+                    DaysOpened = daysOpened,
+                    Quantity = currentPositionQuantity,
+                    CostPrice = costBasisPrice,
+                    AveragePrice = averagePrice,
+                    Value = positionValue,
+                    UnrealizedPnL = unrealizedPnL,
+                    PercentChange = percentChange,
+                    CurrentMargin = currentMargin
+                });
+            }
+
+            return reportDataList;
+        }
+
+        /// <summary>
+        /// Writes the prepared open position report data to an Excel worksheet.
+        /// </summary>
+        /// <param name="package">The Excel package to write to</param>
+        /// <param name="reportData">The prepared report data</param>
+        private void WriteOpenPositionsToWorksheet(ExcelPackage package, List<OpenPositionReportData> reportData)
+        {
+            // Create Open Positions worksheet
+            var worksheet = package.Workbook.Worksheets.Add("Open Positions");
+
+            // Add headers
+            worksheet.Cells[1, 1].Value = "Account";
+            worksheet.Cells[1, 2].Value = "Symbol";
+            worksheet.Cells[1, 3].Value = "Date Opened";
+            worksheet.Cells[1, 4].Value = "Days Opened";
+            worksheet.Cells[1, 5].Value = "Quantity";
+            worksheet.Cells[1, 6].Value = "Cost Price";
+            worksheet.Cells[1, 7].Value = "Average Price";
+            worksheet.Cells[1, 8].Value = "Value";
+            worksheet.Cells[1, 9].Value = "Unrealized P/L";
+            worksheet.Cells[1, 10].Value = "% Change";
+            worksheet.Cells[1, 11].Value = "Current Margin";
+
+            // Populate data
+            int currentRow = 2;
+
+            foreach (var data in reportData)
+            {
+                worksheet.Cells[currentRow, 1].Value = data.AccountId;
+                worksheet.Cells[currentRow, 2].Value = data.Symbol;
+
+                if (data.DateOpened.HasValue)
+                {
+                    worksheet.Cells[currentRow, 3].Value = data.DateOpened.Value;
+                    worksheet.Cells[currentRow, 3].Style.Numberformat.Format = "yyyy-MM-dd";
                 }
 
-                worksheet.Cells[currentRow, 5].Value = currentPositionQuantity;
-                worksheet.Cells[currentRow, 6].Value = position.CostBasisPrice ?? 0;
+                if (data.DaysOpened.HasValue)
+                {
+                    worksheet.Cells[currentRow, 4].Value = data.DaysOpened.Value;
+                }
 
-                var averagePriceCell = worksheet.Cells[currentRow, 7];
-                worksheet.Cells[currentRow, 8].Value = position.PositionValue ?? 0;
-                worksheet.Cells[currentRow, 9].Value = position.FifoPnlUnrealized ?? 0;
+                worksheet.Cells[currentRow, 5].Value = data.Quantity;
+                worksheet.Cells[currentRow, 6].Value = data.CostPrice;
+                worksheet.Cells[currentRow, 6].Style.Numberformat.Format = "#,##0.00";
 
-                var quantityCell = worksheet.Cells[currentRow, 5];
-                var costPriceCell = worksheet.Cells[currentRow, 6];
-                var valueCell = worksheet.Cells[currentRow, 8];
-                var percentChangeCell = worksheet.Cells[currentRow, 10];
-                var marginCell = worksheet.Cells[currentRow, 11];
+                worksheet.Cells[currentRow, 7].Value = data.AveragePrice;
+                worksheet.Cells[currentRow, 7].Style.Numberformat.Format = "#,##0.00";
 
-                averagePriceCell.Formula = $"IF({quantityCell.Address}<>0,{valueCell.Address}/{quantityCell.Address},0)";
-                averagePriceCell.Style.Numberformat.Format = "#,##0.00";
+                worksheet.Cells[currentRow, 8].Value = data.Value;
+                worksheet.Cells[currentRow, 8].Style.Numberformat.Format = "#,##0.00";
 
-                percentChangeCell.Formula = $"IF({costPriceCell.Address}<>0,({averagePriceCell.Address}-{costPriceCell.Address})/{costPriceCell.Address},0)";
-                percentChangeCell.Style.Numberformat.Format = "0.00%";
+                worksheet.Cells[currentRow, 9].Value = data.UnrealizedPnL;
+                worksheet.Cells[currentRow, 9].Style.Numberformat.Format = "#,##0.00";
 
-                marginCell.Formula = $"{valueCell.Address}-({quantityCell.Address}*{costPriceCell.Address})";
-                marginCell.Style.Numberformat.Format = "#,##0.00";
+                worksheet.Cells[currentRow, 10].Value = data.PercentChange;
+                worksheet.Cells[currentRow, 10].Style.Numberformat.Format = "0.00%";
+
+                worksheet.Cells[currentRow, 11].Value = data.CurrentMargin;
+                worksheet.Cells[currentRow, 11].Style.Numberformat.Format = "#,##0.00";
 
                 currentRow++;
             }
