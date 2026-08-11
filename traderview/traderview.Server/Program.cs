@@ -122,7 +122,8 @@ public partial class Program
         builder.Services.AddScoped<INoteService, NoteService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
         builder.Services.AddControllers();
-        builder.Services.AddOpenApi();
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddSwaggerGen();
 
         var app = builder.Build();
 
@@ -132,7 +133,8 @@ public partial class Program
         // Configure the HTTP request pipeline.
         if (app.Environment.IsDevelopment())
         {
-            app.MapOpenApi();
+            app.UseSwagger();
+            app.UseSwaggerUI();
         }
 
         app.UseHttpsRedirection();

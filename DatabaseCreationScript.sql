@@ -116,7 +116,44 @@ END
 GO
 
 -- =============================================
--- Table 2: TradeExecutions
+-- Table 2: Positions
+-- Description: Stores position data from IBKR reports (both open and closed positions)
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Positions]') AND type in (N'U'))
+BEGIN
+	CREATE TABLE [dbo].[Positions]
+	(
+		[Id] INT IDENTITY(1,1) NOT NULL,
+		[OpenDate] DATETIME2(7) NOT NULL,
+		[CloseDate] DATETIME2(7) NULL,
+		[Status] NVARCHAR(20) NOT NULL DEFAULT 'Open',
+		[InstrumentId] INT NOT NULL,
+		[LastReportedPrice] DECIMAL(18, 6) NULL,
+		[LastReportedPriceUpdated] DATETIME2(7) NULL,
+
+		CONSTRAINT [PK_Positions] PRIMARY KEY CLUSTERED ([Id] ASC),
+		CONSTRAINT [FK_Positions_Instruments] FOREIGN KEY ([InstrumentId]) 
+			REFERENCES [dbo].[Instruments] ([Id])
+	);
+
+	-- Create index on OpenDate for time-based queries
+	CREATE NONCLUSTERED INDEX [IX_Positions_OpenDate] 
+	ON [dbo].[Positions] ([OpenDate] DESC);
+
+	-- Create index on Status for filtering open/closed positions
+	CREATE NONCLUSTERED INDEX [IX_Positions_Status] 
+	ON [dbo].[Positions] ([Status]);
+
+	-- Create index on InstrumentId for foreign key lookups
+	CREATE NONCLUSTERED INDEX [IX_Positions_InstrumentId] 
+	ON [dbo].[Positions] ([InstrumentId]);
+
+	PRINT 'Table Positions created successfully.';
+END
+GO
+
+-- =============================================
+-- Table 3: TradeExecutions
 -- Description: Stores all trade execution records from IBKR reports
 -- =============================================
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[TradeExecutions]') AND type in (N'U'))
@@ -124,7 +161,7 @@ BEGIN
 	CREATE TABLE [dbo].[TradeExecutions]
 	(
 		[Id] INT IDENTITY(1,1) NOT NULL,
-		[InstrumentId] INT NOT NULL,
+		[PositionId] INT NULL,
 		[symbol] NVARCHAR(50) NULL,
 		[securityID] NVARCHAR(50) NULL,
 		[tradeID] BIGINT NULL,
@@ -212,8 +249,8 @@ BEGIN
 		[weight] DECIMAL(18, 6) NULL,
 
 		CONSTRAINT [PK_TradeExecutions] PRIMARY KEY CLUSTERED ([Id] ASC),
-		CONSTRAINT [FK_TradeExecutions_Instruments] FOREIGN KEY ([InstrumentId]) 
-			REFERENCES [dbo].[Instruments] ([Id])
+		CONSTRAINT [FK_TradeExecutions_Positions] FOREIGN KEY ([PositionId]) 
+			REFERENCES [dbo].[Positions] ([Id])
 	);
 
 	-- Create unique index on ibExecID (execution ID is unique identifier)
@@ -233,92 +270,12 @@ BEGIN
 	CREATE NONCLUSTERED INDEX [IX_TradeExecutions_Symbol] 
 	ON [dbo].[TradeExecutions] ([symbol]);
 
-	-- Create index on InstrumentId for FK performance
-	CREATE NONCLUSTERED INDEX [IX_TradeExecutions_InstrumentId] 
-	ON [dbo].[TradeExecutions] ([InstrumentId]);
+	-- Create index on PositionId for FK performance
+	CREATE NONCLUSTERED INDEX [IX_TradeExecutions_PositionId] 
+	ON [dbo].[TradeExecutions] ([PositionId])
+	WHERE [PositionId] IS NOT NULL;
 
 	PRINT 'Table TradeExecutions created successfully.';
-END
-GO
-
--- =============================================
--- Table 3: OpenPositions
--- Description: Stores open position snapshots from IBKR reports
--- =============================================
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[OpenPositions]') AND type in (N'U'))
-BEGIN
-	CREATE TABLE [dbo].[OpenPositions]
-	(
-		[Id] INT IDENTITY(1,1) NOT NULL,
-		[whenGenerated] DATETIME2(7) NOT NULL,
-		[accountId] NVARCHAR(50) NULL,
-		[acctAlias] NVARCHAR(50) NULL,
-		[model] NVARCHAR(50) NULL,
-		[currency] NVARCHAR(10) NULL,
-		[fxRateToBase] DECIMAL(18, 10) NULL,
-		[assetCategory] NVARCHAR(50) NULL,
-		[subCategory] NVARCHAR(50) NULL,
-		[symbol] NVARCHAR(50) NULL,
-		[description] NVARCHAR(500) NULL,
-		[conid] BIGINT NULL,
-		[securityID] NVARCHAR(50) NULL,
-		[securityIDType] NVARCHAR(50) NULL,
-		[cusip] NVARCHAR(50) NULL,
-		[isin] NVARCHAR(50) NULL,
-		[figi] NVARCHAR(50) NULL,
-		[listingExchange] NVARCHAR(50) NULL,
-		[underlyingConid] NVARCHAR(50) NULL,
-		[underlyingSymbol] NVARCHAR(50) NULL,
-		[underlyingSecurityID] NVARCHAR(50) NULL,
-		[underlyingListingExchange] NVARCHAR(50) NULL,
-		[issuer] NVARCHAR(100) NULL,
-		[issuerCountryCode] NVARCHAR(10) NULL,
-		[multiplier] INT NULL,
-		[strike] DECIMAL(18, 6) NULL,
-		[expiry] NVARCHAR(50) NULL,
-		[putCall] NVARCHAR(10) NULL,
-		[principalAdjustFactor] DECIMAL(18, 10) NULL,
-		[reportDate] DATETIME2(7) NULL,
-		[position] DECIMAL(18, 6) NULL,
-		[markPrice] DECIMAL(18, 6) NULL,
-		[positionValue] DECIMAL(18, 6) NULL,
-		[openPrice] DECIMAL(18, 6) NULL,
-		[costBasisPrice] DECIMAL(18, 6) NULL,
-		[costBasisMoney] DECIMAL(18, 6) NULL,
-		[percentOfNAV] DECIMAL(18, 6) NULL,
-		[fifoPnlUnrealized] DECIMAL(18, 6) NULL,
-		[side] NVARCHAR(10) NULL,
-		[levelOfDetail] NVARCHAR(50) NULL,
-		[openDateTime] NVARCHAR(50) NULL,
-		[holdingPeriodDateTime] NVARCHAR(50) NULL,
-		[vestingDate] DATETIME2(7) NULL,
-		[code] NVARCHAR(50) NULL,
-		[originatingOrderID] BIGINT NULL,
-		[originatingTransactionID] BIGINT NULL,
-		[accruedInt] DECIMAL(18, 6) NULL,
-		[serialNumber] NVARCHAR(50) NULL,
-		[deliveryType] NVARCHAR(50) NULL,
-		[commodityType] NVARCHAR(50) NULL,
-		[fineness] DECIMAL(18, 6) NULL,
-		[weight] DECIMAL(18, 6) NULL,
-
-		CONSTRAINT [PK_OpenPositions] PRIMARY KEY CLUSTERED ([Id] ASC)
-	);
-
-	-- Create index on whenGenerated for time-based queries
-	CREATE NONCLUSTERED INDEX [IX_OpenPositions_WhenGenerated] 
-	ON [dbo].[OpenPositions] ([whenGenerated] DESC);
-
-	-- Create index on symbol
-	CREATE NONCLUSTERED INDEX [IX_OpenPositions_Symbol] 
-	ON [dbo].[OpenPositions] ([symbol]);
-
-	-- Create index on conid
-	CREATE NONCLUSTERED INDEX [IX_OpenPositions_Conid] 
-	ON [dbo].[OpenPositions] ([conid]) 
-	WHERE [conid] IS NOT NULL;
-
-	PRINT 'Table OpenPositions created successfully.';
 END
 GO
 
@@ -360,7 +317,83 @@ END
 GO
 
 -- =============================================
--- Table 5: EconomicCalendar
+-- Table 5: List
+-- Description: Stores lookup list values for categorization (e.g., trade types)
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[List]') AND type in (N'U'))
+BEGIN
+	CREATE TABLE [dbo].[List]
+	(
+		[Id] INT IDENTITY(1,1) NOT NULL,
+		[Name] NVARCHAR(100) NOT NULL,
+		[Description] NVARCHAR(500) NULL,
+		[Category] NVARCHAR(50) NULL,
+		[IsActive] BIT NOT NULL DEFAULT 1,
+		[CreatedAt] DATETIME2(7) NOT NULL DEFAULT GETUTCDATE(),
+		[UpdatedAt] DATETIME2(7) NOT NULL DEFAULT GETUTCDATE(),
+
+		CONSTRAINT [PK_List] PRIMARY KEY CLUSTERED ([Id] ASC)
+	);
+
+	-- Create index on Name for quick lookups
+	CREATE NONCLUSTERED INDEX [IX_List_Name] 
+	ON [dbo].[List] ([Name]);
+
+	-- Create index on Category for filtering by category
+	CREATE NONCLUSTERED INDEX [IX_List_Category] 
+	ON [dbo].[List] ([Category])
+	WHERE [Category] IS NOT NULL;
+
+	-- Create index on IsActive for filtering active items
+	CREATE NONCLUSTERED INDEX [IX_List_IsActive] 
+	ON [dbo].[List] ([IsActive]);
+
+	PRINT 'Table List created successfully.';
+END
+GO
+
+-- =============================================
+-- Table 6: Notes
+-- Description: Stores notes related to positions and trade types
+-- =============================================
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Notes]') AND type in (N'U'))
+BEGIN
+	CREATE TABLE [dbo].[Notes]
+	(
+		[Id] INT IDENTITY(1,1) NOT NULL,
+		[PositionId] INT NOT NULL,
+		[TradeExecutionId] INT NULL,
+		[TradeTypeId] INT NULL,
+		[Comment] NVARCHAR(MAX) NOT NULL,
+		[EntryDate] DATETIME2(7) NOT NULL DEFAULT GETUTCDATE(),
+		[UpdatedAt] DATETIME2(7) NOT NULL DEFAULT GETUTCDATE(),
+
+		CONSTRAINT [PK_Notes] PRIMARY KEY CLUSTERED ([Id] ASC),
+		CONSTRAINT [FK_Notes_Positions] FOREIGN KEY ([PositionId]) 
+			REFERENCES [dbo].[Positions] ([Id]) ON DELETE CASCADE,
+		CONSTRAINT [FK_Notes_List] FOREIGN KEY ([TradeTypeId]) 
+			REFERENCES [dbo].[List] ([Id])
+	);
+
+	-- Create index on PositionId for FK performance
+	CREATE NONCLUSTERED INDEX [IX_Notes_PositionId] 
+	ON [dbo].[Notes] ([PositionId]);
+
+	-- Create index on TradeTypeId for FK performance
+	CREATE NONCLUSTERED INDEX [IX_Notes_TradeTypeId] 
+	ON [dbo].[Notes] ([TradeTypeId])
+	WHERE [TradeTypeId] IS NOT NULL;
+
+	-- Create index on CreatedAt for time-based queries
+	CREATE NONCLUSTERED INDEX [IX_Notes_EntryDate] 
+	ON [dbo].[Notes] ([EntryDate] DESC);
+
+	PRINT 'Table Notes created successfully.';
+END
+GO
+
+-- =============================================
+-- Table 7: EconomicCalendar
 -- Description: Stores economic calendar events from Financial Modeling Prep API
 -- =============================================
 IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[EconomicCalendar]') AND type in (N'U'))
@@ -410,9 +443,11 @@ GO
 /*
 -- Grant permissions to application user
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.Instruments TO [YourApplicationUser];
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.Positions TO [YourApplicationUser];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.TradeExecutions TO [YourApplicationUser];
-GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.OpenPositions TO [YourApplicationUser];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.HistoricalData TO [YourApplicationUser];
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.List TO [YourApplicationUser];
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.Notes TO [YourApplicationUser];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.EconomicCalendar TO [YourApplicationUser];
 GO
 */
@@ -426,10 +461,12 @@ PRINT '==============================================';
 PRINT '';
 PRINT 'Tables created:';
 PRINT '  1. Instruments - Trading instrument master data';
-PRINT '  2. TradeExecutions - Trade execution records from IBKR';
-PRINT '  3. OpenPositions - Position snapshots';
+PRINT '  2. Positions - Position data (both open and closed)';
+PRINT '  3. TradeExecutions - Trade execution records from IBKR';
 PRINT '  4. HistoricalData - Historical price data';
-PRINT '  5. EconomicCalendar - Economic calendar events';
+PRINT '  5. List - Lookup list values for categorization';
+PRINT '  6. Notes - Notes related to positions and trade types';
+PRINT '  7. EconomicCalendar - Economic calendar events';
 PRINT '';
 PRINT 'Next steps:';
 PRINT '  1. Update connection string in appsettings.json';
@@ -446,11 +483,15 @@ GO
 -- Check record counts
 SELECT 'Instruments' AS TableName, COUNT(*) AS RecordCount FROM dbo.Instruments
 UNION ALL
+SELECT 'Positions', COUNT(*) FROM dbo.Positions
+UNION ALL
 SELECT 'TradeExecutions', COUNT(*) FROM dbo.TradeExecutions
 UNION ALL
-SELECT 'OpenPositions', COUNT(*) FROM dbo.OpenPositions
-UNION ALL
 SELECT 'HistoricalData', COUNT(*) FROM dbo.HistoricalData
+UNION ALL
+SELECT 'List', COUNT(*) FROM dbo.List
+UNION ALL
+SELECT 'Notes', COUNT(*) FROM dbo.Notes
 UNION ALL
 SELECT 'EconomicCalendar', COUNT(*) FROM dbo.EconomicCalendar;
 GO

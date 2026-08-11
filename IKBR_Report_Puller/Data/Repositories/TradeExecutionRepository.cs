@@ -173,25 +173,32 @@ namespace PikUpStix.TraderView.Data.Repositories
                     {
                         while (reader.Read())
                         {
-                            positions.Add(new Position
+                            try
                             {
-                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                                CloseDate = reader.IsDBNull(reader.GetOrdinal("CloseDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CloseDate")),
-                                LastReportedPriceUpdated = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated")),
-                                LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
-                                Status = reader.GetString(reader.GetOrdinal("Status")),
-                                Instrument = new Instrument
+                                positions.Add(new Position
                                 {
-                                    Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                    InstrumentName = reader.GetString(reader.GetOrdinal("InstrumentName")),
-                                    DataName = reader.GetString(reader.GetOrdinal("DataName")),
-                                    Currency = reader.GetString(reader.GetOrdinal("Currency")),
-                                    ConId = reader.GetString(reader.GetOrdinal("ConId")),
-                                    ContractUnitType = reader.GetString(reader.GetOrdinal("ContractUnitType"))
-                                }
-                            });
+                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                                    OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
+                                    CloseDate = reader.IsDBNull(reader.GetOrdinal("CloseDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CloseDate")),
+                                    LastReportedPriceUpdated = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated")),
+                                    LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
+                                    Status = reader.GetString(reader.GetOrdinal("Status")),
+                                    Instrument = new Instrument
+                                    {
+                                        Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                                        InstrumentName = reader.IsDBNull(reader.GetOrdinal("InstrumentName")) ? null : reader.GetString(reader.GetOrdinal("InstrumentName")),
+                                        DataName = reader.IsDBNull(reader.GetOrdinal("DataName")) ? null : reader.GetString(reader.GetOrdinal("DataName")),
+                                        Currency = reader.IsDBNull(reader.GetOrdinal("Currency")) ? null : reader.GetString(reader.GetOrdinal("Currency")),
+                                        ConId = reader.IsDBNull(reader.GetOrdinal("ConId")) ? null : reader.GetString(reader.GetOrdinal("ConId")),
+                                        ContractUnitType = reader.IsDBNull(reader.GetOrdinal("ContractUnitType")) ? null : reader.GetString(reader.GetOrdinal("ContractUnitType"))
+                                    }
+                                });
+                            }
+                            catch(Exception ex)
+                            {
+                                Console.WriteLine("Open Position Read failed.", ex.Message);
+                            }
                         }
                     }
                 }

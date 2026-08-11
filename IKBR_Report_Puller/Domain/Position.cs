@@ -1,4 +1,3 @@
-using Microsoft.Identity.Client;
 using System;
 
 namespace PikUpStix.TraderView.Domain
