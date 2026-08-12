@@ -152,7 +152,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// </summary>
         List<Position> ITradeExecutionRepository.GetOpenPositions()
         {
-            return GetPositions("SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedPriceUpdated, " +
+            return GetPositions("SELECT p.Id, p.OpenDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedPriceUpdated, " +
                     "i.InstrumentName, i.DataName, i.Currency, i.ConId, i.ContractUnitType " +
                     "FROM [dbo].[Positions] p " +
                     "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
@@ -177,10 +177,9 @@ namespace PikUpStix.TraderView.Data.Repositories
                             {
                                 positions.Add(new Position
                                 {
-                                    Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                    Id = reader.GetInt32("Id"),
                                     InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
                                     OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                                    CloseDate = reader.IsDBNull(reader.GetOrdinal("CloseDate")) ? null : reader.GetDateTime(reader.GetOrdinal("CloseDate")),
                                     LastReportedPriceUpdated = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated")),
                                     LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
                                     Status = reader.GetString(reader.GetOrdinal("Status")),

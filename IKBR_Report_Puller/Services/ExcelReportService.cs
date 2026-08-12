@@ -88,85 +88,92 @@ namespace PikUpStix.TraderView.Services
 
             foreach (var position in openPositions)
             {
-                string accountId = position.TradeExecutions.First().AccountId;
-                string symbol = position.TradeExecutions.First().Symbol;
-                long? conid = TypeConverters.ConvertToLong(position.TradeExecutions.First().Conid);
-                decimal currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
-                decimal costBasisPrice = position.TradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Average(x => x.TradePrice);
-                decimal positionValue =  position.LastReportedPrice * currentPositionQuantity;
-                decimal unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
-                DateTime? dateOpened = position.OpenDate;
-                var trades = _tradeExecutionRepository.GetTradeExecutionsByConIdAndAccount(conid, accountId);
-
-                var openTrades = new Queue<(DateTime tradeDate, decimal quantity)>();
-                foreach (var trade in trades)
+                try
                 {
-                    if (trade.OpenCloseIndicator.Contains("O")) // Opening trade
+                    string accountId = position.TradeExecutions.First().AccountId;
+                    string symbol = position.TradeExecutions.First().Symbol;
+                    long? conid = TypeConverters.ConvertToLong(position.TradeExecutions.First().Conid);
+                    decimal currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
+                    decimal costBasisPrice = position.TradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Average(x => x.TradePrice);
+                    decimal positionValue = position.LastReportedPrice * currentPositionQuantity;
+                    decimal unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
+                    DateTime? dateOpened = position.OpenDate;
+                    var trades = _tradeExecutionRepository.GetTradeExecutionsByConIdAndAccount(conid, accountId);
+
+                    var openTrades = new Queue<(DateTime tradeDate, decimal quantity)>();
+                    foreach (var trade in trades)
                     {
-                        openTrades.Enqueue((trade.TradeDate, trade.Quantity));
-                    }
-                    else if (trade.OpenCloseIndicator.Contains("C")) // Closing trade
-                    {
-                        decimal closingQuantity = Math.Abs(trade.Quantity);
-                        while (closingQuantity > 0 && openTrades.Any())
+                        if (trade.OpenCloseIndicator.Contains("O")) // Opening trade
                         {
-                            var (openDate, openQuantity) = openTrades.Dequeue();
-                            if (openQuantity > closingQuantity)
+                            openTrades.Enqueue((trade.TradeDate, trade.Quantity));
+                        }
+                        else if (trade.OpenCloseIndicator.Contains("C")) // Closing trade
+                        {
+                            decimal closingQuantity = Math.Abs(trade.Quantity);
+                            while (closingQuantity > 0 && openTrades.Any())
                             {
-                                // Partial close, put the remainder back
-                                openTrades.Enqueue((openDate, openQuantity - closingQuantity));
-                                closingQuantity = 0;
-                            }
-                            else
-                            {
-                                // Full close of this opening trade
-                                closingQuantity -= openQuantity;
+                                var (openDate, openQuantity) = openTrades.Dequeue();
+                                if (openQuantity > closingQuantity)
+                                {
+                                    // Partial close, put the remainder back
+                                    openTrades.Enqueue((openDate, openQuantity - closingQuantity));
+                                    closingQuantity = 0;
+                                }
+                                else
+                                {
+                                    // Full close of this opening trade
+                                    closingQuantity -= openQuantity;
+                                }
                             }
                         }
                     }
+
+                    // The remaining trades in openTrades are the ones making up the current position
+                    // The last one is the most recent opening date based on FIFO
+                    //if (openTrades.Any())
+                    //{
+                    //    var (mostRecentOpenDate, _) = openTrades.Last();
+                    //    dateOpened = mostRecentOpenDate;
+                    //}
+
+                    // Calculate Days Opened
+                    int? daysOpened = dateOpened.HasValue
+                        ? (int)(DateTime.Today - dateOpened.Value.Date).TotalDays
+                        : null;
+
+                    // Calculate Average Price
+                    decimal averagePrice = currentPositionQuantity != 0
+                        ? positionValue / currentPositionQuantity
+                        : 0;
+
+                    // Calculate % Change
+                    decimal percentChange = costBasisPrice != 0
+                        ? (averagePrice - costBasisPrice) / costBasisPrice
+                        : 0;
+
+                    // Calculate Current Margin
+                    decimal currentMargin = positionValue - (currentPositionQuantity * costBasisPrice);
+
+                    reportDataList.Add(new OpenPositionReportData
+                    {
+                        PositionId = position.Id,
+                        AccountId = accountId,
+                        Symbol = symbol,
+                        DateOpened = dateOpened,
+                        DaysOpened = daysOpened,
+                        Quantity = currentPositionQuantity,
+                        CostPrice = costBasisPrice,
+                        AveragePrice = averagePrice,
+                        Value = positionValue,
+                        UnrealizedPnL = unrealizedPnL,
+                        PercentChange = percentChange,
+                        CurrentMargin = currentMargin
+                    });
                 }
-
-                // The remaining trades in openTrades are the ones making up the current position
-                // The last one is the most recent opening date based on FIFO
-                //if (openTrades.Any())
-                //{
-                //    var (mostRecentOpenDate, _) = openTrades.Last();
-                //    dateOpened = mostRecentOpenDate;
-                //}
-
-                // Calculate Days Opened
-                int? daysOpened = dateOpened.HasValue
-                    ? (int)(DateTime.Today - dateOpened.Value.Date).TotalDays
-                    : null;
-
-                // Calculate Average Price
-                decimal averagePrice = currentPositionQuantity != 0
-                    ? positionValue / currentPositionQuantity
-                    : 0;
-
-                // Calculate % Change
-                decimal percentChange = costBasisPrice != 0
-                    ? (averagePrice - costBasisPrice) / costBasisPrice
-                    : 0;
-
-                // Calculate Current Margin
-                decimal currentMargin = positionValue - (currentPositionQuantity * costBasisPrice);
-
-                reportDataList.Add(new OpenPositionReportData
+                catch(Exception ex)
                 {
-                    PositionId = position.Id,
-                    AccountId = accountId,
-                    Symbol = symbol,
-                    DateOpened = dateOpened,
-                    DaysOpened = daysOpened,
-                    Quantity = currentPositionQuantity,
-                    CostPrice = costBasisPrice,
-                    AveragePrice = averagePrice,
-                    Value = positionValue,
-                    UnrealizedPnL = unrealizedPnL,
-                    PercentChange = percentChange,
-                    CurrentMargin = currentMargin
-                });
+                    Console.WriteLine("Error in PrepareOpenPositionReportData processing position (id: " + position.Id + ") with error: ", ex.Message);
+                }
             }
 
             return reportDataList;
