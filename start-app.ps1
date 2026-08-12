@@ -1,106 +1,149 @@
-﻿# Quick Start Script - TraderView Application
+﻿# start-app.ps1
+# Intelligent start script that rebuilds Docker containers only if code has changed
 
-Write-Host @"
+param(
+    [switch]$Force,
+    [switch]$NoBuild,
+    [switch]$Logs
+)
 
-+------------------------------------------------------------+
-¦       TraderView - Quick Start                             ¦
-+------------------------------------------------------------+
+Write-Host "=== TraderView Application Deployment ===" -ForegroundColor Cyan
 
-"@ -ForegroundColor Cyan
+# Configuration
+$ImageName = "traderview-app"
+$ContainerName = "traderview-app"
+$BuildMarkerFile = ".last-build-hash"
+$SourcePaths = @(
+    "traderview/traderview.Server",
+    "traderview/traderview.client",
+    "IKBR_Report_Puller"
+)
 
-Write-Host "This script will set up and start your entire application." -ForegroundColor White
-Write-Host ""
+# Function to calculate hash of source files
+function Get-SourceHash {
+    $files = Get-ChildItem -Path $SourcePaths -Include *.cs,*.ts,*.tsx,*.jsx,*.html,*.css,*.scss,*.sass,*.json,*.csproj,*.esproj -Recurse -File
+    $hashes = $files | ForEach-Object { 
+        (Get-FileHash -Path $_.FullName -Algorithm MD5).Hash 
+    }
+    $combinedHash = ($hashes -join '') | Get-FileHash -Algorithm MD5
+    return $combinedHash.Hash
+}
 
-# Step 1: Check Docker
-Write-Host "Step 1: Checking Docker..." -ForegroundColor Yellow
+# Function to check if rebuild is needed
+function Test-RebuildNeeded {
+    Write-Host "`nChecking if rebuild is needed..." -ForegroundColor Yellow
+    
+    # Get current source hash
+    $currentHash = Get-SourceHash
+    Write-Host "Current source hash: $currentHash" -ForegroundColor Gray
+    
+    # Check if marker file exists
+    if (-not (Test-Path $BuildMarkerFile)) {
+        Write-Host "No previous build marker found. Rebuild needed." -ForegroundColor Yellow
+        return $true
+    }
+    
+    # Read previous hash
+    $previousHash = Get-Content $BuildMarkerFile -Raw
+    Write-Host "Previous build hash: $previousHash" -ForegroundColor Gray
+    
+    # Check if Docker image exists
+    $imageExists = docker images -q $ImageName
+    if (-not $imageExists) {
+        Write-Host "Docker image not found. Rebuild needed." -ForegroundColor Yellow
+        return $true
+    }
+    
+    # Compare hashes
+    if ($currentHash -ne $previousHash) {
+        Write-Host "Source code has changed. Rebuild needed." -ForegroundColor Yellow
+        return $true
+    }
+    
+    Write-Host "Source code unchanged. Using existing Docker image." -ForegroundColor Green
+    return $false
+}
+
+# Function to build Docker images
+function Build-DockerImages {
+    Write-Host "`nBuilding Docker images..." -ForegroundColor Cyan
+    
+    # Build using docker-compose
+    docker-compose build
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Docker build completed successfully!" -ForegroundColor Green
+        
+        # Save the current hash
+        $currentHash = Get-SourceHash
+        $currentHash | Out-File -FilePath $BuildMarkerFile -NoNewline
+        Write-Host "Build marker updated: $currentHash" -ForegroundColor Gray
+        return $true
+    } else {
+        Write-Host "Docker build failed!" -ForegroundColor Red
+        return $false
+    }
+}
+
+# Function to start containers
+function Start-Containers {
+    Write-Host "`nStarting Docker containers..." -ForegroundColor Cyan
+    docker-compose up -d
+    
+    if ($LASTEXITCODE -eq 0) {
+        Write-Host "Containers started successfully!" -ForegroundColor Green
+        return $true
+    } else {
+        Write-Host "Failed to start containers!" -ForegroundColor Red
+        return $false
+    }
+}
+
+# Main execution logic
 try {
-    $null = docker version 2>&1
-    if ($LASTEXITCODE -ne 0) { throw "Docker daemon is not running." }
-    Write-Host "? Docker is running" -ForegroundColor Green
-} catch {
-    Write-Host "? Docker is not running!" -ForegroundColor Red
-    Write-Host "  Please start Docker Desktop and run this script again." -ForegroundColor Yellow
-    exit 1
-}
-Write-Host ""
-
-# Step 2: Generate .env from User Secrets
-Write-Host "Step 2: Generating .env from User Secrets..." -ForegroundColor Yellow
-& .\generate-env.ps1
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "✗ Failed to generate .env file!" -ForegroundColor Red
-    exit 1
-}
-Write-Host ""
-
-# Step 3: Check Database
-Write-Host "Step 3: Checking database..." -ForegroundColor Yellow
-$dbExists = docker ps -a --filter "name=traderview-sqlserver" --format "{{.Names}}" | Select-String "traderview-sqlserver"
-
-if (-not $dbExists) {
-    Write-Host "Database not found. Setting up..." -ForegroundColor Yellow
-    Write-Host ""
-    & .\setup-database.ps1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "? Database setup failed!" -ForegroundColor Red
+    # Check if Force flag is set
+    if ($Force) {
+        Write-Host "Force rebuild requested." -ForegroundColor Yellow
+        $needsRebuild = $true
+    } elseif ($NoBuild) {
+        Write-Host "Skipping build check (NoBuild flag set)." -ForegroundColor Yellow
+        $needsRebuild = $false
+    } else {
+        $needsRebuild = Test-RebuildNeeded
+    }
+    
+    # Build if needed
+    if ($needsRebuild) {
+        $buildSuccess = Build-DockerImages
+        if (-not $buildSuccess) {
+            Write-Host "`nDeployment failed due to build errors." -ForegroundColor Red
+            exit 1
+        }
+    }
+    
+    # Start containers
+    $startSuccess = Start-Containers
+    if (-not $startSuccess) {
+        Write-Host "`nDeployment failed due to container startup errors." -ForegroundColor Red
         exit 1
     }
-} else {
-    $dbRunning = docker ps --filter "name=traderview-sqlserver" --format "{{.Names}}" | Select-String "traderview-sqlserver"
-    if ($dbRunning) {
-        Write-Host "? Database is already running" -ForegroundColor Green
+    
+    # Show status
+    Write-Host "`n=== Deployment Complete ===" -ForegroundColor Green
+    Write-Host "`nContainer Status:" -ForegroundColor Cyan
+    docker-compose ps
+    
+    # Show logs if requested
+    if ($Logs) {
+        Write-Host "`nShowing logs (Ctrl+C to exit)..." -ForegroundColor Cyan
+        docker-compose logs -f $ContainerName
     } else {
-        Write-Host "Starting database..." -ForegroundColor Yellow
-        docker compose up -d sqlserver
-        Start-Sleep -Seconds 5
-        Write-Host "? Database started" -ForegroundColor Green
+        Write-Host "`nApplication is running. Access at: http://localhost:5000" -ForegroundColor Green
+        Write-Host "To view logs, run: docker-compose logs -f" -ForegroundColor Gray
+        Write-Host "To stop, run: docker-compose down" -ForegroundColor Gray
     }
-}
-Write-Host ""
-
-# Step 4: Start Application
-Write-Host "Step 4: Starting application services..." -ForegroundColor Yellow
-docker compose up -d
-
-if ($LASTEXITCODE -eq 0) {
-    Write-Host "? Services started successfully!" -ForegroundColor Green
-} else {
-    Write-Host "? Failed to start services" -ForegroundColor Red
-    Write-Host "Run 'docker compose logs' to see errors" -ForegroundColor Yellow
+    
+} catch {
+    Write-Host "`nError: $_" -ForegroundColor Red
     exit 1
 }
-Write-Host ""
-
-# Step 5: Wait & Check Status
-Write-Host "Waiting for services to initialize..." -ForegroundColor Yellow
-Start-Sleep -Seconds 3
-Write-Host ""
-
-Write-Host "Step 5: Checking service status..." -ForegroundColor Yellow
-docker compose ps
-Write-Host ""
-
-Write-Host @"
-+------------------------------------------------------------+
-¦       Setup Complete! ??                                   ¦
-+------------------------------------------------------------+
-
-"@ -ForegroundColor Green
-
-Write-Host "Your application is now running!" -ForegroundColor White
-Write-Host ""
-Write-Host "Access Points:" -ForegroundColor Cyan
-Write-Host "  • Frontend:  http://localhost:3000" -ForegroundColor White
-Write-Host "  • Backend:   http://localhost:5000" -ForegroundColor White
-Write-Host "  • Swagger:   http://localhost:5000/swagger" -ForegroundColor White
-Write-Host "  • Database:  localhost,1433" -ForegroundColor White
-Write-Host ""
-Write-Host "Useful Commands:" -ForegroundColor Cyan
-Write-Host "  • View logs:       docker compose logs -f" -ForegroundColor White
-Write-Host "  • Stop services:   docker compose stop" -ForegroundColor White
-Write-Host "  • Restart:         docker compose restart" -ForegroundColor White
-Write-Host "  • Full shutdown:   docker compose down" -ForegroundColor White
-Write-Host ""
-Write-Host "To see logs now, run: " -NoNewline -ForegroundColor Yellow
-Write-Host "docker compose logs -f" -ForegroundColor White
-Write-Host ""
