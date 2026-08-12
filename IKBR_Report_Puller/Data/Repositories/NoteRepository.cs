@@ -67,7 +67,10 @@ namespace PikUpStix.TraderView.Data.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var notes = new List<Note>();
-                var query = "SELECT Id, PositionId, TradeExecutionId, Comment, EntryDate, TradeTypeId FROM Notes WHERE PositionId = @PositionId ORDER BY EntryDate DESC";
+                var query = @"SELECT n.Id, n.PositionId, n.TradeExecutionId, n.Comment, n.EntryDate, n.TradeTypeId, 
+                    l.Category, l.Name 
+                    FROM Notes n inner join Lists l on n.TradeTypeId = l.Id 
+                    WHERE PositionId = @PositionId ORDER BY EntryDate DESC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@PositionId", positionId);
@@ -229,12 +232,14 @@ namespace PikUpStix.TraderView.Data.Repositories
         {
             return new Note
             {
-                Id = reader.GetInt32(0),
-                PositionId = reader.GetInt32(1),
-                TradeExecutionId = reader.IsDBNull(2) ? null : reader.GetInt32(2),
-                Comment = reader.GetString(3),
-                EntryDate = reader.GetDateTime(4),
-                TradeTypeId = reader.GetInt32(5)
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                PositionId = reader.GetInt32(reader.GetOrdinal("PositionId")),
+                TradeExecutionId = reader.IsDBNull(reader.GetOrdinal("TradeExecutionId")) ? null : reader.GetInt32(reader.GetOrdinal("TradeExecutionId")),
+                Comment = reader.GetString(reader.GetOrdinal("Comment")),
+                EntryDate = reader.GetDateTime(reader.GetOrdinal("EntryDate")),
+                TradeTypeId = reader.GetInt32(reader.GetOrdinal("TradeTypeId")),
+                Category = reader.IsDBNull(reader.GetOrdinal("Category")) ? string.Empty : reader.GetString(reader.GetOrdinal("Category")),
+                Name = reader.IsDBNull(reader.GetOrdinal("Name")) ? string.Empty : reader.GetString(reader.GetOrdinal("Name"))
             };
         }
     }

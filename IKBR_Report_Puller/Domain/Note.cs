@@ -13,5 +13,7 @@ namespace IKBR_Report_Puller.Domain
         public string Comment { get; set; } = string.Empty;
         public DateTime EntryDate { get; set; }
         public int TradeTypeId { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
 }

@@ -6,7 +6,7 @@ namespace IKBR_Report_Puller.Domain
     public class ListItem
     {
         public int Id { get; set; }
-        public string ListName { get; set; } = string.Empty;
-        public string Item { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
     }
 }

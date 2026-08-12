@@ -114,6 +114,8 @@ export interface Note {
     comment: string;
     entryDate: string;
     tradeTypeId: number;
+    category: string;
+    name: string;
 }
 
 export interface CreateNoteRequest {
@@ -122,4 +124,10 @@ export interface CreateNoteRequest {
     comment: string;
     entryDate: string;
     tradeTypeId: number;
+}
+
+export interface ListItem {
+    id: number;
+    category: string;
+    name: string;
 }

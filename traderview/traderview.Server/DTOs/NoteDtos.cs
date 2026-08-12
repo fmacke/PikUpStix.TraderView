@@ -21,6 +21,8 @@ namespace traderview.Server.DTOs
         public int PositionId { get; set; }
         public int? TradeExecutionId { get; set; }
         public string Comment { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
         public DateTime EntryDate { get; set; }
         public int TradeTypeId { get; set; }
     }

@@ -317,12 +317,12 @@ END
 GO
 
 -- =============================================
--- Table 5: List
--- Description: Stores lookup list values for categorization (e.g., trade types)
+-- Table 5: Lists
+-- Description: Stores lookup lists values for categorization (e.g., trade types)
 -- =============================================
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[List]') AND type in (N'U'))
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Lists]') AND type in (N'U'))
 BEGIN
-	CREATE TABLE [dbo].[List]
+	CREATE TABLE [dbo].[Lists]
 	(
 		[Id] INT IDENTITY(1,1) NOT NULL,
 		[Name] NVARCHAR(100) NOT NULL,
@@ -332,23 +332,23 @@ BEGIN
 		[CreatedAt] DATETIME2(7) NOT NULL DEFAULT GETUTCDATE(),
 		[UpdatedAt] DATETIME2(7) NOT NULL DEFAULT GETUTCDATE(),
 
-		CONSTRAINT [PK_List] PRIMARY KEY CLUSTERED ([Id] ASC)
+		CONSTRAINT [PK_Lists] PRIMARY KEY CLUSTERED ([Id] ASC)
 	);
 
 	-- Create index on Name for quick lookups
-	CREATE NONCLUSTERED INDEX [IX_List_Name] 
-	ON [dbo].[List] ([Name]);
+	CREATE NONCLUSTERED INDEX [IX_Lists_Name] 
+	ON [dbo].[Lists] ([Name]);
 
 	-- Create index on Category for filtering by category
-	CREATE NONCLUSTERED INDEX [IX_List_Category] 
-	ON [dbo].[List] ([Category])
+	CREATE NONCLUSTERED INDEX [IX_Lists_Category] 
+	ON [dbo].[Lists] ([Category])
 	WHERE [Category] IS NOT NULL;
 
 	-- Create index on IsActive for filtering active items
-	CREATE NONCLUSTERED INDEX [IX_List_IsActive] 
-	ON [dbo].[List] ([IsActive]);
+	CREATE NONCLUSTERED INDEX [IX_Lists_IsActive] 
+	ON [dbo].[Lists] ([IsActive]);
 
-	PRINT 'Table List created successfully.';
+	PRINT 'Table Lists created successfully.';
 END
 GO
 
@@ -371,8 +371,8 @@ BEGIN
 		CONSTRAINT [PK_Notes] PRIMARY KEY CLUSTERED ([Id] ASC),
 		CONSTRAINT [FK_Notes_Positions] FOREIGN KEY ([PositionId]) 
 			REFERENCES [dbo].[Positions] ([Id]) ON DELETE CASCADE,
-		CONSTRAINT [FK_Notes_List] FOREIGN KEY ([TradeTypeId]) 
-			REFERENCES [dbo].[List] ([Id])
+		CONSTRAINT [FK_Notes_Lists] FOREIGN KEY ([TradeTypeId]) 
+			REFERENCES [dbo].[Lists] ([Id])
 	);
 
 	-- Create index on PositionId for FK performance
@@ -446,7 +446,7 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.Instruments TO [YourApplicationUser]
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.Positions TO [YourApplicationUser];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.TradeExecutions TO [YourApplicationUser];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.HistoricalData TO [YourApplicationUser];
-GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.List TO [YourApplicationUser];
+GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.Lists TO [YourApplicationUser];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.Notes TO [YourApplicationUser];
 GRANT SELECT, INSERT, UPDATE, DELETE ON dbo.EconomicCalendar TO [YourApplicationUser];
 GO
@@ -464,7 +464,7 @@ PRINT '  1. Instruments - Trading instrument master data';
 PRINT '  2. Positions - Position data (both open and closed)';
 PRINT '  3. TradeExecutions - Trade execution records from IBKR';
 PRINT '  4. HistoricalData - Historical price data';
-PRINT '  5. List - Lookup list values for categorization';
+PRINT '  5. Lists - Lookup lists values for categorization';
 PRINT '  6. Notes - Notes related to positions and trade types';
 PRINT '  7. EconomicCalendar - Economic calendar events';
 PRINT '';
@@ -489,7 +489,7 @@ SELECT 'TradeExecutions', COUNT(*) FROM dbo.TradeExecutions
 UNION ALL
 SELECT 'HistoricalData', COUNT(*) FROM dbo.HistoricalData
 UNION ALL
-SELECT 'List', COUNT(*) FROM dbo.List
+SELECT 'Lists', COUNT(*) FROM dbo.Lists
 UNION ALL
 SELECT 'Notes', COUNT(*) FROM dbo.Notes
 UNION ALL

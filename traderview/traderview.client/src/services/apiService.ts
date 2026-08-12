@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Trade, TradeContext, RSIndicatorData, OpenPosition, Note, CreateNoteRequest } from '../types/api';
+import type { Trade, TradeContext, RSIndicatorData, OpenPosition, Note, CreateNoteRequest, ListItem } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -142,6 +142,19 @@ export const apiService = {
             return response.data;
         } catch (error) {
             console.error('Get notes API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Get all EntryMethod list items
+    async getEntryMethods(): Promise<ListItem[]> {
+        console.log('Making API call to /lists/entrymethod');
+        try {
+            const response = await apiClient.get<ListItem[]>('/lists/entrymethod');
+            console.log('Get EntryMethod list items API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Get EntryMethod list items API call failed:', error);
             throw error;
         }
     },

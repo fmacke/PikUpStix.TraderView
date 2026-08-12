@@ -23,7 +23,7 @@ namespace PikUpStix.TraderView.Data.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var listItems = new List<ListItem>();
-                var query = "SELECT Id, ListName, Item FROM Lists ORDER BY ListName, Item";
+                var query = "SELECT Id, Category, Name FROM Lists ORDER BY Category, Name";
 
                 using var command = new SqlCommand(query, connection);
                 using var reader = command.ExecuteReader();
@@ -33,8 +33,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                     listItems.Add(new ListItem
                     {
                         Id = reader.GetInt32(0),
-                        ListName = reader.GetString(1),
-                        Item = reader.GetString(2)
+                        Category = reader.GetString(1),
+                        Name = reader.GetString(2)
                     });
                 }
 
@@ -49,7 +49,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var query = "SELECT Id, ListName, Item FROM Lists WHERE Id = @Id";
+                var query = "SELECT Id, Category, Name FROM Lists WHERE Id = @Id";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Id", id);
@@ -60,8 +60,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                     return new ListItem
                     {
                         Id = reader.GetInt32(0),
-                        ListName = reader.GetString(1),
-                        Item = reader.GetString(2)
+                        Category = reader.GetString(1),
+                        Name = reader.GetString(2)
                     };
                 }
 
@@ -72,24 +72,24 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Gets all items for a specific list name
         /// </summary>
-        public List<ListItem> GetByListName(string listName)
+        public List<ListItem> GetByListName(string category)
         {
             return ExecuteDatabaseOperation(connection =>
             {
                 var listItems = new List<ListItem>();
-                var query = "SELECT Id, ListName, Item FROM Lists WHERE ListName = @ListName ORDER BY Item";
+                var query = "SELECT Id, Name, Category FROM Lists WHERE Category = @Category and IsActive = 1 ORDER BY Name";
 
                 using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@ListName", listName);
+                command.Parameters.AddWithValue("@Category", category);
 
                 using var reader = command.ExecuteReader();
                 while (reader.Read())
                 {
                     listItems.Add(new ListItem
                     {
-                        Id = reader.GetInt32(0),
-                        ListName = reader.GetString(1),
-                        Item = reader.GetString(2)
+                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                        Category = reader.GetString(reader.GetOrdinal("Category")),
+                        Name = reader.GetString(reader.GetOrdinal("Name"))
                     });
                 }
 
@@ -105,13 +105,13 @@ namespace PikUpStix.TraderView.Data.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var query = @"
-                    INSERT INTO Lists (ListName, Item) 
-                    VALUES (@ListName, @Item);
+                    INSERT INTO Lists (Category, Name) 
+                    VALUES (@Category, @Name);
                     SELECT CAST(SCOPE_IDENTITY() as int);";
 
                 using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@ListName", listName);
-                command.Parameters.AddWithValue("@Item", item);
+                command.Parameters.AddWithValue("@Category", listName);
+                command.Parameters.AddWithValue("@Name", item);
 
                 var newId = command.ExecuteScalar();
                 return Convert.ToInt32(newId);
@@ -127,13 +127,13 @@ namespace PikUpStix.TraderView.Data.Repositories
             {
                 var query = @"
                     UPDATE Lists 
-                    SET ListName = @ListName, Item = @Item 
+                    SET Category = @Category, Name = @Name 
                     WHERE Id = @Id";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Id", id);
-                command.Parameters.AddWithValue("@ListName", listName);
-                command.Parameters.AddWithValue("@Item", item);
+                command.Parameters.AddWithValue("@Category", listName);
+                command.Parameters.AddWithValue("@Name", item);
 
                 int rowsAffected = command.ExecuteNonQuery();
                 return rowsAffected > 0;
@@ -165,7 +165,7 @@ namespace PikUpStix.TraderView.Data.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var listNames = new List<string>();
-                var query = "SELECT DISTINCT ListName FROM Lists ORDER BY ListName";
+                var query = "SELECT DISTINCT Category FROM Lists ORDER BY Category";
 
                 using var command = new SqlCommand(query, connection);
                 using var reader = command.ExecuteReader();

@@ -275,13 +275,13 @@ END
 GO
 
 -- =============================================
--- Create/Update List Table
+-- Create/Update Lists Table
 -- =============================================
-PRINT 'Checking List table...';
+PRINT 'Checking Lists table...';
 
-IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[List]') AND type in (N'U'))
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[Lists]') AND type in (N'U'))
 BEGIN
-	CREATE TABLE [dbo].[List]
+	CREATE TABLE [dbo].[Lists]
 	(
 		[Id] INT IDENTITY(1,1) NOT NULL,
 		[Name] NVARCHAR(100) NOT NULL,
@@ -291,62 +291,62 @@ BEGIN
 		[CreatedAt] DATETIME2(7) NOT NULL DEFAULT GETUTCDATE(),
 		[UpdatedAt] DATETIME2(7) NOT NULL DEFAULT GETUTCDATE(),
 
-		CONSTRAINT [PK_List] PRIMARY KEY CLUSTERED ([Id] ASC)
+		CONSTRAINT [PK_Lists] PRIMARY KEY CLUSTERED ([Id] ASC)
 	);
 
 	-- Create index on Name for quick lookups
 	CREATE NONCLUSTERED INDEX [IX_List_Name] 
-	ON [dbo].[List] ([Name]);
+	ON [dbo].[Lists] ([Name]);
 
 	-- Create index on Category for filtering by category
-	CREATE NONCLUSTERED INDEX [IX_List_Category] 
-	ON [dbo].[List] ([Category])
+	CREATE NONCLUSTERED INDEX [IX_Lists_Category] 
+	ON [dbo].[Lists] ([Category])
 	WHERE [Category] IS NOT NULL;
 
 	-- Create index on IsActive for filtering active items
-	CREATE NONCLUSTERED INDEX [IX_List_IsActive] 
-	ON [dbo].[List] ([IsActive]);
+	CREATE NONCLUSTERED INDEX [IX_Lists_IsActive] 
+	ON [dbo].[Lists] ([IsActive]);
 
-	PRINT '  - Table List created successfully';
+	PRINT '  - Table Lists created successfully';
 END
 ELSE
 BEGIN
-	PRINT '  - Table List already exists';
+	PRINT '  - Table Lists already exists';
 END
 
--- Ensure all required indexes exist for List table
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[List]') AND name = 'IX_List_Name')
+-- Ensure all required indexes exist for Lists table
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Lists]') AND name = 'IX_Lists_Name')
 BEGIN
-	CREATE NONCLUSTERED INDEX [IX_List_Name] 
-	ON [dbo].[List] ([Name]);
-	PRINT '  - Created index IX_List_Name';
+	CREATE NONCLUSTERED INDEX [IX_Lists_Name] 
+	ON [dbo].[Lists] ([Name]);
+	PRINT '  - Created index IX_Lists_Name';
 END
 ELSE
 BEGIN
-	PRINT '  - Index IX_List_Name already exists';
+	PRINT '  - Index IX_Lists_Name already exists';
 END
 
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[List]') AND name = 'IX_List_Category')
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Lists]') AND name = 'IX_Lists_Category')
 BEGIN
-	CREATE NONCLUSTERED INDEX [IX_List_Category] 
-	ON [dbo].[List] ([Category])
+	CREATE NONCLUSTERED INDEX [IX_Lists_Category] 
+	ON [dbo].[Lists] ([Category])
 	WHERE [Category] IS NOT NULL;
-	PRINT '  - Created index IX_List_Category';
+	PRINT '  - Created index IX_Lists_Category';
 END
 ELSE
 BEGIN
-	PRINT '  - Index IX_List_Category already exists';
+	PRINT '  - Index IX_Lists_Category already exists';
 END
 
-IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[List]') AND name = 'IX_List_IsActive')
+IF NOT EXISTS (SELECT * FROM sys.indexes WHERE object_id = OBJECT_ID(N'[dbo].[Lists]') AND name = 'IX_Lists_IsActive')
 BEGIN
-	CREATE NONCLUSTERED INDEX [IX_List_IsActive] 
-	ON [dbo].[List] ([IsActive]);
-	PRINT '  - Created index IX_List_IsActive';
+	CREATE NONCLUSTERED INDEX [IX_Lists_IsActive] 
+	ON [dbo].[Lists] ([IsActive]);
+	PRINT '  - Created index IX_Lists_IsActive';
 END
 ELSE
 BEGIN
-	PRINT '  - Index IX_List_IsActive already exists';
+	PRINT '  - Index IX_Lists_IsActive already exists';
 END
 
 GO
@@ -529,17 +529,17 @@ BEGIN
 	PRINT '  - FK_Notes_Positions already exists';
 END
 
--- FK: Notes -> List
-IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Notes_List')
+-- FK: Notes -> Lists
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE name = 'FK_Notes_Lists')
 BEGIN
 	ALTER TABLE [dbo].[Notes]
-	ADD CONSTRAINT [FK_Notes_List] FOREIGN KEY ([TradeTypeId]) 
-		REFERENCES [dbo].[List] ([Id]);
-	PRINT '  - Created FK_Notes_List';
+	ADD CONSTRAINT [FK_Notes_Lists] FOREIGN KEY ([TradeTypeId]) 
+		REFERENCES [dbo].[Lists] ([Id]);
+	PRINT '  - Created FK_Notes_Lists';
 END
 ELSE
 BEGIN
-	PRINT '  - FK_Notes_List already exists';
+	PRINT '  - FK_Notes_Lists already exists';
 END
 
 GO
@@ -563,7 +563,7 @@ SELECT
 FROM sys.tables t
 LEFT JOIN sys.columns c ON t.object_id = c.object_id
 LEFT JOIN sys.indexes i ON t.object_id = i.object_id AND i.type > 0
-WHERE t.name IN ('Instruments', 'Positions', 'TradeExecutions', 'HistoricalData', 'List', 'Notes', 'EconomicCalendar')
+WHERE t.name IN ('Instruments', 'Positions', 'TradeExecutions', 'HistoricalData', 'Lists', 'Notes', 'EconomicCalendar')
 GROUP BY t.name
 ORDER BY t.name;
 
@@ -578,7 +578,7 @@ SELECT 'TradeExecutions', COUNT(*) FROM [dbo].[TradeExecutions]
 UNION ALL
 SELECT 'HistoricalData', COUNT(*) FROM [dbo].[HistoricalData]
 UNION ALL
-SELECT 'List', COUNT(*) FROM [dbo].[List]
+SELECT 'Lists', COUNT(*) FROM [dbo].[Lists]
 UNION ALL
 SELECT 'Notes', COUNT(*) FROM [dbo].[Notes]
 UNION ALL

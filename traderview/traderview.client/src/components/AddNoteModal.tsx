@@ -1,16 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './AddNoteModal.css';
+import { apiService } from '../services/apiService';
+import type { ListItem } from '../types/api';
 
 interface AddNoteModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (comment: string) => Promise<void> | Promise<any>;
+    onSubmit: (comment: string, entryMethodId: number | null) => Promise<void> | Promise<any>;
     positionId: number;
 }
 
 function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalProps) {
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [entryMethods, setEntryMethods] = useState<ListItem[]>([]);
+    const [selectedEntryMethodId, setSelectedEntryMethodId] = useState<number | null>(null);
+    const [isLoadingEntryMethods, setIsLoadingEntryMethods] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            fetchEntryMethods();
+        }
+    }, [isOpen]);
+
+    const fetchEntryMethods = async () => {
+        setIsLoadingEntryMethods(true);
+        try {
+            const methods = await apiService.getEntryMethods();
+            setEntryMethods(methods);
+        } catch (error) {
+            console.error('Error fetching entry methods:', error);
+            // Continue without entry methods - the dropdown will just be empty
+        } finally {
+            setIsLoadingEntryMethods(false);
+        }
+    };
 
     if (!isOpen) {
         return null;
@@ -26,10 +50,11 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
 
         setIsSubmitting(true);
         try {
-            console.log('AddNoteModal: About to call onSubmit with comment:', comment);
-            const result = await onSubmit(comment);
+            console.log('AddNoteModal: About to call onSubmit with comment:', comment, 'and entryMethodId:', selectedEntryMethodId);
+            const result = await onSubmit(comment, selectedEntryMethodId);
             console.log('AddNoteModal: onSubmit returned successfully:', result);
             setComment(''); // Clear the form
+            setSelectedEntryMethodId(null); // Clear the entry method selection
             onClose(); // Close the modal
         } catch (error) {
             console.error('AddNoteModal: Error submitting note:', error);
@@ -46,6 +71,7 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
     const handleClose = () => {
         if (!isSubmitting) {
             setComment(''); // Clear the form when closing
+            setSelectedEntryMethodId(null); // Clear the entry method selection
             onClose();
         }
     };
@@ -74,6 +100,23 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
+                        <div className="form-group">
+                            <label htmlFor="entryMethod">Entry Method</label>
+                            <select
+                                id="entryMethod"
+                                value={selectedEntryMethodId ?? ''}
+                                onChange={(e) => setSelectedEntryMethodId(e.target.value ? parseInt(e.target.value) : null)}
+                                disabled={isSubmitting || isLoadingEntryMethods}
+                            >
+                                <option value="">-- Select Entry Method (Optional) --</option>
+                                {entryMethods.map((method) => (
+                                    <option key={method.id} value={method.id}>
+                                        {method.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
                         <div className="form-group">
                             <label htmlFor="comment">Comment</label>
                             <textarea

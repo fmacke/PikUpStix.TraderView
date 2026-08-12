@@ -74,7 +74,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
         setIsNoteModalOpen(false);
     };
 
-    const handleSubmitNote = async (comment: string) => {
+    const handleSubmitNote = async (comment: string, entryMethodId: number | null) => {
         if (!trade) {
             throw new Error('No trade selected');
         }
@@ -84,7 +84,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
             tradeExecutionId: null, // Can be extended later to link to specific executions
             comment: comment,
             entryDate: new Date().toISOString(),
-            tradeTypeId: 1 // Default trade type, can be made configurable
+            tradeTypeId: entryMethodId ?? 1 // Use selected entry method or default to 1
         };
 
         const result = await apiService.createNote(noteRequest);
@@ -184,6 +184,8 @@ function TradeDetail({ trade }: TradeDetailProps) {
                                 <tr>
                                     <th>Date</th>
                                     <th>Comment</th>
+                                    <th>Category</th>
+                                    <th>Type</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -191,6 +193,8 @@ function TradeDetail({ trade }: TradeDetailProps) {
                                     <tr key={note.id}>
                                         <td>{new Date(note.entryDate).toLocaleDateString()}</td>
                                         <td>{note.comment}</td>
+                                        <td>{note.category}</td>
+                                        <td>{note.name}</td>
                                     </tr>
                                 ))}
                             </tbody>

@@ -69,7 +69,7 @@ function OpenPositionList() {
         setSelectedPositionId(null);
     };
 
-    const handleSubmitNote = async (comment: string) => {
+    const handleSubmitNote = async (comment: string, entryMethodId: number | null) => {
         if (!selectedPositionId) {
             throw new Error('No position selected');
         }
@@ -79,7 +79,7 @@ function OpenPositionList() {
             tradeExecutionId: null,
             comment: comment,
             entryDate: new Date().toISOString(),
-            tradeTypeId: 1
+            tradeTypeId: entryMethodId ?? 1 // Use selected entry method or default to 1
         };
 
         const result = await apiService.createNote(noteRequest);
