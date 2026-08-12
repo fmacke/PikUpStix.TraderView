@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Xml.Linq;
+using IKBR_Report_Puller.Data;
 using IKBR_Report_Puller.Domain;
 using PikUpStix.TraderView.Domain;
 
@@ -36,7 +37,7 @@ namespace PikUpStix.TraderView.Services
 
             return report;
         }
-
+        
         public static IKBRReport ParseTodayReport(XDocument reportXml)
         {
             var report = new IKBRReport();
@@ -220,7 +221,7 @@ namespace PikUpStix.TraderView.Services
             {
                 IbExecID = tradeConfirm.Attribute("execID")?.Value,
                 Symbol = tradeConfirm.Attribute("symbol")?.Value,
-                TradeDate = (DateTime)Convert.ToDateTime(tradeConfirm.Attribute("tradeDate")?.Value),
+                TradeDate = Convert.ToDateTime(TypeConverters.ConvertToNullableDate(tradeConfirm.Attribute("tradeDate")?.Value)),
                 AssetCategory = tradeConfirm.Attribute("assetCategory")?.Value,
                 ListingExchange = tradeConfirm.Attribute("listingExchange").Value,
                 Quantity = (decimal)ConvertToDecimal(tradeConfirm.Attribute("quantity").Value),

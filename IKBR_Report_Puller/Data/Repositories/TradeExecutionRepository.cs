@@ -379,6 +379,15 @@ namespace PikUpStix.TraderView.Data.Repositories
                             "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @execID",
                             new Dictionary<string, object> { { "@execID", execID } });
 
+                        var existingPostion = GetOpenPosition(connection, transaction, tradeConfirm.Symbol, tradeConfirm.InstrumentId);
+                        if(existingPostion != null)
+                        {
+                            tradeConfirm.PositionId = existingPostion.Id;
+                        }
+                        else
+                        {
+                            tradeConfirm.PositionId = CreatePosition(connection, transaction, tradeConfirm.InstrumentId, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
+                        }
                         if (exists)
                         {
                             UpdateTodayExecution(connection, transaction, tradeConfirm, execID);
@@ -512,8 +521,8 @@ namespace PikUpStix.TraderView.Data.Repositories
         private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
         {
             const string insertQuery = @"
-                INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, quantity, tradePrice, currency, conid) 
-                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @quantity, @tradePrice, @currency, @conid, @lastReportedPrice)";
+                INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, dateTime, quantity, tradePrice, currency, conid) 
+                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @dateTime, @quantity, @tradePrice, @currency, @conid)";
 
             var parameters = new Dictionary<string, object>
             {
@@ -522,6 +531,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                 { "@ibexecID", execID },
                 { "@symbol", tradeConfirm.Symbol },
                 { "@tradeDate", tradeConfirm.TradeDate },
+                { "@dateTime", tradeConfirm.TradeDate },
                 { "@quantity", tradeConfirm.Quantity },
                 { "@tradePrice", tradeConfirm.TradePrice },
                 { "@currency", tradeConfirm.Currency }, 

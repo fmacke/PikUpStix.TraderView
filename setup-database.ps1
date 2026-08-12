@@ -44,6 +44,7 @@ foreach ($secretId in $userSecretsIds) {
                 $sqlPassword = $secrets.Database.Password
                 Write-Host ""
                 Write-Host "Using password from User Secrets" -ForegroundColor Cyan
+                Write-Host $sqlPassword -ForegroundColor Cyan
                 break
             }
         } catch {

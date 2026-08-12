@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace PikUpStix.TraderView.Services
 {
@@ -53,11 +54,11 @@ namespace PikUpStix.TraderView.Services
 
                     // Save the workbook
                     string whenGeneratedStr = DateTime.Now.ToString("yyyyMMddHHmmss");
-                    string fileName = outputFilePath.Replace("[FILE_NAME]", $"{whenGeneratedStr}.xlsx");
+                    StringBuilder fileName = new StringBuilder(outputFilePath).Append("\\" + whenGeneratedStr + ".xlsx");
                     string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-                    string filePath = Path.Combine(desktopPath, fileName);
+                    string filePath = Path.Combine(desktopPath, fileName.ToString());
 
-                    package.SaveAs(new FileInfo(filePath));
+                    package.SaveAs(new FileInfo(filePath)); 
                     Console.WriteLine($"Successfully created Excel report at {filePath}");
                 }
             }
@@ -92,7 +93,7 @@ namespace PikUpStix.TraderView.Services
                 {
                     string accountId = position.TradeExecutions.First().AccountId;
                     string symbol = position.TradeExecutions.First().Symbol;
-                    long? conid = TypeConverters.ConvertToLong(position.TradeExecutions.First().Conid);
+                    long? conid = TypeConverters.ConvertToLong(position.Instrument.ConId);
                     decimal currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
                     decimal costBasisPrice = position.TradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Average(x => x.TradePrice);
                     decimal positionValue = position.LastReportedPrice * currentPositionQuantity;
@@ -153,10 +154,10 @@ namespace PikUpStix.TraderView.Services
 
                     // Calculate Current Margin
                     decimal currentMargin = positionValue - (currentPositionQuantity * costBasisPrice);
-
+                   
                     reportDataList.Add(new OpenPositionReportData
                     {
-                        PositionId = position.Id,
+                        //PositionId = position.Id,
                         AccountId = accountId,
                         Symbol = symbol,
                         DateOpened = dateOpened,

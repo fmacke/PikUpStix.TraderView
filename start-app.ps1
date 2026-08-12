@@ -4,7 +4,8 @@
 param(
     [switch]$Force,
     [switch]$NoBuild,
-    [switch]$Logs
+    [switch]$Logs,
+    [switch]$NoCache
 )
 
 Write-Host "=== TraderView Application Deployment ===" -ForegroundColor Cyan
@@ -66,10 +67,16 @@ function Test-RebuildNeeded {
 
 # Function to build Docker images
 function Build-DockerImages {
+    param([bool]$UseNoCache = $false)
+    
     Write-Host "`nBuilding Docker images..." -ForegroundColor Cyan
     
-    # Build using docker-compose
-    docker-compose build
+    if ($UseNoCache) {
+        Write-Host "Building with --no-cache flag..." -ForegroundColor Yellow
+        docker-compose build --no-cache
+    } else {
+        docker-compose build
+    }
     
     if ($LASTEXITCODE -eq 0) {
         Write-Host "Docker build completed successfully!" -ForegroundColor Green

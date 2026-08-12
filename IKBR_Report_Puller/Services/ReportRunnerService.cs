@@ -49,16 +49,19 @@ namespace PikUpStix.TraderView.Services
             try
             {
                 (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
-                // Upsert instruments first, then trade executions, then open positions
                 _instrumentRepository.UpsertInstruments(mainReport.Trades, _marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
                 await UpdateOpenPositionPrices();
                 var executions = _tradeExecutionRepository.GetTradeExecutions();
 
+                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+                SaveTradeConfirms(todayReportXml);
+
                 if (writeOutputtoExcel)
                 {
-                    _excelReportService.CreateExcelFileReport(mainReport.OpenPositions, executions, outputFilePath);
-                    await WriteTodayReport(fileName);
+                    var openPositions = _tradeExecutionRepository.GetOpenPositions();
+                    _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
+                    await WriteTodayReportToExcel(fileName, todayReportXml);
                 }
                 if (updateMarketData)
                 {
@@ -114,13 +117,23 @@ namespace PikUpStix.TraderView.Services
                         "QQQ",//nasdaq
                         "^VIX"
                      }, 300);
-                    
+
                 }
             }
             catch (Exception ex)
             {
                 System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
             }
+        }
+
+        private void SaveTradeConfirms(XDocument todayReportXml)
+        {
+            // Convert XDocument to IKBRReport
+            var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
+
+            // Upsert instruments first, then trade executions
+            _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, _marketDataService.SourceName);
+            _tradeExecutionRepository.UpsertTodayExecutions(todayReport.TradeConfirms);
         }
 
         private async Task UpdateOpenPositionPrices()
@@ -130,30 +143,21 @@ namespace PikUpStix.TraderView.Services
             _tradeExecutionRepository.UpsertPositions(openPositions);
         }
 
-        private async Task<string> WriteTodayReport(string fileName) 
+        private async Task<string> WriteTodayReportToExcel(string fileName, XDocument todayReportXml) 
         {
-            //// Fetch and process today's report
-            XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
             fileName = DateTime.UtcNow.ToString("yyyyMMdd") + "_TraderSyncAccess_today.xml";
-            string todayReportFilePath = outputFilePath.Replace("[FILE_NAME]", fileName);
+            StringBuilder todayReportFilePath = new StringBuilder(outputFilePath).Append("\\" + fileName);
 
             // Ensure directory exists
-            string directory = System.IO.Path.GetDirectoryName(todayReportFilePath);
+            string directory = System.IO.Path.GetDirectoryName(todayReportFilePath.ToString());
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
             {
                 Directory.CreateDirectory(directory);
                 System.Console.WriteLine($"Created directory: {directory}");
             }
 
-            todayReportXml.Save(todayReportFilePath);
-            System.Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");
-
-            // Convert XDocument to IKBRReport
-            var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
-
-            // Upsert instruments first, then trade executions
-            _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, _marketDataService.SourceName);
-            _tradeExecutionRepository.UpsertTodayExecutions(todayReport.TradeConfirms);
+            todayReportXml.Save(todayReportFilePath.ToString());
+            System.Console.WriteLine($"Successfully saved 'Today' report to {todayReportFilePath}");            
 
             return fileName;
         }
@@ -161,8 +165,8 @@ namespace PikUpStix.TraderView.Services
         private async Task<(IKBRReport mainReport, string fileName)> GetReportDataFromInteractiveBrokers()
         {
             // Fetch and process main report
-            //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260811_103513_TraderSyncAccess.xml");
-            XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260812_215421_TraderSyncAccess.xml");
+            //XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             StringBuilder mainReportFilePath = new StringBuilder(outputFilePath).Append("\\" + fileName);
 

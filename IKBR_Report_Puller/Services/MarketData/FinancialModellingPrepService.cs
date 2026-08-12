@@ -102,8 +102,8 @@ namespace PikUpStix.TraderView.Services.MarketData
             {
                 await ExecuteWithErrorHandlingAsync(async () =>
                 {
-                    var fromDate = trade.TradeOpened.AddDays(-200);
-                    var toDate = trade.TradeClosed.AddDays(200);
+                    var fromDate = trade.TradeOpened.AddDays(-364);
+                    var toDate = trade.TradeClosed.AddDays(364);
                     if (toDate > DateTime.UtcNow)
                     {
                         toDate = DateTime.UtcNow.AddDays(-1); // don't pull today's data as it's not complete
