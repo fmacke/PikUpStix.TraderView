@@ -6,6 +6,7 @@ using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using System.Data;
+using System.Transactions;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {
@@ -74,7 +75,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                             }
                         });
                         // If no open position exists, create a new position and get its ID
-                        // If Open Position exists, trade.PositionId = openPosition.Id
+                        // If Open Position exists, trade.PositionId = existingPosition.Id
                         if (openPosition == null)
                         {
                             ExecuteDatabaseOperation(connection =>
@@ -368,51 +369,77 @@ namespace PikUpStix.TraderView.Data.Repositories
                 return;
             }
 
-            ExecuteDatabaseOperation(connection =>
+
+            foreach (var tradeConfirm in tradeConfirms)
             {
-                using (var transaction = connection.BeginTransaction())
+                if (string.IsNullOrEmpty(tradeConfirm.IbExecID))
                 {
-                    foreach (var tradeConfirm in tradeConfirms)
+                    Console.WriteLine("TradeExecution confirmation missing execID. Skipping.");
+                    continue;
+                }
+                bool tradeExecutionExists = false;
+                ExecuteDatabaseOperation(connection =>
+                {
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        string execID = tradeConfirm.IbExecID;
-                        if (string.IsNullOrEmpty(execID))
-                        {
-                            Console.WriteLine("TradeExecution confirmation missing execID. Skipping.");
-                            continue;
-                        }
-
-                        bool exists = RecordExists(connection, transaction,
+                        bool tradeExecutionExists = RecordExists(connection, transaction,
                             "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @execID",
-                            new Dictionary<string, object> { { "@execID", execID } });
-
-                        
-                        if (!exists)
-                        {
-                            var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(tradeConfirm.Conid);
-                            if (instrumentId.HasValue)
-                            {
-                                var existingPosition = GetOpenPosition(connection, transaction, tradeConfirm.Symbol, Convert.ToInt32(instrumentId));
-                                if (existingPosition != null)
-                                {
-                                    tradeConfirm.PositionId = existingPosition.Id;
-                                }
-                                else
-                                {
-                                    tradeConfirm.PositionId = CreatePosition(connection, transaction, Convert.ToInt32(instrumentId), tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
-                                }
-                                InsertTradeConfirmation(connection, transaction, tradeConfirm, execID);
-                            }
-                            else
-                            {
-                                Console.WriteLine($"Instrument not found for symbol {tradeConfirm.Symbol} with Conid {tradeConfirm.Conid}. Skipping trade confirmation.");
-                            }   
-                        }
+                            new Dictionary<string, object> { { "@execID", tradeConfirm.IbExecID } });
+                        transaction.Commit();
                     }
 
-                    transaction.Commit();
-                    Console.WriteLine("Successfully processed today's trade confirmations.");
+                });
+
+                if (!tradeExecutionExists)
+                {
+                    tradeConfirm.OpenCloseIndicator = "O";  // THIS MAY NOT BE TRUE - TRADE CONFIRMS COULD BE CLOSING FUNCTIONS - MONITOR
+                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(tradeConfirm.Conid);
+                    
+                    if (instrumentId.HasValue)
+                    {
+                        Position? existingPosition = null;
+                        ExecuteDatabaseOperation(connection =>
+                        {
+                            using (var transaction = connection.BeginTransaction())
+                            {
+                                // Check for open position for the trade's symbol and instrument (within the same transaction)
+                                existingPosition = GetOpenPosition(connection, transaction, tradeConfirm.Symbol, instrumentId.Value);
+                                transaction.Commit();
+                            }
+                        });
+                        if (existingPosition != null)
+                        {
+                            tradeConfirm.PositionId = existingPosition.Id;
+                        }
+                        else
+                        {
+                            ExecuteDatabaseOperation(connection =>
+                            {
+                                using (var transaction = connection.BeginTransaction())
+                                {
+                                    
+                                    tradeConfirm.PositionId = CreatePosition(connection, transaction, instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
+                                    transaction.Commit();
+                                }
+                            });
+                        }
+                        ExecuteDatabaseOperation(connection =>
+                        {
+                            using (var transaction = connection.BeginTransaction())
+                            {
+                                tradeConfirm.Id = InsertTradeConfirmation(connection, transaction, tradeConfirm);
+                                transaction.Commit();
+                            }
+                        });
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Instrument not found for symbol {tradeConfirm.Symbol} with Conid {tradeConfirm.Conid}. Skipping trade confirmation.");
+                    }
                 }
-            });
+            }              
+            Console.WriteLine("Successfully processed today's trade confirmations.");
+                
         }
         private int CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate, decimal openPrice)
         {
@@ -480,7 +507,7 @@ namespace PikUpStix.TraderView.Data.Repositories
             {
                 using (var cmd = new SqlCommand(insertQuery, connection, transaction))
                 {
-                    var parameters = TradeParameterBuilder.GetTradeParameters(trade);
+                    var parameters = TradeParameterBuilder.GetTradeExecutionParams(trade);
                     foreach (var param in parameters)
                     {
                         if(param.Value == null)
@@ -531,80 +558,50 @@ namespace PikUpStix.TraderView.Data.Repositories
         //    ExecuteCommand(connection, transaction, updateQuery, parameters);
         //}
 
-        private void InsertTradeConfirmation(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
+        private int InsertTradeConfirmation(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm)
         {
+            int newTradeId = 0;
             const string insertQuery = @"
                 INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, dateTime, quantity, tradePrice, currency, conid,
-                tradeID, fifoPnlRealized, ibCommission, currency, assetCategory, symbol, description, SecurityIDType, cusip, accountId, isin, figi, 
+                tradeID, fifoPnlRealized, ibCommission, assetCategory, description, SecurityIDType, cusip, accountId, isin, figi, 
                 listingExchange, UnderlyingConid, UnderlyingSymbol, UnderlyingSecurityID, UnderlyingListingExchange,
                 Issuer, IssuerCountryCode, Multiplier, Strike, Expiry, PutCall, PrincipalAdjustFactor, TransactionType,
-                Exchange, Proceeds, ibCommission, NetCash, Cost, OrigTradePrice, OrigTradeDate, OrigTradeID, OrigOrderID,
-                OrigTransactionID, ClearingFirmID, ibOrderID, BuySell) 
+                Exchange, Proceeds, ibCommissionCurrency, NetCash, Cost, OrigTradePrice, OrigTradeDate, OrigTradeID, OrigOrderID,
+                OrigTransactionID, ClearingFirmID, BuySell, openCloseIndicator) 
                 VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @dateTime, @quantity, @tradePrice, @currency, 
-                @conid, @tradeID, @fifoPnlRealized, @ibCommission, @currency, @assetCategory, @symbol, @description, @securityIDType, @cusip,
+                @conid, @tradeID, @fifoPnlRealized, @ibCommission, @assetCategory, @description, @securityIDType, @cusip,
                 @accountId, @isin, @figi, @listingExchange, @UnderlyingConid, @UnderlyingSymbol, @UnderlyingSecurityID, @UnderlyingListingExchange,
                 @Issuer, @IssuerCountryCode, @Multiplier, @Strike, @Expiry, @PutCall, @PrincipalAdjustFactor, @TransactionType,
-                @Exchange, @Proceeds, @ibCommission, @NetCash, @Cost, @OrigTradePrice, @OrigTradeDate, @OrigTradeID, @OrigOrderID,
-                @OrigTransactionID, @ClearingFirmID, @ibOrderID, @BuySell)";
-            var parameters = new Dictionary<string, object>
-            {
-                { "@positionId", tradeConfirm.PositionId },
-                { "@ibOrderID", tradeConfirm.OrderID.ToString() },
-                { "@ibexecID", execID },
-                { "@symbol", tradeConfirm.Symbol },
-                { "@tradeDate", tradeConfirm.TradeDate },
-                { "@dateTime", tradeConfirm.TradeDate },
-                { "@quantity", tradeConfirm.Quantity },
-                { "@tradePrice", tradeConfirm.  TradePrice },
-                { "@currency", tradeConfirm.Currency }, 
-                { "@conid", tradeConfirm.Conid },
-                { "@tradeID", tradeConfirm.TradeID },
-                { "@fifoPnlRealized", tradeConfirm.FifoPnlRealized },
-                { "@ibCommission", tradeConfirm.Commission },
-                { "@currency", tradeConfirm.Currency },
-                { "@assetCategory", tradeConfirm.AssetCategory },
-                { "@symbol", tradeConfirm.Symbol },
-                { "@description", tradeConfirm.Description },
-                { "@securityIDType", tradeConfirm.SecurityIDType },
-                { "@cusip", tradeConfirm.Cusip },
-                { "@accountId", tradeConfirm.AccountId },
-                { "@isin", tradeConfirm.Isin },
-                { "@figi", tradeConfirm.Figi },
-                { "@listingExchange", tradeConfirm.ListingExchange },
-                { "@UnderlyingConid", tradeConfirm.UnderlyingConid },
-                { "@UnderlyingSymbol", tradeConfirm.UnderlyingSymbol },
-                { "@UnderlyingSecurityID", tradeConfirm.UnderlyingSecurityID },
-                { "@UnderlyingListingExchange", tradeConfirm.UnderlyingListingExchange },
-                { "@Issuer", tradeConfirm.Issuer },
-                { "@IssuerCountryCode", tradeConfirm.IssuerCountryCode },
-                { "@Multiplier", tradeConfirm.Multiplier },
-                { "@Strike", tradeConfirm.Strike },
-                { "@Expiry", tradeConfirm.Expiry },
-                { "@PutCall", tradeConfirm.PutCall },
-                { "@PrincipalAdjustFactor", tradeConfirm.PrincipalAdjustFactor },
-                { "@TransactionType", tradeConfirm.TransactionType },
-                { "@Exchange", tradeConfirm.Exchange },
-                { "@Proceeds", tradeConfirm.Proceeds },
-                { "@ibCommission", tradeConfirm.CommissionCurrency },
-                { "@NetCash", tradeConfirm.NetCash },
-                { "@Cost", tradeConfirm.Amount },
-                { "@OrigTradePrice", tradeConfirm.OrigTradePrice },
-                { "@OrigTradeDate", tradeConfirm.OrigTradeDate },
-                { "@OrigTradeID", tradeConfirm.OrigTradeID },
-                { "@OrigOrderID", tradeConfirm.OrigOrderID },
-                { "@OrigTransactionID", tradeConfirm.OrigTransactionID },
-                { "@ClearingFirmID", tradeConfirm.ClearingFirmID },
-                { "@ibOrderID", tradeConfirm.OrderID },
-                { "@BuySell", tradeConfirm.BuySell }
-            };
+                @Exchange, @Proceeds, @ibCommissionCurrency, @NetCash, @Cost, @OrigTradePrice, @OrigTradeDate, @OrigTradeID, @OrigOrderID,
+                @OrigTransactionID, @ClearingFirmID, @BuySell, @OpenCloseIndicator)";
             try
             {
-                ExecuteCommand(connection, transaction, insertQuery, parameters);
+                using (var cmd = new SqlCommand(insertQuery, connection, transaction))
+                {
+                    var parameters = TradeParameterBuilder.GetTradeConfirmParams(tradeConfirm);
+                    foreach (var param in parameters)
+                    {
+                        if (param.Value == null)
+                        {
+                            cmd.Parameters.AddWithValue(param.Key, DBNull.Value);
+                        }
+                        else
+                        {
+                            cmd.Parameters.AddWithValue(param.Key, param.Value);
+                        }
+                    }
+                    var result = cmd.ExecuteScalar();
+                    
+                    newTradeId = Convert.ToInt32(result);
+                    Console.WriteLine($"Created new Trade (Id: {newTradeId}) for symbol {tradeConfirm.Symbol}, on {tradeConfirm.TradeDate:yyyy-MM-dd}");        
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error inserting trade confirmation with ibExecID {execID}: {ex.Message}");
-            }
+                Console.WriteLine($"Error inserting trade confirmation with ibExecID {tradeConfirm.IbExecID}: {ex.Message}");
+            }            
+
+            return newTradeId;
         }
         
 

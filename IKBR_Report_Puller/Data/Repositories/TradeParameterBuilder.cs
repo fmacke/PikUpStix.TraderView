@@ -8,7 +8,59 @@ namespace PikUpStix.TraderView.Data.Repositories
     /// </summary>
     public static class TradeParameterBuilder
     {
-        public static Dictionary<string, object> GetTradeParameters(TradeExecution trade)
+        public static Dictionary<string, object> GetTradeConfirmParams(TradeConfirm tradeConfirm)
+        {
+            return new Dictionary<string, object>
+            {
+                { "@positionId", tradeConfirm.PositionId },
+                { "@ibOrderID", tradeConfirm.OrderID.ToString() },
+                { "@ibexecID", tradeConfirm.IbExecID },
+                { "@symbol", tradeConfirm.Symbol },
+                { "@tradeDate", tradeConfirm.TradeDate },
+                { "@dateTime", tradeConfirm.TradeDate },
+                { "@quantity", tradeConfirm.Quantity },
+                { "@tradePrice", tradeConfirm.TradePrice },
+                { "@currency", tradeConfirm.Currency },
+                { "@conid", tradeConfirm.Conid },
+                { "@tradeID", tradeConfirm.TradeID },
+                { "@fifoPnlRealized", tradeConfirm.FifoPnlRealized },
+                { "@ibCommission", tradeConfirm.Commission },
+                { "@assetCategory", tradeConfirm.AssetCategory },
+                { "@description", tradeConfirm.Description },
+                { "@securityIDType", tradeConfirm.SecurityIDType },
+                { "@cusip", tradeConfirm.Cusip },
+                { "@accountId", tradeConfirm.AccountId },
+                { "@isin", tradeConfirm.Isin },
+                { "@figi", tradeConfirm.Figi },
+                { "@listingExchange", tradeConfirm.ListingExchange },
+                { "@UnderlyingConid", tradeConfirm.UnderlyingConid },
+                { "@UnderlyingSymbol", tradeConfirm.UnderlyingSymbol },
+                { "@UnderlyingSecurityID", tradeConfirm.UnderlyingSecurityID },
+                { "@UnderlyingListingExchange", tradeConfirm.UnderlyingListingExchange },
+                { "@Issuer", tradeConfirm.Issuer },
+                { "@IssuerCountryCode", tradeConfirm.IssuerCountryCode },
+                { "@Multiplier", tradeConfirm.Multiplier },
+                { "@Strike", tradeConfirm.Strike },
+                { "@Expiry", tradeConfirm.Expiry },
+                { "@PutCall", tradeConfirm.PutCall },
+                { "@PrincipalAdjustFactor", tradeConfirm.PrincipalAdjustFactor },
+                { "@TransactionType", tradeConfirm.TransactionType },
+                { "@Exchange", tradeConfirm.Exchange },
+                { "@Proceeds", tradeConfirm.Proceeds },
+                { "@ibCommissionCurrency", tradeConfirm.CommissionCurrency },
+                { "@NetCash", tradeConfirm.NetCash },
+                { "@Cost", tradeConfirm.Amount },
+                { "@OrigTradePrice", tradeConfirm.OrigTradePrice },
+                { "@OrigTradeDate", tradeConfirm.OrigTradeDate },
+                { "@OrigTradeID", tradeConfirm.OrigTradeID },
+                { "@OrigOrderID", tradeConfirm.OrigOrderID },
+                { "@OrigTransactionID", tradeConfirm.OrigTransactionID },
+                { "@ClearingFirmID", tradeConfirm.ClearingFirmID },
+                { "@BuySell", tradeConfirm.BuySell },
+                { "@OpenCloseIndicator", tradeConfirm.OpenCloseIndicator }
+            };
+        }
+        public static Dictionary<string, object> GetTradeExecutionParams(TradeExecution trade)
         {
             return new Dictionary<string, object>
             {

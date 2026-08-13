@@ -55,7 +55,7 @@ namespace PikUpStix.TraderView.Domain
         public long? OrderID { get; set; }
         public string IbExecID { get; set; }
         public string BuySell { get; set; }
-        
+        public string OpenCloseIndicator { get; internal set; }
     }
     public class TradeExecution
     {

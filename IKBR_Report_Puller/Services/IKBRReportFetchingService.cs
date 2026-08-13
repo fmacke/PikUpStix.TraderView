@@ -9,8 +9,7 @@ using System.Net.Http;
 using PikUpStix.TraderView.Interfaces;
 
 namespace PikUpStix.TraderView.Services
-{
-    
+{   
     public class IKBRReportFetchingService : IReportFetchingService
     {
         private readonly IConfiguration _config;
@@ -32,8 +31,6 @@ namespace PikUpStix.TraderView.Services
             _mainQueryId = _config["IBKR:QueryId"];
             _todayQueryId = _config["IBKR:QueryTodayExecutionsId"];
         }
-
-
 
         public async Task<XDocument> FetchMainReportAsync(int maxRetries, int delayInSeconds)
         {

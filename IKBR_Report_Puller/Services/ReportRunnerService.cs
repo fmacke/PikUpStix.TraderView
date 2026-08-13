@@ -62,49 +62,13 @@ namespace PikUpStix.TraderView.Services
                 {
                     var openPositions = _tradeExecutionRepository.GetOpenPositions();
                     _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
-                    await WriteTodayReportToExcel(fileName, todayReportXml);
+                    await WriteTodayReportToExcel(todayReportXml);
                 }
                 if (updateMarketData)
                 {
                     _tradeHistoryReportService.CreateTradeHistoryReport(executions);
 
-                    // Split trades by exchange: American exchanges (NYSE, NASDAQ) use FMP, others use Yahoo
-                    var americanExchanges = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        "NYSE", "NASDAQ", "AMEX", "ARCA", "BATS", "IEX", "NYSEARCA", "NYSEMKT"
-                    };
-
-                    var americanTrades = new List<HistoricalTrade>();
-                    var internationalTrades = new List<HistoricalTrade>();
-
-                    foreach (var trade in _tradeHistoryReportService.TradeHistoryAggregated)
-                    {
-                        // Check if the listing exchange is American
-                        bool isAmericanExchange = !string.IsNullOrEmpty(trade.ListingExchange) &&
-                                                  americanExchanges.Contains(trade.ListingExchange);
-
-                        if (isAmericanExchange)
-                        {
-                            americanTrades.Add(trade);
-                        }
-                        else
-                        {
-                            internationalTrades.Add(trade);
-                        }
-                    }
-
-                    // Fetch chart data using appropriate service for each group
-                    if (americanTrades.Count > 0)
-                    {
-                        System.Console.WriteLine($"Fetching {americanTrades.Count} American exchange trades using Financial Modeling Prep...");
-                        await ((IMarketDataService)_fmpService).FetchAndSaveChartData(americanTrades);
-                    }
-
-                    if (internationalTrades.Count > 0)
-                    {
-                        System.Console.WriteLine($"Fetching {internationalTrades.Count} international exchange trades using Yahoo Finance...");
-                        await _yahooFinanceService.FetchAndSaveChartData(internationalTrades);
-                    }
+                    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);                  
 
                     await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                     await _marketDataService.FetchAndSaveChartData(new List<string>()
@@ -135,9 +99,7 @@ namespace PikUpStix.TraderView.Services
             // Insert instruments first, then trade confirmations
             _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, _marketDataService.SourceName);
             _tradeExecutionRepository.InsertTradeConfirmations(todayReport.TradeConfirms);
-        }
-
-        
+        }     
 
         private async Task UpdateOpenPositionPrices()
         {
@@ -146,9 +108,9 @@ namespace PikUpStix.TraderView.Services
             _tradeExecutionRepository.UpsertPositions(openPositions);
         }
 
-        private async Task<string> WriteTodayReportToExcel(string fileName, XDocument todayReportXml) 
+        private async Task<string> WriteTodayReportToExcel(XDocument todayReportXml) 
         {
-            fileName = DateTime.UtcNow.ToString("yyyyMMdd") + "_TraderSyncAccess_today.xml";
+            string fileName = DateTime.UtcNow.ToString("yyyyMMdd") + "_TraderSyncAccess_today.xml";
             StringBuilder todayReportFilePath = new StringBuilder(outputFilePath).Append("\\" + fileName);
 
             // Ensure directory exists

@@ -24,12 +24,6 @@ namespace PikUpStix.TraderView.Services
         private async Task<List<Position>>? GetOpenPositions()
         {
             var positions = _tradeExecutionRepository.GetOpenPositions();
-            //foreach (var position in positions)
-            //{
-            //    position.Quantity = position.TradeExecutions.Sum(te => te.Quantity);
-            //    position.PositionValue = position.Quantity * position.LastReportedPrice;
-            //    //position.CostBasisPrice = position.Quantity / position.;
-            //}
             return positions;
         }
 
