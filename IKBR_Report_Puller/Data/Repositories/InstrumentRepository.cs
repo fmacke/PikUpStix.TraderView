@@ -16,7 +16,34 @@ namespace PikUpStix.TraderView.Data.Repositories
         public InstrumentRepository(string connectionString) : base(connectionString)
         {
         }
-
+        void IInstrumentRepository.UpsertInstruments(List<TradeConfirm> tradeConfirms, string source)
+        {
+           UpsertInstruments(ConvertToTradeExecute(tradeConfirms), source);
+        }
+        private List<TradeExecution> ConvertToTradeExecute(List<TradeConfirm> tradeConfirms)
+        {
+            // Convert TradeConfirm objects to TradeExecution objects for instrument upsertion
+            var tradeExecutions = new List<TradeExecution>();
+            foreach (var confirm in tradeConfirms)
+            {
+                var execution = new TradeExecution
+                {
+                    Conid = confirm.Conid,
+                    Symbol = confirm.Symbol,
+                    Description = confirm.Description,
+                    AssetCategory = confirm.AssetCategory,
+                    Currency = confirm.Currency,
+                    TradeDate = confirm.TradeDate,
+                    TradePrice = confirm.TradePrice,
+                    Quantity = confirm.Quantity,
+                    TransactionType = confirm.TransactionType,
+                    Exchange = confirm.Exchange,
+                    ListingExchange = confirm.ListingExchange,
+                };
+                tradeExecutions.Add(execution);
+            }
+            return tradeExecutions;
+        }
         /// <summary>
         /// Ensures instruments exist for the given trades
         /// Creates missing instruments automatically
@@ -96,101 +123,10 @@ namespace PikUpStix.TraderView.Data.Repositories
                         }
                     }
                 }
-            });
-
-            
+            }); 
         }
 
         
-
-        /// <summary>
-        /// Ensures instruments exist for the given trade confirmations
-        /// Creates missing instruments automatically and populates InstrumentID on each trade confirm
-        /// </summary>
-        //public void UpsertInstruments(List<TradeExecution> tradeConfirms, string source)
-        //{
-        //    if (tradeConfirms == null || !tradeConfirms.Any())
-        //        return;
-
-        //    ExecuteDatabaseOperation(connection =>
-        //    {
-        //        using (var transaction = connection.BeginTransaction())
-        //        {
-        //            try
-        //            {
-        //                var uniqueConids = tradeConfirms
-        //                    .Where(t => !string.IsNullOrEmpty(t.Conid))
-        //                    .Select(t => t.Conid)
-        //                    .Distinct()
-        //                    .ToList();
-
-        //                int createdCount = 0;
-        //                int existingCount = 0;
-
-        //                // Dictionary to cache conid -> instrumentId mappings
-        //                var conidToInstrumentIdMap = new Dictionary<string, int>();
-
-        //                foreach (var conid in uniqueConids)
-        //                {
-        //                    int? instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
-
-        //                    if (!instrumentId.HasValue)
-        //                    {
-        //                        var tradeConfirm = tradeConfirms.First(t => t.Conid == conid);
-
-        //                        InsertInstrument(
-        //                            connection,
-        //                            transaction,
-        //                            conid,
-        //                            tradeConfirm.Symbol,
-        //                            tradeConfirm.ListingExchange,
-        //                            tradeConfirm.Currency,
-        //                            tradeConfirm.AssetCategory,
-        //                            source,
-        //                            source);
-
-        //                        // Get the newly created instrument ID
-        //                        instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
-        //                        createdCount++;
-        //                    }
-        //                    else
-        //                    {
-        //                        existingCount++;
-        //                    }
-
-        //                    // Store the mapping
-        //                    if (instrumentId.HasValue)
-        //                    {
-        //                        conidToInstrumentIdMap[conid] = instrumentId.Value;
-        //                    }
-        //                }
-
-        //                // Populate InstrumentID on all trade confirms
-        //                foreach (var tradeConfirm in tradeConfirms)
-        //                {
-        //                    if (!string.IsNullOrEmpty(tradeConfirm.Conid) && 
-        //                        conidToInstrumentIdMap.TryGetValue(tradeConfirm.Conid, out int instrumentId))
-        //                    {
-        //                        //tradeConfirm.InstrumentID = instrumentId.ToString();
-        //                    }
-        //                }
-
-        //                transaction.Commit();
-
-        //                if (createdCount > 0)
-        //                {
-        //                    Console.WriteLine($"Created {createdCount} new instrument(s) from trade confirmations, {existingCount} already existed");
-        //                }
-        //            }
-        //            catch (Exception ex)
-        //            {
-        //                transaction.Rollback();
-        //                Console.WriteLine($"Error upserting instruments from trade confirmations: {ex.Message}");
-        //                throw;
-        //            }
-        //        }
-        //    });
-        //}
 
         #region Private Helper Methods
         public Instrument Get(int instrumentId)

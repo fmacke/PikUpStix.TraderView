@@ -50,10 +50,10 @@ namespace PikUpStix.TraderView.Interfaces
         List<TradeExecution> GetTradeExecutionsByPosition(int positionId);
         void UpsertTradeExecutions(List<TradeExecution> trades);
         /// <summary>
-        /// Inserts or updates today's trade confirmations
+        /// Inserts today's trade confirmations
         /// </summary>
-        /// <param name="tradeConfirms">List of trade confirmations to upsert</param>
-        void UpsertTodayExecutions(List<TradeExecution> tradeConfirms);
+        /// <param name="tradeConfirms">List of trade confirmations to insert</param>
+        void InsertTradeConfirmations(List<TradeConfirm> tradeConfirms);
         /// <summary>
         /// Inserts or updates positions
         /// </summary>

@@ -1,6 +1,7 @@
 using DocumentFormat.OpenXml.Drawing;
 using IKBR_Report_Puller.Domain;
 using Microsoft.Extensions.Configuration;
+using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Services.MarketData;
 using System.Text;
@@ -131,10 +132,12 @@ namespace PikUpStix.TraderView.Services
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
 
-            // Upsert instruments first, then trade executions
+            // Insert instruments first, then trade confirmations
             _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, _marketDataService.SourceName);
-            _tradeExecutionRepository.UpsertTodayExecutions(todayReport.TradeConfirms);
+            _tradeExecutionRepository.InsertTradeConfirmations(todayReport.TradeConfirms);
         }
+
+        
 
         private async Task UpdateOpenPositionPrices()
         {
@@ -165,8 +168,8 @@ namespace PikUpStix.TraderView.Services
         private async Task<(IKBRReport mainReport, string fileName)> GetReportDataFromInteractiveBrokers()
         {
             // Fetch and process main report
-            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260812_215421_TraderSyncAccess.xml");
-            //XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260812_215421_TraderSyncAccess.xml");
+            XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
             var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
             StringBuilder mainReportFilePath = new StringBuilder(outputFilePath).Append("\\" + fileName);
 

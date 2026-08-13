@@ -175,22 +175,28 @@ namespace PikUpStix.TraderView.Data.Repositories
                         {
                             try
                             {
+                                DateTime? lastReported = null;
+                                if (!reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")))
+                                {
+                                    lastReported = reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated"));
+                                }
+
                                 positions.Add(new Position
                                 {
                                     Id = reader.GetInt32("Id"),
                                     InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
                                     OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                                    LastReportedPriceUpdated = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated")),
-                                    LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
+                                    LastReportedPriceUpdated = lastReported,
+                                    LastReportedPrice = reader["LastReportedPrice"] is DBNull ? 0 : Convert.ToDecimal(reader["LastReportedPrice"]),
                                     Status = reader.GetString(reader.GetOrdinal("Status")),
                                     Instrument = new Instrument
                                     {
                                         Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                        InstrumentName = reader.IsDBNull(reader.GetOrdinal("InstrumentName")) ? null : reader.GetString(reader.GetOrdinal("InstrumentName")),
-                                        DataName = reader.IsDBNull(reader.GetOrdinal("DataName")) ? null : reader.GetString(reader.GetOrdinal("DataName")),
-                                        Currency = reader.IsDBNull(reader.GetOrdinal("Currency")) ? null : reader.GetString(reader.GetOrdinal("Currency")),
-                                        ConId = reader.IsDBNull(reader.GetOrdinal("ConId")) ? null : reader.GetString(reader.GetOrdinal("ConId")),
-                                        ContractUnitType = reader.IsDBNull(reader.GetOrdinal("ContractUnitType")) ? null : reader.GetString(reader.GetOrdinal("ContractUnitType"))
+                                        InstrumentName = reader["InstrumentName"] is DBNull ? null : reader["InstrumentName"].ToString(),
+                                        DataName = reader["DataName"] is DBNull ? null : reader["DataName"].ToString(),
+                                        Currency = reader["Currency"] is DBNull ? null : reader["Currency"].ToString(),
+                                        ConId = reader["ConId"] is DBNull ? null : reader["ConId"].ToString(),
+                                        ContractUnitType = reader["ContractUnitType"] is DBNull ? null : reader["ContractUnitType"].ToString()
                                     }
                                 });
                             }
@@ -339,8 +345,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 Currency = reader.GetString("currency"),
                                 Conid = reader.GetString("conid"),
                                 IbExecID = reader.GetString("ibExecID"),
-                                IbCommission = reader.GetDecimal("ibCommission"),
-                                IbCommissionCurrency = reader.GetString("ibCommissionCurrency"),
+                                IbCommission = reader["ibCommission"] is DBNull ? null : Convert.ToDecimal(reader["ibCommission"]),
+                                IbCommissionCurrency = reader["ibCommissionCurrency"] is DBNull ? null : reader["ibCommissionCurrency"].ToString(),
                                 ListingExchange = reader.GetString("ListingExchange")
                             });
                         }
@@ -354,7 +360,7 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Inserts or updates today's trade confirmations
         /// </summary>
-        void ITradeExecutionRepository.UpsertTodayExecutions(List<TradeExecution> tradeConfirms)
+        void ITradeExecutionRepository.InsertTradeConfirmations(List<TradeConfirm> tradeConfirms)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
             {
@@ -379,22 +385,27 @@ namespace PikUpStix.TraderView.Data.Repositories
                             "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @execID",
                             new Dictionary<string, object> { { "@execID", execID } });
 
-                        var existingPostion = GetOpenPosition(connection, transaction, tradeConfirm.Symbol, tradeConfirm.InstrumentId);
-                        if(existingPostion != null)
+                        
+                        if (!exists)
                         {
-                            tradeConfirm.PositionId = existingPostion.Id;
-                        }
-                        else
-                        {
-                            tradeConfirm.PositionId = CreatePosition(connection, transaction, tradeConfirm.InstrumentId, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
-                        }
-                        if (exists)
-                        {
-                            UpdateTodayExecution(connection, transaction, tradeConfirm, execID);
-                        }
-                        else
-                        {
-                            InsertTodayExecution(connection, transaction, tradeConfirm, execID);
+                            var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(tradeConfirm.Conid);
+                            if (instrumentId.HasValue)
+                            {
+                                var existingPosition = GetOpenPosition(connection, transaction, tradeConfirm.Symbol, Convert.ToInt32(instrumentId));
+                                if (existingPosition != null)
+                                {
+                                    tradeConfirm.PositionId = existingPosition.Id;
+                                }
+                                else
+                                {
+                                    tradeConfirm.PositionId = CreatePosition(connection, transaction, Convert.ToInt32(instrumentId), tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
+                                }
+                                InsertTradeConfirmation(connection, transaction, tradeConfirm, execID);
+                            }
+                            else
+                            {
+                                Console.WriteLine($"Instrument not found for symbol {tradeConfirm.Symbol} with Conid {tradeConfirm.Conid}. Skipping trade confirmation.");
+                            }   
                         }
                     }
 
@@ -496,46 +507,95 @@ namespace PikUpStix.TraderView.Data.Repositories
             }
         }
 
-        private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
-        {
-            const string updateQuery = @"
-                UPDATE dbo.TradeExecutions 
-                SET symbol = @symbol, tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice,
-                    currency = @currency, conid = @conid 
-                WHERE ibexecID = @execID";
+        //private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
+        //{
+        //    const string updateQuery = @"
+        //        UPDATE dbo.TradeExecutions 
+        //        SET symbol = @symbol, tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice,
+        //            currency = @currency, conid = @conid, fifoPnlRealized = @fifoPnlRealized, ibCommission = @ibCommission
+        //        WHERE ibexecID = @execID";
 
-            var parameters = new Dictionary<string, object>
-            {
-                { "@execID", execID },
-                { "@symbol", tradeConfirm.Symbol },
-                { "@tradeDate", tradeConfirm.TradeDate },
-                { "@quantity", tradeConfirm.Quantity },
-                { "@tradePrice", tradeConfirm.TradePrice },
-                { "@currency", tradeConfirm.Currency },
-                { "@conid", tradeConfirm.Conid }
-            };
+        //    var parameters = new Dictionary<string, object>
+        //    {
+        //        { "@execID", execID },
+        //        { "@symbol", tradeConfirm.Symbol },
+        //        { "@tradeDate", tradeConfirm.TradeDate },
+        //        { "@quantity", tradeConfirm.Quantity },
+        //        { "@tradePrice", tradeConfirm.TradePrice },
+        //        { "@currency", tradeConfirm.Currency },
+        //        { "@conid", tradeConfirm.Conid },
+        //        { "@fifoPnlRealized", tradeConfirm.FifoPnlRealized },
+        //        { "@ibCommission", tradeConfirm.IbCommission }
+        //    };
 
-            ExecuteCommand(connection, transaction, updateQuery, parameters);
-        }
+        //    ExecuteCommand(connection, transaction, updateQuery, parameters);
+        //}
 
-        private void InsertTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
+        private void InsertTradeConfirmation(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm, string execID)
         {
             const string insertQuery = @"
-                INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, dateTime, quantity, tradePrice, currency, conid) 
-                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @dateTime, @quantity, @tradePrice, @currency, @conid)";
-
+                INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, dateTime, quantity, tradePrice, currency, conid,
+                tradeID, fifoPnlRealized, ibCommission, currency, assetCategory, symbol, description, SecurityIDType, cusip, accountId, isin, figi, 
+                listingExchange, UnderlyingConid, UnderlyingSymbol, UnderlyingSecurityID, UnderlyingListingExchange,
+                Issuer, IssuerCountryCode, Multiplier, Strike, Expiry, PutCall, PrincipalAdjustFactor, TransactionType,
+                Exchange, Proceeds, ibCommission, NetCash, Cost, OrigTradePrice, OrigTradeDate, OrigTradeID, OrigOrderID,
+                OrigTransactionID, ClearingFirmID, ibOrderID, BuySell) 
+                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @dateTime, @quantity, @tradePrice, @currency, 
+                @conid, @tradeID, @fifoPnlRealized, @ibCommission, @currency, @assetCategory, @symbol, @description, @securityIDType, @cusip,
+                @accountId, @isin, @figi, @listingExchange, @UnderlyingConid, @UnderlyingSymbol, @UnderlyingSecurityID, @UnderlyingListingExchange,
+                @Issuer, @IssuerCountryCode, @Multiplier, @Strike, @Expiry, @PutCall, @PrincipalAdjustFactor, @TransactionType,
+                @Exchange, @Proceeds, @ibCommission, @NetCash, @Cost, @OrigTradePrice, @OrigTradeDate, @OrigTradeID, @OrigOrderID,
+                @OrigTransactionID, @ClearingFirmID, @ibOrderID, @BuySell)";
             var parameters = new Dictionary<string, object>
             {
                 { "@positionId", tradeConfirm.PositionId },
-                { "@ibOrderID", tradeConfirm.IbOrderID.ToString() },
+                { "@ibOrderID", tradeConfirm.OrderID.ToString() },
                 { "@ibexecID", execID },
                 { "@symbol", tradeConfirm.Symbol },
                 { "@tradeDate", tradeConfirm.TradeDate },
                 { "@dateTime", tradeConfirm.TradeDate },
                 { "@quantity", tradeConfirm.Quantity },
-                { "@tradePrice", tradeConfirm.TradePrice },
+                { "@tradePrice", tradeConfirm.  TradePrice },
                 { "@currency", tradeConfirm.Currency }, 
-                { "@conid", tradeConfirm.Conid }
+                { "@conid", tradeConfirm.Conid },
+                { "@tradeID", tradeConfirm.TradeID },
+                { "@fifoPnlRealized", tradeConfirm.FifoPnlRealized },
+                { "@ibCommission", tradeConfirm.Commission },
+                { "@currency", tradeConfirm.Currency },
+                { "@assetCategory", tradeConfirm.AssetCategory },
+                { "@symbol", tradeConfirm.Symbol },
+                { "@description", tradeConfirm.Description },
+                { "@securityIDType", tradeConfirm.SecurityIDType },
+                { "@cusip", tradeConfirm.Cusip },
+                { "@accountId", tradeConfirm.AccountId },
+                { "@isin", tradeConfirm.Isin },
+                { "@figi", tradeConfirm.Figi },
+                { "@listingExchange", tradeConfirm.ListingExchange },
+                { "@UnderlyingConid", tradeConfirm.UnderlyingConid },
+                { "@UnderlyingSymbol", tradeConfirm.UnderlyingSymbol },
+                { "@UnderlyingSecurityID", tradeConfirm.UnderlyingSecurityID },
+                { "@UnderlyingListingExchange", tradeConfirm.UnderlyingListingExchange },
+                { "@Issuer", tradeConfirm.Issuer },
+                { "@IssuerCountryCode", tradeConfirm.IssuerCountryCode },
+                { "@Multiplier", tradeConfirm.Multiplier },
+                { "@Strike", tradeConfirm.Strike },
+                { "@Expiry", tradeConfirm.Expiry },
+                { "@PutCall", tradeConfirm.PutCall },
+                { "@PrincipalAdjustFactor", tradeConfirm.PrincipalAdjustFactor },
+                { "@TransactionType", tradeConfirm.TransactionType },
+                { "@Exchange", tradeConfirm.Exchange },
+                { "@Proceeds", tradeConfirm.Proceeds },
+                { "@ibCommission", tradeConfirm.CommissionCurrency },
+                { "@NetCash", tradeConfirm.NetCash },
+                { "@Cost", tradeConfirm.Amount },
+                { "@OrigTradePrice", tradeConfirm.OrigTradePrice },
+                { "@OrigTradeDate", tradeConfirm.OrigTradeDate },
+                { "@OrigTradeID", tradeConfirm.OrigTradeID },
+                { "@OrigOrderID", tradeConfirm.OrigOrderID },
+                { "@OrigTransactionID", tradeConfirm.OrigTransactionID },
+                { "@ClearingFirmID", tradeConfirm.ClearingFirmID },
+                { "@ibOrderID", tradeConfirm.OrderID },
+                { "@BuySell", tradeConfirm.BuySell }
             };
             try
             {
@@ -690,25 +750,33 @@ namespace PikUpStix.TraderView.Data.Repositories
                     using var command = new SqlCommand(query, connection);
                     command.Parameters.AddWithValue("@PositionId", positionId);
 
-                    using var reader = command.ExecuteReader();
-                    while (reader.Read())
+                    try
                     {
-                        executions.Add(new TradeExecution
+                        using var reader = command.ExecuteReader();
+
+                        while (reader.Read())
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            InstrumentId = reader.GetInt32("InstrumentId"),
-                            PositionId = positionId,
-                            Symbol = reader.GetString("symbol"),
-                            TradeID = reader.GetInt64("tradeID"),
-                            DateTime = reader.GetDateTime("dateTime"),
-                            TradeDate = reader.GetDateTime("tradeDate"),
-                            Quantity = reader.GetDecimal("quantity"),
-                            TradePrice = reader.GetDecimal("tradePrice"),
-                            BuySell = reader.GetString("buySell"),
-                            FifoPnlRealized = reader.GetDecimal("fifoPnlRealized"),
-                            IbCommission = reader.GetDecimal("ibCommission"),
-                            OpenCloseIndicator = reader.GetString("openCloseIndicator")
-                        });
+                            executions.Add(new TradeExecution
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                InstrumentId = reader.GetInt32("InstrumentId"),
+                                PositionId = positionId,
+                                Symbol = reader.GetString("symbol"),
+                                TradeID = reader.GetInt64("tradeID"),
+                                DateTime = reader.GetDateTime("dateTime"),
+                                TradeDate = reader.GetDateTime("tradeDate"),
+                                Quantity = reader.GetDecimal("quantity"),
+                                TradePrice = reader.GetDecimal("tradePrice"),
+                                BuySell = reader.GetString("buySell"),
+                                FifoPnlRealized = reader.GetDecimal("fifoPnlRealized"),
+                                IbCommission = reader.GetDecimal("ibCommission"),
+                                OpenCloseIndicator = reader.GetString("openCloseIndicator")
+                            });
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error retrieving trade executions for PositionID {positionId}: {ex.Message}");
                     }
                 });
             return executions;
