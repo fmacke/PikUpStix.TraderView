@@ -100,27 +100,31 @@ namespace PikUpStix.TraderView.Services.MarketData
         {
             foreach (var trade in trades)
             {
-                await ExecuteWithErrorHandlingAsync(async () =>
+                if (trade.InstrumentId == 52)
                 {
-                    var fromDate = trade.TradeOpened.AddDays(-364);
-                    var toDate = trade.TradeClosed.AddDays(364);
-                    if (toDate > DateTime.UtcNow)
+                    var instrument = await _instrumentRepository.GetByIdAsync(trade.InstrumentId);
+                    await ExecuteWithErrorHandlingAsync(async () =>
                     {
-                        toDate = DateTime.UtcNow.AddDays(-1); // don't pull today's data as it's not complete
-                    }
+                        var fromDate = trade.TradeOpened.AddDays(-364);
+                        var toDate = trade.TradeClosed.AddDays(364);
+                        if (toDate > DateTime.UtcNow)
+                        {
+                            toDate = DateTime.UtcNow.AddDays(-1); // don't pull today's data as it's not complete
+                        }
 
-                    var barData = await FetchChartDataFromApiAsync(trade.Symbol, fromDate, toDate);
+                        var barData = await FetchChartDataFromApiAsync(instrument.DataSource, fromDate, toDate);
 
-                    if (barData == null || barData.Count == 0)
-                    {
-                        Console.WriteLine("No chart data found for the specified date range.");
-                        return;
-                    }
+                        if (barData == null || barData.Count == 0)
+                        {
+                            Console.WriteLine("No chart data found for the specified date range.");
+                            return;
+                        }
 
-                    Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {trade.Symbol}.");
+                        Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {trade.Symbol}.");
 
-                    _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), barData);
-                }, $"Symbol: {trade.Symbol}, InstrumentId: {trade.InstrumentId}");
+                        _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), barData);
+                    }, $"Symbol: {trade.Symbol}, InstrumentId: {trade.InstrumentId}");
+                }
             }
         }
 
@@ -215,7 +219,7 @@ namespace PikUpStix.TraderView.Services.MarketData
         /// </summary>
         private static string NormalizeSymbol(string symbol)
         {
-            return symbol.Replace("/", "").Replace("-", "").Replace(" ", "").Replace(".", "");
+            return symbol.Replace("/", "").Replace("-", "").Replace(" ", "");//.Replace(".", "");
         }
 
         /// <summary>

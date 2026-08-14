@@ -85,7 +85,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                                     trade.Currency,
                                     trade.AssetCategory,
                                     source,
-                                    source);
+                                    trade.Symbol);
 
                                 createdCount++;
                             }
@@ -365,7 +365,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                 ExecuteDatabaseOperation(connection =>
                 {
                     const string query = @"
-                        SELECT Id, InstrumentName, Provider, DataName, Currency, ListingExchange
+                        SELECT Id, InstrumentName, Provider, DataName, Currency, ListingExchange, DataSource
                         FROM dbo.Instruments
                         WHERE Id = @InstrumentId";
 
@@ -387,7 +387,9 @@ namespace PikUpStix.TraderView.Data.Repositories
                             Currency = reader.IsDBNull(reader.GetOrdinal("Currency"))
                                 ? string.Empty : reader.GetString(reader.GetOrdinal("Currency")),
                             ListingExchange = reader.IsDBNull(reader.GetOrdinal("ListingExchange"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("ListingExchange"))
+                                ? string.Empty : reader.GetString(reader.GetOrdinal("ListingExchange")),
+                            DataSource = reader.IsDBNull(reader.GetOrdinal("DataSource"))
+                                ? string.Empty : reader.GetString(reader.GetOrdinal("DataSource")),
                         };
                     }
                 });

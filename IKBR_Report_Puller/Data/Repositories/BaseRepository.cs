@@ -88,16 +88,29 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// </summary>
         protected T ExecuteScalar<T>(SqlConnection connection, SqlTransaction transaction, string query, Dictionary<string, object> parameters = null)
         {
-            using SqlCommand cmd = new SqlCommand(query, connection, transaction);
-            if (parameters != null)
+            try
             {
-                foreach (var param in parameters)
+                using SqlCommand cmd = new SqlCommand(query, connection, transaction);
+                if (parameters != null)
                 {
-                    cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                    foreach (var param in parameters)
+                    {
+                        cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                    }
                 }
+                var result = cmd.ExecuteScalar();
+                return result != null ? (T)result : default(T);
             }
-            var result = cmd.ExecuteScalar();
-            return result != null ? (T)result : default(T);
+            catch (SqlException e)
+            {
+                Console.WriteLine($"\nDatabase error: {e.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\nAn error occurred: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>

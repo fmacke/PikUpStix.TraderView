@@ -67,15 +67,14 @@ namespace PikUpStix.TraderView.Services
                 if (updateMarketData)
                 {
                     _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-
-                    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);                  
+                    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
 
                     await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                     await _marketDataService.FetchAndSaveChartData(new List<string>()
                     {
                         "^GSPC",//spx
                         "^RUT",//iwm
-                        //"CLUSD",//wti crude oil
+                        "CLUSD",//wti crude oil
                         "BTCUSD",//bitcoin
                         "GCUSD",//gold
                         "XAGUSD",//silver

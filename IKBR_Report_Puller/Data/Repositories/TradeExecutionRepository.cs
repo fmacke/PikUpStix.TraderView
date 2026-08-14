@@ -1,12 +1,10 @@
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Office.Word;
 using IKBR_Report_Puller.Data;
 using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using System.Data;
-using System.Transactions;
+using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Changes;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {
@@ -36,7 +34,7 @@ namespace PikUpStix.TraderView.Data.Repositories
             foreach (var trade in trades)
             {
                 string ibExecID = trade.IbExecID;
-                bool exists = false;
+                bool executionExists = false;
                 if (string.IsNullOrEmpty(ibExecID))
                 {
                     continue;
@@ -45,14 +43,14 @@ namespace PikUpStix.TraderView.Data.Repositories
                 {
                     using (var transaction = connection.BeginTransaction())
                     {
-                        exists = RecordExists(connection, transaction,
+                        executionExists = RecordExists(connection, transaction,
                     "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID",
                     new Dictionary<string, object> { { "@ibExecID", ibExecID } });
                         transaction.Commit();
                     }
                 });
 
-                if (!exists)
+                if (!executionExists)
                 {
                     try
                     {
@@ -74,8 +72,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 transaction.Commit();
                             }
                         });
-                        // If no open position exists, create a new position and get its ID
-                        // If Open Position exists, trade.PositionId = existingPosition.Id
+                        // If no open position executionExists, create a new position and get its ID
+                        // If Open Position executionExists, trade.PositionId = existingPosition.Id
                         if (openPosition == null)
                         {
                             ExecuteDatabaseOperation(connection =>
@@ -91,17 +89,12 @@ namespace PikUpStix.TraderView.Data.Repositories
                         else
                         {
                             trade.PositionId = openPosition.Id;
+                            //TODO:  IF TRANSACTIONID AND BROKERAGEORDERID ARE NULL, THEN THE EXISTING DATABASE ENTRY WAS CREATED FROM A TRADECONFIRM AND NEEDS TO BE FULLY UPDATED WITH THE TRADEEXECUTION DATA.
+                            //NEED TO ADD A METHOD TO UPDATE THE EXISTING TRADEEXECUTION RECORD WITH THE NEW DATA.
+                            //IF NOT A TRADECONFIRM UPDATE - ONLY THE CLOSEPRICE, COST,FIFOPNLREALIZED, MTMPNL AND TRADEMONEY FIELDS NEED UPDATED
                         }
 
-                        ExecuteDatabaseOperation(connection =>
-                        {
-                            using (var transaction = connection.BeginTransaction())
-                            {
-                                trade.TradeID = InsertTrade(connection, transaction, trade);
-                                transaction.Commit();
-                            }
-                        });
-
+                        trade.Id = InsertTrade(trade);
 
                         // Check if latest trade execution closes out the position (i.e., if the sum of quantities for that position is zero)
                         var totalQuantity = 0m;
@@ -112,7 +105,6 @@ namespace PikUpStix.TraderView.Data.Repositories
                                 totalQuantity = GetTotalQuantityForPosition(connection, transaction, trade.PositionId);
                                 transaction.Commit();
                             }
-
                         });
                         
 
@@ -247,7 +239,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                 }
                 catch
                 {
-                    Console.WriteLine("Error closing position with Id: {positionId}. Please check if the position exists and is open.");
+                    Console.WriteLine("Error closing position with Id: {positionId}. Please check if the position executionExists and is open.");
                 }
             }
         }
@@ -369,7 +361,6 @@ namespace PikUpStix.TraderView.Data.Repositories
                 return;
             }
 
-
             foreach (var tradeConfirm in tradeConfirms)
             {
                 if (string.IsNullOrEmpty(tradeConfirm.IbExecID))
@@ -385,7 +376,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                         bool tradeExecutionExists = RecordExists(connection, transaction,
                             "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @execID",
                             new Dictionary<string, object> { { "@execID", tradeConfirm.IbExecID } });
-                        transaction.Commit();
+                        //transaction.Commit();  DON'T THINK THIS IS REQUIRED - COMMENTING OUT FOR NOW - CHECK ON NEXT RUN
                     }
 
                 });
@@ -422,15 +413,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                                     transaction.Commit();
                                 }
                             });
-                        }
-                        ExecuteDatabaseOperation(connection =>
-                        {
-                            using (var transaction = connection.BeginTransaction())
-                            {
-                                tradeConfirm.Id = InsertTradeConfirmation(connection, transaction, tradeConfirm);
-                                transaction.Commit();
-                            }
-                        });
+                        }                        
+                        tradeConfirm.Id = InsertTradeConfirmation(tradeConfirm);
                     }
                     else
                     {
@@ -472,135 +456,38 @@ namespace PikUpStix.TraderView.Data.Repositories
                 return newPositionId;
             }
         }
-        private int InsertTrade(SqlConnection connection, SqlTransaction transaction, TradeExecution trade)
-        {
-            const string insertQuery = @"
-                INSERT INTO [dbo].[TradeExecutions]
-                ([PositionID], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
-                 [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],
-                 [brokerageOrderID], [exchOrderId], [extExecID], [orderType], [traderID], [currency], [description],
-                 [conid], [taxes], [assetCategory], [expiry], [transactionType], [exchange], [proceeds], [netCash],
-                 [mtmPnl], [origTradePrice], [origTradeDate], [origTradeID], [origOrderID], [origTransactionID],
-                 [ibOrderID], [openDateTime], [initialInvestment], [accountId], [acctAlias], [model], [fxRateToBase],
-                 [subCategory], [securityIDType], [cusip], [isin], [figi], [listingExchange], [underlyingConid],
-                 [underlyingSymbol], [underlyingSecurityID], [underlyingListingExchange], [issuer], [issuerCountryCode],
-                 [multiplier], [relatedTradeID], [strike], [reportDate], [putCall], [principalAdjustFactor],
-                 [settleDateTarget], [tradeMoney], [openCloseIndicator], [notes], [clearingFirmID], [relatedTransactionID],
-                 [rtn], [orderReference], [volatilityOrderLink], [orderTime], [holdingPeriodDateTime], [whenRealized],
-                 [whenReopened], [levelOfDetail], [changeInPrice], [changeInQuantity], [isAPIOrder], [accruedInt],
-                 [positionActionID], [serialNumber], [deliveryType], [commodityType], [fineness], [weight])
-                VALUES
-                (@positionId, @symbol, @securityID, @tradeID, @dateTime, @tradeDate, @quantity, @tradePrice, @ibCommission,
-                 @ibCommissionCurrency, @closePrice, @cost, @fifoPnlRealized, @buySell, @transactionID, @ibExecID,
-                 @brokerageOrderID, @exchOrderId, @extExecID, @orderType, @traderID, @currency, @description,
-                 @conid, @taxes, @assetCategory, @expiry, @transactionType, @exchange, @proceeds, @netCash,
-                 @mtmPnl, @origTradePrice, @origTradeDate, @origTradeID, @origOrderID, @origTransactionID,
-                 @ibOrderID, @openDateTime, @initialInvestment, @accountId, @acctAlias, @model, @fxRateToBase,
-                 @subCategory, @securityIDType, @cusip, @isin, @figi, @listingExchange, @underlyingConid,
-                 @underlyingSymbol, @underlyingSecurityID, @underlyingListingExchange, @issuer, @issuerCountryCode,
-                 @multiplier, @relatedTradeID, @strike, @reportDate, @putCall, @principalAdjustFactor,
-                 @settleDateTarget, @tradeMoney, @openCloseIndicator, @notes, @clearingFirmID, @relatedTransactionID,
-                 @rtn, @orderReference, @volatilityOrderLink, @orderTime, @holdingPeriodDateTime, @whenRealized,
-                 @whenReopened, @levelOfDetail, @changeInPrice, @changeInQuantity, @isAPIOrder, @accruedInt,
-                           @positionActionID, @serialNumber, @deliveryType, @commodityType, @fineness, @weight)";
-            try
-            {
-                using (var cmd = new SqlCommand(insertQuery, connection, transaction))
-                {
-                    var parameters = TradeParameterBuilder.GetTradeExecutionParams(trade);
-                    foreach (var param in parameters)
-                    {
-                        if(param.Value == null)
-                        {
-                            cmd.Parameters.AddWithValue(param.Key, DBNull.Value);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue(param.Key, param.Value);
-                        }
-                    }
-                    var result = cmd.ExecuteScalar();
-                    int newTradeId = Convert.ToInt32(result);
-
-                    Console.WriteLine($"Created new Trade (Id: {newTradeId}) for symbol {trade.Symbol}, InstrumentId {trade.InstrumentId} on {trade.TradeDate:yyyy-MM-dd}");
-
-                    return newTradeId;
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error inserting trade with ibExecID {trade.IbExecID}: {ex.Message}");
-                return 0;
-            }
-        }
-
-        //private void UpdateTodayExecution(SqlConnection connection, SqlTransaction transaction, TradeExecution tradeConfirm, string execID)
-        //{
-        //    const string updateQuery = @"
-        //        UPDATE dbo.TradeExecutions 
-        //        SET symbol = @symbol, tradeDate = @tradeDate, quantity = @quantity, tradePrice = @tradePrice,
-        //            currency = @currency, conid = @conid, fifoPnlRealized = @fifoPnlRealized, ibCommission = @ibCommission
-        //        WHERE ibexecID = @execID";
-
-        //    var parameters = new Dictionary<string, object>
-        //    {
-        //        { "@execID", execID },
-        //        { "@symbol", tradeConfirm.Symbol },
-        //        { "@tradeDate", tradeConfirm.TradeDate },
-        //        { "@quantity", tradeConfirm.Quantity },
-        //        { "@tradePrice", tradeConfirm.TradePrice },
-        //        { "@currency", tradeConfirm.Currency },
-        //        { "@conid", tradeConfirm.Conid },
-        //        { "@fifoPnlRealized", tradeConfirm.FifoPnlRealized },
-        //        { "@ibCommission", tradeConfirm.IbCommission }
-        //    };
-
-        //    ExecuteCommand(connection, transaction, updateQuery, parameters);
-        //}
-
-        private int InsertTradeConfirmation(SqlConnection connection, SqlTransaction transaction, TradeConfirm tradeConfirm)
+        private int InsertTrade(TradeExecution trade)
         {
             int newTradeId = 0;
-            const string insertQuery = @"
-                INSERT INTO dbo.TradeExecutions (PositionID, ibOrderID, ibexecID, symbol, tradeDate, dateTime, quantity, tradePrice, currency, conid,
-                tradeID, fifoPnlRealized, ibCommission, assetCategory, description, SecurityIDType, cusip, accountId, isin, figi, 
-                listingExchange, UnderlyingConid, UnderlyingSymbol, UnderlyingSecurityID, UnderlyingListingExchange,
-                Issuer, IssuerCountryCode, Multiplier, Strike, Expiry, PutCall, PrincipalAdjustFactor, TransactionType,
-                Exchange, Proceeds, ibCommissionCurrency, NetCash, Cost, OrigTradePrice, OrigTradeDate, OrigTradeID, OrigOrderID,
-                OrigTransactionID, ClearingFirmID, BuySell, openCloseIndicator) 
-                VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @dateTime, @quantity, @tradePrice, @currency, 
-                @conid, @tradeID, @fifoPnlRealized, @ibCommission, @assetCategory, @description, @securityIDType, @cusip,
-                @accountId, @isin, @figi, @listingExchange, @UnderlyingConid, @UnderlyingSymbol, @UnderlyingSecurityID, @UnderlyingListingExchange,
-                @Issuer, @IssuerCountryCode, @Multiplier, @Strike, @Expiry, @PutCall, @PrincipalAdjustFactor, @TransactionType,
-                @Exchange, @Proceeds, @ibCommissionCurrency, @NetCash, @Cost, @OrigTradePrice, @OrigTradeDate, @OrigTradeID, @OrigOrderID,
-                @OrigTransactionID, @ClearingFirmID, @BuySell, @OpenCloseIndicator)";
-            try
+            ExecuteDatabaseOperation(connection =>
             {
-                using (var cmd = new SqlCommand(insertQuery, connection, transaction))
+                using (var transaction = connection.BeginTransaction())
                 {
-                    var parameters = TradeParameterBuilder.GetTradeConfirmParams(tradeConfirm);
-                    foreach (var param in parameters)
-                    {
-                        if (param.Value == null)
-                        {
-                            cmd.Parameters.AddWithValue(param.Key, DBNull.Value);
-                        }
-                        else
-                        {
-                            cmd.Parameters.AddWithValue(param.Key, param.Value);
-                        }
-                    }
-                    var result = cmd.ExecuteScalar();
-                    
-                    newTradeId = Convert.ToInt32(result);
-                    Console.WriteLine($"Created new Trade (Id: {newTradeId}) for symbol {tradeConfirm.Symbol}, on {tradeConfirm.TradeDate:yyyy-MM-dd}");        
+                    var parameters = TradeParameterBuilder.GetTradeExecutionParams(trade);
+                    var insertQuery = new TradeExecutionInsert().Script();
+                    newTradeId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+                    Console.WriteLine($"Created new Trade (Id: {newTradeId}) for symbol {trade.Symbol}, on {trade.TradeDate:yyyy-MM-dd}");
                 }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error inserting trade confirmation with ibExecID {tradeConfirm.IbExecID}: {ex.Message}");
-            }            
+            });
+            return newTradeId;
+        }
 
+        private int InsertTradeConfirmation(TradeConfirm tradeConfirm)
+        {
+            // THIS METHOD HAS BEEN REFACTORED 14/08/26 TO USE THE BASE REPO PROPERLY.  IF IT WORKS, APPLY SAME PATTER TO CreatePosition, InsertTrade
+            // and any other methods that use transactions and connections directly.
+            // This will ensure proper disposal of resources and consistent error handling.
+            int newTradeId = 0;
+            ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    var parameters = TradeParameterBuilder.GetTradeConfirmationParams(tradeConfirm);
+                    var insertQuery = new TradeConfirmationInsert().Script();
+                    newTradeId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);                    
+                    Console.WriteLine($"Created new Trade (Id: {newTradeId}) for symbol {tradeConfirm.Symbol}, on {tradeConfirm.TradeDate:yyyy-MM-dd}");
+                }
+            });
             return newTradeId;
         }
         
@@ -838,7 +725,7 @@ namespace PikUpStix.TraderView.Data.Repositories
 
                     foreach (var position in positions)
                     {
-                        // Ensure instrument exists before upserting position
+                        // Ensure instrument executionExists before upserting position
                         if (position.Id == 0)
                         {
                             // New Position
@@ -861,7 +748,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                         }
                         else
                         {
-                            // Check if position already exists for the same InstrumentId and OpenDate
+                            // Check if position already executionExists for the same InstrumentId and OpenDate
                             bool exists = RecordExists(connection, transaction,
                                 "SELECT COUNT(*) FROM dbo.Positions WHERE Id = @positionId",
                                 new Dictionary<string, object>

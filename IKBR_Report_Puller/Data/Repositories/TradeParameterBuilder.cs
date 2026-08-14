@@ -8,7 +8,7 @@ namespace PikUpStix.TraderView.Data.Repositories
     /// </summary>
     public static class TradeParameterBuilder
     {
-        public static Dictionary<string, object> GetTradeConfirmParams(TradeConfirm tradeConfirm)
+        public static Dictionary<string, object> GetTradeConfirmationParams(TradeConfirm tradeConfirm)
         {
             return new Dictionary<string, object>
             {
