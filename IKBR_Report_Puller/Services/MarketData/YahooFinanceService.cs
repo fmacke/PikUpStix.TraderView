@@ -114,7 +114,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                         toDate = DateTime.UtcNow;
                     }
 
-                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(symbol);
+                    var instrumentId = _instrumentRepository.GetInstrumentIdByConId(symbol);
                     if (instrumentId == null)
                     {
                         Console.WriteLine($"No instrument found for symbol {symbol} so adding to database.");

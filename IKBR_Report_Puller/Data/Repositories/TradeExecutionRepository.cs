@@ -1,10 +1,14 @@
 using IKBR_Report_Puller.Data;
 using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
+using PikUpStix.TraderView.Data.Scripts.DataComms.Instruments.Query;
+using PikUpStix.TraderView.Data.Scripts.DataComms.Positions.Command;
+using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Command;
+using PikUpStix.TraderView.Data.Scripts.DataComms.Positions.Query;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using System.Data;
-using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Changes;
+using System.Transactions;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {
@@ -39,88 +43,20 @@ namespace PikUpStix.TraderView.Data.Repositories
                 {
                     continue;
                 }
-                ExecuteDatabaseOperation(connection =>
-                {
-                    using (var transaction = connection.BeginTransaction())
-                    {
-                        executionExists = RecordExists(connection, transaction,
-                    "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID",
-                    new Dictionary<string, object> { { "@ibExecID", ibExecID } });
-                        transaction.Commit();
-                    }
-                });
+                executionExists = DoesExecutionExist(ibExecID);
 
                 if (!executionExists)
                 {
                     try
                     {
-                        // Get InstrumentId for the trade's symbol
-                        int? instrumentId = _instrumentRepository.GetInstrumentIdFromConId(trade.Conid);
-                        if (!instrumentId.HasValue || instrumentId.Value == 0)
-                        {
-                            throw new InvalidOperationException($"Instrument not found for symbol {trade.Symbol} with Conid {trade.Conid}. Instruments must be upserted before trade executions.");
-                        }
-                        trade.InstrumentId = instrumentId.Value;
-
-                        Position? openPosition = null;
-                        ExecuteDatabaseOperation(connection =>
-                        {
-                            using (var transaction = connection.BeginTransaction())
-                            {
-                                // Check for open position for the trade's symbol and instrument (within the same transaction)
-                                openPosition = GetOpenPosition(connection, transaction, trade.Symbol, instrumentId.Value);
-                                transaction.Commit();
-                            }
-                        });
-                        // If no open position executionExists, create a new position and get its ID
-                        // If Open Position executionExists, trade.PositionId = existingPosition.Id
-                        if (openPosition == null)
-                        {
-                            ExecuteDatabaseOperation(connection =>
-                            {
-                                using (var transaction = connection.BeginTransaction())
-                                {
-                                    trade.PositionId = CreatePosition(connection, transaction, instrumentId.Value, trade.Symbol, trade.TradeDate, trade.TradePrice);
-                                    transaction.Commit();
-                                }
-                            });
-                            
-                        }
-                        else
-                        {
-                            trade.PositionId = openPosition.Id;
-                            //TODO:  IF TRANSACTIONID AND BROKERAGEORDERID ARE NULL, THEN THE EXISTING DATABASE ENTRY WAS CREATED FROM A TRADECONFIRM AND NEEDS TO BE FULLY UPDATED WITH THE TRADEEXECUTION DATA.
-                            //NEED TO ADD A METHOD TO UPDATE THE EXISTING TRADEEXECUTION RECORD WITH THE NEW DATA.
-                            //IF NOT A TRADECONFIRM UPDATE - ONLY THE CLOSEPRICE, COST,FIFOPNLREALIZED, MTMPNL AND TRADEMONEY FIELDS NEED UPDATED
-                        }
-
-                        trade.Id = InsertTrade(trade);
+                        trade.InstrumentId = _instrumentRepository.GetInstrumentIdByConId(trade.Conid).Value;
+                        trade.PositionId = GetOpenPosition(trade.InstrumentId)?.Id ?? CreatePosition(trade.InstrumentId, trade.Symbol, trade.TradeDate, trade.TradePrice);
+                        trade.Id = CreateTradeExecution(trade);
 
                         // Check if latest trade execution closes out the position (i.e., if the sum of quantities for that position is zero)
-                        var totalQuantity = 0m;
-                        ExecuteDatabaseOperation(connection =>
-                        {
-                            using (var transaction = connection.BeginTransaction())
-                            {
-                                totalQuantity = GetTotalQuantityForPosition(connection, transaction, trade.PositionId);
-                                transaction.Commit();
-                            }
-                        });
-                        
-
-                        // If position is closed, update the Psitions table to mark it as closed and set the close date
+                        var totalQuantity = GetTotalQuantityForPosition(trade.PositionId);
                         if (totalQuantity == 0)
-                        {
-                            ExecuteDatabaseOperation(connection =>
-                            {
-                                using (var transaction = connection.BeginTransaction())
-                                {
-                                    ClosePosition(connection, transaction, trade.PositionId, trade.TradeDate);
-                                    transaction.Commit();
-                                }
-                            });
-                            
-                        }
+                            ClosePosition(trade.PositionId, trade.TradeDate);
                     }
                     catch (Exception ex)
                     {
@@ -129,28 +65,41 @@ namespace PikUpStix.TraderView.Data.Repositories
                 }
             }
         }
+
+        private bool DoesExecutionExist(string ibExecID)
+        {            
+            return ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        return RecordExists(connection, transaction,
+                        "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @ibExecID",
+                        new Dictionary<string, object> { { "@ibExecID", ibExecID } });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error checking existence of trade execution with ibExecID {ibExecID}: {ex.Message}");
+                        return false;
+                    }
+                }
+            });
+        }
+
         /// <summary>
         /// Gets all positions from the database
         /// </summary>
         List<Position> ITradeExecutionRepository.GetAllPositions()
         {
-            return GetPositions("SELECT p.Id, p.OpenDate, p.CloseDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedPriceUpdated, " +
-                    "i.InstrumentName, i.DataName,i.Currency, i.ConId " +
-                    "FROM [dbo].[Positions] p " +
-                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
-                    "ORDER BY p.OpenDate DESC");
+            return GetPositions(new GetPositions().Script());
         }
         /// <summary>
         /// Gets all positions from the database
         /// </summary>
         List<Position> ITradeExecutionRepository.GetOpenPositions()
         {
-            return GetPositions("SELECT p.Id, p.OpenDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedPriceUpdated, " +
-                    "i.InstrumentName, i.DataName, i.Currency, i.ConId, i.ContractUnitType " +
-                    "FROM [dbo].[Positions] p " +
-                    "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
-                    "WHERE p.Status = 'Open' " +
-                    "ORDER BY p.OpenDate DESC");
+            return GetPositions(new GetOpenPositions().Script());
         }
 
         private List<Position> GetPositions(string sqlCommand)
@@ -212,103 +161,115 @@ namespace PikUpStix.TraderView.Data.Repositories
         /// <summary>
         /// Closes a position by setting its status to 'Closed' and close date
         /// </summary>
-        private void ClosePosition(SqlConnection connection, SqlTransaction transaction, int positionId, DateTime closeDate)
+        private void ClosePosition(int positionId, DateTime closeDate)
         {
-            const string updateQuery = @"
-                UPDATE [dbo].[Positions]
-                SET Status = 'Closed', CloseDate = @closeDate
-                WHERE Id = @positionId";
-
-            var parameters = new Dictionary<string, object>
+            ExecuteDatabaseOperation(connection =>
             {
-                { "@positionId", positionId },
-                { "@closeDate", closeDate }
-            };
-
-            using (var cmd = new SqlCommand(updateQuery, connection, transaction))
-            {
-                try
+                using (var transaction = connection.BeginTransaction())
                 {
-                    foreach (var param in parameters)
+                    try
                     {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
+                        string closeQuery = new ClosePosition().Script();
 
-                    cmd.ExecuteNonQuery();
-                    Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
-                }
-                catch
-                {
-                    Console.WriteLine("Error closing position with Id: {positionId}. Please check if the position executionExists and is open.");
-                }
-            }
-        }
-        /// <summary>
-        /// Gets an open position by symbol and instrument ID within a transaction
-        /// </summary>
-        private Position? GetOpenPosition(SqlConnection connection, SqlTransaction transaction, string symbol, int instrumentId)
-        {
-            const string query = @"
-                SELECT p.Id, p.InstrumentId, p.OpenDate, p.Status, p.LastReportedPrice, p.LastReportedPriceUpdated
-                FROM [dbo].[Positions] p WITH (UPDLOCK, ROWLOCK)
-                WHERE p.InstrumentId = @instrumentId
-                AND p.Status = 'Open'";
-
-            var parameters = new Dictionary<string, object>
-            {
-                { "@instrumentId", instrumentId }
-            };
-
-            using (var cmd = new SqlCommand(query, connection, transaction))
-            {
-                foreach (var param in parameters)
-                {
-                    cmd.Parameters.AddWithValue(param.Key, param.Value);
-                }
-
-                using (var reader = cmd.ExecuteReader())
-                {
-                    if (reader.Read())
-                    {
-                        return new Position
+                        var parameters = new Dictionary<string, object>
                         {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                            OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                            Status = reader.GetString(reader.GetOrdinal("Status")),
-                            LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice")) ? 0 : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
-                            LastReportedPriceUpdated = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")) ? null : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated"))
+                            { "@positionId", positionId },
+                            { "@closeDate", closeDate }
                         };
+                        ExecuteCommand(connection, transaction, closeQuery, parameters);
+                        Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
+                    }
+                    catch
+                    {
+                        Console.WriteLine("Error closing position with Id: {positionId}. Please check if the position executionExists and is open.");
                     }
                 }
-            }
-
-            return null;
+            });
         }
-        
+        private Position? GetOpenPosition(int instrumentId)
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        string query = new InstrumentGetById().Script();
+
+                        var parameters = new Dictionary<string, object>
+                        {
+                            { "@instrumentId", instrumentId }
+                        };
+
+                        return ExecuteSingle(connection, transaction, query, MapPosition, parameters);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error retrieving open position for InstrumentId {instrumentId}: {ex.Message}");
+                        return null;
+                    }
+                }
+            }); 
+        }
+
+        private static Position MapPosition(SqlDataReader reader)
+        {
+            return new Position
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
+                Status = reader.GetString(reader.GetOrdinal("Status")),
+                LastReportedPrice = reader.IsDBNull(reader.GetOrdinal("LastReportedPrice"))
+                    ? 0m
+                    : reader.GetDecimal(reader.GetOrdinal("LastReportedPrice")),
+                LastReportedPriceUpdated = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated"))
+                    ? null
+                    : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated"))
+            };
+        }
+
 
         /// <summary>
         /// Gets the total quantity for a position by summing all trade executions
         /// </summary>
-        private decimal GetTotalQuantityForPosition(SqlConnection connection, SqlTransaction transaction, int positionId)
+        private decimal GetTotalQuantityForPosition(int positionId)
         {
-            const string query = @"
-                SELECT ISNULL(SUM(quantity), 0) as TotalQuantity
-                FROM [dbo].[TradeExecutions]
-                WHERE PositionID = @positionId";
-
-            var parameters = new Dictionary<string, object>
+            return ExecuteDatabaseOperation(connection =>
             {
-                { "@positionId", positionId }
-            };
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        var quantity = 0M;
+                        const string query = @"
+                            SELECT ISNULL(SUM(quantity), 0) as TotalQuantity
+                            FROM [dbo].[TradeExecutions]
+                            WHERE PositionID = @positionId";
 
-            return ExecuteScalar<decimal>(connection, transaction, query, parameters);
+                        var parameters = new Dictionary<string, object>
+                        {
+                            { "@positionId", positionId }
+                        };
+
+                        quantity = ExecuteScalar<decimal>(connection, transaction, query, parameters);
+                        transaction.Commit();
+                        return quantity;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine($"Error calculating total quantity for PositionId {positionId}: {ex.Message}");
+                        throw;
+                    }
+                }
+            });
         }
 
-        /// <summary>
-        /// Gets all trade executions ordered by order ID and date
-        /// </summary>
-        List<TradeExecution> ITradeExecutionRepository.GetTradeExecutions()
+            /// <summary>
+            /// Gets all trade executions ordered by order ID and date
+            /// </summary>        
+            List<TradeExecution> ITradeExecutionRepository.GetTradeExecutions()
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -368,53 +329,29 @@ namespace PikUpStix.TraderView.Data.Repositories
                     Console.WriteLine("TradeExecution confirmation missing execID. Skipping.");
                     continue;
                 }
-                bool tradeExecutionExists = false;
-                ExecuteDatabaseOperation(connection =>
-                {
-                    using (var transaction = connection.BeginTransaction())
-                    {
-                        bool tradeExecutionExists = RecordExists(connection, transaction,
-                            "SELECT COUNT(*) FROM dbo.TradeExecutions WHERE ibExecID = @execID",
-                            new Dictionary<string, object> { { "@execID", tradeConfirm.IbExecID } });
-                        //transaction.Commit();  DON'T THINK THIS IS REQUIRED - COMMENTING OUT FOR NOW - CHECK ON NEXT RUN
-                    }
-
-                });
+                bool tradeExecutionExists = DoesExecutionExist(tradeConfirm.IbExecID);
 
                 if (!tradeExecutionExists)
                 {
                     tradeConfirm.OpenCloseIndicator = "O";  // THIS MAY NOT BE TRUE - TRADE CONFIRMS COULD BE CLOSING FUNCTIONS - MONITOR
-                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(tradeConfirm.Conid);
+                    var instrumentId = _instrumentRepository.GetInstrumentIdByConId(tradeConfirm.Conid);
                     
                     if (instrumentId.HasValue)
                     {
                         Position? existingPosition = null;
-                        ExecuteDatabaseOperation(connection =>
-                        {
-                            using (var transaction = connection.BeginTransaction())
-                            {
-                                // Check for open position for the trade's symbol and instrument (within the same transaction)
-                                existingPosition = GetOpenPosition(connection, transaction, tradeConfirm.Symbol, instrumentId.Value);
-                                transaction.Commit();
-                            }
-                        });
+ 
+                        // Check for open position for the trade's symbol and instrument (within the same transaction)
+                        existingPosition = GetOpenPosition(instrumentId.Value);
+
                         if (existingPosition != null)
                         {
                             tradeConfirm.PositionId = existingPosition.Id;
                         }
                         else
                         {
-                            ExecuteDatabaseOperation(connection =>
-                            {
-                                using (var transaction = connection.BeginTransaction())
-                                {
-                                    
-                                    tradeConfirm.PositionId = CreatePosition(connection, transaction, instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
-                                    transaction.Commit();
-                                }
-                            });
-                        }                        
-                        tradeConfirm.Id = InsertTradeConfirmation(tradeConfirm);
+                            tradeConfirm.PositionId = CreatePosition(instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
+                        }                       
+                        tradeConfirm.Id = CreateTradeConfirmation(tradeConfirm);
                     }
                     else
                     {
@@ -425,70 +362,89 @@ namespace PikUpStix.TraderView.Data.Repositories
             Console.WriteLine("Successfully processed today's trade confirmations.");
                 
         }
-        private int CreatePosition(SqlConnection connection, SqlTransaction transaction, int instrumentId, string symbol, DateTime openDate, decimal openPrice)
+        private int CreatePosition(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
         {
-            const string insertQuery = @"
-                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated)
-                VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @LastReportedPriceUpdated);
-                SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-            var parameters = new Dictionary<string, object>
-            {
-                { "@openDate", openDate },
-                { "@status", "Open" },
-                { "@instrumentId", instrumentId },
-                { "@lastReportedPrice", openPrice },
-                { "@LastReportedPriceUpdated", DateTime.Now}
-            };
-
-            using (var cmd = new SqlCommand(insertQuery, connection, transaction))
-            {
-                foreach (var param in parameters)
-                {
-                    cmd.Parameters.AddWithValue(param.Key, param.Value);
-                }
-
-                var result = cmd.ExecuteScalar();
-                int newPositionId = Convert.ToInt32(result);
-
-                Console.WriteLine($"Created new Position (Id: {newPositionId}) for symbol {symbol}, InstrumentId {instrumentId} on {openDate:yyyy-MM-dd}");
-
-                return newPositionId;
-            }
-        }
-        private int InsertTrade(TradeExecution trade)
-        {
-            int newTradeId = 0;
-            ExecuteDatabaseOperation(connection =>
+            return ExecuteDatabaseOperation(connection =>
             {
                 using (var transaction = connection.BeginTransaction())
                 {
-                    var parameters = TradeParameterBuilder.GetTradeExecutionParams(trade);
-                    var insertQuery = new TradeExecutionInsert().Script();
-                    newTradeId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
-                    Console.WriteLine($"Created new Trade (Id: {newTradeId}) for symbol {trade.Symbol}, on {trade.TradeDate:yyyy-MM-dd}");
+                    try
+                    {
+                        string insertQuery = new CreatePosition().Script();
+
+                        var parameters = new Dictionary<string, object>
+                        {
+                            { "@openDate", openDate },
+                            { "@status", "Open" },
+                            { "@instrumentId", instrumentId },
+                            { "@lastReportedPrice", openPrice },
+                            { "@LastReportedPriceUpdated", DateTime.Now}
+                        };
+
+                        int newPositionId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+                        transaction.Commit();
+                        Console.WriteLine($"Created new Position (Id: {newPositionId}) for symbol {symbol}, InstrumentId {instrumentId} on {openDate:yyyy-MM-dd}");
+                        return newPositionId;
+
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine($"Error inserting position for instrumentId {instrumentId} on {openDate:yyyy-MM-dd}: {ex.Message}");
+                        throw;
+                    }
                 }
             });
-            return newTradeId;
         }
-
-        private int InsertTradeConfirmation(TradeConfirm tradeConfirm)
+        private int CreateTradeExecution(TradeExecution trade)
         {
-            // THIS METHOD HAS BEEN REFACTORED 14/08/26 TO USE THE BASE REPO PROPERLY.  IF IT WORKS, APPLY SAME PATTER TO CreatePosition, InsertTrade
-            // and any other methods that use transactions and connections directly.
-            // This will ensure proper disposal of resources and consistent error handling.
-            int newTradeId = 0;
-            ExecuteDatabaseOperation(connection =>
+            // MODEL EXAMPLE
+            return ExecuteDatabaseOperation(connection =>
             {
                 using (var transaction = connection.BeginTransaction())
                 {
-                    var parameters = TradeParameterBuilder.GetTradeConfirmationParams(tradeConfirm);
-                    var insertQuery = new TradeConfirmationInsert().Script();
-                    newTradeId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);                    
-                    Console.WriteLine($"Created new Trade (Id: {newTradeId}) for symbol {tradeConfirm.Symbol}, on {tradeConfirm.TradeDate:yyyy-MM-dd}");
+                    try
+                    {
+                        var parameters = TradeParameterBuilder.GetTradeExecutionParams(trade);
+                        var insertQuery = new TradeExecutionInsert().Script();
+                        int tradeId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+                        transaction.Commit();
+                        Console.WriteLine($"Created new Trade Excecution (Id: {tradeId}) for symbol {trade.Symbol}, on {trade.TradeDate:yyyy-MM-dd}");
+                        return tradeId;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine($"Error inserting trade execution for symbol {trade.Symbol} on {trade.TradeDate:yyyy-MM-dd}: {ex.Message}");
+                        throw;
+                    }
                 }
             });
-            return newTradeId;
+        }
+
+        private int CreateTradeConfirmation(TradeConfirm tradeConfirm)
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        var parameters = TradeParameterBuilder.GetTradeConfirmationParams(tradeConfirm);
+                        var insertQuery = new TradeConfirmationInsert().Script();
+                        int tradeId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+                        transaction.Commit();
+                        Console.WriteLine($"Created new Trade Confirmation (PositionId: {tradeConfirm.PositionId}) for symbol {tradeConfirm.Symbol}, on {tradeConfirm.TradeDate:yyyy-MM-dd}");
+                        return tradeId;
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine($"Error inserting trade confirmation for symbol {tradeConfirm.Symbol} with PositionId {tradeConfirm.PositionId} on {tradeConfirm.TradeDate:yyyy-MM-dd}: {ex.Message}");
+                        throw;
+                    }
+                }
+            });
         }
         
 

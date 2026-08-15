@@ -100,31 +100,29 @@ namespace PikUpStix.TraderView.Services.MarketData
         {
             foreach (var trade in trades)
             {
-                if (trade.InstrumentId == 52)
+
+                var instrument = await _instrumentRepository.GetByIdAsync(trade.InstrumentId);
+                await ExecuteWithErrorHandlingAsync(async () =>
                 {
-                    var instrument = await _instrumentRepository.GetByIdAsync(trade.InstrumentId);
-                    await ExecuteWithErrorHandlingAsync(async () =>
+                    var fromDate = trade.TradeOpened.AddDays(-364);
+                    var toDate = trade.TradeClosed.AddDays(364);
+                    if (toDate > DateTime.UtcNow)
                     {
-                        var fromDate = trade.TradeOpened.AddDays(-364);
-                        var toDate = trade.TradeClosed.AddDays(364);
-                        if (toDate > DateTime.UtcNow)
-                        {
-                            toDate = DateTime.UtcNow.AddDays(-1); // don't pull today's data as it's not complete
-                        }
+                        toDate = DateTime.UtcNow.AddDays(-1); // don't pull today's data as it's not complete
+                    }
 
-                        var barData = await FetchChartDataFromApiAsync(instrument.DataSource, fromDate, toDate);
+                    var barData = await FetchChartDataFromApiAsync(instrument.DataSource, fromDate, toDate);
 
-                        if (barData == null || barData.Count == 0)
-                        {
-                            Console.WriteLine("No chart data found for the specified date range.");
-                            return;
-                        }
+                    if (barData == null || barData.Count == 0)
+                    {
+                        Console.WriteLine("No chart data found for the specified date range.");
+                        return;
+                    }
 
-                        Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {trade.Symbol}.");
+                    Console.WriteLine($"Retrieved {barData.Count} rows of chart data for {trade.Symbol}.");
 
-                        _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), barData);
-                    }, $"Symbol: {trade.Symbol}, InstrumentId: {trade.InstrumentId}");
-                }
+                    _historicalDataRepository.UpdateHistoricalData(trade.InstrumentId.ToString(), barData);
+                }, $"Symbol: {trade.Symbol}, InstrumentId: {trade.InstrumentId}");
             }
         }
 
@@ -140,11 +138,11 @@ namespace PikUpStix.TraderView.Services.MarketData
                     {
                         toDate = DateTime.UtcNow;
                     }
-                    var instrumentId = _instrumentRepository.GetInstrumentIdFromConId(symbol);
+                    var instrumentId = _instrumentRepository.GetInstrumentIdByConId(symbol);
                     if (instrumentId == null)
                     {
-                        Console.WriteLine($"No position found for symbol {symbol} so adding to database.");
-                        instrumentId = _instrumentRepository.InsertInstrument(symbol, symbol, "FinancialModellingPrep", "USD", "INDEX", "FinancialModellingPrep", "FinancialModellingPrep");
+                        throw new Exception($"No instrument in database for symbol {symbol}.  Skipping for now.");
+                        //instrumentId = _instrumentRepository.InsertInstrument(symbol, symbol, "FinancialModellingPrep", "USD", "INDEX", "FinancialModellingPrep", symbol);
                     }
                     var instrument = _instrumentRepository.Get(instrumentId.Value);
                     var barData = await FetchChartDataFromApiAsync(instrument.DataName, fromDate, toDate);

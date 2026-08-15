@@ -13,7 +13,7 @@ namespace PikUpStix.TraderView.Interfaces
         /// </summary>
         /// <param name="conid">The contract ID</param>
         /// <returns>The instrument ID, or null if not found</returns>
-        int? GetInstrumentIdFromConId(string conid);
+        int? GetInstrumentIdByConId(string conid);
 
         /// <summary>
         /// Gets an instrument by its ID
@@ -33,7 +33,7 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="provider">Provider of the instrument</param>
         /// <param name="dataSource">Data source of the instrument</param>
         /// <returns>The newly created instrument ID, or null if insertion failed</returns>
-        int? InsertInstrument(string conid, string symbol, string listingExchange, string currency, string assetCategory, string provider, string dataSource);
+        int InsertInstrument(string conid, string symbol, string listingExchange, string currency, string assetCategory, string provider, string dataSource);
 
         /// <summary>
         /// Ensures instruments exist for the given trades.

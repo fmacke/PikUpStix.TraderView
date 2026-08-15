@@ -1,10 +1,13 @@
+using DocumentFormat.OpenXml.Math;
+using Microsoft.Data.SqlClient;
+using PikUpStix.TraderView.Data.Scripts.DataComms.Instruments.Command;
+using PikUpStix.TraderView.Data.Scripts.DataComms.Instruments.Query;
+using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Command;
+using PikUpStix.TraderView.Domain;
+using PikUpStix.TraderView.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using DocumentFormat.OpenXml.Math;
-using Microsoft.Data.SqlClient;
-using PikUpStix.TraderView.Domain;
-using PikUpStix.TraderView.Interfaces;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {
@@ -52,78 +55,62 @@ namespace PikUpStix.TraderView.Data.Repositories
         {
             if (trades == null || !trades.Any())
                 return;
-
-            ExecuteDatabaseOperation(connection =>
+            try
             {
-                using (var transaction = connection.BeginTransaction())
+                var uniqueConids = trades
+                    .Where(t => !string.IsNullOrEmpty(t.Conid))
+                    .Select(t => t.Conid)
+                    .Distinct()
+                    .ToList();
+
+                int createdCount = 0;
+                int existingCount = 0;
+
+                foreach (var conid in uniqueConids)
                 {
-                    try
+                    int? instrumentId = GetInstrumentIdByConId(conid);
+
+                    if (!instrumentId.HasValue)
                     {
-                        var uniqueConids = trades
-                            .Where(t => !string.IsNullOrEmpty(t.Conid))
-                            .Select(t => t.Conid)
-                            .Distinct()
-                            .ToList();
+                        var trade = trades.First(t => t.Conid == conid);
 
-                        int createdCount = 0;
-                        int existingCount = 0;
+                        ((IInstrumentRepository)this).InsertInstrument(
+                            conid,
+                            trade.Symbol,
+                            trade.ListingExchange,
+                            trade.Currency,
+                            trade.AssetCategory,
+                            source,
+                            trade.Symbol);
 
-                        foreach (var conid in uniqueConids)
-                        {
-                            int? instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
-
-                            if (!instrumentId.HasValue)
-                            {
-                                var trade = trades.First(t => t.Conid == conid);
-
-                                InsertInstrument(
-                                    connection,
-                                    transaction,
-                                    conid,
-                                    trade.Symbol,
-                                    trade.ListingExchange,
-                                    trade.Currency,
-                                    trade.AssetCategory,
-                                    source,
-                                    trade.Symbol);
-
-                                createdCount++;
-                            }
-                            else
-                            {
-                                existingCount++;
-                            }
-                        }
-
-                        transaction.Commit();
-
-                        if (createdCount > 0)
-                        {
-                            Console.WriteLine($"Created {createdCount} new instrument(s), {existingCount} already existed");
-                        }
+                        createdCount++;
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        transaction.Rollback();
-                        Console.WriteLine($"Error upserting instruments: {ex.Message}");
-                        throw;
+                        existingCount++;
                     }
                 }
-                using (var transaction = connection.BeginTransaction())
+                if (createdCount > 0)
                 {
-                    foreach (var trade in trades.Where(x => x.InstrumentId == 0))
+                    Console.WriteLine($"Created {createdCount} new instrument(s), {existingCount} already existed");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error upserting instruments: {ex.Message}");
+                throw;
+            }
+            foreach (var trade in trades.Where(x => x.InstrumentId == 0))
+            {
+                if (!string.IsNullOrEmpty(trade.Conid))
+                {
+                    int? instrumentId = GetInstrumentIdByConId(trade.Conid);
+                    if (instrumentId.HasValue)
                     {
-                        if (!string.IsNullOrEmpty(trade.Conid))
-                        {
-                            int? instrumentId = GetInstrumentIdByConid(connection, transaction, trade.Conid);
-                            if (instrumentId.HasValue)
-                            {
-                                trade.InstrumentId = instrumentId.Value;
-                            }
-                        }
+                        trade.InstrumentId = instrumentId.Value;
                     }
                 }
-            }); 
+            }
         }
 
         
@@ -208,39 +195,19 @@ namespace PikUpStix.TraderView.Data.Repositories
             return instrument;
         }
 
-        public int? GetInstrumentIdFromConId(string conid)
+        public int? GetInstrumentIdByConId(string conid)
         {
-            int? instrumentId = null;
+            int instrumentId = 0;
             ExecuteDatabaseOperation(connection =>
             {
                 using (var transaction = connection.BeginTransaction())
                 {
-                    try
-                    {
-                        instrumentId = GetInstrumentIdByConid(connection, transaction, conid);
-
-                        return instrumentId;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error obtaining instrumentId from conid: {ex.Message}");
-                        throw;
-                    }
+                    string query = new InstrumentGetByConId().Script();
+                    var parameters = new Dictionary<string, object>{{ "@conid", conid }};
+                    instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
+                    transaction.Commit();
                 }
             });
-            return instrumentId;
-        }
-
-        private int? GetInstrumentIdByConid(SqlConnection connection, SqlTransaction transaction, string conid)
-        {
-            const string query = "SELECT Id FROM dbo.Instruments WHERE ConId = @conid";
-
-            var parameters = new Dictionary<string, object>
-            {
-                { "@conid", conid }
-            };
-
-            int instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
             return instrumentId > 0 ? instrumentId : (int?)null;
         }
         public int? GetInstrumentIdFromSymbol(string symbol, string provider)
@@ -277,47 +244,11 @@ namespace PikUpStix.TraderView.Data.Repositories
             };
 
             int instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
+            transaction.Commit();
             return instrumentId > 0 ? instrumentId : (int?)null;
         }
 
-        public int? InsertInstrument(string conid, string symbol, string listingExchange, string currency, string assetCategory, string provider, string dataSource)
-        {
-            int? id = null;
-            ExecuteDatabaseOperation(connection =>
-            {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    try
-                    {
-                        InsertInstrument(
-                                    connection,
-                                    transaction,
-                                    conid,
-                                    symbol,
-                                    listingExchange,
-                                    currency,
-                                    assetCategory,
-                                    provider,
-                                    dataSource);
-
-                        // Get the newly created instrument ID
-                        id = GetInstrumentIdByConid(connection, transaction, conid);
-                        transaction.Commit();
-                        return id;
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        Console.WriteLine($"Error upserting instruments from trade confirmations: {ex.Message}");
-                        throw;
-                    }
-                }
-            });
-            return id;
-        }
-        private void InsertInstrument(
-            SqlConnection connection,
-            SqlTransaction transaction,
+        int IInstrumentRepository.InsertInstrument(
             string conid,
             string symbol,
             string listingExchange,
@@ -326,32 +257,34 @@ namespace PikUpStix.TraderView.Data.Repositories
             string provider,
             string dataSource)
         {
-            const string insertQuery = @"
-                INSERT INTO dbo.Instruments 
-                (InstrumentName, Provider, DataName, DataSource, Format, Frequency, ContractUnit, ContractUnitType, 
-                 PriceQuotation, MinimumPriceFluctuation, Currency, ListingExchange, ConId) 
-                VALUES 
-                (@instrumentName, @provider, @dataName, @dataSource, @format, @frequency, @contractUnit, @contractUnitType, 
-                 @priceQuotation, @minimumPriceFluctuation, @currency, @listingExchange, @conId)";
-
-            var parameters = new Dictionary<string, object>
+            int newInstrumentId = 0;
+            ExecuteDatabaseOperation(connection =>
             {
-                { "@instrumentName", symbol ?? "Unknown" },
-                { "@provider", provider ?? "Unknown" },
-                { "@dataName", symbol ?? "Unknown" },
-                { "@dataSource", dataSource ?? "Unknown" },
-                { "@format", "TradeExecution" },
-                { "@frequency", "TradeExecution" },
-                { "@contractUnit", DBNull.Value },
-                { "@contractUnitType", assetCategory },
-                { "@priceQuotation", DBNull.Value },
-                { "@minimumPriceFluctuation", DBNull.Value },
-                { "@currency", (object)currency ?? DBNull.Value },
-                { "@listingExchange", (object)listingExchange ?? DBNull.Value },
-                { "@conId", conid }
-            };
+                using (var transaction = connection.BeginTransaction())
+                {
+                    string insertQuery = new InstrumentInsert().Script();
 
-            ExecuteCommand(connection, transaction, insertQuery, parameters);
+                    var parameters = new Dictionary<string, object>
+                    {
+                        { "@instrumentName", symbol ?? "Unknown" },
+                        { "@provider", provider ?? "Unknown" },
+                        { "@dataName", symbol ?? "Unknown" },
+                        { "@dataSource", dataSource ?? "Unknown" },
+                        { "@format", "TradeExecution" },
+                        { "@frequency", "TradeExecution" },
+                        { "@contractUnit", DBNull.Value },
+                        { "@contractUnitType", assetCategory },
+                        { "@priceQuotation", DBNull.Value },
+                        { "@minimumPriceFluctuation", DBNull.Value },
+                        { "@currency", (object)currency ?? DBNull.Value },
+                        { "@listingExchange", (object)listingExchange ?? DBNull.Value },
+                        { "@conId", conid }
+                    };
+                    newInstrumentId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+                    transaction.Commit();
+                }
+            });
+            return newInstrumentId;
         }
 
         /// <summary>
@@ -396,6 +329,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                 return instrument;
             });
         }
+
+        
         #endregion
     }
 }

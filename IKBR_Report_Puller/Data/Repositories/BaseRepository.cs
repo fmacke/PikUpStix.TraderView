@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
 using Microsoft.Data.SqlClient;
 
 namespace PikUpStix.TraderView.Data.Repositories
@@ -77,9 +74,10 @@ namespace PikUpStix.TraderView.Data.Repositories
                 }
                 cmd.ExecuteNonQuery();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                string boom = ex.Message;
+                Console.WriteLine($"\nAn error occurred: {ex.Message}");
+                throw;
             }
         }
 
@@ -90,7 +88,13 @@ namespace PikUpStix.TraderView.Data.Repositories
         {
             try
             {
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    connection.Open();
+                }
+
                 using SqlCommand cmd = new SqlCommand(query, connection, transaction);
+
                 if (parameters != null)
                 {
                     foreach (var param in parameters)
@@ -98,8 +102,57 @@ namespace PikUpStix.TraderView.Data.Repositories
                         cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
                     }
                 }
+
                 var result = cmd.ExecuteScalar();
-                return result != null ? (T)result : default(T);
+
+                // Handle DBNull or null returns
+                if (result == null || result is DBNull)
+                {
+                    return default;
+                }
+
+                // Handle underlying types for Nullable<T> (e.g. int?)
+                Type targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+
+                // Safely convert SQL Server types (e.g. decimal to int/long/Guid)
+                return (T)Convert.ChangeType(result, targetType);
+            }
+            catch (SqlException e)
+            {
+                Console.WriteLine($"\nDatabase error: {e.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\nAn error occurred: {ex.Message}");
+                throw;
+            }
+        }
+        /// <summary>
+        /// Executes a query within an optional transaction and maps the first matching record, returning null if not found.
+        /// </summary>
+        protected T? ExecuteSingle<T>(SqlConnection connection, SqlTransaction? transaction, string query,
+            Func<SqlDataReader, T> mapFunction,
+            Dictionary<string, object>? parameters = null) where T : class
+        {
+            try
+            {
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    connection.Open();
+                }
+
+                using SqlCommand cmd = new SqlCommand(query, connection, transaction);
+
+                if (parameters != null)
+                {
+                    foreach (var param in parameters)
+                    {
+                        cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                    }
+                }
+                using SqlDataReader reader = cmd.ExecuteReader();
+                return reader.Read() ? mapFunction(reader) : null;
             }
             catch (SqlException e)
             {
@@ -114,6 +167,50 @@ namespace PikUpStix.TraderView.Data.Repositories
         }
 
         /// <summary>
+        /// Executes a query within an optional transaction and maps all matching records to a list.
+        /// </summary>
+        protected List<T> ExecuteList<T>(SqlConnection connection, SqlTransaction? transaction, string query, Func<SqlDataReader, T> mapFunction, Dictionary<string, object>? parameters = null)
+        {
+            try
+            {
+                if (connection.State != System.Data.ConnectionState.Open)
+                {
+                    connection.Open();
+                }
+
+                using SqlCommand cmd = new SqlCommand(query, connection, transaction);
+
+                if (parameters != null)
+                {
+                    foreach (var param in parameters)
+                    {
+                        cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
+                    }
+                }
+
+                var results = new List<T>();
+                using SqlDataReader reader = cmd.ExecuteReader();
+                while (reader.Read())
+                {
+                    results.Add(mapFunction(reader));
+                }
+
+                return results;
+            }
+            catch (SqlException e)
+            {
+                Console.WriteLine($"\nDatabase error: {e.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\nAn error occurred: {ex.Message}");
+                throw;
+            }
+        }
+
+
+        /// <summary>
         /// Checks if a record exists based on a query
         /// </summary>
         protected bool RecordExists(SqlConnection connection, SqlTransaction transaction, string query, Dictionary<string, object> parameters)
@@ -123,3 +220,4 @@ namespace PikUpStix.TraderView.Data.Repositories
         }
     }
 }
+    

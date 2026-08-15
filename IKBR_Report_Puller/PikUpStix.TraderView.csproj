@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Data\Scripts\DataComms\TradeExecutions\Queries\" />
+    <Folder Include="Data\Scripts\DataComms\TradeExecutions\Query\" />
   </ItemGroup>
 
 </Project>
