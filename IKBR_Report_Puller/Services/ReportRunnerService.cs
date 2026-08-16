@@ -18,7 +18,6 @@ namespace PikUpStix.TraderView.Services
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly IMarketDataService _marketDataService;
-        private readonly YahooFinanceService _yahooFinanceService;
         private readonly FinancialModellingPrepService _fmpService;
         const int maxRetries = 3;
         const int delayInSeconds = 5;
@@ -30,7 +29,6 @@ namespace PikUpStix.TraderView.Services
             IExcelReportService excelReportService,
             ITradeHistoryReportService tradeHistoryReportService,
             IMarketDataService economicCalendarService,
-            YahooFinanceService yahooFinanceService,
             FinancialModellingPrepService fmpService,
             IConfiguration config)
         {
@@ -40,7 +38,6 @@ namespace PikUpStix.TraderView.Services
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
             _marketDataService = economicCalendarService;
-            _yahooFinanceService = yahooFinanceService;
             _fmpService = fmpService;
             _config = config;
             outputFilePath = _config["IBKR:OutputFilePath"];

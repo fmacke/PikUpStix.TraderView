@@ -95,7 +95,19 @@ namespace traderview.Server.DTOs
         public double SMA150 { get; set; }
         public double SMA200 { get; set; }
     }
-
+    public class StockScreenerDto
+    {
+        public string Symbol { get; set; } = string.Empty;
+        public string CompanyName { get; set; } = string.Empty;
+        public string Exchange { get; set; } = string.Empty;
+        public decimal Price { get; set; }
+        public decimal Change { get; set; }
+        public decimal PercentChange { get; set; }
+        public decimal Volume { get; set; }
+        public decimal MarketCap { get; set; }
+        public decimal PE_Ratio { get; set; }
+        public decimal DividendYield { get; set; }
+    }
     public class OpenPositionDto
     {
         public int PositionId { get; set; }

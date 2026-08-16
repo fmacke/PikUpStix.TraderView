@@ -1,9 +1,10 @@
-using TraderView.Domain.Entities;
+using System.Collections.Concurrent;
 using System.Net.Http.Json;
 using System.Text.Json;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Models.FMP;
+using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Services.MarketData
 {
@@ -186,13 +187,12 @@ namespace PikUpStix.TraderView.Services.MarketData
         }
         public async Task<IReadOnlyList<FmpQuarterlyIncomeStatementDto>> GetQuarterlyIncomeStatementsAsync(
             string symbol,
-            int limit = 8,
-            CancellationToken cancellationToken = default)
+            int limit = 8)
         {
             try
             {
-                var url = $"v3/income-statement/{symbol.ToUpperInvariant()}?period=quarter&limit={limit}&apikey={_apiKey}";
-                var result = await _httpClient.GetFromJsonAsync<List<FmpQuarterlyIncomeStatementDto>>(url, cancellationToken);
+                var url = $"{_baseUrl}/income-statement?symbol={symbol.ToUpperInvariant()}&period=quarter&limit={limit}&apikey={_apiKey}";
+                var result = await _httpClient.GetFromJsonAsync<List<FmpQuarterlyIncomeStatementDto>>(url);
 
                 return result ?? (IReadOnlyList<FmpQuarterlyIncomeStatementDto>)Array.Empty<FmpQuarterlyIncomeStatementDto>();
             }
@@ -206,11 +206,10 @@ namespace PikUpStix.TraderView.Services.MarketData
         public async Task<CanSlimCurrentQuarterMetric?> EvaluateCurrentQuarterEpsAsync(
             string symbol,
             decimal minEpsGrowth = 25m,
-            decimal minRevenueGrowth = 20m,
-            CancellationToken cancellationToken = default)
+            decimal minRevenueGrowth = 20m)
         {
             // Fetch at least 8 quarters to evaluate YoY growth across consecutive recent quarters
-            var statements = await GetQuarterlyIncomeStatementsAsync(symbol, 8, cancellationToken);
+            var statements = await GetQuarterlyIncomeStatementsAsync(symbol, 8);
 
             if (statements == null || statements.Count < 5)
             {
@@ -248,7 +247,369 @@ namespace PikUpStix.TraderView.Services.MarketData
                 PassesCriteria = epsGrowthYoY >= minEpsGrowth && revGrowthYoY >= minRevenueGrowth
             };
         }
+        public async Task<CanSlimAnnualMetric?> EvaluateAnnualEpsAsync(string symbol, decimal minCagr = 25m, decimal minRoe = 17m)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                throw new ArgumentException("Ticker symbol cannot be null or whitespace.", nameof(symbol));
+            }
 
+            var cleanSymbol = symbol.Trim().ToUpperInvariant();
+
+            // 1. Concurrently fetch 5 years of annual income statements and TTM key metrics
+            var annualsTask = GetAnnualIncomeStatementsAsync(cleanSymbol, limit: 5);
+            var metricsTask = GetKeyMetricsTtmAsync(cleanSymbol);
+
+            await Task.WhenAll(annualsTask, metricsTask);
+
+            var annuals = annualsTask.Result;
+            var metrics = metricsTask.Result;
+
+            // CAN SLIM 'A' requires at least 4 consecutive completed fiscal years (Y0, Y-1, Y-2, Y-3)
+            if (annuals == null || annuals.Count < 4)
+            {
+                Console.WriteLine("Insufficient annual statement history for CAN SLIM 'A' evaluation on {0} (Found: {1}, Required: 4+)",
+                    cleanSymbol, annuals?.Count ?? 0);
+                return null;
+            }
+
+            // FMP returns annual statements sorted latest first:
+            // index 0 = Y0 (latest fiscal year), 1 = Y-1, 2 = Y-2, 3 = Y-3 (3 years prior)
+            var y0 = annuals[0].EpsDiluted;
+            var y1 = annuals[1].EpsDiluted;
+            var y2 = annuals[2].EpsDiluted;
+            var y3 = annuals[3].EpsDiluted;
+
+            // 2. Monotonic Annual EPS Progression Check (Y0 > Y1 > Y2)
+            // O'Neil requires consistent earnings growth without major cyclical breakdowns
+            bool hasConsecutiveGrowth = (y0 > y1) && (y1 > y2);
+
+            // 3. Compute 3-Year EPS Compound Annual Growth Rate (CAGR)
+            // Standard Formula: (Y0 / Y3)^(1/3) - 1
+            decimal cagr3YearPercent = 0m;
+            if (y3 > 0 && y0 > 0)
+            {
+                double ratio = (double)(y0 / y3);
+                double cagr = Math.Pow(ratio, 1.0 / 3.0) - 1.0;
+                cagr3YearPercent = Math.Round((decimal)(cagr * 100.0), 2);
+            }
+            else if (y3 <= 0 && y0 > 0)
+            {
+                // Turnaround exception (negative EPS 3 years ago turned solidly profitable)
+                decimal divisor = Math.Abs(y3 == 0m ? 0.01m : y3);
+                cagr3YearPercent = Math.Round(((y0 - y3) / divisor) * 100m, 2);
+            }
+
+            // 4. Optional 5-Year EPS CAGR Calculation
+            decimal? cagr5YearPercent = null;
+            if (annuals.Count >= 5)
+            {
+                var y4 = annuals[4].EpsDiluted;
+                if (y4 > 0 && y0 > 0)
+                {
+                    double ratio5 = (double)(y0 / y4);
+                    double cagr5 = Math.Pow(ratio5, 1.0 / 4.0) - 1.0;
+                    cagr5YearPercent = Math.Round((decimal)(cagr5 * 100.0), 2);
+                }
+            }
+
+            // 5. Extract TTM Return on Equity (ROE) & Margins from Key Metrics
+            decimal returnOnEquity = 0m;
+            decimal operatingMargin = 0m;
+            decimal returnOnAssets = 0m;
+
+            if (metrics != null && metrics.Count > 0)
+            {
+                var primaryMetric = metrics[0];
+                returnOnEquity = Math.Round(primaryMetric.Roe * 100m, 2);
+                operatingMargin = Math.Round(primaryMetric.OperatingProfitMargin * 100m, 2);
+                returnOnAssets = Math.Round(primaryMetric.Roa * 100m, 2);
+            }
+
+            // 6. Build Historical Annual Earnings Progression Points (for charting / audit breakdown)
+            var history = new List<AnnualEarningsPoint>();
+            for (int i = 0; i < annuals.Count; i++)
+            {
+                decimal yoyGrowth = 0m;
+                if (i + 1 < annuals.Count)
+                {
+                    var current = annuals[i].EpsDiluted;
+                    var prior = annuals[i + 1].EpsDiluted;
+                    yoyGrowth = CalculatePercentageGrowth(prior, current);
+                }
+
+                history.Add(new AnnualEarningsPoint
+                {
+                    CalendarYear = annuals[i].CalendarYear,
+                    FiscalDate = annuals[i].Date,
+                    Revenue = annuals[i].Revenue,
+                    NetIncome = annuals[i].NetIncome,
+                    EpsDiluted = annuals[i].EpsDiluted,
+                    EpsGrowthYoYPercent = Math.Round(yoyGrowth, 2)
+                });
+            }
+
+            // 7. CAN SLIM 'A' Strict Pass/Fail Gate
+            bool passesCriteria = cagr3YearPercent >= minCagr &&
+                                  returnOnEquity >= minRoe &&
+                                  hasConsecutiveGrowth;
+
+            return new CanSlimAnnualMetric
+            {
+                Symbol = cleanSymbol,
+                EvaluationDateUtc = DateTime.UtcNow,
+                EpsCagr3YearPercent = cagr3YearPercent,
+                EpsCagr5YearPercent = cagr5YearPercent,
+                ReturnOnEquityPercent = returnOnEquity,
+                HasConsecutiveAnnualGrowth = hasConsecutiveGrowth,
+                LatestFiscalYearEps = y0,
+                LatestFiscalYear = annuals[0].CalendarYear,
+                PriorYear1Eps = y1,
+                PriorYear2Eps = y2,
+                PriorYear3Eps = y3,
+                OperatingMarginPercent = operatingMargin,
+                ReturnOnAssetsPercent = returnOnAssets,
+                AnnualHistory = history,
+                PassesCriteria = passesCriteria
+            };
+        }
+        public async Task<IReadOnlyList<FmpKeyMetricsDto>> GetKeyMetricsTtmAsync(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                throw new ArgumentException("Ticker symbol cannot be null or whitespace.", nameof(symbol));
+            }
+
+            var cleanSymbol = symbol.Trim().ToUpperInvariant();
+
+            try
+            {
+                // FMP TTM Key Metrics endpoint
+                var url = $"{_baseUrl}/key-metrics-ttm/{cleanSymbol}?apikey={_apiKey}";
+
+                var result = await _httpClient.GetFromJsonAsync<List<FmpKeyMetricsDto>>(url);
+
+                if (result == null || result.Count == 0)
+                {
+                    Console.WriteLine($"No TTM key metrics returned from FMP for {cleanSymbol}");
+                    return Array.Empty<FmpKeyMetricsDto>();
+                }
+
+                return result;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching TTM key metrics for {cleanSymbol} from FMP (Status: {ex.StatusCode})");
+                return Array.Empty<FmpKeyMetricsDto>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error fetching TTM key metrics for {cleanSymbol}: {ex.Message}");
+                return Array.Empty<FmpKeyMetricsDto>();
+            }
+        }
+        public async Task<IReadOnlyList<FmpAnnualIncomeStatementDto>> GetAnnualIncomeStatementsAsync(string symbol, int limit = 5)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                throw new ArgumentException("Ticker symbol cannot be null or whitespace.", nameof(symbol));
+            }
+
+            var cleanSymbol = symbol.Trim().ToUpperInvariant();
+
+            try
+            {
+                // FMP endpoint for annual statements defaults to period=annual, but explicitly passing it guarantees correct grouping
+                var url = $"{_baseUrl}/income-statement/{cleanSymbol}?period=annual&limit={limit}&apikey={_apiKey}";
+
+                var result = await _httpClient.GetFromJsonAsync<List<FmpAnnualIncomeStatementDto>>(url);
+
+                if (result == null || result.Count == 0)
+                {
+                    Console.WriteLine($"No annual income statements returned from FMP for {cleanSymbol}");
+                    return Array.Empty<FmpAnnualIncomeStatementDto>();
+                }
+
+                // Ensure returned statements are ordered newest to oldest (Y0 down to Y-4)
+                return result
+                    .OrderByDescending(x => x.CalendarYear)
+                    .ThenByDescending(x => x.Date)
+                    .ToList();
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error occurred while fetching annual income statements for {cleanSymbol} from FMP (Status: {ex.StatusCode}): {ex.Message}");
+                return Array.Empty<FmpAnnualIncomeStatementDto>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Unexpected error fetching annual income statements for {cleanSymbol}: {ex.Message}");
+                return Array.Empty<FmpAnnualIncomeStatementDto>();
+            }
+        }
+        public async Task<IReadOnlyList<CanSlimCandidate>> RunScreenerAsync(CanSlimScreenerCriteria criteria)
+        {
+            // STAGE 1: Bulk screener API call to fetch liquid universe
+            var url = $"{_baseUrl}/company-screener?priceMoreThan={criteria.MinPrice}&volumeMoreThan={criteria.MinVolume}&marketCapMoreThan={criteria.MinMarketCap}&isEtf=false&isActivelyTrading=true&exchange=NASDAQ,NYSE&country=US&limit=600&apikey={_apiKey}";
+
+            var preFiltered = await _httpClient.GetFromJsonAsync<List<FmpScreenerResultDto>>(url);
+            if (preFiltered == null || preFiltered.Count == 0)
+            {
+                return Array.Empty<CanSlimCandidate>();
+            }
+
+            Console.WriteLine($"Stage 1 Pre-Filter passed {preFiltered.Count} candidates. Running Stage 2 & 3 deep evaluations...");
+
+            var passedCandidates = new ConcurrentBag<CanSlimCandidate>();
+            var throttler = new SemaphoreSlim(criteria.MaxDegreeOfParallelism);
+
+            // STAGE 3: Parallel evaluation of 'C' and 'A'
+            var tasks = preFiltered.Select(async stock =>
+            {
+                await throttler.WaitAsync();
+                try
+                {
+                    var caResult = await EvaluateCanSlimCAAsync(stock.Symbol);
+
+                    if (caResult != null &&
+                        caResult.PassesBoth &&
+                        caResult.CurrentQuarter != null &&
+                        caResult.Annual != null &&
+                        caResult.CurrentQuarter.EpsGrowthYoYPercent >= criteria.MinCurrentQuarterEpsGrowthPercent &&
+                        caResult.CurrentQuarter.RevenueGrowthYoYPercent >= criteria.MinCurrentQuarterRevGrowthPercent &&
+                        caResult.Annual.EpsCagr3YearPercent >= criteria.MinAnnualEpsCagrPercent &&
+                        caResult.Annual.ReturnOnEquityPercent >= criteria.MinReturnOnEquityPercent)
+                    {
+                        passedCandidates.Add(new CanSlimCandidate
+                        {
+                            Symbol = stock.Symbol,
+                            CompanyName = stock.CompanyName,
+                            Sector = stock.Sector,
+                            Industry = stock.Industry,
+                            Price = stock.Price,
+                            Volume = stock.Volume,
+                            MarketCap = stock.MarketCap,
+                            CurrentQuarter = caResult.CurrentQuarter,
+                            Annual = caResult.Annual
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Failed evaluating CAN SLIM criteria for {stock.Symbol}: {ex}");
+                }
+                finally
+                {
+                    throttler.Release();
+                }
+            });
+
+            await Task.WhenAll(tasks);
+
+            return passedCandidates
+                .OrderByDescending(x => x.CurrentQuarter.EpsGrowthYoYPercent)
+                .ToList();
+        }
+        public async Task<CanSlimEvaluationResult> EvaluateCanSlimCAAsync(string symbol)
+        {
+            if (string.IsNullOrWhiteSpace(symbol))
+            {
+                throw new ArgumentException("Ticker symbol cannot be null or whitespace.", nameof(symbol));
+            }
+
+            var cleanSymbol = symbol.Trim().ToUpperInvariant();
+
+            // 1. Run 'C' (Quarterly) and 'A' (Annual) evaluations concurrently to minimize API latency
+            var currentQuarterTask = EvaluateCurrentQuarterEpsAsync(cleanSymbol);
+            var annualTask = EvaluateAnnualEpsAsync(cleanSymbol);
+
+            await Task.WhenAll(currentQuarterTask, annualTask);
+
+            var currentQuarter = currentQuarterTask.Result;
+            var annual = annualTask.Result;
+
+            // 2. Validate availability of data
+            if (currentQuarter == null || annual == null)
+            {
+                Console.WriteLine($"Incomplete data returned for CAN SLIM C+A evaluation on {cleanSymbol}");
+
+                return new CanSlimEvaluationResult
+                {
+                    Symbol = cleanSymbol,
+                    CurrentQuarter = currentQuarter,
+                    Annual = annual,
+                    PassesBoth = false
+                };
+            }
+
+            // 3. Evaluate composite O'Neil CAN SLIM 'C' and 'A' thresholds
+            // C: EPS Growth >= 25%, Sales Growth >= 20%
+            // A: 3-Yr CAGR >= 25%, TTM ROE >= 17%, Unbroken annual progression
+            bool passesC = currentQuarter.PassesCriteria;
+            bool passesA = annual.PassesCriteria;
+            bool passesBoth = passesC && passesA;
+
+            // 4. Calculate IBD SmartSelect-style Composite Fundamental Rating (A+ to E)
+            annual.FundamentalGrade = CalculateFundamentalGrade(
+                currentQuarter.EpsGrowthYoYPercent,
+                currentQuarter.RevenueGrowthYoYPercent,
+                annual.EpsCagr3YearPercent,
+                annual.ReturnOnEquityPercent,
+                currentQuarter.IsAccelerating,
+                annual.HasConsecutiveAnnualGrowth);
+
+            return new CanSlimEvaluationResult
+            {
+                Symbol = cleanSymbol,
+                CurrentQuarter = currentQuarter,
+                Annual = annual,
+                PassesBoth = passesBoth
+            };
+        }
+        private static string CalculateFundamentalGrade(
+    decimal qEpsGrowth,
+    decimal qRevGrowth,
+    decimal annualCagr,
+    decimal roe,
+    bool isAccelerating,
+    bool hasConsecutiveGrowth)
+        {
+            int score = 0;
+
+            // Quarterly EPS Growth ('C')
+            if (qEpsGrowth >= 50m) score += 30;
+            else if (qEpsGrowth >= 25m) score += 20;
+            else if (qEpsGrowth > 0m) score += 10;
+
+            // Quarterly Sales Confirmation
+            if (qRevGrowth >= 25m) score += 15;
+            else if (qRevGrowth >= 15m) score += 10;
+
+            // Annual EPS 3-Yr CAGR ('A')
+            if (annualCagr >= 35m) score += 25;
+            else if (annualCagr >= 25m) score += 15;
+            else if (annualCagr > 0m) score += 5;
+
+            // Return on Equity (ROE)
+            if (roe >= 25m) score += 20;
+            else if (roe >= 17m) score += 15;
+            else if (roe >= 10m) score += 5;
+
+            // Acceleration & Consistency Bonuses
+            if (isAccelerating) score += 5;
+            if (hasConsecutiveGrowth) score += 5;
+
+            // Map 0-100 score to IBD Letter Grades
+            return score switch
+            {
+                >= 90 => "A+",
+                >= 80 => "A",
+                >= 70 => "B",
+                >= 55 => "C",
+                >= 40 => "D",
+                _ => "E"
+            };
+        }
         private static decimal CalculatePercentageGrowth(decimal baseValue, decimal currentValue)
         {
             if (baseValue == 0)

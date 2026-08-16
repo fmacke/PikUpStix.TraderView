@@ -77,20 +77,6 @@ public partial class Program
             return new TradeExecutionService(tradeExecutionRepo, positionRepo);
         });
 
-        // Register YahooFinanceService
-        builder.Services.AddScoped<YahooFinanceService>(provider =>
-        {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
-            var httpClient = httpClientFactory.CreateClient();
-            var economicRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
-            var historicalRepo = provider.GetRequiredService<IHistoricalDataRepository>();
-            var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-            var baseUrl = config["YahooFinance:BaseUrl"] ?? "https://query1.finance.yahoo.com";
-            var outputFilePath = config["IBKR:OutputFilePath"];
-            return new YahooFinanceService(httpClient, economicRepo, historicalRepo, instrumentRepo, baseUrl, outputFilePath);
-        });
-
         // Register FinancialModellingPrepService
         builder.Services.AddScoped<FinancialModellingPrepService>(provider =>
         {
