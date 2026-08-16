@@ -1,6 +1,7 @@
-using IKBR_Report_Puller.Domain;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities;
 using PikUpStix.TraderView.Interfaces;
+using PikUpStix.TraderView.Models.FMP;
+using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace PikUpStix.TraderView.Services.MarketData
@@ -182,7 +183,82 @@ namespace PikUpStix.TraderView.Services.MarketData
                 }, $"InstrumentId: {position.Id}, Symbol: {position.Instrument.DataName}");
             }
         }
+        public async Task<IReadOnlyList<FmpQuarterlyIncomeStatementDto>> GetQuarterlyIncomeStatementsAsync(
+            string symbol,
+            int limit = 8,
+            CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var url = $"v3/income-statement/{symbol.ToUpperInvariant()}?period=quarter&limit={limit}&apikey={_apiKey}";
+                var result = await _httpClient.GetFromJsonAsync<List<FmpQuarterlyIncomeStatementDto>>(url, cancellationToken);
 
+                return result ?? (IReadOnlyList<FmpQuarterlyIncomeStatementDto>)Array.Empty<FmpQuarterlyIncomeStatementDto>();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error fetching quarterly income statements for {Symbol} with error {Error}", symbol, ex.Message);
+                return Array.Empty<FmpQuarterlyIncomeStatementDto>();
+            }
+        }
+
+        public async Task<CanSlimCurrentQuarterMetric?> EvaluateCurrentQuarterEpsAsync(
+            string symbol,
+            decimal minEpsGrowth = 25m,
+            decimal minRevenueGrowth = 20m,
+            CancellationToken cancellationToken = default)
+        {
+            // Fetch at least 8 quarters to evaluate YoY growth across consecutive recent quarters
+            var statements = await GetQuarterlyIncomeStatementsAsync(symbol, 8, cancellationToken);
+
+            if (statements == null || statements.Count < 5)
+            {
+                Console.WriteLine("Insufficient quarterly history for CAN SLIM 'C' evaluation on {Symbol}", symbol);
+                return null;
+            }
+
+            // Statements are returned latest first [Q0, Q-1, Q-2, Q-3, Q-4 (YoY for Q0), Q-5 (YoY for Q-1), ...]
+            var currentQ = statements[0];
+            var priorYearQ = statements[4];
+
+            // Calculate Latest YoY Growth
+            var epsGrowthYoY = CalculatePercentageGrowth(priorYearQ.EpsDiluted, currentQ.EpsDiluted);
+            var revGrowthYoY = CalculatePercentageGrowth(priorYearQ.Revenue, currentQ.Revenue);
+
+            // Check Acceleration (Compare Q0 YoY vs Q-1 YoY)
+            bool isAccelerating = false;
+            if (statements.Count >= 6)
+            {
+                var prevQ = statements[1];
+                var prevPriorYearQ = statements[5];
+                var prevEpsGrowthYoY = CalculatePercentageGrowth(prevPriorYearQ.EpsDiluted, prevQ.EpsDiluted);
+                isAccelerating = epsGrowthYoY > prevEpsGrowthYoY;
+            }
+
+            return new CanSlimCurrentQuarterMetric
+            {
+                Symbol = symbol.ToUpperInvariant(),
+                LatestQuarterDate = currentQ.Date,
+                LatestQuarterEps = currentQ.EpsDiluted,
+                PriorYearQuarterEps = priorYearQ.EpsDiluted,
+                EpsGrowthYoYPercent = Math.Round(epsGrowthYoY, 2),
+                RevenueGrowthYoYPercent = Math.Round(revGrowthYoY, 2),
+                IsAccelerating = isAccelerating,
+                PassesCriteria = epsGrowthYoY >= minEpsGrowth && revGrowthYoY >= minRevenueGrowth
+            };
+        }
+
+        private static decimal CalculatePercentageGrowth(decimal baseValue, decimal currentValue)
+        {
+            if (baseValue == 0)
+            {
+                return currentValue > 0 ? 100m : 0m;
+            }
+
+            // Handles negative base EPS turning profitable or standard growth
+            return ((currentValue - baseValue) / Math.Abs(baseValue)) * 100m;
+        }
+    
         /// <summary>
         /// Executes an async operation with standardized error handling
         /// </summary>

@@ -1,9 +1,8 @@
-using IKBR_Report_Puller.Domain;
-using PikUpStix.TraderView.Domain;
-using PikUpStix.TraderView.Interfaces;
+using TraderView.Domain.Entities;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Web;
+using PikUpStix.TraderView.Interfaces;
+using PikUpStix.TraderView.Models.FMP;
 
 namespace PikUpStix.TraderView.Services.MarketData
 {
@@ -20,6 +19,8 @@ namespace PikUpStix.TraderView.Services.MarketData
         private readonly string _outputFilePath;
 
         public string SourceName => "YahooFinance";
+
+        string IMarketDataService.SourceName => throw new NotImplementedException();
 
         public YahooFinanceService(
             HttpClient httpClient,
@@ -260,6 +261,31 @@ namespace PikUpStix.TraderView.Services.MarketData
         }
 
         Task IMarketDataService.FetchLatestPrices(List<Position> positions)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<List<EconomicCalendarEvent>> IMarketDataService.FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task IMarketDataService.FetchAndSaveChartData(List<HistoricalTrade> trades)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task IMarketDataService.FetchAndSaveChartData(List<string> symbols, int lookBackDays)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<IReadOnlyList<FmpQuarterlyIncomeStatementDto>> IMarketDataService.GetQuarterlyIncomeStatementsAsync(string symbol, int limit, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        Task<CanSlimCurrentQuarterMetric?> IMarketDataService.EvaluateCurrentQuarterEpsAsync(string symbol, decimal minEpsGrowth, decimal minRevenueGrowth, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
         }

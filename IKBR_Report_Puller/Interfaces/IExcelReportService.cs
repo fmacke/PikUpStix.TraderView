@@ -1,5 +1,5 @@
 using System.Xml.Linq;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities  ;
 using PikUpStix.TraderView.Models;
 
 namespace PikUpStix.TraderView.Interfaces

@@ -1,5 +1,4 @@
-using PikUpStix.TraderView.Domain;
-using System.Collections.Generic;
+using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Interfaces
 {

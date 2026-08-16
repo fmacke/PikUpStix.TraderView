@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using IKBR_Report_Puller.Domain;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities;
+using PikUpStix.TraderView.Models.FMP;
 
 namespace PikUpStix.TraderView.Interfaces
 {
@@ -22,5 +19,7 @@ namespace PikUpStix.TraderView.Interfaces
         Task FetchAndSaveChartData(List<string> symbols, int lookBackDays);
         Task FetchLatestPrices(List<Position> positions);
         string SourceName { get; }
+        Task<IReadOnlyList<FmpQuarterlyIncomeStatementDto>> GetQuarterlyIncomeStatementsAsync(string symbol, int limit = 8, CancellationToken cancellationToken = default);
+        Task<CanSlimCurrentQuarterMetric?> EvaluateCurrentQuarterEpsAsync(string symbol, decimal minEpsGrowth = 25m, decimal minRevenueGrowth = 20m, CancellationToken cancellationToken = default);
     }
 }

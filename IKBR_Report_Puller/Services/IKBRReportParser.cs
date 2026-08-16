@@ -1,10 +1,7 @@
-using System;
 using System.Globalization;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Xml.Linq;
 using IKBR_Report_Puller.Data;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Services
 {

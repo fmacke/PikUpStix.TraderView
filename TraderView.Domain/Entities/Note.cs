@@ -1,0 +1,19 @@
+using System;
+
+namespace TraderView.Domain.Entities
+{
+    /// <summary>
+    /// Represents a note associated with a position or trade execution
+    /// </summary>
+    public class Note
+    {
+        public int Id { get; set; }
+        public int PositionId { get; set; }
+        public int? TradeExecutionId { get; set; }
+        public string Comment { get; set; } = string.Empty;
+        public DateTime EntryDate { get; set; }
+        public int TradeTypeId { get; set; }
+        public string Category { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+    }
+}

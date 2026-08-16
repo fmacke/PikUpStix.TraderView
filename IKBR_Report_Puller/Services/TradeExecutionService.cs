@@ -1,6 +1,4 @@
-using DocumentFormat.OpenXml.Drawing.Charts;
-using PikUpStix.TraderView.Data.Repositories;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities;
 using PikUpStix.TraderView.Interfaces;
 
 namespace PikUpStix.TraderView.Services

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using PikUpStix.TraderView.Interfaces;
-using IKBR_Report_Puller.Domain;
+using TraderView.Domain.Entities;
 
 namespace traderview.Server.Controllers
 {

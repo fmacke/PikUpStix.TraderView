@@ -1,4 +1,4 @@
-﻿using PikUpStix.TraderView.Domain;
+﻿using TraderView.Domain.Entities;
 using PikUpStix.TraderView.Services;
 
 namespace IKBR_Report_Puller.Tests.Services

@@ -1,13 +1,8 @@
-using DocumentFormat.OpenXml.Math;
 using Microsoft.Data.SqlClient;
-using PikUpStix.TraderView.Data.Scripts.DataComms.Instruments.Command;
-using PikUpStix.TraderView.Data.Scripts.DataComms.Instruments.Query;
-using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Command;
-using PikUpStix.TraderView.Domain;
+using PikUpStix.TraderView.Data.Features.Instruments.Command;
+using PikUpStix.TraderView.Data.Features.Instruments.Query;
 using PikUpStix.TraderView.Interfaces;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {

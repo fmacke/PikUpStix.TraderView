@@ -1,5 +1,5 @@
 using Microsoft.Data.SqlClient;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Interfaces
 {

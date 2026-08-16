@@ -1,7 +1,5 @@
-﻿using IKBR_Report_Puller.Domain;
-using System.Text;
+﻿using TraderView.Domain.Entities;
 using PikUpStix.TraderView.Interfaces;
-using PikUpStix.TraderView.Domain;
 
 namespace PikUpStix.TraderView.Services
 {

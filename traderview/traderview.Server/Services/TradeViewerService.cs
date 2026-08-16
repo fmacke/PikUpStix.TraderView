@@ -159,7 +159,7 @@ namespace traderview.Server.Services
             }
         }
 
-        private TradeDto MapToTradeDto(IKBR_Report_Puller.Domain.TradeSummary tradeSummary)
+        private TradeDto MapToTradeDto(TraderView.Domain.Entities.TradeSummary tradeSummary)
         {
             return new TradeDto
             {

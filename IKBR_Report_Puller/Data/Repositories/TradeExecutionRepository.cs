@@ -1,16 +1,13 @@
-using DocumentFormat.OpenXml.Spreadsheet;
 using IKBR_Report_Puller.Data;
-using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
-using PikUpStix.TraderView.Data.Scripts.DataComms.Instruments.Query;
-using PikUpStix.TraderView.Data.Scripts.DataComms.Positions.Command;
-using PikUpStix.TraderView.Data.Scripts.DataComms.Positions.Query;
-using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Command;
-using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Query;
-using PikUpStix.TraderView.Domain;
+using PikUpStix.TraderView.Data.Features.Instruments.Query;
+using PikUpStix.TraderView.Data.Features.Positions.Command;
+using PikUpStix.TraderView.Data.Features.Positions.Query;
+using PikUpStix.TraderView.Data.Features.TradeExecutions.Command;
+using PikUpStix.TraderView.Data.Features.TradeExecutions.Query;
 using PikUpStix.TraderView.Interfaces;
 using System.Data;
-using System.Transactions;
+using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {

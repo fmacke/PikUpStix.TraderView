@@ -1,4 +1,4 @@
-using IKBR_Report_Puller.Domain;
+using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Interfaces
 {

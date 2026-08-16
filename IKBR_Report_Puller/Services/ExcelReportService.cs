@@ -1,16 +1,9 @@
-using DocumentFormat.OpenXml.Bibliography;
 using IKBR_Report_Puller.Data;
-using IKBR_Report_Puller.Domain;
 using OfficeOpenXml;
 using OfficeOpenXml.Drawing.Chart;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities;
 using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Models;
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace PikUpStix.TraderView.Services

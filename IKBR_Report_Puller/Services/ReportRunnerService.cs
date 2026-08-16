@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Configuration;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities;
 using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Services.MarketData;
 using System.Text;

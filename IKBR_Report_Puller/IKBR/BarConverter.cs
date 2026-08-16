@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using IBApi;
-using DomainBar = IKBR_Report_Puller.Domain.Bar;
+using DomainBar = TraderView.Domain.Entities.Bar;
 
 namespace IKBR_Report_Puller.IKBR
 {

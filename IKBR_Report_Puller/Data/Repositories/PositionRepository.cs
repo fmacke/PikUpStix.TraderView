@@ -1,7 +1,8 @@
 using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Interfaces;
-using PikUpStix.TraderView.Domain;
-using IKBR_Report_Puller.Domain;
+using TraderView.Domain.Entities;
+using System;
+using System.Collections.Generic;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {

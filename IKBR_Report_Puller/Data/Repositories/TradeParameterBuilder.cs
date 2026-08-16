@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using PikUpStix.TraderView.Domain;
+using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Data.Repositories
 {
