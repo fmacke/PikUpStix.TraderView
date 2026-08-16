@@ -74,6 +74,11 @@ namespace PikUpStix.TraderView.Data.Repositories
                 }
                 cmd.ExecuteNonQuery();
             }
+            catch (SqlException e)
+            {
+                Console.WriteLine($"\nDatabase error: {e.Message}");
+                throw;
+            }
             catch (Exception ex)
             {
                 Console.WriteLine($"\nAn error occurred: {ex.Message}");
@@ -209,14 +214,26 @@ namespace PikUpStix.TraderView.Data.Repositories
             }
         }
 
-
         /// <summary>
         /// Checks if a record exists based on a query
         /// </summary>
         protected bool RecordExists(SqlConnection connection, SqlTransaction transaction, string query, Dictionary<string, object> parameters)
         {
-            int count = ExecuteScalar<int>(connection, transaction, query, parameters);
-            return count > 0;
+            try
+            {
+                int count = ExecuteScalar<int>(connection, transaction, query, parameters);
+                return count > 0;
+            }
+            catch (SqlException e)
+            {
+                Console.WriteLine($"\nDatabase error: {e.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\nAn error occurred: {ex.Message}");
+                throw;
+            }
         }
     }
 }

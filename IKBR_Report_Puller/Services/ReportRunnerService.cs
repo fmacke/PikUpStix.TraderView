@@ -53,34 +53,34 @@ namespace PikUpStix.TraderView.Services
                 await UpdateOpenPositionPrices();
                 var executions = _tradeExecutionRepository.GetTradeExecutions();
 
-                //XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                //SaveTradeConfirms(todayReportXml);
+                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+                SaveTradeConfirms(todayReportXml);
 
-                //if (writeOutputtoExcel)
-                //{
-                //    var openPositions = _tradeExecutionRepository.GetOpenPositions();
-                //    _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
-                //    await WriteTodayReportToExcel(todayReportXml);
-                //}
-                //if (updateMarketData)
-                //{
-                //    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                //await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                if (writeOutputtoExcel)
+                {
+                    var openPositions = _tradeExecutionRepository.GetOpenPositions();
+                    _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
+                    await WriteTodayReportToExcel(todayReportXml);
+                }
+                if (updateMarketData)
+                {
+                    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
+                    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
 
-                //await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                //await _marketDataService.FetchAndSaveChartData(new List<string>()
-                //    {
-                //        "^GSPC",//spx
-                //        "^RUT",//iwm
-                //        //"CLUSD",//wti crude oil
-                //        "BTCUSD",//bitcoin
-                //        "GCUSD",//gold
-                //        "XAGUSD",//silver
-                //        "QQQ",//nasdaq
-                //        "^VIX"
-                //     }, 300);
+                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                    await _marketDataService.FetchAndSaveChartData(new List<string>()
+                    {
+                        "^GSPC",//spx
+                        "^RUT",//iwm
+                        //"CLUSD",//wti crude oil
+                        "BTCUSD",//bitcoin
+                        "GCUSD",//gold
+                        "XAGUSD",//silver
+                        "QQQ",//nasdaq
+                        "^VIX"
+                     }, 300);
 
-                //}
+                }
             }
             catch (Exception ex)
             {

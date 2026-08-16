@@ -26,6 +26,12 @@ namespace PikUpStix.TraderView.Interfaces
         /// <returns>List of trade executions for the position</returns>
         List<TradeExecution> GetByPositionId(int positionId);
         /// <summary>
+        /// Gets trade summary for a specific position ID
+        /// </summary>
+        /// <param name="positionId">The position ID</param>
+        /// <returns>Trade summary for the position</returns>
+        TradeSummary? GetTradeSummaryByPositionId(int positionId);
+        /// <summary>
         /// Gets all trade executions ordered by order ID and date
         /// </summary>
         /// <returns>List of all trade executions</returns>
@@ -41,14 +47,7 @@ namespace PikUpStix.TraderView.Interfaces
         /// <param name="conid">The contract ID</param>
         /// <param name="accountId">The account ID</param>
         /// <returns>List of trade executions with date, quantity, and open/close indicator</returns>        
-        List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)> GetTradeExecutionsByConIdAndAccount(long? conid, string accountId);
-        /// <summary>
-        /// Gets trade executions for a specific position ID asynchronously
-        /// </summary>
-        /// <param name="positionId">The position ID</param>
-        /// <returns>List of trade executions for the position</returns>
-        List<TradeExecution> GetTradeExecutionsByPosition(int positionId);
-        void UpsertTradeExecutions(List<TradeExecution> trades);
+        List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)> GetTradeExecutionsByConIdAndAccount(long? conid, string accountId);        
         /// <summary>
         /// Inserts today's trade confirmations
         /// </summary>
@@ -59,6 +58,11 @@ namespace PikUpStix.TraderView.Interfaces
         /// </summary>
         /// <param name="positions">List of positions to upsert</param>
         void UpsertPositions(List<Position> positions);
-        TradeSummary? GetTradeSummaryByPositionId(int positionId);
+        /// <summary>
+        /// Inserts or updates trade executions
+        /// </summary>
+        /// <param name="trades">List of trade executions to upsert</param>
+        void UpsertTradeExecutions(List<TradeExecution> trades);
+        
     }
 }

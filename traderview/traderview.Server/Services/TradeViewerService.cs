@@ -5,6 +5,9 @@ using PikUpStix.TraderView.Interfaces;
 
 namespace traderview.Server.Services
 {
+    // TODO: Consider refactoring this service to separate concerns, e.g., data access, business logic, and mapping to DTOs.
+    // REALLY consider using AutoMapper or similar for mapping domain models to DTOs to reduce boilerplate code.
+    // ALSO, SERVICES SHOULD BE IN CORE PROJECT, NOT IN SERVER PROJECT. Move this to a core project and inject dependencies properly.
     public class TradeViewerService : ITradeViewerService
     {
         
@@ -82,9 +85,8 @@ namespace traderview.Server.Services
                     ListingExchange = instrumentDomain.ListingExchange
                 };
 
-                // Get trade executions using repository
-                var executionsDomain = _tradeExecutionRepository.GetByPositionId(positionId);
-                var executions = executionsDomain.Select(e => new TradeExecutionDto
+
+                var executions = _tradeExecutionRepository.GetByPositionId(positionId).Select(e => new TradeExecutionDto
                 {
                     Id = e.Id,
                     PositionId = positionId,

@@ -1,6 +1,6 @@
 ﻿namespace PikUpStix.TraderView.Data.Scripts.DataComms.Positions.Query
 {
-    internal class GetPositions
+    internal class GetByPositionId
     {
         public string Script()
         {
