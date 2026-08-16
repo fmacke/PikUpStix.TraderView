@@ -26,7 +26,7 @@ namespace traderview.Server.Controllers
         /// Get all open positions
         /// </summary>
         /// <returns>List of all open positions</returns>
-        [HttpGet("{symbol}")]
+        [HttpGet("EvaluateCurrentQuarterEpsAsync/{symbol}")]
         [ProducesResponseType(typeof(CanSlimCurrentQuarterMetric), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<CanSlimCurrentQuarterMetric>> EvaluateCurrentQuarterEpsAsync(string symbol)
@@ -46,7 +46,7 @@ namespace traderview.Server.Controllers
                 );
             }
         }
-        [HttpGet]
+        [HttpGet("RunStockScreener/")]
         [ProducesResponseType(typeof(IReadOnlyList<CanSlimCandidate>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IReadOnlyList<CanSlimCandidate>>> RunStockScreener()
