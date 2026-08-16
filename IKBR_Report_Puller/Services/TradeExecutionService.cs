@@ -8,39 +8,15 @@ namespace PikUpStix.TraderView.Services
     public class TradeExecutionService : ITradeExecutionService
     {
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
-        private readonly IPositionRepository _positionRepository;
 
         public TradeExecutionService(ITradeExecutionRepository tradeExecutionRepository, IPositionRepository positionRepository)
         {
             _tradeExecutionRepository = tradeExecutionRepository;
-            _positionRepository = positionRepository;
         }
 
         async Task<List<Position>> ITradeExecutionService.GetOpenPositionsAsync()
         {
-            return await Task.Run(() => GetOpenPositions());
-        }
-
-        private async Task<List<Position>>? GetOpenPositions()
-        {
-            var positions = _tradeExecutionRepository.GetOpenPositions();
-            return positions;
-        }
-
-        /// <summary>
-        /// Gets an open position by symbol and instrument ID asynchronously
-        /// </summary>
-        async Task<Position?> ITradeExecutionService.GetOpenPositionAsync(string symbol, int instrumentId)
-        {
-            return await Task.Run(() => _positionRepository.GetOpenPosition(symbol, instrumentId));
-        }
-
-        /// <summary>
-        /// Creates a new position asynchronously
-        /// </summary>
-        async Task<int> ITradeExecutionService.CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
-        {
-            return await Task.Run(() => _positionRepository.CreatePosition(instrumentId, symbol, openDate, openPrice));
+            return await Task.Run(() => _tradeExecutionRepository.GetOpenPositions());
         }
     }
 }

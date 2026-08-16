@@ -1,8 +1,4 @@
-using PikUpStix.TraderView.Domain;
-using System;
-using System.Collections.Generic;
-
-namespace IKBR_Report_Puller.Domain
+namespace PikUpStix.TraderView.Domain
 {
     public class IKBRReport
     {

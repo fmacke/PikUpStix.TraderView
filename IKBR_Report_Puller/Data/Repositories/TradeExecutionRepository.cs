@@ -1,10 +1,11 @@
+using DocumentFormat.OpenXml.Spreadsheet;
 using IKBR_Report_Puller.Data;
 using IKBR_Report_Puller.Domain;
 using Microsoft.Data.SqlClient;
 using PikUpStix.TraderView.Data.Scripts.DataComms.Instruments.Query;
 using PikUpStix.TraderView.Data.Scripts.DataComms.Positions.Command;
-using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Command;
 using PikUpStix.TraderView.Data.Scripts.DataComms.Positions.Query;
+using PikUpStix.TraderView.Data.Scripts.DataComms.TradeExecutions.Command;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
 using System.Data;
@@ -106,53 +107,72 @@ namespace PikUpStix.TraderView.Data.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var positions = new List<Position>();
-
-                using (var cmd = new SqlCommand(
-                    sqlCommand, connection))
-                {
-                    using (var reader = cmd.ExecuteReader())
+                // 1. Fetch Positions
+                var positions = ExecuteList(
+                    connection,
+                    transaction: null,
+                    query: sqlCommand,
+                    mapFunction: reader => new Position
                     {
-                        while (reader.Read())
+                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                        InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                        OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
+                        LastReportedPriceUpdated = !reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated"))
+                            ? reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated"))
+                            : null,
+                        LastReportedPrice = reader["LastReportedPrice"] is DBNull ? 0 : Convert.ToDecimal(reader["LastReportedPrice"]),
+                        Status = reader.GetString(reader.GetOrdinal("Status")),
+                        Instrument = new Instrument
                         {
-                            try
-                            {
-                                DateTime? lastReported = null;
-                                if (!reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated")))
-                                {
-                                    lastReported = reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated"));
-                                }
-
-                                positions.Add(new Position
-                                {
-                                    Id = reader.GetInt32("Id"),
-                                    InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                    OpenDate = reader.GetDateTime(reader.GetOrdinal("OpenDate")),
-                                    LastReportedPriceUpdated = lastReported,
-                                    LastReportedPrice = reader["LastReportedPrice"] is DBNull ? 0 : Convert.ToDecimal(reader["LastReportedPrice"]),
-                                    Status = reader.GetString(reader.GetOrdinal("Status")),
-                                    Instrument = new Instrument
-                                    {
-                                        Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
-                                        InstrumentName = reader["InstrumentName"] is DBNull ? null : reader["InstrumentName"].ToString(),
-                                        DataName = reader["DataName"] is DBNull ? null : reader["DataName"].ToString(),
-                                        Currency = reader["Currency"] is DBNull ? null : reader["Currency"].ToString(),
-                                        ConId = reader["ConId"] is DBNull ? null : reader["ConId"].ToString(),
-                                        ContractUnitType = reader["ContractUnitType"] is DBNull ? null : reader["ContractUnitType"].ToString()
-                                    }
-                                });
-                            }
-                            catch(Exception ex)
-                            {
-                                Console.WriteLine("Open Position Read failed.", ex.Message);
-                            }
-                        }
+                            Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                            InstrumentName = reader["InstrumentName"]?.ToString(),
+                            DataName = reader["DataName"]?.ToString(),
+                            Currency = reader["Currency"]?.ToString(),
+                            ConId = reader["ConId"]?.ToString(),
+                            ContractUnitType = reader["ContractUnitType"]?.ToString()
+                        },
+                        TradeExecutions = new List<TradeExecution>()
                     }
-                }
+                );
+
+                if (!positions.Any())
+                    return positions;
+
+                // 2. Fetch TradeExecutions for all retrieved Positions
+                var positionIds = string.Join(",", positions.Select(p => p.Id));
+                string executionsQuery = $"SELECT * FROM TradeExecutions WHERE PositionId IN ({positionIds})";
+
+                var tradeExecutions = ExecuteList(
+                    connection,
+                    transaction: null,
+                    query: executionsQuery,
+                    mapFunction: reader => new TradeExecution
+                    {
+                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                        PositionId = reader.GetInt32(reader.GetOrdinal("PositionId")),
+                        Symbol = reader.GetString("symbol"),
+                        TradeID = reader.GetInt64("tradeID"),
+                        DateTime = reader.GetDateTime("dateTime"),
+                        TradeDate = reader.GetDateTime("tradeDate"),
+                        Quantity = reader.GetDecimal("quantity"),
+                        TradePrice = reader.GetDecimal("tradePrice"),
+                        BuySell = reader.GetString("buySell"),
+                        FifoPnlRealized = reader.GetDecimal("fifoPnlRealized"),
+                        IbCommission = reader.GetDecimal("ibCommission"),
+                        OpenCloseIndicator = reader.GetString("openCloseIndicator")
+                    }
+                );
+
+                // 3. Group and assign TradeExecutions to their parent Position
+                var executionLookup = tradeExecutions.ToLookup(te => te.PositionId);
                 foreach (var position in positions)
                 {
-                    position.TradeExecutions = ((ITradeExecutionRepository)this).GetByPositionId(position.Id);
+                    if (executionLookup.Contains(position.Id))
+                    {
+                        position.TradeExecutions.AddRange(executionLookup[position.Id]);
+                    }
                 }
+
                 return positions;
             });
         }

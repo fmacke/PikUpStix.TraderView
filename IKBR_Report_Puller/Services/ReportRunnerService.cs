@@ -1,5 +1,3 @@
-using DocumentFormat.OpenXml.Drawing;
-using IKBR_Report_Puller.Domain;
 using Microsoft.Extensions.Configuration;
 using PikUpStix.TraderView.Domain;
 using PikUpStix.TraderView.Interfaces;
