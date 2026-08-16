@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace PikUpStix.TraderView.Models.FMP
+namespace TraderView.Application.Models.FMP
 {
     public class FmpQuarterlyIncomeStatementDto
     {

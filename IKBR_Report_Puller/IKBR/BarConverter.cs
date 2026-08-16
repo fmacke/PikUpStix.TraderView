@@ -4,7 +4,7 @@ using System.Linq;
 using IBApi;
 using DomainBar = TraderView.Domain.Entities.Bar;
 
-namespace IKBR_Report_Puller.IKBR
+namespace TraderView.Application.IKBR
 {
     /// <summary>
     /// Converts between IBApi.Bar and Domain.Bar types

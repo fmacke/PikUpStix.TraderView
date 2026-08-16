@@ -1,9 +1,9 @@
 using System.Globalization;
 using System.Xml.Linq;
-using IKBR_Report_Puller.Data;
+using TraderView.Application.Data;
 using TraderView.Domain.Entities;
 
-namespace PikUpStix.TraderView.Services
+namespace TraderView.Application.Services
 {
     public static class IKBRReportParser
     {

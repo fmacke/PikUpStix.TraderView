@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace PikUpStix.TraderView.Services
+namespace TraderView.Application.Services
 {
     public class IKBRReportServiceBase
     {

@@ -1,8 +1,9 @@
 using TraderView.Domain.Entities;
-using PikUpStix.TraderView.Interfaces;
-using PikUpStix.TraderView.Models.FMP;
 using System.Net.Http.Json;
 using System.Text.Json;
+using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Models.FMP;
 
 namespace PikUpStix.TraderView.Services.MarketData
 {

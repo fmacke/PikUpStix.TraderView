@@ -1,5 +1,6 @@
 using TraderView.Domain.Entities;
-using PikUpStix.TraderView.Interfaces;
+using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
 
 namespace PikUpStix.TraderView.Services
 {

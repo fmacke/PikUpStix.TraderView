@@ -1,13 +1,13 @@
 using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using IBApi;
-using IKBR_Report_Puller.IKBR;
 using Microsoft.Extensions.Configuration;
-using PikUpStix.TraderView.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using TraderView.Application.IKBR;
+using TraderView.Application.Interfaces.Services;
 
 namespace PikUpStix.TraderView.Services
 {

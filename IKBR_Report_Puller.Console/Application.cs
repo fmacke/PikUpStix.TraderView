@@ -1,6 +1,6 @@
-using PikUpStix.TraderView.Interfaces;
+using TraderView.Application.Interfaces.Services;
 
-namespace IKBR_Report_Puller.Console
+namespace TraderView.Console
 {
     public class Application
     {

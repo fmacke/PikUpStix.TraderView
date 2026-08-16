@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using TraderView.Domain.Entities;
-using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Services.MarketData;
 using System.Text;
 using System.Xml.Linq;
+using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Services;
 
 namespace PikUpStix.TraderView.Services
 {

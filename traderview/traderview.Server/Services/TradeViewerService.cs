@@ -1,7 +1,8 @@
 ﻿using Microsoft.Data.SqlClient;
 using System.Data;
 using traderview.Server.DTOs;
-using PikUpStix.TraderView.Interfaces;
+using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
 
 namespace traderview.Server.Services
 {

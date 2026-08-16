@@ -1,12 +1,13 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PikUpStix.TraderView.Data.Repositories;
-using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Services.MarketData;
 using PikUpStix.TraderView.Services;
+using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
+using TraderView.Infrastructure.Repositories;
 
-namespace IKBR_Report_Puller.Console
+namespace TraderView.Console
 {
     class Program
     {

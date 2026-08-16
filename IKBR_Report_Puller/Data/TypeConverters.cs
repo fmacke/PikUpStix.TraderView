@@ -1,8 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Globalization;
 
-namespace IKBR_Report_Puller.Data
+namespace TraderView.Application.Data
 {
     /// <summary>
     /// Provides type conversion utilities for database operations

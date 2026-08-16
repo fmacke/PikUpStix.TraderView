@@ -1,7 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
-using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Services;
+using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
 
 namespace IKBR_Report_Puller.Tests.Services
 {

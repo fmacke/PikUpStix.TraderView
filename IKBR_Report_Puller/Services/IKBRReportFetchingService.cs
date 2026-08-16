@@ -6,7 +6,8 @@ using Microsoft.Extensions.Configuration;
 using System.Linq;
 using IBApi; // Ensure TwsClient is referenced
 using System.Net.Http;
-using PikUpStix.TraderView.Interfaces;
+using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Services;
 
 namespace PikUpStix.TraderView.Services
 {   

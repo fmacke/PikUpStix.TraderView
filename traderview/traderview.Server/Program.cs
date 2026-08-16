@@ -1,8 +1,9 @@
-using PikUpStix.TraderView.Data.Repositories;
-using PikUpStix.TraderView.Interfaces;
 using PikUpStix.TraderView.Services;
 using PikUpStix.TraderView.Services.MarketData;
 using traderview.Server.Services;
+using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
+using TraderView.Infrastructure.Repositories;
 
 public partial class Program
 {

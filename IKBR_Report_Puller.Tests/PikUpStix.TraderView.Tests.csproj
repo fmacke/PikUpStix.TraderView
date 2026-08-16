@@ -23,7 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IKBR_Report_Puller\PikUpStix.TraderView.csproj" />
+    <ProjectReference Include="..\IKBR_Report_Puller\TraderView.Application.csproj" />
   </ItemGroup>
 
 </Project>

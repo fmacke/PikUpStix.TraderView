@@ -1,4 +1,4 @@
-namespace PikUpStix.TraderView.Models
+namespace TraderView.Application.Models
 {
     public class IbkrSettings
     {

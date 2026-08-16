@@ -1,6 +1,6 @@
 using System;
 
-namespace PikUpStix.TraderView.Models
+namespace TraderView.Application.Models
 {
     /// <summary>
     /// Represents the calculated data for an open position in a report format.

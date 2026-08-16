@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
-using PikUpStix.TraderView.Interfaces;
+using TraderView.Application.Interfaces.Services;
 using TraderView.Domain.Entities;
 
 namespace traderview.Server.Controllers
