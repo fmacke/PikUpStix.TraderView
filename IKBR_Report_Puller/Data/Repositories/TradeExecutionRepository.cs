@@ -50,13 +50,13 @@ namespace PikUpStix.TraderView.Data.Repositories
                     try
                     {
                         trade.InstrumentId = _instrumentRepository.GetInstrumentIdByConId(trade.Conid).Value;
-                        trade.PositionId = GetOpenPosition(trade.InstrumentId)?.Id ?? CreatePosition(trade.InstrumentId, trade.Symbol, trade.TradeDate, trade.TradePrice);
+                        trade.PositionId = GetOpenPosition(trade.InstrumentId)?.Id ?? CreatePosition(trade.InstrumentId, trade.Symbol, trade.TradeDate, trade.TradePrice, "O");
                         trade.Id = CreateTradeExecution(trade);
 
                         // Check if latest trade execution closes out the position (i.e., if the sum of quantities for that position is zero)
                         var totalQuantity = GetTotalQuantityForPosition(trade.PositionId);
                         if (totalQuantity == 0)
-                            ClosePosition(trade.PositionId, trade.TradeDate);
+                            ClosePosition(trade.PositionId, trade.DateTime);
                     }
                     catch (Exception ex)
                     {
@@ -177,6 +177,7 @@ namespace PikUpStix.TraderView.Data.Repositories
                             { "@closeDate", closeDate }
                         };
                         ExecuteCommand(connection, transaction, closeQuery, parameters);
+                        transaction.Commit();
                         Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
                     }
                     catch
@@ -333,7 +334,6 @@ namespace PikUpStix.TraderView.Data.Repositories
 
                 if (!tradeExecutionExists)
                 {
-                    tradeConfirm.OpenCloseIndicator = "O";  // THIS MAY NOT BE TRUE - TRADE CONFIRMS COULD BE CLOSING FUNCTIONS - MONITOR
                     var instrumentId = _instrumentRepository.GetInstrumentIdByConId(tradeConfirm.Conid);
                     
                     if (instrumentId.HasValue)
@@ -345,11 +345,13 @@ namespace PikUpStix.TraderView.Data.Repositories
 
                         if (existingPosition != null)
                         {
+                            tradeConfirm.OpenCloseIndicator = "O"; 
                             tradeConfirm.PositionId = existingPosition.Id;
                         }
                         else
                         {
-                            tradeConfirm.PositionId = CreatePosition(instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
+                            tradeConfirm.OpenCloseIndicator = (existingPosition.Quantity + tradeConfirm.Quantity) == 0 ? "O" : "C";                              
+                            tradeConfirm.PositionId = CreatePosition(instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice, tradeConfirm.OpenCloseIndicator);
                         }                       
                         tradeConfirm.Id = CreateTradeConfirmation(tradeConfirm);
                     }
@@ -362,7 +364,7 @@ namespace PikUpStix.TraderView.Data.Repositories
             Console.WriteLine("Successfully processed today's trade confirmations.");
                 
         }
-        private int CreatePosition(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
+        private int CreatePosition(int instrumentId, string symbol, DateTime openDate, decimal openPrice, string openCloseIndicator)
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -378,7 +380,8 @@ namespace PikUpStix.TraderView.Data.Repositories
                             { "@status", "Open" },
                             { "@instrumentId", instrumentId },
                             { "@lastReportedPrice", openPrice },
-                            { "@LastReportedPriceUpdated", DateTime.Now}
+                            { "@LastReportedPriceUpdated", DateTime.Now},
+                            { "@openCloseIndicator", openCloseIndicator }
                         };
 
                         int newPositionId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);

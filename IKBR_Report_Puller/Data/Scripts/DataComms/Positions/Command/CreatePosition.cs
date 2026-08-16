@@ -11,9 +11,9 @@ namespace PikUpStix.TraderView.Data.Scripts.DataComms.Positions.Command
     {
         public string Script()
         {
-            return @"INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated)
+            return @"INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated, OpenCloseIndicator)
                             OUTPUT INSERTED.Id
-                            VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @LastReportedPriceUpdated);";
+                            VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @LastReportedPriceUpdated, @openCloseIndicator);";
         }
     }
 }
