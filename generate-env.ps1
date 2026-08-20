@@ -16,7 +16,7 @@ $secrets = $null
 foreach ($project in @("Server", "Console", "Library")) {
     $secretId = $userSecretsIds[$project]
     $userSecretsPath = "$env:APPDATA\Microsoft\UserSecrets\$secretId\secrets.json"
-
+    
     if (Test-Path $userSecretsPath) {
         try {
             $secrets = Get-Content $userSecretsPath | ConvertFrom-Json
@@ -35,7 +35,7 @@ if (-not $secrets) {
     # Create default .env file
     $envContent = @"
 # SQL Server Configuration
-SQL_PASSWORD=DevPassword123!@#
+SQL_PASSWORD=your_password
 
 # IBKR Configuration
 IBKR_TOKEN=your_token_here
@@ -65,49 +65,43 @@ $envLines += "# To update: modify User Secrets in Visual Studio, then re-run gen
 $envLines += "# Generated: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"
 $envLines += ""
 
+# Helper to read flat keys with colons safely
+function Get-SecretValue ($jsonObject, [string]$keyName, [string]$defaultValue = "") {
+    $prop = $jsonObject.PSObject.Properties[$keyName]
+    if ($prop -and -not [string]::IsNullOrWhiteSpace($prop.Value)) {
+        return $prop.Value
+    }
+    return $defaultValue
+}
+
 # Database Configuration
 $envLines += "# SQL Server Configuration"
-if ($secrets.Database) {
-    $envLines += "SQL_PASSWORD=$($secrets.Database.Password)"
-} else {
-    $envLines += "SQL_PASSWORD=DevPassword123!@#"
-}
+$sqlPassword = Get-SecretValue $secrets "Database:Password" "DevPassword123!@#"
+$envLines += "SQL_PASSWORD=$sqlPassword"
 $envLines += ""
 
 # IBKR Configuration
 $envLines += "# IBKR Configuration"
-if ($secrets.IBKR) {
-    $envLines += "IBKR_TOKEN=$($secrets.IBKR.Token)"
-    $envLines += "IBKR_QUERY_ID=$($secrets.IBKR.QueryId)"
-    $envLines += "IBKR_TODAY_EXEC_ID=$($secrets.IBKR.QueryTodayExecutionsId)"
-} else {
-    $envLines += "IBKR_TOKEN=your_token_here"
-    $envLines += "IBKR_QUERY_ID=your_query_id_here"
-    $envLines += "IBKR_TODAY_EXEC_ID=your_today_exec_id_here"
-}
+$ibkrToken       = Get-SecretValue $secrets "IBKR:Token" "your_token_here"
+$ibkrQueryId     = Get-SecretValue $secrets "IBKR:QueryId" "your_query_id_here"
+$ibkrTodayExecId = Get-SecretValue $secrets "IBKR:QueryTodayExecutionsId" "your_today_exec_id_here"
+
+$envLines += "IBKR_TOKEN=$ibkrToken"
+$envLines += "IBKR_QUERY_ID=$ibkrQueryId"
+$envLines += "IBKR_TODAY_EXEC_ID=$ibkrTodayExecId"
 $envLines += ""
 
 # Financial Modeling Prep API
 $envLines += "# Financial Modeling Prep API"
-if ($secrets.FinancialModelingPrep) {
-    $envLines += "FMP_API_KEY=$($secrets.FinancialModelingPrep.ApiKey)"
-} else {
-    $envLines += "FMP_API_KEY=your_fmp_api_key_here"
-}
+$fmpApiKey = Get-SecretValue $secrets "FinancialModelingPrep:ApiKey" "your_fmp_api_key_here"
+$envLines += "FMP_API_KEY=$fmpApiKey"
+$envLines += ""
 $envLines += ""
 
 # Market Data Service
 $envLines += "# Market Data Service (yahoo or fmp)"
 $envLines += "MARKET_DATA_SERVICE=fmp"
 $envLines += ""
-
-# Yahoo Finance
-$envLines += "# Yahoo Finance"
-if ($secrets.YahooFinance -and $secrets.YahooFinance.BaseUrl) {
-    $envLines += "YAHOO_FINANCE_BASE_URL=$($secrets.YahooFinance.BaseUrl)"
-} else {
-    $envLines += "YAHOO_FINANCE_BASE_URL=https://query1.finance.yahoo.com"
-}
 
 # Write to .env file
 $envContent = $envLines -join "`r`n"

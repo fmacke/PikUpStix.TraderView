@@ -16,8 +16,7 @@ $ContainerName = "traderview-app"
 $BuildMarkerFile = ".last-build-hash"
 $SourcePaths = @(
     "traderview/traderview.Server",
-    "traderview/traderview.client",
-    "IKBR_Report_Puller"
+    "traderview/traderview.client"
 )
 
 # Function to calculate hash of source files

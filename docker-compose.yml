@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
@@ -60,10 +58,6 @@ services:
       - FinancialModelingPrep__ApiKey=${FMP_API_KEY}
       - FinancialModelingPrep__BaseUrl=https://financialmodelingprep.com/stable
       - FinancialModelingPrep__OutputFilePath=/app/documents/[FILE_NAME]
-
-      # Yahoo Finance API Settings
-      - YahooFinance__BaseUrl=${YAHOO_FINANCE_BASE_URL:-https://query1.finance.yahoo.com}
-      - YahooFinance__OutputFilePath=/app/documents/[FILE_NAME]
 
       # Logging Levels
       - Logging__LogLevel__Default=Information

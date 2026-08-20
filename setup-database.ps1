@@ -26,7 +26,7 @@ if (-not (Test-Path ".env")) {
 }
 
 # Read the SQL password from User Secrets
-$sqlPassword = "DevPassword123!@#"  # Default password
+$sqlPassword = "booof"  # Default password
 
 # Try all User Secrets locations
 $userSecretsIds = @(
@@ -37,29 +37,30 @@ $userSecretsIds = @(
 
 foreach ($secretId in $userSecretsIds) {
     $userSecretsPath = "$env:APPDATA\Microsoft\UserSecrets\$secretId\secrets.json"
+    
     if (Test-Path $userSecretsPath) {
         try {
-            $secrets = Get-Content $userSecretsPath | ConvertFrom-Json
-            if ($secrets.Database.Password) {
-                $sqlPassword = $secrets.Database.Password
-                Write-Host ""
-                Write-Host "Using password from User Secrets" -ForegroundColor Cyan
-                Write-Host $sqlPassword -ForegroundColor Cyan
+            $secrets = Get-Content $userSecretsPath -Raw | ConvertFrom-Json
+            
+            # Use PSObject to safely access the key containing a colon
+            $passwordProp = $secrets.PSObject.Properties['Database:Password']
+            $password = if ($passwordProp) { $passwordProp.Value } else { $null }
+
+            if (-not [string]::IsNullOrWhiteSpace($password)) {
+                $sqlPassword = $password
+                Write-Host "`n✓ Found password in User Secrets ($secretId)" -ForegroundColor Cyan
                 break
             }
         } catch {
-            # Continue to next secrets file
+            Write-Warning "Failed to parse ${userSecretsPath}: $_"
         }
     }
 }
 
 # Then check .env file (overrides User Secrets if present)
-if (Test-Path ".env") {
-    $envContent = Get-Content ".env" -Raw
-    if ($envContent -match "SQL_PASSWORD=(.+)") {
-        $sqlPassword = $matches[1].Trim()
-    }
-}
+# Pass it directly to Docker Compose environment
+$env:SQL_PASSWORD = $sqlPassword
+docker-compose up -d sqlserver
 
 # Start the SQL Server container
 Write-Host ""
