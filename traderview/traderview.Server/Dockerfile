@@ -5,7 +5,7 @@ WORKDIR /src
 # Copy solution and project files
 COPY ["PikUpStix.TraderView.sln", "./"]
 COPY ["traderview/traderview.Server/traderview.Server.csproj", "traderview/traderview.Server/"]
-COPY ["IKBR_Report_Puller/PikUpStix.TraderView.csproj", "IKBR_Report_Puller/"]
+#COPY ["IKBR_Report_Puller/PikUpStix.TraderView.csproj", "IKBR_Report_Puller/"]
 
 # Restore dependencies
 RUN dotnet restore "traderview/traderview.Server/traderview.Server.csproj"

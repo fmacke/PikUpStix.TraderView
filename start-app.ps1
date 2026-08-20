@@ -25,7 +25,10 @@ function Get-SourceHash {
     $hashes = $files | ForEach-Object { 
         (Get-FileHash -Path $_.FullName -Algorithm MD5).Hash 
     }
-    $combinedHash = ($hashes -join '') | Get-FileHash -Algorithm MD5
+    $combinedString = $hashes -join ''
+    $md5 = [System.Security.Cryptography.MD5]::Create()
+    $bytes = [System.Text.Encoding]::UTF8.GetBytes($combinedString)
+    $combinedHash = [System.BitConverter]::ToString($md5.ComputeHash($bytes)) -replace '-'
     return $combinedHash.Hash
 }
 
