@@ -47,8 +47,8 @@ namespace TraderView.Application.Models.FMP
         public string CompanyName { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public decimal Changes { get; set; }
-        public long Volume { get; set; }
-        public long MarketCap { get; set; }
+        public decimal Volume { get; set; }
+        public decimal MarketCap { get; set; }
         public string Exchange { get; set; } = string.Empty;
         public string Sector { get; set; } = string.Empty;
         public string Industry { get; set; } = string.Empty;
@@ -61,8 +61,8 @@ namespace TraderView.Application.Models.FMP
         public string Sector { get; set; } = string.Empty;
         public string Industry { get; set; } = string.Empty;
         public decimal Price { get; set; }
-        public long Volume { get; set; }
-        public long MarketCap { get; set; }
+        public decimal Volume { get; set; }
+        public decimal MarketCap { get; set; }
         public CanSlimCurrentQuarterMetric CurrentQuarter { get; set; } = new();
         public CanSlimAnnualMetric Annual { get; set; } = new();
     }
@@ -219,25 +219,40 @@ namespace TraderView.Application.Models.FMP
 
     public class FmpKeyMetricsDto
     {
-        [JsonPropertyName("roeTTM")]
+        [JsonPropertyName("returnOnEquityTTM")]
         public decimal Roe { get; set; } // e.g., 0.3245 -> 32.45% (O'Neil Benchmark >= 17%)
 
         [JsonPropertyName("returnOnTangibleAssetsTTM")]
         public decimal ReturnOnTangibleAssets { get; set; }
 
-        [JsonPropertyName("netIncomePerEBTTTM")]
-        public decimal NetIncomePerEbt { get; set; }
+        [JsonPropertyName("incomeQualityTTM")]
+        public decimal IncomeQualityTTM { get; set; }
 
-        [JsonPropertyName("operatingProfitMarginTTM")]
-        public decimal OperatingProfitMargin { get; set; }
+        [JsonPropertyName("operatingReturnOnAssetsTTM")]
+        public decimal OperatingReturnOnAssetsTTM { get; set; }
 
-        [JsonPropertyName("netProfitMarginTTM")]
-        public decimal NetProfitMargin { get; set; }
+        [JsonPropertyName("marketCap")]
+        public decimal MarketCap { get; set; }
+
+        [JsonPropertyName("enterpriseValueTTM")]
+        public decimal EnterpriseValueTTM { get; set; }
+
+        [JsonPropertyName("evToSalesTTM")]
+        public decimal EvToSalesTTM { get; set; }
+
+        [JsonPropertyName("earningsYieldTTM")]
+        public decimal EarningsYieldTTM { get; set; }
+
+        // Note: Net profit margin is not present in this metrics payload (would typically be in financial ratios)
+        public decimal NetProfitMargin =>
+        EnterpriseValueTTM > 0 && EvToSalesTTM > 0
+            ? EarningsYieldTTM * (MarketCap / EnterpriseValueTTM) * EvToSalesTTM
+            : 0m;
 
         [JsonPropertyName("returnOnAssetsTTM")]
         public decimal Roa { get; set; }
 
-        [JsonPropertyName("debtToEquityTTM")]
+        [JsonPropertyName("netDebtToEBITDATTM")]
         public decimal DebtToEquity { get; set; }
 
         [JsonPropertyName("currentRatioTTM")]

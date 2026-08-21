@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
@@ -322,7 +323,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             {
                 var primaryMetric = metrics[0];
                 returnOnEquity = Math.Round(primaryMetric.Roe * 100m, 2);
-                operatingMargin = Math.Round(primaryMetric.OperatingProfitMargin * 100m, 2);
+                operatingMargin = Math.Round(primaryMetric.NetProfitMargin * 100m, 2);
                 returnOnAssets = Math.Round(primaryMetric.Roa * 100m, 2);
             }
 
@@ -449,8 +450,9 @@ namespace PikUpStix.TraderView.Services.MarketData
         }
         public async Task<IReadOnlyList<CanSlimCandidate>> RunScreenerAsync(CanSlimScreenerCriteria criteria)
         {
+            int limitScreenerListTo = 600;
             // STAGE 1: Bulk screener API call to fetch liquid universe
-            var url = $"{_baseUrl}/company-screener?priceMoreThan={criteria.MinPrice}&volumeMoreThan={criteria.MinVolume}&marketCapMoreThan={criteria.MinMarketCap}&isEtf=false&isActivelyTrading=true&exchange=NASDAQ,NYSE&country=US&limit=600&apikey={_apiKey}";
+            var url = $"{_baseUrl}/company-screener?priceMoreThan={criteria.MinPrice}&volumeMoreThan={criteria.MinVolume}&marketCapMoreThan={criteria.MinMarketCap}&isEtf=false&isActivelyTrading=true&exchange=NASDAQ,NYSE&country=US&limit={limitScreenerListTo}&apikey={_apiKey}";
 
             var preFiltered = await _httpClient.GetFromJsonAsync<List<FmpScreenerResultDto>>(url);
             if (preFiltered == null || preFiltered.Count == 0)
@@ -471,14 +473,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 {
                     var caResult = await EvaluateCanSlimCAAsync(stock.Symbol);
 
-                    if (caResult != null &&
-                        caResult.PassesBoth &&
-                        caResult.CurrentQuarter != null &&
-                        caResult.Annual != null &&
-                        caResult.CurrentQuarter.EpsGrowthYoYPercent >= criteria.MinCurrentQuarterEpsGrowthPercent &&
-                        caResult.CurrentQuarter.RevenueGrowthYoYPercent >= criteria.MinCurrentQuarterRevGrowthPercent &&
-                        caResult.Annual.EpsCagr3YearPercent >= criteria.MinAnnualEpsCagrPercent &&
-                        caResult.Annual.ReturnOnEquityPercent >= criteria.MinReturnOnEquityPercent)
+                    if (StockPassesEvaluation(caResult, criteria))
                     {
                         passedCandidates.Add(new CanSlimCandidate
                         {
@@ -510,6 +505,45 @@ namespace PikUpStix.TraderView.Services.MarketData
                 .OrderByDescending(x => x.CurrentQuarter.EpsGrowthYoYPercent)
                 .ToList();
         }
+
+        private bool StockPassesEvaluation(CanSlimEvaluationResult caResult, CanSlimScreenerCriteria criteria)
+        {
+            StringBuilder sb = new StringBuilder();
+            if(caResult == null)
+            {
+                sb.AppendLine("Evaluation result is null.");
+            }
+            else
+            {
+                if (!caResult.PassesBoth)
+                    sb.AppendLine($"Stock {caResult.Symbol} failed to pass both 'C' and 'A' criteria.");
+                if (caResult.CurrentQuarter == null)
+                    sb.AppendLine($"Current quarter data is missing for {caResult.Symbol}.");
+                if (caResult.Annual == null)
+                    sb.AppendLine($"Annual data is missing for {caResult.Symbol}.");
+                if (caResult.CurrentQuarter != null && caResult.CurrentQuarter.EpsGrowthYoYPercent < criteria.MinCurrentQuarterEpsGrowthPercent)
+                    sb.AppendLine($"Current quarter EPS growth {caResult.CurrentQuarter.EpsGrowthYoYPercent}% is below the minimum {criteria.MinCurrentQuarterEpsGrowthPercent}% for {caResult.Symbol}.");
+                if (caResult.CurrentQuarter != null && caResult.CurrentQuarter.RevenueGrowthYoYPercent < criteria.MinCurrentQuarterRevGrowthPercent)
+                    sb.AppendLine($"Current quarter revenue growth {caResult.CurrentQuarter.RevenueGrowthYoYPercent}% is below the minimum {criteria.MinCurrentQuarterRevGrowthPercent}% for {caResult.Symbol}.");
+                if (caResult.Annual != null && caResult.Annual.EpsCagr3YearPercent < criteria.MinAnnualEpsCagrPercent)
+                    sb.AppendLine($"Annual EPS CAGR 3-year {caResult.Annual.EpsCagr3YearPercent}% is below the minimum {criteria.MinAnnualEpsCagrPercent}% for {caResult.Symbol}.");
+                if (caResult.Annual != null && caResult.Annual.ReturnOnEquityPercent < criteria.MinReturnOnEquityPercent)
+                    sb.AppendLine($"Annual ROE {caResult.Annual.ReturnOnEquityPercent}% is below the minimum {criteria.MinReturnOnEquityPercent}% for {caResult.Symbol}.");
+            }
+            if (sb.Length > 0)
+            {
+                Console.WriteLine(sb.ToString());
+            }
+            return caResult != null &&
+                        caResult.PassesBoth &&
+                        caResult.CurrentQuarter != null &&
+                        caResult.Annual != null &&
+                        caResult.CurrentQuarter.EpsGrowthYoYPercent >= criteria.MinCurrentQuarterEpsGrowthPercent &&
+                        caResult.CurrentQuarter.RevenueGrowthYoYPercent >= criteria.MinCurrentQuarterRevGrowthPercent &&
+                        caResult.Annual.EpsCagr3YearPercent >= criteria.MinAnnualEpsCagrPercent &&
+                        caResult.Annual.ReturnOnEquityPercent >= criteria.MinReturnOnEquityPercent;
+        }
+
         public async Task<CanSlimEvaluationResult> EvaluateCanSlimCAAsync(string symbol)
         {
             if (string.IsNullOrWhiteSpace(symbol))
