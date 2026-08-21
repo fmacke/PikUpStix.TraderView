@@ -169,7 +169,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             {
                 await ExecuteWithErrorHandlingAsync(async () =>
                 {
-                    var barData = await FetchChartDataFromApiAsync(position.Instrument.DataName, DateTime.UtcNow.AddDays(-3), DateTime.UtcNow);
+                    var barData = await FetchChartDataFromApiAsync(position.Instrument.DataSource, DateTime.UtcNow.AddDays(-3), DateTime.UtcNow);
                     if (barData == null || barData.Count == 0)
                     {
                         Console.WriteLine($"No latest price data found for {position.Instrument.DataName}.");
@@ -385,7 +385,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             try
             {
                 // FMP TTM Key Metrics endpoint
-                var url = $"{_baseUrl}/key-metrics-ttm/{cleanSymbol}?apikey={_apiKey}";
+                var url = $"{_baseUrl}/key-metrics-ttm?symbol={cleanSymbol}&apikey={_apiKey}";
 
                 var result = await _httpClient.GetFromJsonAsync<List<FmpKeyMetricsDto>>(url);
 
@@ -420,7 +420,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             try
             {
                 // FMP endpoint for annual statements defaults to period=annual, but explicitly passing it guarantees correct grouping
-                var url = $"{_baseUrl}/income-statement/{cleanSymbol}?period=annual&limit={limit}&apikey={_apiKey}";
+                var url = $"{_baseUrl}/income-statement/?symbol={cleanSymbol}&period=annual&limit={limit}&apikey={_apiKey}";
 
                 var result = await _httpClient.GetFromJsonAsync<List<FmpAnnualIncomeStatementDto>>(url);
 
