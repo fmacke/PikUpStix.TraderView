@@ -5,7 +5,7 @@ using System.Text;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Models;
-using TraderView.Application.Data;
+using TraderView.Application.Utils;
 
 namespace PikUpStix.TraderView.Services
 {

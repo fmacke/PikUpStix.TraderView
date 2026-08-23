@@ -1,6 +1,5 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
-using TraderView.Application.Data;
 using TraderView.Application.Features.Instruments.Query.GetBy;
 using TraderView.Application.Features.Positions.Command.Create;
 using TraderView.Application.Features.Positions.Command.Update;
@@ -9,6 +8,7 @@ using TraderView.Application.Features.TradeExecutions.Command.Create;
 using TraderView.Application.Features.TradeExecutions.Command.Update;
 using TraderView.Application.Features.TradeExecutions.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Utils;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Infrastructure.Repositories

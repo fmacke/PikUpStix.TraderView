@@ -1,6 +1,6 @@
 ﻿namespace TraderView.Application.Features.Instruments.Query.GetBy
 {
-    public class GetInstrumentByConIdQuery
+    public class GetInstrumentByConIdQuery : IQuery<string>
     {
         public string Script()
         {
