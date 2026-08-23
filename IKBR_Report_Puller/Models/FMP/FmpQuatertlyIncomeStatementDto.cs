@@ -49,6 +49,8 @@ namespace TraderView.Application.Models.FMP
         public decimal Changes { get; set; }
         public decimal Volume { get; set; }
         public decimal MarketCap { get; set; }
+
+        [JsonPropertyName("exchangeShortName")] 
         public string Exchange { get; set; } = string.Empty;
         public string Sector { get; set; } = string.Empty;
         public string Industry { get; set; } = string.Empty;
@@ -56,7 +58,10 @@ namespace TraderView.Application.Models.FMP
 
     public class CanSlimCandidate
     {
+        public int Id { get; set; }
+        public int InstrumentId { get; set; }
         public string Symbol { get; set; } = string.Empty;
+        public string Exchange { get; set; } = string.Empty;
         public string CompanyName { get; set; } = string.Empty;
         public string Sector { get; set; } = string.Empty;
         public string Industry { get; set; } = string.Empty;

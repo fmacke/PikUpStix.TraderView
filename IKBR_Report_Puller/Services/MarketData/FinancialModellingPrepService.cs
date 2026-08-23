@@ -478,6 +478,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                         passedCandidates.Add(new CanSlimCandidate
                         {
                             Symbol = stock.Symbol,
+                            Exchange = stock.Exchange,
                             CompanyName = stock.CompanyName,
                             Sector = stock.Sector,
                             Industry = stock.Industry,

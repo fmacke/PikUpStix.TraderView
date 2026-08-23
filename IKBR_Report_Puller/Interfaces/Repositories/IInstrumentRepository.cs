@@ -41,6 +41,12 @@ namespace TraderView.Application.Interfaces.Repositories
         /// <param name="trades">List of trades to process</param>
         /// <param name="source">Source of the trades</param>
         void UpsertInstruments(List<TradeExecution> trades, string source);
+        /// <summary>
+        /// Ensures instruments exist for the given trade confirmations.
+        /// Creates missing instruments automatically and updates trade.InstrumentId
+        /// </summary>
+        /// <param name="trades">List of trade confirmations to process</param>
+        /// <param name="source">Source of the trade confirmations</param>
         void UpsertInstruments(List<TradeConfirm> trades, string source);
 
         /// <summary>

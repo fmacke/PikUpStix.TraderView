@@ -46,24 +46,29 @@ namespace traderview.Server.Controllers
                 );
             }
         }
+
+        /// <summary>
+        /// Run the stock screener to get a list of qualifying CAN SLIM candidates
+        /// </summary>
+        /// <param name="symbol">The stock symbol to screen for CAN SLIM candidates</param>
+        /// <returns>A list of qualifying CAN SLIM candidates</returns>
         [HttpGet("RunStockScreener/")]
         [ProducesResponseType(typeof(IReadOnlyList<CanSlimCandidate>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IReadOnlyList<CanSlimCandidate>>> RunStockScreener()
+        public async Task<ActionResult<IReadOnlyList<CanSlimCandidate>>> RunStockScreener(string symbol)
         {
             try
             {
-                _logger.LogInformation("Fetching all qualifying EPS stocks");
-                var canSlimScreenerCriteria = new CanSlimScreenerCriteria();
-                var canslimCandidates = await _marketDataService.RunScreenerAsync(canSlimScreenerCriteria);
-                return Ok(canslimCandidates);
+                _logger.LogInformation("Fetching all qualifying CAN SLIM candidates");
+                var stocksShortList = await _marketDataService.RunScreenerAsync(new CanSlimScreenerCriteria());
+                return Ok(stocksShortList);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching stocks");
-                return StatusCode(  
+                _logger.LogError(ex, "Error fetching CAN SLIM candidates");
+                return StatusCode(
                     StatusCodes.Status500InternalServerError,
-                    new { message = "Error fetching stocks", detail = ex.Message }
+                    new { message = "Error fetching CAN SLIM candidates", detail = ex.Message }
                 );
             }
         }
