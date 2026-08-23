@@ -2,9 +2,16 @@
 {
     public class GetCandidatesBySnapshotIdQuery : IQuery<string>
     {
+        private readonly int _snapshotId;
+
+        public GetCandidatesBySnapshotIdQuery(int snapshotId)
+        {
+            _snapshotId = snapshotId;
+        }
+
         public string Script()
         {
-            return @"SELECT [Id]
+            return $@"SELECT [Id]
                       ,[Symbol]
                       ,[Exchange]
                       ,[CompanyName]
@@ -37,7 +44,7 @@
                       ,[Annual_PassesCriteria]
                       ,[CreatedAtUtc]
                   FROM [TradingBE].[dbo].[CanSlimCandidates]
-                  Where [CanSlimScreenerSnapshotId] = @CanSlimScreenerSnapshotId";
+                  Where [CanSlimScreenerSnapshotId] = {_snapshotId}";
         }
     }
 }

@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using PikUpStix.TraderView.Services;
 using PikUpStix.TraderView.Services.MarketData;
 using traderview.Server.Services;
@@ -52,6 +53,12 @@ public partial class Program
             var connectionString = BuildConnectionString(config);
             return new EconomicCalendarRepository(connectionString);
         });
+        builder.Services.AddSingleton<ICanSlimCandidateRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new CanSlimCandidateRepository(connectionString);
+        });
         builder.Services.AddScoped<INoteRepository>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
@@ -88,7 +95,7 @@ public partial class Program
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
-            var outputFilePath = config["IBKR:OutputFilePath"];
+            var outputFilePath = config["FinancialModelingPrep:OutputFilePath"];
             return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
         });
 
@@ -102,11 +109,12 @@ public partial class Program
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
-            var outputFilePath = config["IBKR:OutputFilePath"];
+            var outputFilePath = config["FinancialModelingPrep:OutputFilePath"];
             return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
         });
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();
+        builder.Services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();

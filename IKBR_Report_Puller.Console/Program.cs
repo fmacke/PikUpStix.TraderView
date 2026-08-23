@@ -75,6 +75,13 @@ namespace TraderView.Console
                         return new EconomicCalendarRepository(connectionString);
                     });
 
+                    services.AddSingleton<ICanSlimCandidateRepository>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var connectionString = BuildConnectionString(config);
+                        return new CanSlimCandidateRepository(connectionString);
+                    });
+
                     // Register both market data services
                     services.AddSingleton<FinancialModellingPrepService>(provider =>
                     {
@@ -122,6 +129,7 @@ namespace TraderView.Console
                     });
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
+                    services.AddSingleton<ICanSlimScreenerService, CanSlimScreenerService>();
                     services.AddSingleton<Application>();
                 })
                 .Build();

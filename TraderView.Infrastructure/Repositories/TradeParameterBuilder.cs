@@ -1,3 +1,4 @@
+using TraderView.Application.Models.FMP;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Infrastructure.Repositories
@@ -150,6 +151,59 @@ namespace TraderView.Infrastructure.Repositories
                 { "@commodityType", trade.CommodityType },
                 { "@fineness", trade.Fineness },
                 { "@weight", trade.Weight }
+            };
+        }
+
+        internal static Dictionary<string, object> GetCanSlimAnnualHistory(AnnualEarningsPoint annualHistory)
+        {
+            return new Dictionary<string, object>
+            {
+                { "@CandidateId", annualHistory.CandidateId },
+                { "@CalendarYear", annualHistory.CalendarYear },
+                { "@FiscalDate", annualHistory.FiscalDate },
+                { "@Revenue", annualHistory.Revenue },
+                { "@NetIncome", annualHistory.NetIncome },
+                { "@EpsDiluted", annualHistory.EpsDiluted },
+                { "@EpsGrowthYoYPercent", annualHistory.EpsGrowthYoYPercent }
+            };
+        }
+
+        internal static Dictionary<string, object> GetCanSlimCandidate(CanSlimCandidate candidate)
+        {
+            return new Dictionary<string, object>
+            {
+                { "@CanSlimScreenerSnapShotId", candidate.CanSlimScreenerSnapShotId },
+                { "@Symbol", candidate.Symbol },
+                { "@CompanyName", candidate.CompanyName },
+                { "@Price", candidate.Price },
+                { "@Volume", candidate.Volume },
+                { "@MarketCap", candidate.MarketCap },
+                { "@Exchange", candidate.Exchange },
+                { "@Sector", candidate.Sector },
+                { "@Industry", candidate.Industry },
+                { "@PassesBoth", candidate.PassesBoth },
+                { "@EvaluationDateUtc", candidate.Annual.EvaluationDateUtc },
+                { "@CurrentQuarter_LatestQuarterDate", candidate.CurrentQuarter.LatestQuarterDate },
+                { "@CurrentQuarter_LatestQuarterEps", candidate.CurrentQuarter.LatestQuarterEps },
+                { "@CurrentQuarter_PriorYearQuarterEps", candidate.CurrentQuarter.PriorYearQuarterEps },
+                { "@CurrentQuarter_EpsGrowthYoYPercent", candidate.CurrentQuarter.EpsGrowthYoYPercent },
+                { "@CurrentQuarter_RevenueGrowthYoYPercent", candidate.CurrentQuarter.RevenueGrowthYoYPercent },
+                { "@CurrentQuarter_IsAccelerating", candidate.CurrentQuarter.IsAccelerating },
+                { "@CurrentQuarter_PassesCriteria", candidate.CurrentQuarter.PassesCriteria },
+                { "@Annual_EpsCagr3YearPercent", candidate.Annual.EpsCagr3YearPercent },
+                { "@Annual_EpsCagr5YearPercent", candidate.Annual.EpsCagr5YearPercent },
+                { "@Annual_ReturnOnEquityPercent", candidate.Annual.ReturnOnEquityPercent },
+                { "@Annual_HasConsecutiveAnnualGrowth", candidate.Annual.HasConsecutiveAnnualGrowth },
+                { "@Annual_LatestFiscalYearEps", candidate.Annual.LatestFiscalYearEps },
+                { "@Annual_LatestFiscalYear", candidate.Annual.LatestFiscalYear },
+                { "@Annual_PriorYear1Eps", candidate.Annual.PriorYear1Eps },
+                { "@Annual_PriorYear2Eps", candidate.Annual.PriorYear2Eps },
+                { "@Annual_PriorYear3Eps", candidate.Annual.PriorYear3Eps },
+                { "@Annual_OperatingMarginPercent", candidate.Annual.OperatingMarginPercent },
+                { "@Annual_ReturnOnAssetsPercent", candidate.Annual.ReturnOnAssetsPercent },
+                { "@Annual_PassesCriteria", candidate.Annual.PassesCriteria },
+                { "@Annual_FundamentalGrade", candidate.Annual.FundamentalGrade },
+                { "@CreatedAtUtc", DateTime.Now }
             };
         }
     }

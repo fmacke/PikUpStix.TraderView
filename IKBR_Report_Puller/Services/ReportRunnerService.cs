@@ -40,7 +40,7 @@ namespace PikUpStix.TraderView.Services
             _marketDataService = economicCalendarService;
             _fmpService = fmpService;
             _config = config;
-            outputFilePath = _config["IBKR:OutputFilePath"];
+            outputFilePath = _config["FinancialModelingPrep:OutputFilePath"];
         }
         public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData)
         {

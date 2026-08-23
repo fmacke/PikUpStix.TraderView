@@ -1,7 +1,15 @@
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Reflection.Metadata.Ecma335;
+using TraderView.Application.Features.CanSlimScreener.Command;
 using TraderView.Application.Features.Instruments.Query.GetBy;
+using TraderView.Application.Features.TradeExecutions.Command.Create;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Models.FMP;
+using TraderView.Domain.Entities;
 namespace TraderView.Infrastructure.Repositories
 {
     public class CanSlimCandidateRepository : BaseRepository, ICanSlimCandidateRepository
@@ -14,15 +22,11 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var candidates = new List<CanSlimCandidate>();
-                var query = new GetCandidatesBySnapshotIdQuery().Script();
-                using var command = new SqlCommand(query, connection);
-                command.Parameters.AddWithValue("@CanSlimScreenerSnapshotId", snapshotId);
-                stopped here - checked this against pattern elsewhere
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
-                {
-                    candidates.Add(new CanSlimCandidate
+                var candidates = ExecuteList(
+                    connection,
+                    transaction: null,
+                    query: new GetCandidatesBySnapshotIdQuery(snapshotId).Script(),
+                    mapFunction: reader => new CanSlimCandidate
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
                         Symbol = reader.GetString(reader.GetOrdinal("Symbol")),
@@ -64,14 +68,48 @@ namespace TraderView.Infrastructure.Repositories
                             // Annual History is not included in this query; it would require a separate query to fetch the annual history for each candidate.
                         }
                     });
-                }
                 return candidates;
             });
         }
 
         int ICanSlimCandidateRepository.Insert(CanSlimCandidate candidate)
         {
-            throw new NotImplementedException();
+            return ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    var parameters = TradeParameterBuilder.GetCanSlimCandidate(candidate);
+                    var insertQuery = new CreateCanSlimCandidateCommand().Script();
+                    var canSlimCandidateId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+
+                    foreach (var annualHistory in candidate.Annual.AnnualHistory)
+                    {
+                        annualHistory.CandidateId = canSlimCandidateId;
+                        parameters = TradeParameterBuilder.GetCanSlimAnnualHistory(annualHistory);
+                        insertQuery = new CreateCanSlimCandidateAnnualHistoryCommand().Script();
+                        ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+                    }
+                    transaction.Commit();
+                    Console.WriteLine($"Created new CanSlimCandidate (Id: {canSlimCandidateId}) for symbol {candidate.Symbol}, on {candidate.Annual.EvaluationDateUtc:yyyy-MM-dd}");
+                    return canSlimCandidateId;
+                }
+            });
+        }
+
+        int ICanSlimCandidateRepository.InsertScreenerSnapShot()
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    var parameters = new Dictionary<string, object>
+                        {{ "@CreatedAt", DateTime.Now } };
+                    var insertQuery = new CreateCanSlimScreentSnapshotCommand().Script();
+                    int canSlimScreenerSnapShotId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+                    transaction.Commit();
+                    return canSlimScreenerSnapShotId;
+                }
+            });
         }
     }
-}
+ }

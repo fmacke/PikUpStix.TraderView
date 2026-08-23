@@ -59,10 +59,12 @@ namespace TraderView.Application.Models.FMP
     public class CanSlimCandidate
     {
         public int Id { get; set; }
+        public int CanSlimScreenerSnapShotId { get; set; }
         public string Symbol { get; set; } = string.Empty;
         public string Exchange { get; set; } = string.Empty;
         public string CompanyName { get; set; } = string.Empty;
         public string Sector { get; set; } = string.Empty;
+        public bool PassesBoth { get; set; }
         public string Industry { get; set; } = string.Empty;
         public decimal Price { get; set; }
         public decimal Volume { get; set; }
@@ -171,6 +173,7 @@ namespace TraderView.Application.Models.FMP
     /// </summary>
     public class AnnualEarningsPoint
     {
+        public int CandidateId { get; set; }
         public string CalendarYear { get; set; } = string.Empty;
         public string FiscalDate { get; set; } = string.Empty;
         public decimal Revenue { get; set; }
