@@ -1,10 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PikUpStix.TraderView.Services.MarketData;
 using PikUpStix.TraderView.Services;
+using PikUpStix.TraderView.Services.MarketData;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Services;
 using TraderView.Infrastructure.Repositories;
 
 namespace TraderView.Console
@@ -130,6 +131,7 @@ namespace TraderView.Console
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddSingleton<ICanSlimScreenerService, CanSlimScreenerService>();
+                    services.AddSingleton<IRiskMatrixService, RiskMatrixService>();
                     services.AddSingleton<Application>();
                 })
                 .Build();

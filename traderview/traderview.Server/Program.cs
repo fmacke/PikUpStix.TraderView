@@ -4,6 +4,7 @@ using PikUpStix.TraderView.Services.MarketData;
 using traderview.Server.Services;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Services;
 using TraderView.Infrastructure.Repositories;
 
 public partial class Program
@@ -115,6 +116,7 @@ public partial class Program
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();
         builder.Services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
+        builder.Services.AddScoped<IRiskMatrixService, RiskMatrixService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
