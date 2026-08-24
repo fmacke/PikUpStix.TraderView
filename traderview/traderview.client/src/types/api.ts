@@ -1,3 +1,4 @@
+
 export interface Trade {
     id: number;
     positionId: number;
@@ -131,3 +132,5 @@ export interface ListItem {
     category: string;
     name: string;
 }
+
+

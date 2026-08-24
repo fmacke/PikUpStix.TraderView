@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { apiService } from '../services/apiService';
 import type { OpenPosition, CreateNoteRequest, Note } from '../types/api';
+import { SortableTableHeader, SortConfig } from './SortableTableHeader';
 import AddNoteModal from './AddNoteModal';
 import './OpenPositionList.css';
 
@@ -120,6 +121,24 @@ function OpenPositionList() {
         return new Date(date).toLocaleDateString();
     };
 
+    const [sortConfig, setSortConfig] = useState<SortConfig<OpenPositionDto>>({
+        key: 'symbol',
+        direction: 'asc'
+    });
+
+    const handleSort = (key: keyof OpenPositionDto) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
+        }));
+    };
+
+    // Recalculate total current margin
+    const totalCurrentMargin = useMemo(() => {
+        return openPositions?.reduce((sum, pos) => sum + (Number(pos.currentMargin) || 0), 0) ?? 0;
+    }, [openPositions]);
+
+
     if (loading) {
         return (
             <div className="open-positions-container">
@@ -160,22 +179,80 @@ function OpenPositionList() {
                 <table className="positions-table">
                     <thead>
                         <tr>
-                            <th>Symbol</th>
-                            <th>Date Opened</th>
-                            <th>Days Opened</th>
-                            <th>Quantity</th>
-                            <th>Cost Price</th>
-                            <th>Average Price</th>
-                            <th>Value</th>
-                            <th>Unrealized P/L</th>
-                            <th>% Change</th>
-                            <th>Current Margin</th>
+                            <SortableTableHeader
+                                columnKey="symbol"
+                                title="Symbol"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                            />
+                            <SortableTableHeader
+                                columnKey="dateOpened"
+                                title="Date Opened"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                            />
+                            <SortableTableHeader
+                                columnKey="daysOpened"
+                                title="Days Opened"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                align="right"
+                            />
+                            <SortableTableHeader
+                                columnKey="quantity"
+                                title="Quantity"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                align="right"
+                            />
+                            <SortableTableHeader
+                                columnKey="costPrice"
+                                title="Cost Price"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                align="right"
+                            />
+                            <SortableTableHeader
+                                columnKey="averagePrice"
+                                title="Average Price"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                align="right"
+                            />
+                            <SortableTableHeader
+                                columnKey="value"
+                                title="Value"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                align="right"
+                            />
+                            <SortableTableHeader
+                                columnKey="unrealizedPnL"
+                                title="Unrealized P/L"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                align="right"
+                            />
+                            <SortableTableHeader
+                                columnKey="percentChange"
+                                title="% Change"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                align="right"
+                            />
+                            <SortableTableHeader
+                                columnKey="currentMargin"
+                                title="Current Margin"
+                                sortConfig={sortConfig}
+                                onSort={handleSort}
+                                align="right"
+                            />
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {openPositions.map((position, index) => (
-                            <tr 
+                        {sortedPositions.map((position, index) => (
+                            <tr
                                 key={`${position.symbol}-${position.accountId}-${index}`}
                                 className={selectedPosition?.positionId === position.positionId ? 'selected-row' : ''}
                                 onClick={() => handleRowClick(position)}
@@ -198,9 +275,12 @@ function OpenPositionList() {
                                     {formatCurrency(position.currentMargin)}
                                 </td>
                                 <td>
-                                    <button 
-                                        className="add-note-button" 
-                                        onClick={() => handleAddNoteClick(position.positionId)}
+                                    <button
+                                        className="add-note-button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleAddNoteClick(position.positionId);
+                                        }}
                                     >
                                         Add Note
                                     </button>
@@ -208,6 +288,20 @@ function OpenPositionList() {
                             </tr>
                         ))}
                     </tbody>
+                    <tfoot>
+                        <tr className="summary-row">
+                            <td colSpan={9} className="summary-label" style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                                Total Margin:
+                            </td>
+                            <td
+                                className={`number-cell summary-value ${totalCurrentMargin >= 0 ? 'positive' : 'negative'}`}
+                                style={{ fontWeight: 'bold' }}
+                            >
+                                {formatCurrency(totalCurrentMargin)}
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 
