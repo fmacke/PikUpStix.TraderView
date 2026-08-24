@@ -1,22 +1,22 @@
 .sortable-th {
     cursor: pointer;
     user-select: none;
-    padding: 10px 12px;
-    font-size: 0.85rem;
+    padding: 12px 16px;
+    font-size: 14px;
     font-weight: 600;
-    color: #8b949e;
-    background-color: #161b22;
-    border-bottom: 1px solid #30363d;
+    color: #495057;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 
     .sortable-th:hover {
-        color: #c9d1d9;
-        background-color: #1c2128;
+        color: #007bff;
+        background-color: #e9ecef;
     }
 
     .sortable-th.active {
-        color: #58a6ff;
+        color: #007bff;
     }
 
     .sortable-th .th-content {
@@ -42,19 +42,19 @@
 
 .sort-icon .arrow-up,
 .sort-icon .arrow-down {
-    fill: #484f58;
+    fill: #adb5bd;
     transition: fill 0.15s ease;
 }
 
 .sort-icon.asc .arrow-up {
-    fill: #58a6ff;
+    fill: #007bff;
 }
 
 .sort-icon.desc .arrow-down {
-    fill: #58a6ff;
+    fill: #007bff;
 }
 
 .sortable-th:hover .sort-icon.inactive .arrow-up,
 .sortable-th:hover .sort-icon.inactive .arrow-down {
-    fill: #8b949e;
+    fill: #6c757d;
 }

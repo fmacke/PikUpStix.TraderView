@@ -597,12 +597,12 @@ namespace TraderView.Infrastructure.Repositories
 
                         if (existingPosition != null)
                         {
-                            tradeConfirm.OpenCloseIndicator = "O"; 
+                            tradeConfirm.OpenCloseIndicator = (existingPosition.Quantity + tradeConfirm.Quantity) == 0 ? "O" : "C";                            
                             tradeConfirm.PositionId = existingPosition.Id;
                         }
                         else
                         {
-                            tradeConfirm.OpenCloseIndicator = (existingPosition.Quantity + tradeConfirm.Quantity) == 0 ? "O" : "C";                              
+                            tradeConfirm.OpenCloseIndicator = "O";
                             tradeConfirm.PositionId = CreatePosition(instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice, tradeConfirm.OpenCloseIndicator);
                         }                       
                         tradeConfirm.Id = CreateTradeConfirmation(tradeConfirm);

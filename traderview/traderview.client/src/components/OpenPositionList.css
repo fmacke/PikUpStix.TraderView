@@ -18,7 +18,7 @@
 }
 
 .positions-table {
-    width: 80%;
+    width: 100%; 
     border-collapse: collapse;
     min-width: 1200px;
 }

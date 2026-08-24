@@ -89,7 +89,7 @@ namespace PikUpStix.TraderView.Services
                     string symbol = position.TradeExecutions.First().Symbol;
                     long? conid = TypeConverters.ConvertToLong(position.Instrument.ConId);
                     decimal currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
-                    decimal costBasisPrice = position.TradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Average(x => x.TradePrice);
+                    decimal costBasisPrice = CalculateAverageCost(position.TradeExecutions);
                     decimal positionValue = position.LastReportedPrice * currentPositionQuantity;
                     decimal unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
                     DateTime? dateOpened = position.OpenDate;
@@ -172,6 +172,18 @@ namespace PikUpStix.TraderView.Services
             }
 
             return reportDataList;
+        }
+
+        private decimal CalculateAverageCost(List<TradeExecution> tradeExecutions)
+        {
+            // this is an approximation of the average cost basis for the current open position
+            decimal totalCost = 0;
+            decimal totalQuantity = tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Sum(x => x.Quantity);
+            foreach (var tre in tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")))
+            {
+                totalCost += tre.TradePrice * tre.Quantity;
+            }
+            return totalQuantity != 0 ? totalCost / totalQuantity : 0;
         }
 
         /// <summary>

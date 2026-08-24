@@ -1,4 +1,4 @@
-import React from 'react';
+
 import './SortableTableHeader.css';
 
 export type SortDirection = 'asc' | 'desc';

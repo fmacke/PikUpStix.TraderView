@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { apiService } from '../services/apiService';
 import type { OpenPosition, CreateNoteRequest, Note } from '../types/api';
-import { SortableTableHeader, SortConfig } from './SortableTableHeader';
+import { SortableTableHeader } from './SortableTableHeader';
+import type { SortConfig } from './SortableTableHeader';
 import AddNoteModal from './AddNoteModal';
 import './OpenPositionList.css';
 
@@ -14,7 +15,20 @@ function OpenPositionList() {
     const [selectedPosition, setSelectedPosition] = useState<OpenPosition | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
     const [notesLoading, setNotesLoading] = useState<boolean>(false);
-
+    const loadOpenPositions = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const positions = await apiService.getOpenPositions();
+            setOpenPositions(positions);
+        } catch (err) {
+            const errorMessage = err instanceof Error ? err.message : 'Failed to load open positions';
+            setError(errorMessage);
+            console.error('Error loading open positions:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
     useEffect(() => {
         loadOpenPositions();
     }, []);
@@ -41,20 +55,7 @@ function OpenPositionList() {
         fetchNotes();
     }, [selectedPosition?.positionId]);
 
-    const loadOpenPositions = async () => {
-        try {
-            setLoading(true);
-            setError(null);
-            const positions = await apiService.getOpenPositions();
-            setOpenPositions(positions);
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to load open positions';
-            setError(errorMessage);
-            console.error('Error loading open positions:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    
 
     const handleAddNoteClick = (positionId: number) => {
         setSelectedPositionId(positionId);
@@ -121,12 +122,43 @@ function OpenPositionList() {
         return new Date(date).toLocaleDateString();
     };
 
-    const [sortConfig, setSortConfig] = useState<SortConfig<OpenPositionDto>>({
+    const [sortConfig, setSortConfig] = useState<SortConfig<OpenPosition>>({
         key: 'symbol',
         direction: 'asc'
     });
+    const sortedPositions = useMemo(() => {
+        if (!openPositions || openPositions.length === 0) return [];
 
-    const handleSort = (key: keyof OpenPositionDto) => {
+        return [...openPositions].sort((a, b) => {
+            const aVal = a[sortConfig.key];
+            const bVal = b[sortConfig.key];
+
+            // Handle null or undefined values
+            if (aVal == null && bVal == null) return 0;
+            if (aVal == null) return 1;
+            if (bVal == null) return -1;
+
+            // Date sorting
+            if (sortConfig.key === 'dateOpened') {
+                const dateA = new Date(aVal as string).getTime();
+                const dateB = new Date(bVal as string).getTime();
+                return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
+            }
+
+            // Numeric sorting
+            if (typeof aVal === 'number' && typeof bVal === 'number') {
+                return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+            }
+
+            // String sorting
+            const strA = String(aVal).toLowerCase();
+            const strB = String(bVal).toLowerCase();
+            return sortConfig.direction === 'asc'
+                ? strA.localeCompare(strB)
+                : strB.localeCompare(strA);
+        });
+    }, [openPositions, sortConfig]);
+    const handleSort = (key: keyof OpenPosition) => {
         setSortConfig(prev => ({
             key,
             direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc'
