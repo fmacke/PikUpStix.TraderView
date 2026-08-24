@@ -14,7 +14,6 @@ namespace TraderView.Domain.Entities
         public List<TradeExecution> TradeExecutions { get; set; } = new List<TradeExecution>();
         public Instrument Instrument { get; set; }
         public string AccountId { get; set; }
-        public int PositionID { get; set; }
         public string AcctAlias { get; set; }
         public string Model { get; set; }
         public string Currency { get; set; }

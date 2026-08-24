@@ -11,9 +11,9 @@ namespace TraderView.Application.Features.Positions.Command.Create
     {
         public string Script()
         {
-            return @"INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated, OpenCloseIndicator)
+            return @"INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated)
                             OUTPUT INSERTED.Id
-                            VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @LastReportedPriceUpdated, @openCloseIndicator);";
+                            VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @LastReportedPriceUpdated);";
         }
     }
 }

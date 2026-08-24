@@ -40,8 +40,17 @@ USE TradingBE;
 GO
 
 
-/****** Object:  Database [TradingBE]    Script Date: 23/08/2026 12:54:43 ******/
-
+USE [master]
+GO
+/****** Object:  Database [TradingBE]    Script Date: 24/08/2026 14:07:11 ******/
+CREATE DATABASE [TradingBE]
+ CONTAINMENT = NONE
+ ON  PRIMARY 
+( NAME = N'TradingBE', FILENAME = N'/var/opt/mssql/data/TradingBE.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
+ LOG ON 
+( NAME = N'TradingBE_log', FILENAME = N'/var/opt/mssql/data/TradingBE_log.ldf' , SIZE = 73728KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
+ WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
+GO
 ALTER DATABASE [TradingBE] SET COMPATIBILITY_LEVEL = 160
 GO
 IF (1 = FULLTEXTSERVICEPROPERTY('IsFullTextInstalled'))
@@ -117,14 +126,14 @@ ALTER DATABASE [TradingBE] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP
 GO
 USE [TradingBE]
 GO
-/****** Object:  Table [dbo].[CanSlimCandidateAnnualHistory]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[CanSlimCandidateAnnualHistory]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
 CREATE TABLE [dbo].[CanSlimCandidateAnnualHistory](
-	[Id] [bigint] IDENTITY(1,1) NOT NULL,
-	[CandidateSnapshotId] [bigint] NOT NULL,
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[CandidateId] [int] NOT NULL,
 	[CalendarYear] [varchar](10) NOT NULL,
 	[FiscalDate] [varchar](10) NULL,
 	[Revenue] [decimal](19, 2) NOT NULL,
@@ -137,13 +146,14 @@ CREATE TABLE [dbo].[CanSlimCandidateAnnualHistory](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[CanSlimCandidateSnapshots]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[CanSlimCandidates]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[CanSlimCandidateSnapshots](
-	[Id] [bigint] IDENTITY(1,1) NOT NULL,
+CREATE TABLE [dbo].[CanSlimCandidates](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[CanSlimScreenerSnapshotId] [int] NOT NULL,
 	[Symbol] [varchar](16) NOT NULL,
 	[Exchange] [varchar](16) NULL,
 	[CompanyName] [nvarchar](200) NULL,
@@ -181,7 +191,21 @@ CREATE TABLE [dbo].[CanSlimCandidateSnapshots](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[EconomicCalendar]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[CanSlimScreenerSnapshot]    Script Date: 24/08/2026 14:07:12 ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [dbo].[CanSlimScreenerSnapshot](
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[CreatedAt] [datetime] NOT NULL,
+ CONSTRAINT [PK_CanSlimScreenerSnapshot] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+/****** Object:  Table [dbo].[EconomicCalendar]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -213,7 +237,7 @@ CREATE TABLE [dbo].[EconomicCalendar](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[HistoricalData]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[HistoricalData]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -240,7 +264,7 @@ CREATE TABLE [dbo].[HistoricalData](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Instruments]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[Instruments]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -266,7 +290,7 @@ CREATE TABLE [dbo].[Instruments](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Lists]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[Lists]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -285,7 +309,7 @@ CREATE TABLE [dbo].[Lists](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Notes]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[Notes]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -304,7 +328,7 @@ CREATE TABLE [dbo].[Notes](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Positions]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[Positions]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -323,7 +347,7 @@ CREATE TABLE [dbo].[Positions](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TradeExecutions]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Table [dbo].[TradeExecutions]    Script Date: 24/08/2026 14:07:12 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -422,14 +446,14 @@ CREATE TABLE [dbo].[TradeExecutions](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Index [IX_CanSlimCandidateAnnualHistory_SnapshotId]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_CanSlimCandidateAnnualHistory_SnapshotId]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_CanSlimCandidateAnnualHistory_SnapshotId] ON [dbo].[CanSlimCandidateAnnualHistory]
 (
-	[CandidateSnapshotId] ASC
+	[CandidateId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_CanSlimCandidateSnapshots_PassesBoth]    Script Date: 23/08/2026 12:54:43 ******/
-CREATE NONCLUSTERED INDEX [IX_CanSlimCandidateSnapshots_PassesBoth] ON [dbo].[CanSlimCandidateSnapshots]
+/****** Object:  Index [IX_CanSlimCandidateSnapshots_PassesBoth]    Script Date: 24/08/2026 14:07:12 ******/
+CREATE NONCLUSTERED INDEX [IX_CanSlimCandidateSnapshots_PassesBoth] ON [dbo].[CanSlimCandidates]
 (
 	[PassesBoth] ASC,
 	[EvaluationDateUtc] DESC
@@ -438,8 +462,8 @@ INCLUDE([Symbol],[Price],[Annual_ReturnOnEquityPercent],[CurrentQuarter_EpsGrowt
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_CanSlimCandidateSnapshots_Symbol_Date]    Script Date: 23/08/2026 12:54:43 ******/
-CREATE NONCLUSTERED INDEX [IX_CanSlimCandidateSnapshots_Symbol_Date] ON [dbo].[CanSlimCandidateSnapshots]
+/****** Object:  Index [IX_CanSlimCandidateSnapshots_Symbol_Date]    Script Date: 24/08/2026 14:07:12 ******/
+CREATE NONCLUSTERED INDEX [IX_CanSlimCandidateSnapshots_Symbol_Date] ON [dbo].[CanSlimCandidates]
 (
 	[Symbol] ASC,
 	[EvaluationDateUtc] DESC
@@ -448,25 +472,25 @@ INCLUDE([PassesBoth],[Price],[Volume],[MarketCap]) WITH (PAD_INDEX = OFF, STATIS
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_EconomicCalendar_Country]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_EconomicCalendar_Country]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_EconomicCalendar_Country] ON [dbo].[EconomicCalendar]
 (
 	[Country] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_EconomicCalendar_Date]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_EconomicCalendar_Date]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_EconomicCalendar_Date] ON [dbo].[EconomicCalendar]
 (
 	[Date] DESC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_HistoricalData_Date]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_HistoricalData_Date]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_HistoricalData_Date] ON [dbo].[HistoricalData]
 (
 	[Date] DESC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_HistoricalData_InstrumentId]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_HistoricalData_InstrumentId]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_HistoricalData_InstrumentId] ON [dbo].[HistoricalData]
 (
 	[InstrumentId] ASC,
@@ -475,25 +499,25 @@ CREATE NONCLUSTERED INDEX [IX_HistoricalData_InstrumentId] ON [dbo].[HistoricalD
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_Lists_Name]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_Lists_Name]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_Lists_Name] ON [dbo].[Lists]
 (
 	[Name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_Notes_PositionId]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_Notes_PositionId]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_Notes_PositionId] ON [dbo].[Notes]
 (
 	[PositionId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_Positions_InstrumentId]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_Positions_InstrumentId]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_Positions_InstrumentId] ON [dbo].[Positions]
 (
 	[InstrumentId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_Positions_OpenDate]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_Positions_OpenDate]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_Positions_OpenDate] ON [dbo].[Positions]
 (
 	[OpenDate] DESC
@@ -501,59 +525,59 @@ CREATE NONCLUSTERED INDEX [IX_Positions_OpenDate] ON [dbo].[Positions]
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_Positions_Status]    Script Date: 23/08/2026 12:54:43 ******/
+/****** Object:  Index [IX_Positions_Status]    Script Date: 24/08/2026 14:07:12 ******/
 CREATE NONCLUSTERED INDEX [IX_Positions_Status] ON [dbo].[Positions]
 (
 	[Status] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] ADD  DEFAULT ((0)) FOR [Revenue]
+ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] ADD  CONSTRAINT [DF__CanSlimCa__Reven__71D1E811]  DEFAULT ((0)) FOR [Revenue]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] ADD  DEFAULT ((0)) FOR [NetIncome]
+ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] ADD  CONSTRAINT [DF__CanSlimCa__NetIn__72C60C4A]  DEFAULT ((0)) FOR [NetIncome]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] ADD  DEFAULT ((0)) FOR [EpsDiluted]
+ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] ADD  CONSTRAINT [DF__CanSlimCa__EpsDi__73BA3083]  DEFAULT ((0)) FOR [EpsDiluted]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] ADD  DEFAULT ((0)) FOR [EpsGrowthYoYPercent]
+ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] ADD  CONSTRAINT [DF__CanSlimCa__EpsGr__74AE54BC]  DEFAULT ((0)) FOR [EpsGrowthYoYPercent]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT (sysutcdatetime()) FOR [EvaluationDateUtc]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Evalu__5CD6CB2B]  DEFAULT (sysutcdatetime()) FOR [EvaluationDateUtc]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [PassesBoth]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Passe__5DCAEF64]  DEFAULT ((0)) FOR [PassesBoth]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [CurrentQuarter_LatestQuarterEps]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Curre__5EBF139D]  DEFAULT ((0)) FOR [CurrentQuarter_LatestQuarterEps]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [CurrentQuarter_PriorYearQuarterEps]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Curre__5FB337D6]  DEFAULT ((0)) FOR [CurrentQuarter_PriorYearQuarterEps]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [CurrentQuarter_EpsGrowthYoYPercent]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Curre__60A75C0F]  DEFAULT ((0)) FOR [CurrentQuarter_EpsGrowthYoYPercent]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [CurrentQuarter_RevenueGrowthYoYPercent]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Curre__619B8048]  DEFAULT ((0)) FOR [CurrentQuarter_RevenueGrowthYoYPercent]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [CurrentQuarter_IsAccelerating]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Curre__628FA481]  DEFAULT ((0)) FOR [CurrentQuarter_IsAccelerating]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [CurrentQuarter_PassesCriteria]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Curre__6383C8BA]  DEFAULT ((0)) FOR [CurrentQuarter_PassesCriteria]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_EpsCagr3YearPercent]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__6477ECF3]  DEFAULT ((0)) FOR [Annual_EpsCagr3YearPercent]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_ReturnOnEquityPercent]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__656C112C]  DEFAULT ((0)) FOR [Annual_ReturnOnEquityPercent]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_HasConsecutiveAnnualGrowth]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__66603565]  DEFAULT ((0)) FOR [Annual_HasConsecutiveAnnualGrowth]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_LatestFiscalYearEps]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__6754599E]  DEFAULT ((0)) FOR [Annual_LatestFiscalYearEps]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_PriorYear1Eps]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__68487DD7]  DEFAULT ((0)) FOR [Annual_PriorYear1Eps]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_PriorYear2Eps]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__693CA210]  DEFAULT ((0)) FOR [Annual_PriorYear2Eps]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_PriorYear3Eps]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__6A30C649]  DEFAULT ((0)) FOR [Annual_PriorYear3Eps]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_OperatingMarginPercent]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__6B24EA82]  DEFAULT ((0)) FOR [Annual_OperatingMarginPercent]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_ReturnOnAssetsPercent]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__6C190EBB]  DEFAULT ((0)) FOR [Annual_ReturnOnAssetsPercent]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ('N/A') FOR [Annual_FundamentalGrade]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__6D0D32F4]  DEFAULT ('N/A') FOR [Annual_FundamentalGrade]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT ((0)) FOR [Annual_PassesCriteria]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Annua__6E01572D]  DEFAULT ((0)) FOR [Annual_PassesCriteria]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateSnapshots] ADD  DEFAULT (sysutcdatetime()) FOR [CreatedAtUtc]
+ALTER TABLE [dbo].[CanSlimCandidates] ADD  CONSTRAINT [DF__CanSlimCa__Creat__6EF57B66]  DEFAULT (sysutcdatetime()) FOR [CreatedAtUtc]
 GO
 ALTER TABLE [dbo].[EconomicCalendar] ADD  DEFAULT (getutcdate()) FOR [CreatedAt]
 GO
@@ -571,11 +595,16 @@ ALTER TABLE [dbo].[Notes] ADD  DEFAULT (getutcdate()) FOR [UpdatedAt]
 GO
 ALTER TABLE [dbo].[Positions] ADD  DEFAULT ('Open') FOR [Status]
 GO
-ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory]  WITH CHECK ADD  CONSTRAINT [FK_CanSlimCandidateAnnualHistory_CandidateSnapshot] FOREIGN KEY([CandidateSnapshotId])
-REFERENCES [dbo].[CanSlimCandidateSnapshots] ([Id])
+ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory]  WITH CHECK ADD  CONSTRAINT [FK_CanSlimCandidateAnnualHistory_CandidateSnapshot] FOREIGN KEY([CandidateId])
+REFERENCES [dbo].[CanSlimCandidates] ([Id])
 ON DELETE CASCADE
 GO
 ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] CHECK CONSTRAINT [FK_CanSlimCandidateAnnualHistory_CandidateSnapshot]
+GO
+ALTER TABLE [dbo].[CanSlimCandidates]  WITH CHECK ADD  CONSTRAINT [FK_CanSlimCandidates_CanSlimScreenerSnapshot] FOREIGN KEY([CanSlimScreenerSnapshotId])
+REFERENCES [dbo].[CanSlimScreenerSnapshot] ([Id])
+GO
+ALTER TABLE [dbo].[CanSlimCandidates] CHECK CONSTRAINT [FK_CanSlimCandidates_CanSlimScreenerSnapshot]
 GO
 ALTER TABLE [dbo].[HistoricalData]  WITH CHECK ADD  CONSTRAINT [FK_HistoricalData_Instruments] FOREIGN KEY([InstrumentId])
 REFERENCES [dbo].[Instruments] ([Id])

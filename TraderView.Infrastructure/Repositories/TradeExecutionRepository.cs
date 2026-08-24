@@ -254,6 +254,7 @@ namespace TraderView.Infrastructure.Repositories
                             Id = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
                             InstrumentName = reader["InstrumentName"]?.ToString(),
                             DataName = reader["DataName"]?.ToString(),
+                            DataSource = reader.GetString(reader.GetOrdinal("DataSource")),
                             Currency = reader["Currency"]?.ToString(),
                             ConId = reader["ConId"]?.ToString(),
                             ContractUnitType = reader["ContractUnitType"]?.ToString()
