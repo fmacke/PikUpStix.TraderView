@@ -4,6 +4,7 @@ namespace TraderView.Application.Interfaces.Repositories
 {
     public interface ICanSlimCandidateRepository
     {
+        CanSlimScreenerSnapshot GetLatestScreenerSnapShot();
         List<CanSlimCandidate> GetAllBySnapshotId(int snapshotId);
         int Insert(CanSlimCandidate candidate);
         int InsertScreenerSnapShot();

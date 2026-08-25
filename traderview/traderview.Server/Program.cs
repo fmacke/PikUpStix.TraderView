@@ -94,10 +94,11 @@ public partial class Program
             var economicRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
             var historicalRepo = provider.GetRequiredService<IHistoricalDataRepository>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
+            var canSlimCandidateService  = provider.GetRequiredService<ICanSlimScreenerService>();
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
             var outputFilePath = config["FinancialModelingPrep:OutputFilePath"];
-            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
+            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, canSlimCandidateService, apiKey, baseUrl, outputFilePath);
         });
 
         builder.Services.AddScoped<IMarketDataService>(provider =>
@@ -108,10 +109,11 @@ public partial class Program
             var economicRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
             var historicalRepo = provider.GetRequiredService<IHistoricalDataRepository>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
+            var canSlimCandidateService  = provider.GetRequiredService<ICanSlimScreenerService>();
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
             var outputFilePath = config["FinancialModelingPrep:OutputFilePath"];
-            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
+            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, canSlimCandidateService, apiKey, baseUrl, outputFilePath);
         });
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();

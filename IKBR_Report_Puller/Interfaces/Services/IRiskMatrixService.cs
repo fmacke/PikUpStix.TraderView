@@ -1,4 +1,4 @@
-﻿using TraderView.Domain.Entities;
+﻿using TraderView.Application.Models.FMP;
 
 namespace TraderView.Application.Interfaces.Services
 {

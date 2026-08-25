@@ -6,5 +6,6 @@ namespace TraderView.Application.Interfaces.Services
     {
         Task<List<CanSlimCandidate>> GetAllBySnapshotIdAsync(int snapshotId);
         Task<int> CreateCanSlimScreenerSnapshot(List<CanSlimCandidate> candidates);
+        Task<CanSlimScreenerSnapshot> GetLatestScreenerSnapShot();
     }
 }

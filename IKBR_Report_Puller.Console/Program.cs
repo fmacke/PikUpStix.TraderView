@@ -91,12 +91,12 @@ namespace TraderView.Console
                         var historicalDataRepository = provider.GetRequiredService<IHistoricalDataRepository>();
                         var instrumentRepository = provider.GetRequiredService<IInstrumentRepository>();
                         var config = provider.GetRequiredService<IConfiguration>();
-
+                        var canSlimCandidateService = provider.GetRequiredService<ICanSlimScreenerService>();
                         var apiKey = config["FinancialModelingPrep:ApiKey"];
                         var baseUrl = config["FinancialModelingPrep:BaseUrl"];
                         var outputPath = config["FinancialModelingPrep:OutputFilePath"];
 
-                        return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, instrumentRepository, apiKey, baseUrl, outputPath);
+                        return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, instrumentRepository, canSlimCandidateService, apiKey, baseUrl, outputPath);
                     });
 
                     // Register the default IMarketDataService (use Yahoo Finance by default, or configure via settings)

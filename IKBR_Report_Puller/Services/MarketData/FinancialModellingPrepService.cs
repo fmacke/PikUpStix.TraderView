@@ -18,6 +18,7 @@ namespace PikUpStix.TraderView.Services.MarketData
         private readonly IEconomicCalendarRepository _repository;
         private readonly IHistoricalDataRepository _historicalDataRepository;
         private readonly IInstrumentRepository _instrumentRepository;
+        private readonly ICanSlimScreenerService _canSlimScreenerService;
         private readonly string _apiKey;
         private readonly string _baseUrl;
         private readonly string _outputFilePath;
@@ -29,6 +30,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             IEconomicCalendarRepository repository,
             IHistoricalDataRepository historicalDataRepository,
             IInstrumentRepository instrumentRepository,
+            ICanSlimScreenerService canSlimScreenerService,
             string apiKey,
             string baseUrl,
             string outputFilePath)
@@ -37,6 +39,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _historicalDataRepository = historicalDataRepository ?? throw new ArgumentNullException(nameof(historicalDataRepository));
             _instrumentRepository = instrumentRepository ?? throw new ArgumentNullException(nameof(instrumentRepository));
+            _canSlimScreenerService = canSlimScreenerService ?? throw new ArgumentNullException(nameof(canSlimScreenerService));
             _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
             _baseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
             _outputFilePath = outputFilePath ?? throw new ArgumentNullException(nameof(outputFilePath));
@@ -104,7 +107,6 @@ namespace PikUpStix.TraderView.Services.MarketData
         {
             foreach (var trade in trades)
             {
-
                 var instrument = await _instrumentRepository.GetByIdAsync(trade.InstrumentId);
                 await ExecuteWithErrorHandlingAsync(async () =>
                 {
@@ -186,9 +188,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 }, $"InstrumentId: {position.Id}, Symbol: {position.Instrument.DataName}");
             }
         }
-        public async Task<IReadOnlyList<FmpQuarterlyIncomeStatementDto>> GetQuarterlyIncomeStatementsAsync(
-            string symbol,
-            int limit = 8)
+        public async Task<IReadOnlyList<FmpQuarterlyIncomeStatementDto>> GetQuarterlyIncomeStatementsAsync(string symbol,int limit = 8)
         {
             try
             {
@@ -203,7 +203,6 @@ namespace PikUpStix.TraderView.Services.MarketData
                 return Array.Empty<FmpQuarterlyIncomeStatementDto>();
             }
         }
-
         public async Task<CanSlimCurrentQuarterMetric?> EvaluateCurrentQuarterEpsAsync(
             string symbol,
             decimal minEpsGrowth = 25m,
@@ -450,7 +449,26 @@ namespace PikUpStix.TraderView.Services.MarketData
         }
         public async Task<IReadOnlyList<CanSlimCandidate>> RunScreenerAsync(CanSlimScreenerCriteria criteria)
         {
-            int limitScreenerListTo = 600;
+            var latestScreener = await _canSlimScreenerService.GetLatestScreenerSnapShot();
+            if (latestScreener == null)
+            {
+                var newScreenerData = await GetNewScreenerData(criteria);
+                await _canSlimScreenerService.CreateCanSlimScreenerSnapshot(newScreenerData.ToList());
+                return newScreenerData;
+            }
+            else if (latestScreener.CreatedAt < DateTime.Today)
+            {
+                var newScreenerData = await GetNewScreenerData(criteria);
+                await _canSlimScreenerService.CreateCanSlimScreenerSnapshot(newScreenerData.ToList());
+                return newScreenerData;
+            }
+            else
+                return await _canSlimScreenerService.GetAllBySnapshotIdAsync(latestScreener.Id);
+        }
+        private async Task<IReadOnlyList<CanSlimCandidate>> GetNewScreenerData(CanSlimScreenerCriteria criteria)
+        {
+            // CALL FMP API to get new candidates and save to database
+            int limitScreenerListTo = 5;
             // STAGE 1: Bulk screener API call to fetch liquid universe
             var url = $"{_baseUrl}/company-screener?priceMoreThan={criteria.MinPrice}&volumeMoreThan={criteria.MinVolume}&marketCapMoreThan={criteria.MinMarketCap}&isEtf=false&isActivelyTrading=true&exchange=NASDAQ,NYSE&country=US&limit={limitScreenerListTo}&apikey={_apiKey}";
 
@@ -544,7 +562,6 @@ namespace PikUpStix.TraderView.Services.MarketData
                         caResult.Annual.EpsCagr3YearPercent >= criteria.MinAnnualEpsCagrPercent &&
                         caResult.Annual.ReturnOnEquityPercent >= criteria.MinReturnOnEquityPercent;
         }
-
         public async Task<CanSlimEvaluationResult> EvaluateCanSlimCAAsync(string symbol)
         {
             if (string.IsNullOrWhiteSpace(symbol))
@@ -655,7 +672,6 @@ namespace PikUpStix.TraderView.Services.MarketData
             // Handles negative base EPS turning profitable or standard growth
             return ((currentValue - baseValue) / Math.Abs(baseValue)) * 100m;
         }
-    
         /// <summary>
         /// Executes an async operation with standardized error handling
         /// </summary>
@@ -684,7 +700,6 @@ namespace PikUpStix.TraderView.Services.MarketData
                 throw new Exception($"Error fetching and saving FMP{contextInfo}: {ex.Message}", ex);
             }
         }
-
         /// <summary>
         /// Normalizes a symbol by removing special characters for API requests
         /// </summary>
@@ -692,7 +707,6 @@ namespace PikUpStix.TraderView.Services.MarketData
         {
             return symbol.Replace("/", "").Replace("-", "").Replace(" ", "");//.Replace(".", "");
         }
-
         /// <summary>
         /// Fetches chart data from the API for a given symbol and date range
         /// </summary>
@@ -718,7 +732,6 @@ namespace PikUpStix.TraderView.Services.MarketData
 
             return barData ?? new List<Bar>();
         }
-
         /// <summary>
         /// Saves economic calendar barData to a JSON file
         /// </summary>

@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using DocumentFormat.OpenXml.Office.CoverPageProps;
+using System.Text.Json.Serialization;
 
 namespace TraderView.Application.Models.FMP
 {
@@ -39,6 +40,11 @@ namespace TraderView.Application.Models.FMP
         public decimal RevenueGrowthYoYPercent { get; set; }
         public bool IsAccelerating { get; set; }
         public bool PassesCriteria { get; set; }
+    }
+    public class  CanSlimScreenerSnapshot
+    {
+        public int Id { get; set; }
+        public DateTime CreatedAt { get; set; } 
     }
 
     public class FmpScreenerResultDto
@@ -196,7 +202,7 @@ namespace TraderView.Application.Models.FMP
         [JsonPropertyName("symbol")]
         public string Symbol { get; set; } = string.Empty;
 
-        [JsonPropertyName("calendarYear")]
+        [JsonPropertyName("fiscalYear")]
         public string CalendarYear { get; set; } = string.Empty;
 
         [JsonPropertyName("period")]

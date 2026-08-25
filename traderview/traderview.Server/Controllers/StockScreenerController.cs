@@ -58,7 +58,7 @@ namespace traderview.Server.Controllers
         [HttpGet("RunStockScreener/")]
         [ProducesResponseType(typeof(IReadOnlyList<CanSlimCandidate>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IReadOnlyList<CanSlimCandidate>>> RunStockScreener(string symbol)
+        public async Task<ActionResult<IReadOnlyList<CanSlimCandidate>>> RunStockScreener()
         {
             try
             {
@@ -67,8 +67,8 @@ namespace traderview.Server.Controllers
                 return Ok(stocksShortList);
             }
             catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching CAN SLIM candidates");
+            {       
+                _logger.LogError(ex, "Error fetching CAN SLIM candidates")      ;
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { message = "Error fetching CAN SLIM candidates", detail = ex.Message }

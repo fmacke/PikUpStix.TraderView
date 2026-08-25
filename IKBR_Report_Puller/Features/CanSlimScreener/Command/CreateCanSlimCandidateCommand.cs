@@ -79,7 +79,7 @@
         public string Script()
         {
             return @"
-                INSERT INTO [dbo].[CanSlimScreenerSnapshot]
+                INSERT INTO [dbo].[CanSlimScreenerSnapshots]
                            ([CreatedAt])
                      OUTPUT INSERTED.Id
                      VALUES

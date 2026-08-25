@@ -5,6 +5,7 @@ using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Reflection.Metadata.Ecma335;
 using TraderView.Application.Features.CanSlimScreener.Command;
+using TraderView.Application.Features.CanSlimScreener.Query.GetBy;
 using TraderView.Application.Features.Instruments.Query.GetBy;
 using TraderView.Application.Features.TradeExecutions.Command.Create;
 using TraderView.Application.Interfaces.Repositories;
@@ -40,35 +41,47 @@ namespace TraderView.Infrastructure.Repositories
                         CurrentQuarter = new CanSlimCurrentQuarterMetric
                         {
                             Symbol = reader.GetString(reader.GetOrdinal("Symbol")),
-                            LatestQuarterDate = reader.GetString(reader.GetOrdinal("LatestQuarterDate")),
-                            LatestQuarterEps = reader.GetDecimal(reader.GetOrdinal("LatestQuarterEps")),
-                            PriorYearQuarterEps = reader.GetDecimal(reader.GetOrdinal("PriorYearQuarterEps")),
-                            EpsGrowthYoYPercent = reader.GetDecimal(reader.GetOrdinal("EpsGrowthYoYPercent")),
-                            RevenueGrowthYoYPercent = reader.GetDecimal(reader.GetOrdinal("RevenueGrowthYoYPercent")),
-                            IsAccelerating = reader.GetBoolean(reader.GetOrdinal("IsAccelerating")),
-                            PassesCriteria = reader.GetBoolean(reader.GetOrdinal("PassesCriteria"))
+                            LatestQuarterDate = reader.GetString(reader.GetOrdinal("CurrentQuarter_LatestQuarterDate")),
+                            LatestQuarterEps = reader.GetDecimal(reader.GetOrdinal("CurrentQuarter_LatestQuarterEps")),
+                            PriorYearQuarterEps = reader.GetDecimal(reader.GetOrdinal("CurrentQuarter_PriorYearQuarterEps")),
+                            EpsGrowthYoYPercent = reader.GetDecimal(reader.GetOrdinal("CurrentQuarter_EpsGrowthYoYPercent")),
+                            RevenueGrowthYoYPercent = reader.GetDecimal(reader.GetOrdinal("CurrentQuarter_RevenueGrowthYoYPercent")),
+                            IsAccelerating = reader.GetBoolean(reader.GetOrdinal("CurrentQuarter_IsAccelerating")),
+                            PassesCriteria = reader.GetBoolean(reader.GetOrdinal("CurrentQuarter_PassesCriteria"))
                         },
                         Annual = new CanSlimAnnualMetric
                         {
                             Symbol = reader.GetString(reader.GetOrdinal("Symbol")),
                             EvaluationDateUtc = reader.GetDateTime(reader.GetOrdinal("EvaluationDateUtc")),
-                            EpsCagr3YearPercent = reader.GetDecimal(reader.GetOrdinal("EpsCagr3YearPercent")),
-                            EpsCagr5YearPercent = reader.IsDBNull(reader.GetOrdinal("EpsCagr5YearPercent")) ? null : reader.GetDecimal(reader.GetOrdinal("EpsCagr5YearPercent")),
-                            ReturnOnEquityPercent = reader.GetDecimal(reader.GetOrdinal("ReturnOnEquityPercent")),
-                            HasConsecutiveAnnualGrowth = reader.GetBoolean(reader.GetOrdinal("HasConsecutiveAnnualGrowth")),
-                            LatestFiscalYearEps = reader.GetDecimal(reader.GetOrdinal("LatestFiscalYearEps")),
-                            LatestFiscalYear = reader.GetString(reader.GetOrdinal("LatestFiscalYear")),
-                            PriorYear1Eps = reader.GetDecimal(reader.GetOrdinal("PriorYear1Eps")),
-                            PriorYear2Eps = reader.GetDecimal(reader.GetOrdinal("PriorYear2Eps")),
-                            PriorYear3Eps = reader.GetDecimal(reader.GetOrdinal("PriorYear3Eps")),
-                            OperatingMarginPercent = reader.GetDecimal(reader.GetOrdinal("OperatingMarginPercent")),
-                            ReturnOnAssetsPercent = reader.GetDecimal(reader.GetOrdinal("ReturnOnAssetsPercent")),
-                            PassesCriteria = reader.GetBoolean(reader.GetOrdinal("PassesCriteria")),
-                            FundamentalGrade = reader.GetString(reader.GetOrdinal("FundamentalGrade"))
+                            EpsCagr3YearPercent = reader.GetDecimal(reader.GetOrdinal("Annual_EpsCagr3YearPercent")),
+                            EpsCagr5YearPercent = reader.IsDBNull(reader.GetOrdinal("Annual_EpsCagr5YearPercent")) ? null : reader.GetDecimal(reader.GetOrdinal("Annual_EpsCagr5YearPercent")),
+                            ReturnOnEquityPercent = reader.GetDecimal(reader.GetOrdinal("Annual_ReturnOnEquityPercent")),
+                            HasConsecutiveAnnualGrowth = reader.GetBoolean(reader.GetOrdinal("Annual_HasConsecutiveAnnualGrowth")),
+                            LatestFiscalYearEps = reader.GetDecimal(reader.GetOrdinal("Annual_LatestFiscalYearEps")),
+                            LatestFiscalYear = reader.GetString(reader.GetOrdinal("Annual_LatestFiscalYear")),
+                            PriorYear1Eps = reader.GetDecimal(reader.GetOrdinal("Annual_PriorYear1Eps")),
+                            PriorYear2Eps = reader.GetDecimal(reader.GetOrdinal("Annual_PriorYear2Eps")),
+                            PriorYear3Eps = reader.GetDecimal(reader.GetOrdinal("Annual_PriorYear3Eps")),
+                            OperatingMarginPercent = reader.GetDecimal(reader.GetOrdinal("Annual_OperatingMarginPercent")),
+                            ReturnOnAssetsPercent = reader.GetDecimal(reader.GetOrdinal("Annual_ReturnOnAssetsPercent")),
+                            PassesCriteria = reader.GetBoolean(reader.GetOrdinal("Annual_PassesCriteria")),
+                            FundamentalGrade = reader.GetString(reader.GetOrdinal("Annual_FundamentalGrade"))
                             // Annual History is not included in this query; it would require a separate query to fetch the annual history for each candidate.
                         }
                     });
                 return candidates;
+            });
+        }
+
+        CanSlimScreenerSnapshot? ICanSlimCandidateRepository.GetLatestScreenerSnapShot()
+        {
+            return ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    var result = ExecuteSingle<CanSlimScreenerSnapshot>(connection, transaction, new GetLatestScreenerSnapshot().Script(), MapScreenerSnapshot);                  
+                    return result;
+                }
             });
         }
 
@@ -110,6 +123,14 @@ namespace TraderView.Infrastructure.Repositories
                     return canSlimScreenerSnapShotId;
                 }
             });
+        }
+        private static CanSlimScreenerSnapshot MapScreenerSnapshot(SqlDataReader reader)
+        {
+            return new CanSlimScreenerSnapshot
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
+            };
         }
     }
  }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TraderView.Domain.Entities
+namespace TraderView.Application.Models.FMP
 {
     public class RiskMatrixCalculationRequest
     {

@@ -8,15 +8,18 @@ namespace TraderView.Console
         private readonly IReportRunnerService _reportRunnerService;
         private readonly IMarketDataService _financialDataService;
         private readonly IRiskMatrixService _riskMatrixService;
+        private readonly ICanSlimScreenerService _canSlimScreenerService;
 
         public Application(
             IReportRunnerService reportRunnerService,
             IMarketDataService financialDataService,
-            IRiskMatrixService riskMatrixService)
+            IRiskMatrixService riskMatrixService,
+            ICanSlimScreenerService canSlimScreenerService)
         {
             _reportRunnerService = reportRunnerService;
             _financialDataService = financialDataService;
             _riskMatrixService = riskMatrixService;
+            _canSlimScreenerService = canSlimScreenerService;
         }
 
 
@@ -24,14 +27,21 @@ namespace TraderView.Console
         {
             //await _reportRunnerService.RunReportAsync(true, true);
 
-            //var screenerList = await _financialDataService.RunScreenerAsync(new CanSlimScreenerCriteria());
-            //foreach (var screener in screenerList)
-            //{
-            //    System.Console.WriteLine($"Symbol: {screener.Symbol}, Sector: {screener.Sector}");
-            //}
+            var screenerList = await _financialDataService.RunScreenerAsync(new CanSlimScreenerCriteria());
+            foreach (var screener in screenerList)
+            {
+                System.Console.WriteLine($"Symbol: {screener.Symbol}, Sector: {screener.Sector}");
+            }
             //var lethavealook = await _financialDataService.GetKeyMetricsTtmAsync("NVDA");
             //System.Console.WriteLine($"NVDA TTM Revenue:");
             // Win rates matching columns: 30%, 40%, 50%, and Custom (42.11%)
+            //RunRiskMatrixTest();
+
+            await Task.CompletedTask;
+        }
+
+        private void RunRiskMatrixTest()
+        {
             decimal[] winRates = { 30.0m, 40.0m, 50.0m, 42.11m };
             const int tradesCount = 10;
 
@@ -82,8 +92,6 @@ namespace TraderView.Console
                     $"{resCustom.CompoundedRoi,20:F2}%"
                 );
             }
-
-            await Task.CompletedTask;
         }
     }
 }
