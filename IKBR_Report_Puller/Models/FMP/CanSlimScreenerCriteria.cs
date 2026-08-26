@@ -129,7 +129,7 @@
         /// <summary>
         /// Maximum candidate count returned from the Stage 1 broad market screener.
         /// </summary>
-        public int Stage1UniverseLimit { get; set; } = 600;
+        public int Stage1UniverseLimit { get; set; } = 1000;
 
         #endregion
     }

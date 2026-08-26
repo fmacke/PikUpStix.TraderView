@@ -15,6 +15,7 @@ function OpenPositionList() {
     const [selectedPosition, setSelectedPosition] = useState<OpenPosition | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
     const [notesLoading, setNotesLoading] = useState<boolean>(false);
+
     const loadOpenPositions = async () => {
         try {
             setLoading(true);
@@ -29,6 +30,7 @@ function OpenPositionList() {
             setLoading(false);
         }
     };
+
     useEffect(() => {
         loadOpenPositions();
     }, []);
@@ -44,8 +46,8 @@ function OpenPositionList() {
                 setNotesLoading(true);
                 const notesData = await apiService.getNotesByPositionId(selectedPosition.positionId);
                 setNotes(notesData);
-            } catch (error) {
-                console.error('Error fetching notes:', error);
+            } catch (err) {
+                console.error('Error fetching notes:', err);
                 setNotes([]);
             } finally {
                 setNotesLoading(false);
@@ -54,8 +56,6 @@ function OpenPositionList() {
 
         fetchNotes();
     }, [selectedPosition?.positionId]);
-
-    
 
     const handleAddNoteClick = (positionId: number) => {
         setSelectedPositionId(positionId);
@@ -81,13 +81,11 @@ function OpenPositionList() {
             tradeExecutionId: null,
             comment: comment,
             entryDate: new Date().toISOString(),
-            tradeTypeId: entryMethodId ?? 1 // Use selected entry method or default to 1
+            tradeTypeId: entryMethodId ?? 1
         };
 
         const result = await apiService.createNote(noteRequest);
-        console.log('Note created successfully', result);
 
-        // Refresh notes list if the note was added for the currently selected position
         if (selectedPosition && selectedPosition.positionId === selectedPositionId) {
             const notesData = await apiService.getNotesByPositionId(selectedPositionId);
             setNotes(notesData);
@@ -126,6 +124,7 @@ function OpenPositionList() {
         key: 'symbol',
         direction: 'asc'
     });
+
     const sortedPositions = useMemo(() => {
         if (!openPositions || openPositions.length === 0) return [];
 
@@ -133,24 +132,20 @@ function OpenPositionList() {
             const aVal = a[sortConfig.key];
             const bVal = b[sortConfig.key];
 
-            // Handle null or undefined values
             if (aVal == null && bVal == null) return 0;
             if (aVal == null) return 1;
             if (bVal == null) return -1;
 
-            // Date sorting
             if (sortConfig.key === 'dateOpened') {
                 const dateA = new Date(aVal as string).getTime();
                 const dateB = new Date(bVal as string).getTime();
                 return sortConfig.direction === 'asc' ? dateA - dateB : dateB - dateA;
             }
 
-            // Numeric sorting
             if (typeof aVal === 'number' && typeof bVal === 'number') {
                 return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
             }
 
-            // String sorting
             const strA = String(aVal).toLowerCase();
             const strB = String(bVal).toLowerCase();
             return sortConfig.direction === 'asc'
@@ -158,6 +153,7 @@ function OpenPositionList() {
                 : strB.localeCompare(strA);
         });
     }, [openPositions, sortConfig]);
+
     const handleSort = (key: keyof OpenPosition) => {
         setSortConfig(prev => ({
             key,
@@ -165,11 +161,9 @@ function OpenPositionList() {
         }));
     };
 
-    // Recalculate total current margin
     const totalCurrentMargin = useMemo(() => {
         return openPositions?.reduce((sum, pos) => sum + (Number(pos.currentMargin) || 0), 0) ?? 0;
     }, [openPositions]);
-
 
     if (loading) {
         return (
@@ -211,74 +205,16 @@ function OpenPositionList() {
                 <table className="positions-table">
                     <thead>
                         <tr>
-                            <SortableTableHeader
-                                columnKey="symbol"
-                                title="Symbol"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                            />
-                            <SortableTableHeader
-                                columnKey="dateOpened"
-                                title="Date Opened"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                            />
-                            <SortableTableHeader
-                                columnKey="daysOpened"
-                                title="Days Opened"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                                align="right"
-                            />
-                            <SortableTableHeader
-                                columnKey="quantity"
-                                title="Quantity"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                                align="right"
-                            />
-                            <SortableTableHeader
-                                columnKey="costPrice"
-                                title="Cost Price"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                                align="right"
-                            />
-                            <SortableTableHeader
-                                columnKey="averagePrice"
-                                title="Average Price"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                                align="right"
-                            />
-                            <SortableTableHeader
-                                columnKey="value"
-                                title="Value"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                                align="right"
-                            />
-                            <SortableTableHeader
-                                columnKey="unrealizedPnL"
-                                title="Unrealized P/L"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                                align="right"
-                            />
-                            <SortableTableHeader
-                                columnKey="percentChange"
-                                title="% Change"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                                align="right"
-                            />
-                            <SortableTableHeader
-                                columnKey="currentMargin"
-                                title="Current Margin"
-                                sortConfig={sortConfig}
-                                onSort={handleSort}
-                                align="right"
-                            />
+                            <SortableTableHeader columnKey="symbol" title="Symbol" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="dateOpened" title="Date Opened" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="daysOpened" title="Days Opened" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="quantity" title="Quantity" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="costPrice" title="Cost Price" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="averagePrice" title="Average Price" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="value" title="Value" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="unrealizedPnL" title="Unrealized P/L" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="percentChange" title="% Change" sortConfig={sortConfig} onSort={handleSort} />
+                            <SortableTableHeader columnKey="currentMargin" title="Current Margin" sortConfig={sortConfig} onSort={handleSort} />
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -337,7 +273,6 @@ function OpenPositionList() {
                 </table>
             </div>
 
-            {/* Notes Section */}
             {selectedPosition && (
                 <div className="notes-section">
                     <h2>Notes for {selectedPosition.symbol}</h2>
@@ -368,7 +303,6 @@ function OpenPositionList() {
                 </div>
             )}
 
-            {/* Add Note Modal */}
             <AddNoteModal
                 isOpen={isNoteModalOpen}
                 onClose={handleCloseNoteModal}

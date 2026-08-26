@@ -468,9 +468,8 @@ namespace PikUpStix.TraderView.Services.MarketData
         private async Task<IReadOnlyList<CanSlimCandidate>> GetNewScreenerData(CanSlimScreenerCriteria criteria)
         {
             // CALL FMP API to get new candidates and save to database
-            int limitScreenerListTo = 5;
             // STAGE 1: Bulk screener API call to fetch liquid universe
-            var url = $"{_baseUrl}/company-screener?priceMoreThan={criteria.MinPrice}&volumeMoreThan={criteria.MinVolume}&marketCapMoreThan={criteria.MinMarketCap}&isEtf=false&isActivelyTrading=true&exchange=NASDAQ,NYSE&country=US&limit={limitScreenerListTo}&apikey={_apiKey}";
+            var url = $"{_baseUrl}/company-screener?priceMoreThan={criteria.MinPrice}&volumeMoreThan={criteria.MinVolume}&marketCapMoreThan={criteria.MinMarketCap}&isEtf=false&isActivelyTrading=true&exchange=NASDAQ,NYSE&country=US&limit={criteria.Stage1UniverseLimit}&apikey={_apiKey}";
 
             var preFiltered = await _httpClient.GetFromJsonAsync<List<FmpScreenerResultDto>>(url);
             if (preFiltered == null || preFiltered.Count == 0)

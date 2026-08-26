@@ -55,10 +55,36 @@ namespace traderview.Server.Controllers
         /// </summary>
         /// <param name="symbol">The stock symbol to screen for CAN SLIM candidates</param>
         /// <returns>A list of qualifying CAN SLIM candidates</returns>
-        [HttpGet("RunStockScreener/")]
+        [HttpPost("RunStockScreener")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<object>> RunStockScreener()
+        {
+            try
+            {
+                _logger.LogInformation("Fetching all qualifying CAN SLIM candidates");
+                var stocksShortList = await _marketDataService.RunScreenerAsync(new CanSlimScreenerCriteria());
+                _logger.LogInformation("IBKR data sync completed successfully");
+                return Ok(new { message = "IBKR data sync completed successfully", timestamp = DateTime.UtcNow });
+            }
+            catch (Exception ex)
+            {       
+                _logger.LogError(ex, "Error fetching CAN SLIM candidates")      ;
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { message = "Error fetching CAN SLIM candidates", detail = ex.Message }
+                );
+            }
+        }
+        /// <summary>
+        /// Run the stock screener to get a list of qualifying CAN SLIM candidates
+        /// </summary>
+        /// <param name="symbol">The stock symbol to screen for CAN SLIM candidates</param>
+        /// <returns>A list of qualifying CAN SLIM candidates</returns>
+        [HttpGet("GetCanSlimCandidates")]
         [ProducesResponseType(typeof(IReadOnlyList<CanSlimCandidate>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IReadOnlyList<CanSlimCandidate>>> RunStockScreener()
+        public async Task<ActionResult<IReadOnlyList<CanSlimCandidate>>> GetCanSlimCandidates()
         {
             try
             {
@@ -67,8 +93,8 @@ namespace traderview.Server.Controllers
                 return Ok(stocksShortList);
             }
             catch (Exception ex)
-            {       
-                _logger.LogError(ex, "Error fetching CAN SLIM candidates")      ;
+            {
+                _logger.LogError(ex, "Error fetching CAN SLIM candidates");
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { message = "Error fetching CAN SLIM candidates", detail = ex.Message }

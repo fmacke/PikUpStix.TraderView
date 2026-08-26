@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Trade, TradeContext, RSIndicatorData, OpenPosition, Note, CreateNoteRequest, ListItem } from '../types/api';
+import type { Trade, TradeContext, RSIndicatorData, OpenPosition, Note, CreateNoteRequest, ListItem, CanSlimCandidate } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -103,6 +103,37 @@ export const apiService = {
             return response.data;
         } catch (error) {
             console.error('IBKR sync API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Sync FMP Stock Screener data - fetches shortlisted stocks FMP and updates database
+    async syncFMPData(): Promise<{ message: string; timestamp: string }> {
+        console.log('Making API call to /stockscreener/RunStockScreener');
+        try {
+            const response = await apiClient.post<{ message: string; timestamp: string }>(
+                '/stockscreener/RunStockScreener',
+                {},
+                {
+                    timeout: 300000 // 5 minute timeout for long-running sync operation
+                }
+            );
+            console.log('StockScreener sync API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('StockScreener sync API call failed:', error);
+            throw error;
+        }
+    },
+
+    async getCanSlimCandidates(): Promise<CanSlimCandidate[]> {
+        console.log('Making API call to /GetCanSlimCandidates');
+        try {
+            const response = await apiClient.get<CanSlimCandidate[]>('/stockscreener/GetCanSlimCandidates');
+            console.log('GetCanSlimCandidates API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('GetCanSlimCandidates API call failed:', error);
             throw error;
         }
     },

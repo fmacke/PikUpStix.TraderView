@@ -133,4 +133,16 @@ export interface ListItem {
     name: string;
 }
 
-
+export interface CanSlimCandidate {
+    id: number;
+    canSlimScreenerSnapShotId: number;
+    symbol: string;
+    exchange: string;
+    companyName: string;
+    sector: string;
+    passesBoth: boolean;
+    industry: string;
+    price: number;
+    volume: number;
+    marketCap: number;
+}

@@ -7,6 +7,7 @@ import TradeDetail from './components/TradeDetail';
 import OpenPositionList from './components/OpenPositionList';
 import RiskCalculator from './components/RiskCalculator';
 import StockScreener from './components/StockScreener';
+import SyncButton from './components/SyncButton';
 
 type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener';
 
@@ -15,8 +16,6 @@ function App() {
     const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [syncing, setSyncing] = useState<boolean>(false);
-    const [syncMessage, setSyncMessage] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>('trades');
 
     useEffect(() => {
@@ -25,26 +24,6 @@ function App() {
 
     const handleTradeSelect = (trade: Trade) => {
         setSelectedTrade(trade);
-    };
-
-    const handleSync = async () => {
-        try {
-            setSyncing(true);
-            setSyncMessage(null);
-            setError(null);
-
-            const result = await apiService.syncIBKRData();
-            setSyncMessage(`✓ ${result.message}`);
-
-            // Refresh trade data after successful sync
-            await populateTradeData();
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Failed to sync IBKR data. Please try again.';
-            setError(errorMessage);
-            console.error('Error syncing IBKR data:', err);
-        } finally {
-            setSyncing(false);
-        }
     };
 
     if (loading) {
@@ -108,15 +87,26 @@ function App() {
                         Screener
                     </button>
                 </div>
-                <button
-                    onClick={handleSync}
-                    disabled={syncing}
-                    className="sync-button"
-                    title="Sync data from Interactive Brokers"
-                >
-                    {syncing ? 'Syncing...' : 'Sync IBKR Data'}
-                </button>
-                {syncMessage && <span className="sync-success">{syncMessage}</span>}
+
+                <div className="nav-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {/* Primary IBKR Sync Button */}
+                    <SyncButton
+                        label="Sync IBKR Data"
+                        syncingLabel="Syncing IBKR..."
+                        title="Sync data from Interactive Brokers"
+                        onSync={() => apiService.syncIBKRData()}
+                        onSuccess={populateTradeData}
+                    />
+
+                    {/* Secondary Custom Sync Button */}
+                    <SyncButton
+                        label="Sync Market Data"
+                        syncingLabel="Syncing..."
+                        title="Sync secondary market feed"
+                        onSync={() => apiService.syncFMPData()} 
+                        onSuccess={populateTradeData}
+                    />
+                </div>
             </div>
 
             {viewMode === 'trades' && (
@@ -133,9 +123,7 @@ function App() {
                     </div>
                 </div>
             )}
-
             {viewMode === 'positions' && <OpenPositionList />}
-
             {viewMode === 'riskcalculator' && <RiskCalculator />}
             {viewMode === 'stockscreener' && <StockScreener />}
         </div>
@@ -147,7 +135,6 @@ function App() {
             setError(null);
             const data = await apiService.getTrades();
             setTrades(data);
-            // Auto-select the most recently closed trade (sorted by exitDate descending)
             if (data.length > 0) {
                 const sortedData = [...data].sort((a, b) => {
                     return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
