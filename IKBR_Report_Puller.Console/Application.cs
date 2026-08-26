@@ -25,13 +25,13 @@ namespace TraderView.Console
 
         public async Task RunAsync()
         {
-            //await _reportRunnerService.RunReportAsync(true, true);
+            await _reportRunnerService.RunReportAsync(true, true);
 
-            var screenerList = await _financialDataService.RunScreenerAsync(new CanSlimScreenerCriteria());
-            foreach (var screener in screenerList)
-            {
-                System.Console.WriteLine($"Symbol: {screener.Symbol}, Sector: {screener.Sector}");
-            }
+            //var screenerList = await _financialDataService.RunScreenerAsync(new CanSlimScreenerCriteria());
+            //foreach (var screener in screenerList)
+            //{
+            //    System.Console.WriteLine($"Symbol: {screener.Symbol}, Sector: {screener.Sector}");
+            //}
             //var lethavealook = await _financialDataService.GetKeyMetricsTtmAsync("NVDA");
             //System.Console.WriteLine($"NVDA TTM Revenue:");
             // Win rates matching columns: 30%, 40%, 50%, and Custom (42.11%)

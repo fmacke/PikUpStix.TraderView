@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
+using System.Transactions;
 using TraderView.Application.Features.Instruments.Query.GetBy;
 using TraderView.Application.Features.Positions.Command.Create;
 using TraderView.Application.Features.Positions.Command.Update;
@@ -68,6 +69,8 @@ namespace TraderView.Infrastructure.Repositories
                     if(!tradeExecInDb.TransactionID.HasValue)
                     {
                         // Entry was made by TradeConfirmation so will be missing key details. Update the record with the new trade execution details.
+                        trade.Id = tradeExecInDb.Id; // Ensure we have the correct Id for the update
+                        trade.PositionId = tradeExecInDb.PositionId; // Preserve the existing PositionId
                         UpdateTradeExecution(trade);
                     }
                 }
@@ -402,12 +405,16 @@ namespace TraderView.Infrastructure.Repositories
 
             ExecuteDatabaseOperation(connection =>
             {
-                ExecuteCommand(
-                    connection,
-                    transaction: null,
-                    query: query,
-                    parameters: parameters
-                );
+                using (var transaction = connection.BeginTransaction())
+                {
+                    ExecuteCommand(
+                        connection,
+                        transaction: transaction,
+                        query: query,
+                        parameters: parameters
+                    );
+                    transaction.Commit();
+                }
             });
         }
         /// <summary>
