@@ -5,8 +5,10 @@ import type { Trade } from './types/api';
 import TradeList from './components/TradeList';
 import TradeDetail from './components/TradeDetail';
 import OpenPositionList from './components/OpenPositionList';
+import RiskCalculator from './components/RiskCalculator';
+import StockScreener from './components/StockScreener';
 
-type ViewMode = 'trades' | 'positions';
+type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener';
 
 function App() {
     const [trades, setTrades] = useState<Trade[]>([]);
@@ -81,21 +83,33 @@ function App() {
         <div className="app-container">
             <div className="nav-header">
                 <div className="nav-buttons">
-                    <button 
-                        onClick={() => setViewMode('trades')} 
+                    <button
+                        onClick={() => setViewMode('trades')}
                         className={`nav-button ${viewMode === 'trades' ? 'active' : ''}`}
                     >
                         Trades
                     </button>
-                    <button 
-                        onClick={() => setViewMode('positions')} 
+                    <button
+                        onClick={() => setViewMode('positions')}
                         className={`nav-button ${viewMode === 'positions' ? 'active' : ''}`}
                     >
                         Open Positions
                     </button>
+                    <button
+                        onClick={() => setViewMode('riskcalculator')}
+                        className={`nav-button ${viewMode === 'riskcalculator' ? 'active' : ''}`}
+                    >
+                        Risk Calculator
+                    </button>
+                    <button
+                        onClick={() => setViewMode('stockscreener')}
+                        className={`nav-button ${viewMode === 'stockscreener' ? 'active' : ''}`}
+                    >
+                        Screener
+                    </button>
                 </div>
-                <button 
-                    onClick={handleSync} 
+                <button
+                    onClick={handleSync}
                     disabled={syncing}
                     className="sync-button"
                     title="Sync data from Interactive Brokers"
@@ -105,22 +119,25 @@ function App() {
                 {syncMessage && <span className="sync-success">{syncMessage}</span>}
             </div>
 
-            {viewMode === 'trades' ? (
+            {viewMode === 'trades' && (
                 <div className="master-detail-layout">
                     <div className="detail-pane">
                         <TradeDetail trade={selectedTrade} />
                     </div>
                     <div className="list-pane">
-                        <TradeList 
-                            trades={trades} 
+                        <TradeList
+                            trades={trades}
                             selectedPositionId={selectedTrade?.positionId ?? null}
                             onTradeSelect={handleTradeSelect}
                         />
                     </div>
                 </div>
-            ) : (
-                <OpenPositionList />
             )}
+
+            {viewMode === 'positions' && <OpenPositionList />}
+
+            {viewMode === 'riskcalculator' && <RiskCalculator />}
+            {viewMode === 'stockscreener' && <StockScreener />}
         </div>
     );
 
