@@ -100,9 +100,9 @@ function App() {
 
                     {/* Secondary Custom Sync Button */}
                     <SyncButton
-                        label="Sync Market Data"
-                        syncingLabel="Syncing..."
-                        title="Sync secondary market feed"
+                        label="Sync Screener Data"
+                        syncingLabel="Syncing Screener..."
+                        title="Sync screener data from FMP"
                         onSync={() => apiService.syncFMPData()} 
                         onSuccess={populateTradeData}
                     />

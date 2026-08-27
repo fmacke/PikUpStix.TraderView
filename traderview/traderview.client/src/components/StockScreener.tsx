@@ -3,6 +3,7 @@ import { apiService } from '../services/apiService';
 import type { CanSlimCandidate } from '../types/api';
 import { SortableTableHeader } from './SortableTableHeader';
 import type { SortConfig } from './SortableTableHeader';
+import SyncButton from './SyncButton';
 import './OpenPositionList.css';
 
 function StockScreener() {
@@ -33,6 +34,32 @@ function StockScreener() {
     useEffect(() => {
         loadCandidates();
     }, []);
+
+    const handleDownloadWatchList = async (): Promise<{ message: string; timestamp: string }> => {
+        // Map candidates to TradingView format (e.g., "NASDAQ:WDC" or fallback to "WDC")
+        const formattedSymbols = candidates
+            .filter((c) => Boolean(c.symbol))
+            .map((c) => (c.exchange ? `${c.exchange}:${c.symbol}` : c.symbol))
+            .join(', ');
+
+        const blob = new Blob([formattedSymbols], { type: 'text/plain;charset=utf-8' });
+        const url = window.URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.href = url;
+        const dateStr = new Date().toISOString().split('T')[0];
+        link.setAttribute('download', `tradingview-watchlist-${dateStr}.txt`);
+
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        return {
+            message: 'TradingView watch list downloaded successfully',
+            timestamp: new Date().toISOString()
+        };
+    };
 
     const handleSort = (key: keyof CanSlimCandidate) => {
         setSortConfig(prev => ({
@@ -125,6 +152,13 @@ function StockScreener() {
         <div className="open-positions-container">
             <h1>CAN SLIM Candidates</h1>
             <div className="positions-table-container">
+                <SyncButton
+                    label="Download Watch List"
+                    syncingLabel="Downloading Watch List..."
+                    title="Download watch list for TradingView"
+                    onSync={handleDownloadWatchList}
+                    onSuccess={() => { }}
+                />
                 <table className="positions-table">
                     <thead>
                         <tr>
