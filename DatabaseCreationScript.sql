@@ -1,48 +1,6 @@
--- =============================================
--- SQL Server Database Creation Script for TradingBE
--- Generated from IKBR_Report_Puller repository
--- Description: Complete database schema recreation script
--- =============================================
-
-USE master;
-GO
-
--- Drop database if exists (CAUTION: This will delete all data!)
--- Uncomment the following lines to drop and recreate the database
-/*
-IF EXISTS (SELECT name FROM sys.databases WHERE name = N'TradingBE')
-BEGIN
-	ALTER DATABASE TradingBE SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
-	DROP DATABASE TradingBE;
-END
-GO
-*/
-
--- Create the database
-IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'TradingBE')
-BEGIN
-	CREATE DATABASE [TradingBE]
- CONTAINMENT = NONE
- ON  PRIMARY 
-	( NAME = N'TradingBE', FILENAME = N'/var/opt/mssql/data/TradingBE.mdf' , SIZE = 73728KB , MAXSIZE = UNLIMITED, FILEGROWTH = 65536KB )
-	 LOG ON 
-	( NAME = N'TradingBE_log', FILENAME = N'/var/opt/mssql/data/TradingBE_log.ldf' , SIZE = 73728KB , MAXSIZE = 2048GB , FILEGROWTH = 65536KB )
- WITH CATALOG_COLLATION = DATABASE_DEFAULT, LEDGER = OFF
-	PRINT 'Database TradingBE created successfully.';
-END
-ELSE
-BEGIN
-	PRINT 'Database TradingBE already exists.';
-END
-GO
-
-USE TradingBE;
-GO
-
-
 USE [master]
 GO
-/****** Object:  Database [TradingBE]    Script Date: 24/08/2026 14:07:11 ******/
+/****** Object:  Database [TradingBE]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE DATABASE [TradingBE]
  CONTAINMENT = NONE
  ON  PRIMARY 
@@ -126,7 +84,7 @@ ALTER DATABASE [TradingBE] SET QUERY_STORE (OPERATION_MODE = READ_WRITE, CLEANUP
 GO
 USE [TradingBE]
 GO
-/****** Object:  Table [dbo].[CanSlimCandidateAnnualHistory]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[CanSlimCandidateAnnualHistory]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -146,7 +104,7 @@ CREATE TABLE [dbo].[CanSlimCandidateAnnualHistory](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[CanSlimCandidates]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[CanSlimCandidates]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -191,12 +149,12 @@ CREATE TABLE [dbo].[CanSlimCandidates](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[CanSlimScreenerSnapshot]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[CanSlimScreenerSnapshots]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
-CREATE TABLE [dbo].[CanSlimScreenerSnapshot](
+CREATE TABLE [dbo].[CanSlimScreenerSnapshots](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[CreatedAt] [datetime] NOT NULL,
  CONSTRAINT [PK_CanSlimScreenerSnapshot] PRIMARY KEY CLUSTERED 
@@ -205,7 +163,7 @@ CREATE TABLE [dbo].[CanSlimScreenerSnapshot](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[EconomicCalendar]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[EconomicCalendar]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -237,7 +195,7 @@ CREATE TABLE [dbo].[EconomicCalendar](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[HistoricalData]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[HistoricalData]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -264,7 +222,7 @@ CREATE TABLE [dbo].[HistoricalData](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Instruments]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[Instruments]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -290,7 +248,7 @@ CREATE TABLE [dbo].[Instruments](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Lists]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[Lists]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -309,7 +267,7 @@ CREATE TABLE [dbo].[Lists](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Notes]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[Notes]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -328,7 +286,7 @@ CREATE TABLE [dbo].[Notes](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[Positions]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[Positions]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -347,7 +305,7 @@ CREATE TABLE [dbo].[Positions](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 GO
-/****** Object:  Table [dbo].[TradeExecutions]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Table [dbo].[TradeExecutions]    Script Date: 27/08/2026 10:54:26 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -446,13 +404,13 @@ CREATE TABLE [dbo].[TradeExecutions](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 GO
-/****** Object:  Index [IX_CanSlimCandidateAnnualHistory_SnapshotId]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_CanSlimCandidateAnnualHistory_SnapshotId]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_CanSlimCandidateAnnualHistory_SnapshotId] ON [dbo].[CanSlimCandidateAnnualHistory]
 (
 	[CandidateId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_CanSlimCandidateSnapshots_PassesBoth]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_CanSlimCandidateSnapshots_PassesBoth]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_CanSlimCandidateSnapshots_PassesBoth] ON [dbo].[CanSlimCandidates]
 (
 	[PassesBoth] ASC,
@@ -462,7 +420,7 @@ INCLUDE([Symbol],[Price],[Annual_ReturnOnEquityPercent],[CurrentQuarter_EpsGrowt
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_CanSlimCandidateSnapshots_Symbol_Date]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_CanSlimCandidateSnapshots_Symbol_Date]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_CanSlimCandidateSnapshots_Symbol_Date] ON [dbo].[CanSlimCandidates]
 (
 	[Symbol] ASC,
@@ -472,25 +430,25 @@ INCLUDE([PassesBoth],[Price],[Volume],[MarketCap]) WITH (PAD_INDEX = OFF, STATIS
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_EconomicCalendar_Country]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_EconomicCalendar_Country]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_EconomicCalendar_Country] ON [dbo].[EconomicCalendar]
 (
 	[Country] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_EconomicCalendar_Date]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_EconomicCalendar_Date]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_EconomicCalendar_Date] ON [dbo].[EconomicCalendar]
 (
 	[Date] DESC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_HistoricalData_Date]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_HistoricalData_Date]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_HistoricalData_Date] ON [dbo].[HistoricalData]
 (
 	[Date] DESC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_HistoricalData_InstrumentId]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_HistoricalData_InstrumentId]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_HistoricalData_InstrumentId] ON [dbo].[HistoricalData]
 (
 	[InstrumentId] ASC,
@@ -499,25 +457,25 @@ CREATE NONCLUSTERED INDEX [IX_HistoricalData_InstrumentId] ON [dbo].[HistoricalD
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_Lists_Name]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_Lists_Name]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_Lists_Name] ON [dbo].[Lists]
 (
 	[Name] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_Notes_PositionId]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_Notes_PositionId]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_Notes_PositionId] ON [dbo].[Notes]
 (
 	[PositionId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_Positions_InstrumentId]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_Positions_InstrumentId]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_Positions_InstrumentId] ON [dbo].[Positions]
 (
 	[InstrumentId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 GO
-/****** Object:  Index [IX_Positions_OpenDate]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_Positions_OpenDate]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_Positions_OpenDate] ON [dbo].[Positions]
 (
 	[OpenDate] DESC
@@ -525,7 +483,7 @@ CREATE NONCLUSTERED INDEX [IX_Positions_OpenDate] ON [dbo].[Positions]
 GO
 SET ANSI_PADDING ON
 GO
-/****** Object:  Index [IX_Positions_Status]    Script Date: 24/08/2026 14:07:12 ******/
+/****** Object:  Index [IX_Positions_Status]    Script Date: 27/08/2026 10:54:26 ******/
 CREATE NONCLUSTERED INDEX [IX_Positions_Status] ON [dbo].[Positions]
 (
 	[Status] ASC
@@ -602,7 +560,7 @@ GO
 ALTER TABLE [dbo].[CanSlimCandidateAnnualHistory] CHECK CONSTRAINT [FK_CanSlimCandidateAnnualHistory_CandidateSnapshot]
 GO
 ALTER TABLE [dbo].[CanSlimCandidates]  WITH CHECK ADD  CONSTRAINT [FK_CanSlimCandidates_CanSlimScreenerSnapshot] FOREIGN KEY([CanSlimScreenerSnapshotId])
-REFERENCES [dbo].[CanSlimScreenerSnapshot] ([Id])
+REFERENCES [dbo].[CanSlimScreenerSnapshots] ([Id])
 GO
 ALTER TABLE [dbo].[CanSlimCandidates] CHECK CONSTRAINT [FK_CanSlimCandidates_CanSlimScreenerSnapshot]
 GO
@@ -636,4 +594,3 @@ USE [master]
 GO
 ALTER DATABASE [TradingBE] SET  READ_WRITE 
 GO
-
