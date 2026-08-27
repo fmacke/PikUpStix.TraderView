@@ -102,7 +102,6 @@ namespace PikUpStix.TraderView.Services.MarketData
                 throw;
             }
         }
-
         async Task IMarketDataService.FetchAndSaveChartData(List<HistoricalTrade> trades)
         {
             foreach (var trade in trades)
@@ -131,7 +130,6 @@ namespace PikUpStix.TraderView.Services.MarketData
                 }, $"Symbol: {trade.Symbol}, InstrumentId: {trade.InstrumentId}");
             }
         }
-
         async Task IMarketDataService.FetchAndSaveChartData(List<string> symbols, int lookBackDays)
         {
             foreach (var symbol in symbols)
@@ -165,7 +163,6 @@ namespace PikUpStix.TraderView.Services.MarketData
                 }, $"Symbol: {symbol}");
             }
         }
-
         async Task IMarketDataService.FetchLatestPrices(List<Position> positions)
         {
             foreach (var position in positions)
@@ -188,7 +185,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 }, $"InstrumentId: {position.Id}, Symbol: {position.Instrument.DataName}");
             }
         }
-        public async Task<IReadOnlyList<FmpQuarterlyIncomeStatementDto>> GetQuarterlyIncomeStatementsAsync(string symbol,int limit = 8)
+        async Task<IReadOnlyList<FmpQuarterlyIncomeStatementDto>> IMarketDataService.GetQuarterlyIncomeStatementsAsync(string symbol,int limit = 8)
         {
             try
             {
@@ -203,13 +200,13 @@ namespace PikUpStix.TraderView.Services.MarketData
                 return Array.Empty<FmpQuarterlyIncomeStatementDto>();
             }
         }
-        public async Task<CanSlimCurrentQuarterMetric?> EvaluateCurrentQuarterEpsAsync(
+        async Task<CanSlimCurrentQuarterMetric?> IMarketDataService.EvaluateCurrentQuarterEpsAsync(
             string symbol,
             decimal minEpsGrowth = 25m,
             decimal minRevenueGrowth = 20m)
         {
             // Fetch at least 8 quarters to evaluate YoY growth across consecutive recent quarters
-            var statements = await GetQuarterlyIncomeStatementsAsync(symbol, 8);
+            var statements = await ((IMarketDataService)this).GetQuarterlyIncomeStatementsAsync(symbol, 8);
 
             if (statements == null || statements.Count < 5)
             {
@@ -247,7 +244,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 PassesCriteria = epsGrowthYoY >= minEpsGrowth && revGrowthYoY >= minRevenueGrowth
             };
         }
-        public async Task<CanSlimAnnualMetric?> EvaluateAnnualEpsAsync(string symbol, decimal minCagr = 25m, decimal minRoe = 17m)
+        async Task<CanSlimAnnualMetric?> IMarketDataService.EvaluateAnnualEpsAsync(string symbol, decimal minCagr = 25m, decimal minRoe = 17m)
         {
             if (string.IsNullOrWhiteSpace(symbol))
             {
@@ -257,8 +254,8 @@ namespace PikUpStix.TraderView.Services.MarketData
             var cleanSymbol = symbol.Trim().ToUpperInvariant();
 
             // 1. Concurrently fetch 5 years of annual income statements and TTM key metrics
-            var annualsTask = GetAnnualIncomeStatementsAsync(cleanSymbol, limit: 5);
-            var metricsTask = GetKeyMetricsTtmAsync(cleanSymbol);
+            var annualsTask = ((IMarketDataService)this).GetAnnualIncomeStatementsAsync(cleanSymbol, limit: 5);
+            var metricsTask = ((IMarketDataService)this).GetKeyMetricsTtmAsync(cleanSymbol);
 
             await Task.WhenAll(annualsTask, metricsTask);
 
@@ -373,7 +370,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 PassesCriteria = passesCriteria
             };
         }
-        public async Task<IReadOnlyList<FmpKeyMetricsDto>> GetKeyMetricsTtmAsync(string symbol)
+        async Task<IReadOnlyList<FmpKeyMetricsDto>> IMarketDataService.GetKeyMetricsTtmAsync(string symbol)
         {
             if (string.IsNullOrWhiteSpace(symbol))
             {
@@ -408,7 +405,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 return Array.Empty<FmpKeyMetricsDto>();
             }
         }
-        public async Task<IReadOnlyList<FmpAnnualIncomeStatementDto>> GetAnnualIncomeStatementsAsync(string symbol, int limit = 5)
+        async Task<IReadOnlyList<FmpAnnualIncomeStatementDto>> IMarketDataService.GetAnnualIncomeStatementsAsync(string symbol, int limit = 5)
         {
             if (string.IsNullOrWhiteSpace(symbol))
             {
@@ -447,7 +444,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 return Array.Empty<FmpAnnualIncomeStatementDto>();
             }
         }
-        public async Task<IReadOnlyList<CanSlimCandidate>> RunScreenerAsync(CanSlimScreenerCriteria criteria)
+        async Task<IReadOnlyList<CanSlimCandidate>> IMarketDataService.RunScreenerAsync(CanSlimScreenerCriteria criteria)
         {
             var latestScreener = await _canSlimScreenerService.GetLatestScreenerSnapShot();
             if (latestScreener == null)
@@ -523,7 +520,6 @@ namespace PikUpStix.TraderView.Services.MarketData
                 .OrderByDescending(x => x.CurrentQuarter.EpsGrowthYoYPercent)
                 .ToList();
         }
-
         private bool StockPassesEvaluation(CanSlimEvaluationResult caResult, CanSlimScreenerCriteria criteria)
         {
             StringBuilder sb = new StringBuilder();
@@ -561,7 +557,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                         caResult.Annual.EpsCagr3YearPercent >= criteria.MinAnnualEpsCagrPercent &&
                         caResult.Annual.ReturnOnEquityPercent >= criteria.MinReturnOnEquityPercent;
         }
-        public async Task<CanSlimEvaluationResult> EvaluateCanSlimCAAsync(string symbol)
+        async Task<CanSlimEvaluationResult> EvaluateCanSlimCAAsync(string symbol)
         {
             if (string.IsNullOrWhiteSpace(symbol))
             {
@@ -571,8 +567,8 @@ namespace PikUpStix.TraderView.Services.MarketData
             var cleanSymbol = symbol.Trim().ToUpperInvariant();
 
             // 1. Run 'C' (Quarterly) and 'A' (Annual) evaluations concurrently to minimize API latency
-            var currentQuarterTask = EvaluateCurrentQuarterEpsAsync(cleanSymbol);
-            var annualTask = EvaluateAnnualEpsAsync(cleanSymbol);
+            var currentQuarterTask = ((IMarketDataService)this).EvaluateCurrentQuarterEpsAsync(cleanSymbol);
+            var annualTask = ((IMarketDataService)this).EvaluateAnnualEpsAsync(cleanSymbol);
 
             await Task.WhenAll(currentQuarterTask, annualTask);
 
