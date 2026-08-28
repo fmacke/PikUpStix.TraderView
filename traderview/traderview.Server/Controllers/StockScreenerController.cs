@@ -4,6 +4,7 @@ using PikUpStix.TraderView.Services;
 using traderview.Server.DTOs;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Models.FMP;
+using TraderView.Domain.Entities.FMP;
 
 namespace traderview.Server.Controllers
 {

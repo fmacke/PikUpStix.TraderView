@@ -1,6 +1,6 @@
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
-using TraderView.Application.Models.FMP;
+using TraderView.Domain.Entities.FMP;
 
 namespace PikUpStix.TraderView.Services
 {
@@ -20,7 +20,7 @@ namespace PikUpStix.TraderView.Services
             var snapshotId = await Task.Run(() => _canSlimCandidateRepository.InsertScreenerSnapShot());
             foreach (var candidate in candidates)
             {
-                candidate.CanSlimScreenerSnapShotId = snapshotId;
+                candidate.CanSlimScreenerSnapshotId = snapshotId;
                 await Task.Run(() => _canSlimCandidateRepository.Insert(candidate));
             }
             return snapshotId;
@@ -28,6 +28,21 @@ namespace PikUpStix.TraderView.Services
         async Task<CanSlimScreenerSnapshot> ICanSlimScreenerService.GetLatestScreenerSnapShot()
         {
             return await Task.Run(() => _canSlimCandidateRepository.GetLatestScreenerSnapShot());
+        }
+
+        public Task<List<CanSlimCandidate>> GetAllBySnapshotIdAsync(int snapshotId)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<int> CreateCanSlimScreenerSnapshot(List<CanSlimCandidate> candidates)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<CanSlimScreenerSnapshot> GetLatestScreenerSnapShot()
+        {
+            throw new NotImplementedException();
         }
     }
 }

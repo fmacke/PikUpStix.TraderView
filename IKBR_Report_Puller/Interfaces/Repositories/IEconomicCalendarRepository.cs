@@ -11,12 +11,12 @@ namespace TraderView.Application.Interfaces.Repositories
         /// Inserts or updates economic calendar events in the database
         /// </summary>
         /// <param name="events">List of economic calendar events to upsert</param>
-        void UpsertEconomicCalendarEvents(List<EconomicCalendarEvent> events);
+        void UpsertEconomicCalendarEvents(List<EconomicCalendar> events);
 
         /// <summary>
         /// Retrieves all economic calendar events from the database
         /// </summary>
         /// <returns>List of all economic calendar events</returns>
-        List<EconomicCalendarEvent> GetAllEvents();
+        List<EconomicCalendar> GetAllEvents();
     }
 }

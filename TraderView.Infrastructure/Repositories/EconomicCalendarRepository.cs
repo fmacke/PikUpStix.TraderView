@@ -16,7 +16,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Inserts or updates economic calendar events using MERGE statement
         /// </summary>
-        public void UpsertEconomicCalendarEvents(List<EconomicCalendarEvent> events)
+        public void UpsertEconomicCalendarEvents(List<EconomicCalendar> events)
         {
             if (events == null || events.Count == 0)
             {
@@ -87,11 +87,11 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Retrieves all economic calendar events from the database
         /// </summary>
-        public List<EconomicCalendarEvent> GetAllEvents()
+        public List<EconomicCalendar> GetAllEvents()
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var events = new List<EconomicCalendarEvent>();
+                var events = new List<EconomicCalendar>();
 
                 using (var cmd = new SqlCommand(@"
                     SELECT Date, Country, Event, Currency, Previous, Estimate, Actual, Change, Impact, ChangePercentage, Unit
@@ -102,7 +102,7 @@ namespace TraderView.Infrastructure.Repositories
                     {
                         while (reader.Read())
                         {
-                            events.Add(new EconomicCalendarEvent
+                            events.Add(new EconomicCalendar
                             {
                                 Date = reader.GetDateTime(0),
                                 Country = reader.IsDBNull(1) ? null : reader.GetString(1),

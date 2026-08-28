@@ -6,18 +6,35 @@ namespace TraderView.Domain.Entities
     public class Instrument
     {
         public int Id { get; set; }
-        public string InstrumentName { get; set; }
-        public string Provider { get; set; }
-        public string DataName { get; set; }
-        public string DataSource { get; set; }
-        public string Format { get; set; }
-        public string Frequency { get; set; }
+
+        public string InstrumentName { get; set; } = null!;
+
+        public string? Provider { get; set; }
+
+        public string? DataName { get; set; }
+
+        public string? DataSource { get; set; }
+
+        public string? Format { get; set; }
+
+        public string? Frequency { get; set; }
+
         public double? ContractUnit { get; set; }
-        public string ContractUnitType { get; set; }
-        public string PriceQuotation { get; set; }
+
+        public string? ContractUnitType { get; set; }
+
+        public string? PriceQuotation { get; set; }
+
         public double? MinimumPriceFluctuation { get; set; }
-        public string Currency { get; set; }
-        public string ListingExchange { get; set; }
-        public string ConId { get; set; }
+
+        public string? Currency { get; set; }
+
+        public string? ListingExchange { get; set; }
+
+        public string? ConId { get; set; }
+
+        public virtual ICollection<HistoricalDatum> HistoricalData { get; set; } = new List<HistoricalDatum>();
+
+        public virtual ICollection<Position> Positions { get; set; } = new List<Position>();
     }
 }

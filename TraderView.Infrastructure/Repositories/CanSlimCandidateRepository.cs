@@ -11,6 +11,7 @@ using TraderView.Application.Features.TradeExecutions.Command.Create;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Models.FMP;
 using TraderView.Domain.Entities;
+using TraderView.Domain.Entities.FMP;
 namespace TraderView.Infrastructure.Repositories
 {
     public class CanSlimCandidateRepository : BaseRepository, ICanSlimCandidateRepository

@@ -8,7 +8,7 @@ namespace TraderView.Domain.Entities
     /// <summary>
     /// Represents an economic calendar event from Financial Modeling Prep API
     /// </summary>
-    public class EconomicCalendarEvent
+    public class EconomicCalendar
     {
         [JsonPropertyName("date")]
         [JsonConverter(typeof(FmpDateTimeConverter))]
@@ -43,6 +43,9 @@ namespace TraderView.Domain.Entities
 
         [JsonPropertyName("unit")]
         public string Unit { get; set; }
+        public DateTime CreatedAt { get; set; }
+
+        public DateTime UpdatedAt { get; set; }
     }
     /// <summary>
     /// Custom JSON converter for DateTime that handles the Financial Modeling Prep API date format

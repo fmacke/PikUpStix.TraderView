@@ -4,8 +4,8 @@ using System.Text;
 using System.Text.Json;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
-using TraderView.Application.Models.FMP;
 using TraderView.Domain.Entities;
+using TraderView.Domain.Entities.FMP;
 
 namespace PikUpStix.TraderView.Services.MarketData
 {
@@ -48,7 +48,7 @@ namespace PikUpStix.TraderView.Services.MarketData
         /// <summary>
         /// Fetches economic calendar data from API, saves to file and database
         /// </summary>
-        async Task<List<EconomicCalendarEvent>> IMarketDataService.FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate)
+        async Task<List<EconomicCalendar>> IMarketDataService.FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate)
         {
             try
             {
@@ -65,7 +65,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 var content = await response.Content.ReadAsStringAsync();
 
                 // Deserialize JSON response
-                var events = JsonSerializer.Deserialize<List<EconomicCalendarEvent>>(content, new JsonSerializerOptions
+                var events = JsonSerializer.Deserialize<List<EconomicCalendar>>(content, new JsonSerializerOptions
                 {
                     PropertyNameCaseInsensitive = true
                 });
@@ -73,7 +73,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 if (events == null || events.Count == 0)
                 {
                     Console.WriteLine("No economic calendar barData found for the specified date range.");
-                    return new List<EconomicCalendarEvent>();
+                    return new List<EconomicCalendar>();
                 }
 
                 Console.WriteLine($"Retrieved {events.Count} economic calendar barData.");
@@ -499,8 +499,15 @@ namespace PikUpStix.TraderView.Services.MarketData
                             Price = stock.Price,
                             Volume = stock.Volume,
                             MarketCap = stock.MarketCap,
-                            CurrentQuarter = caResult.CurrentQuarter,
-                            Annual = caResult.Annual
+                            CurrentQuarterLatestQuarterDate = caResult.CurrentQuarter?.LatestQuarterDate,
+                            CurrentQuarterLatestQuarterEps = caResult.CurrentQuarter?.LatestQuarterEps ?? 0m,
+                            CurrentQuarterPriorYearQuarterEps = caResult.CurrentQuarter?.PriorYearQuarterEps ?? 0m,
+                            CurrentQuarterEpsGrowthYoYpercent = caResult.CurrentQuarter?.EpsGrowthYoYPercent ?? 0m,
+                            CurrentQuarterRevenueGrowthYoYpercent = caResult.CurrentQuarter?.RevenueGrowthYoYPercent ?? 0m,
+                            CurrentQuarterIsAccelerating = caResult.CurrentQuarter?.IsAccelerating ?? false,
+                            CurrentQuarterPassesCriteria = caResult.CurrentQuarter?.PassesCriteria ?? false,
+                            // TODO - THIS IS ALL MESSED UP SINCE NEW DBCONTEXT ADDED .  NEED TO FIX THIS.
+                            AnnualPassesCriteria = caResult.Annual?.PassesCriteria ?? false,
                         });
                     }
                 }
@@ -517,7 +524,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             await Task.WhenAll(tasks);
 
             return passedCandidates
-                .OrderByDescending(x => x.CurrentQuarter.EpsGrowthYoYPercent)
+                .OrderByDescending(x => x.CurrentQuarterEpsGrowthYoYpercent )
                 .ToList();
         }
         private bool StockPassesEvaluation(CanSlimEvaluationResult caResult, CanSlimScreenerCriteria criteria)
@@ -730,7 +737,7 @@ namespace PikUpStix.TraderView.Services.MarketData
         /// <summary>
         /// Saves economic calendar barData to a JSON file
         /// </summary>
-        private async Task SaveToFileAsync(List<EconomicCalendarEvent> events, string fromDate, string toDate)
+        private async Task SaveToFileAsync(List<EconomicCalendar> events, string fromDate, string toDate)
         {
             try
             {

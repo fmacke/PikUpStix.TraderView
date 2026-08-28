@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using TraderView.Application.Interfaces.Services;
-using TraderView.Application.Models.FMP;
+﻿using TraderView.Application.Interfaces.Services;
+using TraderView.Domain.Entities.FMP;
 
 namespace TraderView.Application.Services
 {

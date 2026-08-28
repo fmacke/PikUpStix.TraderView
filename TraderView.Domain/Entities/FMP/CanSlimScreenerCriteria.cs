@@ -1,4 +1,4 @@
-﻿namespace TraderView.Application.Models.FMP
+﻿namespace TraderView.Domain.Entities.FMP
 {
     public class CanSlimScreenerCriteria
     {

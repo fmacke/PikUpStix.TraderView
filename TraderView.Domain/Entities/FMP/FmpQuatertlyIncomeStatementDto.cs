@@ -1,7 +1,6 @@
-﻿using DocumentFormat.OpenXml.Office.CoverPageProps;
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
-namespace TraderView.Application.Models.FMP
+namespace TraderView.Domain.Entities.FMP
 {
     public class FmpQuarterlyIncomeStatementDto
     {
@@ -28,55 +27,6 @@ namespace TraderView.Application.Models.FMP
 
         [JsonPropertyName("fillingDate")]
         public string FillingDate { get; set; } = string.Empty;
-    }
-
-    public class CanSlimCurrentQuarterMetric
-    {
-        public string Symbol { get; set; } = string.Empty;
-        public string LatestQuarterDate { get; set; } = string.Empty;
-        public decimal LatestQuarterEps { get; set; }
-        public decimal PriorYearQuarterEps { get; set; }
-        public decimal EpsGrowthYoYPercent { get; set; }
-        public decimal RevenueGrowthYoYPercent { get; set; }
-        public bool IsAccelerating { get; set; }
-        public bool PassesCriteria { get; set; }
-    }
-    public class  CanSlimScreenerSnapshot
-    {
-        public int Id { get; set; }
-        public DateTime CreatedAt { get; set; } 
-    }
-
-    public class FmpScreenerResultDto
-    {
-        public string Symbol { get; set; } = string.Empty;
-        public string CompanyName { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public decimal Changes { get; set; }
-        public decimal Volume { get; set; }
-        public decimal MarketCap { get; set; }
-
-        [JsonPropertyName("exchangeShortName")] 
-        public string Exchange { get; set; } = string.Empty;
-        public string Sector { get; set; } = string.Empty;
-        public string Industry { get; set; } = string.Empty;
-    }
-
-    public class CanSlimCandidate
-    {
-        public int Id { get; set; }
-        public int CanSlimScreenerSnapShotId { get; set; }
-        public string Symbol { get; set; } = string.Empty;
-        public string Exchange { get; set; } = string.Empty;
-        public string CompanyName { get; set; } = string.Empty;
-        public string Sector { get; set; } = string.Empty;
-        public bool PassesBoth { get; set; }
-        public string Industry { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public decimal Volume { get; set; }
-        public decimal MarketCap { get; set; }
-        public CanSlimCurrentQuarterMetric CurrentQuarter { get; set; } = new();
-        public CanSlimAnnualMetric Annual { get; set; } = new();
     }
     /// <summary>
     /// Represents the evaluation of William O'Neil's CAN SLIM 'A' (Annual Earnings) pillar,

@@ -10,9 +10,10 @@
         public decimal ClosePrice { get; set; }
         public decimal IbCommission { get; set; } = 0;
         public string IbCommissionCurrency { get; set; }
-        public decimal TotalCost => TradePrice * (decimal)Math.Sqrt((double)Quantity * (double)Quantity) - IbCommission;
+        public decimal TotalCost => Convert.ToDecimal(TradePrice) * (decimal)Math.Sqrt((double)Convert.ToDecimal(Quantity) * (double)Convert.ToDecimal(Quantity)) - IbCommission;
         public DateTime TradeOpened{ get; set; }
         public DateTime TradeClosed { get; set; }
+        public int InstrumentId { get; set; }
     }
 }
  

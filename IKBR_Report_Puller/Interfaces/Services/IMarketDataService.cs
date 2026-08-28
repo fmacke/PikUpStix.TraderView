@@ -1,5 +1,5 @@
 using TraderView.Domain.Entities;
-using TraderView.Application.Models.FMP;
+using TraderView.Domain.Entities.FMP;
 
 namespace TraderView.Application.Interfaces.Services
 {
@@ -14,7 +14,7 @@ namespace TraderView.Application.Interfaces.Services
         /// <param name="fromDate">Start date for calendar events</param>
         /// <param name="toDate">End date for calendar events</param>
         /// <returns>List of economic calendar events</returns>
-        Task<List<EconomicCalendarEvent>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate);
+        Task<List<EconomicCalendar>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate);
         Task FetchAndSaveChartData(List<HistoricalTrade> trades);
         Task FetchAndSaveChartData(List<string> symbols, int lookBackDays);
         Task FetchLatestPrices(List<Position> positions);

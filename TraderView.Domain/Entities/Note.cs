@@ -1,3 +1,4 @@
+using DocumentFormat.OpenXml.Office2010.ExcelAc;
 using System;
 
 namespace TraderView.Domain.Entities
@@ -8,12 +9,21 @@ namespace TraderView.Domain.Entities
     public class Note
     {
         public int Id { get; set; }
+
         public int PositionId { get; set; }
+
         public int? TradeExecutionId { get; set; }
-        public string Comment { get; set; } = string.Empty;
+
+        public int? TradeTypeId { get; set; }
+
+        public string Comment { get; set; } = null!;
+
         public DateTime EntryDate { get; set; }
-        public int TradeTypeId { get; set; }
-        public string Category { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
+
+        public DateTime UpdatedAt { get; set; }
+
+        public virtual Position Position { get; set; } = null!;
+
+        public virtual List? TradeType { get; set; }
     }
 }

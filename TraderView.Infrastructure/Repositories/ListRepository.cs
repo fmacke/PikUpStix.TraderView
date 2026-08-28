@@ -21,7 +21,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var listItems = new List<ListItem>();
-                var query = "SELECT Id, Category, Name FROM Lists ORDER BY Category, Name";
+                var query = "SELECT Id, Category, Name FROM ListItems ORDER BY Category, Name";
 
                 using var command = new SqlCommand(query, connection);
                 using var reader = command.ExecuteReader();
@@ -47,7 +47,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var query = "SELECT Id, Category, Name FROM Lists WHERE Id = @Id";
+                var query = "SELECT Id, Category, Name, Description, IsActive, CreatedAt, UpdatedAt FROM ListItems WHERE Id = @Id";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Id", id);
@@ -59,7 +59,11 @@ namespace TraderView.Infrastructure.Repositories
                     {
                         Id = reader.GetInt32(0),
                         Category = reader.GetString(1),
-                        Name = reader.GetString(2)
+                        Name = reader.GetString(2),
+                        Description = reader.IsDBNull(3) ? null : reader.GetString(3),
+                        IsActive = reader.GetBoolean(4),
+                        CreatedAt = reader.GetDateTime(5),
+                        UpdatedAt = reader.GetDateTime(6)
                     };
                 }
 
@@ -75,7 +79,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var listItems = new List<ListItem>();
-                var query = "SELECT Id, Name, Category FROM Lists WHERE Category = @Category and IsActive = 1 ORDER BY Name";
+                var query = "SELECT Id, Name, Category, Description, IsActive, CreatedAt, UpdatedAt FROM ListItems WHERE Category = @Category and IsActive = 1 ORDER BY Name";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Category", category);
@@ -87,7 +91,11 @@ namespace TraderView.Infrastructure.Repositories
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
                         Category = reader.GetString(reader.GetOrdinal("Category")),
-                        Name = reader.GetString(reader.GetOrdinal("Name"))
+                        Name = reader.GetString(reader.GetOrdinal("Name")),
+                        Description = reader.IsDBNull(reader.GetOrdinal("Description")) ? null : reader.GetString(reader.GetOrdinal("Description")),
+                        IsActive = reader.GetBoolean(reader.GetOrdinal("IsActive")),
+                        CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt")),
+                        UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt"))
                     });
                 }
 
@@ -103,7 +111,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var query = @"
-                    INSERT INTO Lists (Category, Name) 
+                    INSERT INTO ListItems (Category, Name) 
                     VALUES (@Category, @Name);
                     SELECT CAST(SCOPE_IDENTITY() as int);";
 
@@ -145,7 +153,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var query = "DELETE FROM Lists WHERE Id = @Id";
+                var query = "DELETE FROM ListItems WHERE Id = @Id";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Id", id);
@@ -163,7 +171,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var listNames = new List<string>();
-                var query = "SELECT DISTINCT Category FROM Lists ORDER BY Category";
+                var query = "SELECT DISTINCT Category FROM ListItems ORDER BY Category";
 
                 using var command = new SqlCommand(query, connection);
                 using var reader = command.ExecuteReader();
