@@ -30,7 +30,7 @@ namespace traderview.Server.DTOs
         public int PositionId { get; set; }
         public int InstrumentId { get; set; }
         public string? Symbol { get; set; }
-        public long? TradeID { get; set; }
+        public long? TradeId { get; set; }
         public string? DateTime { get; set; }
         public DateTime? TradeDate { get; set; }
         public decimal? Quantity { get; set; }

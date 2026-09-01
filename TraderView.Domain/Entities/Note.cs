@@ -24,6 +24,5 @@ namespace TraderView.Domain.Entities
 
         public virtual Position Position { get; set; } = null!;
 
-        public virtual List? TradeType { get; set; }
     }
 }

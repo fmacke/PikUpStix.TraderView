@@ -1,4 +1,3 @@
-using TraderView.Application.Models.FMP;
 using TraderView.Domain.Entities;
 using TraderView.Domain.Entities.FMP;
 
@@ -66,11 +65,11 @@ namespace TraderView.Infrastructure.Repositories
             return new Dictionary<string, object>
             {
                 { "@PositionId", trade.PositionId },
-                { "@InstrumentId", trade.InstrumentId },
+                { "@InstrumentId", trade.Position.InstrumentId },
                 { "@symbol", trade.Symbol },
                 { "@conID", trade.Conid },
-                { "@SecurityID", trade.UnderlyingSecurityID },
-                { "@tradeID", trade.TradeID },
+                { "@SecurityID", trade.UnderlyingSecurityId },
+                { "@tradeID", trade.TradeId },
                 { "@dateTime", trade.DateTime },
                 { "@tradeDate", trade.TradeDate },
                 { "@quantity", trade.Quantity },
@@ -81,13 +80,13 @@ namespace TraderView.Infrastructure.Repositories
                 { "@cost", trade.Cost },
                 { "@fifoPnlRealized", trade.FifoPnlRealized },
                 { "@buySell", trade.BuySell },
-                { "@transactionID", trade.TransactionID },
-                { "@ibExecID", trade.IbExecID },
-                { "@brokerageOrderID", trade.BrokerageOrderID },
+                { "@transactionID", trade.TransactionId },
+                { "@ibExecID", trade.IbExecId },
+                { "@brokerageOrderID", trade.BrokerageOrderId },
                 { "@exchOrderId", trade.ExchOrderId },
-                { "@extExecID", trade.ExtExecID },
+                { "@extExecID", trade.ExtExecId },
                 { "@orderType", trade.OrderType },
-                { "@traderID", trade.TraderID },
+                { "@traderID", trade.TraderId },
                 { "@currency", trade.Currency },
                 { "@description", trade.Description },
                 { "@taxes", trade.Taxes },
@@ -100,10 +99,10 @@ namespace TraderView.Infrastructure.Repositories
                 { "@mtmPnl", trade.MtmPnl },
                 { "@origTradePrice", trade.OrigTradePrice },
                 { "@origTradeDate", trade.OrigTradeDate },
-                { "@origTradeID", trade.OrigTradeID },
-                { "@origOrderID", trade.OrigOrderID },
-                { "@origTransactionID", trade.OrigTransactionID },
-                { "@ibOrderID", trade.IbOrderID },
+                { "@origTradeID", trade.OrigTradeId },
+                { "@origOrderID", trade.OrigOrderId },
+                { "@origTransactionID", trade.OrigTransactionId },
+                { "@ibOrderID", trade.IbOrderId },
                 { "@openDateTime", trade.OpenDateTime },
                 { "@initialInvestment", trade.InitialInvestment },
                 { "@accountId", trade.AccountId },
@@ -111,19 +110,19 @@ namespace TraderView.Infrastructure.Repositories
                 { "@model", trade.Model },
                 { "@fxRateToBase", trade.FxRateToBase },
                 { "@subCategory", trade.SubCategory },
-                { "@securityIDType", trade.SecurityIDType },
+                { "@securityIDType", trade.SecurityIdtype },
                 { "@cusip", trade.Cusip },
                 { "@isin", trade.Isin },
                 { "@figi", trade.Figi },
                 { "@listingExchange", trade.ListingExchange },
                 { "@underlyingConid", trade.UnderlyingConid },
                 { "@underlyingSymbol", trade.UnderlyingSymbol },
-                { "@underlyingSecurityID", trade.UnderlyingSecurityID },
+                { "@underlyingSecurityID", trade.UnderlyingSecurityId },
                 { "@underlyingListingExchange", trade.UnderlyingListingExchange },
                 { "@issuer", trade.Issuer },
                 { "@issuerCountryCode", trade.IssuerCountryCode },
                 { "@multiplier", trade.Multiplier },
-                { "@relatedTradeID", trade.RelatedTradeID },
+                { "@relatedTradeID", trade.RelatedTradeId },
                 { "@strike", trade.Strike },
                 { "@reportDate", trade.ReportDate },
                 { "@putCall", trade.PutCall },
@@ -132,8 +131,8 @@ namespace TraderView.Infrastructure.Repositories
                 { "@tradeMoney", trade.TradeMoney },
                 { "@openCloseIndicator", trade.OpenCloseIndicator },
                 { "@notes", trade.Notes },
-                { "@clearingFirmID", trade.ClearingFirmID },
-                { "@relatedTransactionID", trade.RelatedTransactionID },
+                { "@clearingFirmID", trade.ClearingFirmId },
+                { "@relatedTransactionID", trade.RelatedTransactionId },
                 { "@rtn", trade.Rtn },
                 { "@orderReference", trade.OrderReference },
                 { "@volatilityOrderLink", trade.VolatilityOrderLink },
@@ -144,9 +143,9 @@ namespace TraderView.Infrastructure.Repositories
                 { "@levelOfDetail", trade.LevelOfDetail },
                 { "@changeInPrice", trade.ChangeInPrice },
                 { "@changeInQuantity", trade.ChangeInQuantity },
-                { "@isAPIOrder", trade.IsAPIOrder },
+                { "@isAPIOrder", trade.IsApiorder },
                 { "@accruedInt", trade.AccruedInt },
-                { "@positionActionID", trade.PositionActionID },
+                { "@positionActionID", trade.PositionActionId },
                 { "@serialNumber", trade.SerialNumber },
                 { "@deliveryType", trade.DeliveryType },
                 { "@commodityType", trade.CommodityType },
@@ -155,7 +154,7 @@ namespace TraderView.Infrastructure.Repositories
             };
         }
 
-        internal static Dictionary<string, object> GetCanSlimAnnualHistory(AnnualEarningsPoint annualHistory)
+        internal static Dictionary<string, object> GetCanSlimAnnualHistory(CanSlimCandidateAnnualHistory annualHistory)
         {
             return new Dictionary<string, object>
             {
@@ -165,7 +164,7 @@ namespace TraderView.Infrastructure.Repositories
                 { "@Revenue", annualHistory.Revenue },
                 { "@NetIncome", annualHistory.NetIncome },
                 { "@EpsDiluted", annualHistory.EpsDiluted },
-                { "@EpsGrowthYoYPercent", annualHistory.EpsGrowthYoYPercent }
+                { "@EpsGrowthYoYPercent", annualHistory.EpsGrowthYoYpercent }
             };
         }
 
@@ -173,7 +172,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return new Dictionary<string, object>
             {
-                { "@CanSlimScreenerSnapShotId", candidate.CanSlimScreenerSnapShotId },
+                { "@CanSlimScreenerSnapshotId", candidate.CanSlimScreenerSnapshotId },
                 { "@Symbol", candidate.Symbol },
                 { "@CompanyName", candidate.CompanyName },
                 { "@Price", candidate.Price },
@@ -183,27 +182,27 @@ namespace TraderView.Infrastructure.Repositories
                 { "@Sector", candidate.Sector },
                 { "@Industry", candidate.Industry },
                 { "@PassesBoth", candidate.PassesBoth },
-                { "@EvaluationDateUtc", candidate.Annual.EvaluationDateUtc },
-                { "@CurrentQuarter_LatestQuarterDate", candidate.CurrentQuarter.LatestQuarterDate },
-                { "@CurrentQuarter_LatestQuarterEps", candidate.CurrentQuarter.LatestQuarterEps },
-                { "@CurrentQuarter_PriorYearQuarterEps", candidate.CurrentQuarter.PriorYearQuarterEps },
-                { "@CurrentQuarter_EpsGrowthYoYPercent", candidate.CurrentQuarter.EpsGrowthYoYPercent },
-                { "@CurrentQuarter_RevenueGrowthYoYPercent", candidate.CurrentQuarter.RevenueGrowthYoYPercent },
-                { "@CurrentQuarter_IsAccelerating", candidate.CurrentQuarter.IsAccelerating },
-                { "@CurrentQuarter_PassesCriteria", candidate.CurrentQuarter.PassesCriteria },
-                { "@Annual_EpsCagr3YearPercent", candidate.Annual.EpsCagr3YearPercent },
-                { "@Annual_EpsCagr5YearPercent", candidate.Annual.EpsCagr5YearPercent },
-                { "@Annual_ReturnOnEquityPercent", candidate.Annual.ReturnOnEquityPercent },
-                { "@Annual_HasConsecutiveAnnualGrowth", candidate.Annual.HasConsecutiveAnnualGrowth },
-                { "@Annual_LatestFiscalYearEps", candidate.Annual.LatestFiscalYearEps },
-                { "@Annual_LatestFiscalYear", candidate.Annual.LatestFiscalYear },
-                { "@Annual_PriorYear1Eps", candidate.Annual.PriorYear1Eps },
-                { "@Annual_PriorYear2Eps", candidate.Annual.PriorYear2Eps },
-                { "@Annual_PriorYear3Eps", candidate.Annual.PriorYear3Eps },
-                { "@Annual_OperatingMarginPercent", candidate.Annual.OperatingMarginPercent },
-                { "@Annual_ReturnOnAssetsPercent", candidate.Annual.ReturnOnAssetsPercent },
-                { "@Annual_PassesCriteria", candidate.Annual.PassesCriteria },
-                { "@Annual_FundamentalGrade", candidate.Annual.FundamentalGrade },
+                { "@EvaluationDateUtc", candidate.EvaluationDateUtc },
+                { "@CurrentQuarter_LatestQuarterDate", candidate.CurrentQuarterLatestQuarterDate },
+                { "@CurrentQuarter_LatestQuarterEps", candidate.CurrentQuarterLatestQuarterEps },
+                { "@CurrentQuarter_PriorYearQuarterEps", candidate.CurrentQuarterPriorYearQuarterEps },
+                { "@CurrentQuarter_EpsGrowthYoYPercent", candidate.CurrentQuarterEpsGrowthYoYpercent },
+                { "@CurrentQuarter_RevenueGrowthYoYPercent", candidate.CurrentQuarterRevenueGrowthYoYpercent },
+                { "@CurrentQuarter_IsAccelerating", candidate.CurrentQuarterIsAccelerating },
+                { "@CurrentQuarter_PassesCriteria", candidate.CurrentQuarterPassesCriteria },
+                { "@Annual_EpsCagr3YearPercent", candidate.AnnualEpsCagr3YearPercent },
+                { "@Annual_EpsCagr5YearPercent", candidate.AnnualEpsCagr5YearPercent },
+                { "@Annual_ReturnOnEquityPercent", candidate.AnnualReturnOnEquityPercent },
+                { "@Annual_HasConsecutiveAnnualGrowth", candidate.AnnualHasConsecutiveAnnualGrowth },
+                { "@Annual_LatestFiscalYearEps", candidate.AnnualLatestFiscalYearEps },
+                { "@Annual_LatestFiscalYear", candidate.AnnualLatestFiscalYear },
+                { "@Annual_PriorYear1Eps", candidate.AnnualPriorYear1Eps },
+                { "@Annual_PriorYear2Eps", candidate.AnnualPriorYear2Eps },
+                { "@Annual_PriorYear3Eps", candidate.AnnualPriorYear3Eps },
+                { "@Annual_OperatingMarginPercent", candidate.AnnualOperatingMarginPercent },
+                { "@Annual_ReturnOnAssetsPercent", candidate.AnnualReturnOnAssetsPercent },
+                { "@Annual_PassesCriteria", candidate.AnnualPassesCriteria },
+                { "@Annual_FundamentalGrade", candidate.AnnualFundamentalGrade },
                 { "@CreatedAtUtc", DateTime.Now }
             };
         }

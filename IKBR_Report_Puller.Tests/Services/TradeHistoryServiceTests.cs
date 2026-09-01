@@ -25,7 +25,7 @@ namespace IKBR_Report_Puller.Tests.Services
                     Symbol = "AAPL",
                     Quantity = 100,
                     TradePrice = 150.00m,
-                    IbOrderID = 1,
+                    IbOrderId = 1,
                     TradeDate = DateTime.Now
                 }
             };
@@ -62,7 +62,7 @@ namespace IKBR_Report_Puller.Tests.Services
                     Symbol = "AAPL",
                     Quantity = 50,
                     TradePrice = 155.00m,
-                    IbOrderID = 2,
+                    IbOrderId = 2,
                     TradeDate = DateTime.Now.AddDays(1)
                 }
             };
@@ -86,7 +86,7 @@ namespace IKBR_Report_Puller.Tests.Services
                     Symbol = "AAPL",
                     Quantity = 100,
                     TradePrice = 150.00m,
-                    IbOrderID = 1,
+                    IbOrderId = 1,
                     TradeDate = DateTime.Now
                 },
                 new TradeExecution       
@@ -94,7 +94,7 @@ namespace IKBR_Report_Puller.Tests.Services
                     Symbol = "MSFT",
                     Quantity = 50,
                     TradePrice = 200.00m,
-                    IbOrderID = 2,
+                    IbOrderId = 2,
                     TradeDate = DateTime.Now
                 }
             };

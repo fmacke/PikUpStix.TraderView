@@ -14,12 +14,12 @@ namespace TraderView.Application.Models
         public string Symbol { get; set; } = string.Empty;
         public DateTime? DateOpened { get; set; }
         public int? DaysOpened { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal CostPrice { get; set; }
-        public decimal AveragePrice { get; set; }
-        public decimal Value { get; set; }
-        public decimal UnrealizedPnL { get; set; }
-        public decimal PercentChange { get; set; }
-        public decimal CurrentMargin { get; set; }
+        public decimal? Quantity { get; set; }
+        public decimal? CostPrice { get; set; }
+        public decimal? AveragePrice { get; set; }
+        public decimal? Value { get; set; }
+        public decimal? UnrealizedPnL { get; set; }
+        public decimal? PercentChange { get; set; }
+        public decimal? CurrentMargin { get; set; }
     }
 }

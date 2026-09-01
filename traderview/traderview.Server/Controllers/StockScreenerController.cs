@@ -1,9 +1,5 @@
-﻿using DocumentFormat.OpenXml.Drawing.Charts;
-using Microsoft.AspNetCore.Mvc;
-using PikUpStix.TraderView.Services;
-using traderview.Server.DTOs;
+﻿using Microsoft.AspNetCore.Mvc;
 using TraderView.Application.Interfaces.Services;
-using TraderView.Application.Models.FMP;
 using TraderView.Domain.Entities.FMP;
 
 namespace traderview.Server.Controllers
@@ -136,7 +132,7 @@ namespace traderview.Server.Controllers
                 new CanSlimCandidate
                 {
                     Id = 1,
-                    CanSlimScreenerSnapShotId = 101,
+                    CanSlimScreenerSnapshotId = 101,
                     Symbol = "NVDA",
                     Exchange = "NASDAQ",
                     CompanyName = "NVIDIA Corporation",
@@ -146,54 +142,46 @@ namespace traderview.Server.Controllers
                     Price = 125.50m,
                     Volume = 48500000m,
                     MarketCap = 3080000000000m,
-                    CurrentQuarter = new CanSlimCurrentQuarterMetric
+                    CurrentQuarterLatestQuarterDate = "Q2-2026",
+                    CurrentQuarterEpsGrowthYoYpercent = 88.5m,
+                    CurrentQuarterRevenueGrowthYoYpercent = 112.0m,
+                    CurrentQuarterIsAccelerating = true,
+                    CurrentQuarterPassesCriteria = true,
+                    EvaluationDateUtc = DateTime.UtcNow,
+                    AnnualEpsCagr3YearPercent = 74.2m,
+                    AnnualEpsCagr5YearPercent = 58.4m,
+                    AnnualReturnOnEquityPercent = 62.3m,
+                    AnnualHasConsecutiveAnnualGrowth = true,
+                    AnnualLatestFiscalYear = "2025",
+                    AnnualLatestFiscalYearEps = 2.85m,
+                    AnnualPriorYear1Eps = 1.19m,
+                    AnnualPriorYear2Eps = 0.34m,
+                    AnnualPriorYear3Eps = 0.26m,
+                    AnnualOperatingMarginPercent = 61.5m,
+                    AnnualReturnOnAssetsPercent = 38.2m,
+                    AnnualPassesCriteria = true,
+                    AnnualFundamentalGrade = "A+",
+                    CanSlimCandidateAnnualHistories = new List<CanSlimCandidateAnnualHistory>
                     {
-                        Symbol = "NVDA",
-                        LatestQuarterDate = "Q2-2026",
-                        EpsGrowthYoYPercent = 88.5m,
-                        RevenueGrowthYoYPercent = 112.0m,
-                        IsAccelerating = true,
-                        PassesCriteria = true
-                    },
-                    Annual = new CanSlimAnnualMetric
-                    {
-                        Symbol = "NVDA",
-                        EvaluationDateUtc = DateTime.UtcNow,
-                        EpsCagr3YearPercent = 74.2m,
-                        EpsCagr5YearPercent = 58.4m,
-                        ReturnOnEquityPercent = 62.3m,
-                        HasConsecutiveAnnualGrowth = true,
-                        LatestFiscalYear = "2025",
-                        LatestFiscalYearEps = 2.85m,
-                        PriorYear1Eps = 1.19m,
-                        PriorYear2Eps = 0.34m,
-                        PriorYear3Eps = 0.26m,
-                        OperatingMarginPercent = 61.5m,
-                        ReturnOnAssetsPercent = 38.2m,
-                        PassesCriteria = true,
-                        FundamentalGrade = "A+",
-                        AnnualHistory = new List<AnnualEarningsPoint>
+                        new CanSlimCandidateAnnualHistory
                         {
-                            new AnnualEarningsPoint
-                            {
-                                CandidateId = 1,
-                                CalendarYear = "2025",
-                                FiscalDate = "2025-01-26",
-                                Revenue = 60922000000m,
-                                NetIncome = 29760000000m,
-                                EpsDiluted = 2.85m,
-                                EpsGrowthYoYPercent = 139.5m
-                            },
-                            new AnnualEarningsPoint
-                            {
-                                CandidateId = 1,
-                                CalendarYear = "2024",
-                                FiscalDate = "2024-01-28",
-                                Revenue = 26974000000m,
-                                NetIncome = 4368000000m,
-                                EpsDiluted = 1.19m,
-                                EpsGrowthYoYPercent = 250.0m
-                            }
+                            CandidateId = 1,
+                            CalendarYear = "2025",
+                            FiscalDate = "2025-01-26",
+                            Revenue = 60922000000m,
+                            NetIncome = 29760000000m,
+                            EpsDiluted = 2.85m,
+                            EpsGrowthYoYpercent = 139.5m
+                        },
+                        new CanSlimCandidateAnnualHistory
+                        {
+                            CandidateId = 1,
+                            CalendarYear = "2024",
+                            FiscalDate = "2024-01-28",
+                            Revenue = 26974000000m,
+                            NetIncome = 4368000000m,
+                            EpsDiluted = 1.19m,
+                            EpsGrowthYoYpercent = 250.0m
                         }
                     }
                 },
@@ -202,7 +190,7 @@ namespace traderview.Server.Controllers
                 new CanSlimCandidate
                 {
                     Id = 2,
-                    CanSlimScreenerSnapShotId = 101,
+                    CanSlimScreenerSnapshotId = 101,
                     Symbol = "PLTR",
                     Exchange = "NYSE",
                     CompanyName = "Palantir Technologies Inc.",
@@ -212,54 +200,45 @@ namespace traderview.Server.Controllers
                     Price = 34.20m,
                     Volume = 31200000m,
                     MarketCap = 76000000000m,
-                    CurrentQuarter = new CanSlimCurrentQuarterMetric
+                    CurrentQuarterLatestQuarterDate = "Q2-2026",
+                    CurrentQuarterEpsGrowthYoYpercent = 60.0m,
+                    CurrentQuarterRevenueGrowthYoYpercent = 27.2m,
+                    CurrentQuarterIsAccelerating = true,
+                    CurrentQuarterPassesCriteria = true,
+                    EvaluationDateUtc = DateTime.UtcNow,
+                    AnnualEpsCagr3YearPercent = 48.6m,
+                    AnnualEpsCagr5YearPercent = null,
+                    AnnualHasConsecutiveAnnualGrowth = true,
+                    AnnualLatestFiscalYear = "2025",
+                    AnnualLatestFiscalYearEps = 0.38m,
+                    AnnualPriorYear1Eps = 0.25m,
+                    AnnualPriorYear2Eps = 0.16m,
+                    AnnualPriorYear3Eps = -0.05m,
+                    AnnualOperatingMarginPercent = 24.1m,
+                    AnnualReturnOnAssetsPercent = 14.8m,
+                    AnnualPassesCriteria = true,
+                    AnnualFundamentalGrade = "A",
+                    CanSlimCandidateAnnualHistories = new List<CanSlimCandidateAnnualHistory>
                     {
-                        Symbol = "PLTR",
-                        LatestQuarterDate = "Q2-2026",
-                        EpsGrowthYoYPercent = 60.0m,
-                        RevenueGrowthYoYPercent = 27.2m,
-                        IsAccelerating = true,
-                        PassesCriteria = true
-                    },
-                    Annual = new CanSlimAnnualMetric
-                    {
-                        Symbol = "PLTR",
-                        EvaluationDateUtc = DateTime.UtcNow,
-                        EpsCagr3YearPercent = 48.6m,
-                        EpsCagr5YearPercent = null,
-                        ReturnOnEquityPercent = 19.4m,
-                        HasConsecutiveAnnualGrowth = true,
-                        LatestFiscalYear = "2025",
-                        LatestFiscalYearEps = 0.38m,
-                        PriorYear1Eps = 0.25m,
-                        PriorYear2Eps = 0.16m,
-                        PriorYear3Eps = -0.05m,
-                        OperatingMarginPercent = 24.1m,
-                        ReturnOnAssetsPercent = 14.8m,
-                        PassesCriteria = true,
-                        FundamentalGrade = "A",
-                        AnnualHistory = new List<AnnualEarningsPoint>
+                        new CanSlimCandidateAnnualHistory
                         {
-                            new AnnualEarningsPoint
-                            {
-                                CandidateId = 2,
-                                CalendarYear = "2025",
-                                FiscalDate = "2025-12-31",
-                                Revenue = 2860000000m,
-                                NetIncome = 850000000m,
-                                EpsDiluted = 0.38m,
-                                EpsGrowthYoYPercent = 52.0m
-                            },
-                            new AnnualEarningsPoint
-                            {
-                                CandidateId = 2,
-                                CalendarYear = "2024",
-                                FiscalDate = "2024-12-31",
-                                Revenue = 2225000000m,
-                                NetIncome = 512000000m,
-                                EpsDiluted = 0.25m,
-                                EpsGrowthYoYPercent = 56.3m
-                            }
+                        CandidateId = 2,
+                        CalendarYear = "2025",
+                            FiscalDate = "2025-12-31",
+                            Revenue = 2860000000m,
+                            NetIncome = 850000000m,
+                            EpsDiluted = 0.38m,
+                            EpsGrowthYoYpercent = 52.0m
+                        },
+                        new CanSlimCandidateAnnualHistory
+                        {
+                            CandidateId = 2,
+                            CalendarYear = "2024",
+                            FiscalDate = "2024-12-31",
+                            Revenue = 2225000000m,
+                            NetIncome = 512000000m,
+                            EpsDiluted = 0.25m,
+                            EpsGrowthYoYpercent = 56.3m
                         }
                     }
                 },
@@ -268,7 +247,7 @@ namespace traderview.Server.Controllers
                 new CanSlimCandidate
                 {
                     Id = 3,
-                    CanSlimScreenerSnapShotId = 101,
+                    CanSlimScreenerSnapshotId = 101,
                     Symbol = "CELH",
                     Exchange = "NASDAQ",
                     CompanyName = "Celsius Holdings, Inc.",
@@ -278,54 +257,45 @@ namespace traderview.Server.Controllers
                     Price = 58.75m,
                     Volume = 8400000m,
                     MarketCap = 13800000000m,
-                    CurrentQuarter = new CanSlimCurrentQuarterMetric
+                    CurrentQuarterLatestQuarterDate = "Q2-2026",
+                    CurrentQuarterEpsGrowthYoYpercent = 38.2m,
+                    CurrentQuarterRevenueGrowthYoYpercent = 35.1m,
+                    CurrentQuarterIsAccelerating = false,
+                    CurrentQuarterPassesCriteria = true,
+                    AnnualEpsCagr3YearPercent = 52.1m,
+                    AnnualEpsCagr5YearPercent = 41.8m,
+                    AnnualReturnOnEquityPercent = 29.7m,
+                    AnnualHasConsecutiveAnnualGrowth = true,
+                    AnnualLatestFiscalYear = "2025",
+                    AnnualLatestFiscalYearEps = 1.12m,
+                    AnnualPriorYear1Eps = 0.77m,
+                    AnnualPriorYear2Eps = 0.45m,
+                    AnnualPriorYear3Eps = 0.18m,
+                    AnnualOperatingMarginPercent = 21.3m,
+                    AnnualReturnOnAssetsPercent = 18.6m,
+                    AnnualPassesCriteria = true,
+                    AnnualFundamentalGrade = "A",
+                    CanSlimCandidateAnnualHistories = new List<CanSlimCandidateAnnualHistory>
                     {
-                        Symbol = "CELH",
-                        LatestQuarterDate = "Q2-2026",
-                        EpsGrowthYoYPercent = 38.2m,
-                        RevenueGrowthYoYPercent = 35.1m,
-                        IsAccelerating = false,
-                        PassesCriteria = true
-                    },
-                    Annual = new CanSlimAnnualMetric
-                    {
-                        Symbol = "CELH",
-                        EvaluationDateUtc = DateTime.UtcNow,
-                        EpsCagr3YearPercent = 52.1m,
-                        EpsCagr5YearPercent = 41.8m,
-                        ReturnOnEquityPercent = 29.7m,
-                        HasConsecutiveAnnualGrowth = true,
-                        LatestFiscalYear = "2025",
-                        LatestFiscalYearEps = 1.12m,
-                        PriorYear1Eps = 0.77m,
-                        PriorYear2Eps = 0.45m,
-                        PriorYear3Eps = 0.18m,
-                        OperatingMarginPercent = 21.3m,
-                        ReturnOnAssetsPercent = 18.6m,
-                        PassesCriteria = true,
-                        FundamentalGrade = "A",
-                        AnnualHistory = new List<AnnualEarningsPoint>
+                        new CanSlimCandidateAnnualHistory
                         {
-                            new AnnualEarningsPoint
-                            {
-                                CandidateId = 3,
-                                CalendarYear = "2025",
-                                FiscalDate = "2025-12-31",
-                                Revenue = 1540000000m,
-                                NetIncome = 265000000m,
-                                EpsDiluted = 1.12m,
-                                EpsGrowthYoYPercent = 45.5m
-                            },
-                            new AnnualEarningsPoint
-                            {
-                                CandidateId = 3,
-                                CalendarYear = "2024",
-                                FiscalDate = "2024-12-31",
-                                Revenue = 1318000000m,
-                                NetIncome = 182000000m,
-                                EpsDiluted = 0.77m,
-                                EpsGrowthYoYPercent = 71.1m
-                            }
+                            CandidateId = 3,
+                            CalendarYear = "2025",
+                            FiscalDate = "2025-12-31",
+                            Revenue = 1540000000m,
+                            NetIncome = 265000000m,
+                            EpsDiluted = 1.12m,
+                            EpsGrowthYoYpercent = 45.5m
+                        },
+                        new CanSlimCandidateAnnualHistory
+                        {
+                            CandidateId = 3,
+                            CalendarYear = "2024",
+                            FiscalDate = "2024-12-31",
+                            Revenue = 1318000000m,
+                            NetIncome = 182000000m,
+                            EpsDiluted = 0.77m,
+                            EpsGrowthYoYpercent = 71.1m
                         }
                     }
                 },
@@ -334,7 +304,7 @@ namespace traderview.Server.Controllers
                 new CanSlimCandidate
                 {
                     Id = 4,
-                    CanSlimScreenerSnapShotId = 101,
+                    CanSlimScreenerSnapshotId = 101,
                     Symbol = "ANET",
                     Exchange = "NYSE",
                     CompanyName = "Arista Networks, Inc.",
@@ -344,54 +314,46 @@ namespace traderview.Server.Controllers
                     Price = 312.40m,
                     Volume = 2600000m,
                     MarketCap = 98000000000m,
-                    CurrentQuarter = new CanSlimCurrentQuarterMetric
+                    CurrentQuarterLatestQuarterDate = "Q2-2026",
+                    CurrentQuarterEpsGrowthYoYpercent = 32.5m,
+                    CurrentQuarterRevenueGrowthYoYpercent = 28.9m,
+                    CurrentQuarterIsAccelerating = false,
+                    CurrentQuarterPassesCriteria = true,
+                    EvaluationDateUtc = DateTime.UtcNow,
+                    AnnualEpsCagr3YearPercent = 36.8m,
+                    AnnualEpsCagr5YearPercent = 30.1m,
+                    AnnualReturnOnEquityPercent = 33.2m,
+                    AnnualHasConsecutiveAnnualGrowth = true,
+                    AnnualLatestFiscalYear = "2025",
+                    AnnualLatestFiscalYearEps = 8.42m,
+                    AnnualPriorYear1Eps = 6.24m,
+                    AnnualPriorYear2Eps = 4.58m,
+                    AnnualPriorYear3Eps = 2.87m,
+                    AnnualOperatingMarginPercent = 42.1m,
+                    AnnualReturnOnAssetsPercent = 24.5m,
+                    AnnualPassesCriteria = true,
+                    AnnualFundamentalGrade = "A",
+                    CanSlimCandidateAnnualHistories = new List<CanSlimCandidateAnnualHistory>
                     {
-                        Symbol = "ANET",
-                        LatestQuarterDate = "Q2-2026",
-                        EpsGrowthYoYPercent = 32.5m,
-                        RevenueGrowthYoYPercent = 28.9m,
-                        IsAccelerating = false,
-                        PassesCriteria = true
-                    },
-                    Annual = new CanSlimAnnualMetric
-                    {
-                        Symbol = "ANET",
-                        EvaluationDateUtc = DateTime.UtcNow,
-                        EpsCagr3YearPercent = 36.8m,
-                        EpsCagr5YearPercent = 30.1m,
-                        ReturnOnEquityPercent = 33.2m,
-                        HasConsecutiveAnnualGrowth = true,
-                        LatestFiscalYear = "2025",
-                        LatestFiscalYearEps = 8.42m,
-                        PriorYear1Eps = 6.24m,
-                        PriorYear2Eps = 4.58m,
-                        PriorYear3Eps = 2.87m,
-                        OperatingMarginPercent = 42.1m,
-                        ReturnOnAssetsPercent = 24.5m,
-                        PassesCriteria = true,
-                        FundamentalGrade = "A",
-                        AnnualHistory = new List<AnnualEarningsPoint>
+                        new CanSlimCandidateAnnualHistory
                         {
-                            new AnnualEarningsPoint
-                            {
                                 CandidateId = 4,
                                 CalendarYear = "2025",
                                 FiscalDate = "2025-12-31",
                                 Revenue = 7150000000m,
                                 NetIncome = 2680000000m,
                                 EpsDiluted = 8.42m,
-                                EpsGrowthYoYPercent = 34.9m
-                            },
-                            new AnnualEarningsPoint
-                            {
-                                CandidateId = 4,
-                                CalendarYear = "2024",
-                                FiscalDate = "2024-12-31",
-                                Revenue = 5860000000m,
-                                NetIncome = 1980000000m,
-                                EpsDiluted = 6.24m,
-                                EpsGrowthYoYPercent = 36.2m
-                            }
+                                EpsGrowthYoYpercent = 34.9m
+                        },
+                        new CanSlimCandidateAnnualHistory
+                        {
+                            CandidateId = 4,
+                            CalendarYear = "2024",
+                            FiscalDate = "2024-12-31",
+                            Revenue = 5860000000m,
+                            NetIncome = 1980000000m,
+                            EpsDiluted = 6.24m,
+                            EpsGrowthYoYpercent = 36.2m
                         }
                     }
                 },
@@ -400,7 +362,7 @@ namespace traderview.Server.Controllers
                 new CanSlimCandidate
                 {
                     Id = 5,
-                    CanSlimScreenerSnapShotId = 101,
+                    CanSlimScreenerSnapshotId = 101,
                     Symbol = "XYZ",
                     Exchange = "NYSE",
                     CompanyName = "XYZ Industrial Group",
@@ -410,54 +372,46 @@ namespace traderview.Server.Controllers
                     Price = 42.10m,
                     Volume = 1200000m,
                     MarketCap = 5400000000m,
-                    CurrentQuarter = new CanSlimCurrentQuarterMetric
+                    CurrentQuarterLatestQuarterDate = "Q2-2026",
+                    CurrentQuarterEpsGrowthYoYpercent = 8.2m,
+                    CurrentQuarterRevenueGrowthYoYpercent = 4.0m,
+                    CurrentQuarterIsAccelerating = false,
+                    CurrentQuarterPassesCriteria = false,
+                    EvaluationDateUtc = DateTime.UtcNow,
+                    AnnualEpsCagr3YearPercent = 11.4m,
+                    AnnualEpsCagr5YearPercent = 9.8m,
+                    AnnualReturnOnEquityPercent = 12.1m,
+                    AnnualHasConsecutiveAnnualGrowth = false,
+                    AnnualLatestFiscalYear = "2025",
+                    AnnualLatestFiscalYearEps = 2.10m,
+                    AnnualPriorYear1Eps = 2.30m,
+                    AnnualPriorYear2Eps = 1.95m,
+                    AnnualPriorYear3Eps = 1.80m,
+                    AnnualOperatingMarginPercent = 11.2m,
+                    AnnualReturnOnAssetsPercent = 6.4m,
+                    AnnualPassesCriteria = false,
+                    AnnualFundamentalGrade = "C",
+                    CanSlimCandidateAnnualHistories = new List<CanSlimCandidateAnnualHistory>
                     {
-                        Symbol = "XYZ",
-                        LatestQuarterDate = "Q2-2026",
-                        EpsGrowthYoYPercent = 8.2m,
-                        RevenueGrowthYoYPercent = 4.0m,
-                        IsAccelerating = false,
-                        PassesCriteria = false
-                    },
-                    Annual = new CanSlimAnnualMetric
-                    {
-                        Symbol = "XYZ",
-                        EvaluationDateUtc = DateTime.UtcNow,
-                        EpsCagr3YearPercent = 11.4m,
-                        EpsCagr5YearPercent = 9.8m,
-                        ReturnOnEquityPercent = 12.1m,
-                        HasConsecutiveAnnualGrowth = false,
-                        LatestFiscalYear = "2025",
-                        LatestFiscalYearEps = 2.10m,
-                        PriorYear1Eps = 2.30m,
-                        PriorYear2Eps = 1.95m,
-                        PriorYear3Eps = 1.80m,
-                        OperatingMarginPercent = 11.2m,
-                        ReturnOnAssetsPercent = 6.4m,
-                        PassesCriteria = false,
-                        FundamentalGrade = "C",
-                        AnnualHistory = new List<AnnualEarningsPoint>
+                        new CanSlimCandidateAnnualHistory
                         {
-                            new AnnualEarningsPoint
-                            {
                                 CandidateId = 5,
                                 CalendarYear = "2025",
                                 FiscalDate = "2025-12-31",
                                 Revenue = 2100000000m,
                                 NetIncome = 240000000m,
                                 EpsDiluted = 2.10m,
-                                EpsGrowthYoYPercent = -8.7m
-                            },
-                            new AnnualEarningsPoint
-                            {
-                                CandidateId = 5,
-                                CalendarYear = "2024",
-                                FiscalDate = "2024-12-31",
-                                Revenue = 2050000000m,
-                                NetIncome = 265000000m,
-                                EpsDiluted = 2.30m,
-                                EpsGrowthYoYPercent = 17.9m
-                            }
+                                EpsGrowthYoYpercent = -8.7m
+                        },
+                        new CanSlimCandidateAnnualHistory   
+                        {
+                            CandidateId = 5,
+                            CalendarYear = "2024",
+                            FiscalDate = "2024-12-31",
+                            Revenue = 2050000000m,
+                            NetIncome = 265000000m,
+                            EpsDiluted = 2.30m,
+                            EpsGrowthYoYpercent = 17.9m
                         }
                     }
                 }

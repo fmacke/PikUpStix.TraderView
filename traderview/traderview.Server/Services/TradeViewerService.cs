@@ -43,15 +43,15 @@ namespace traderview.Server.Services
                 // Map HistoricalTrade to TradeDto
                 return await Task.FromResult(trades.Select(trade => new TradeDto
                 {
-                    PositionId = trade.PositionId,
+                    PositionId = Convert.ToInt32(trade.PositionId),
                     InstrumentId = trade.InstrumentId,
                     Symbol = trade.Symbol,
                     EntryDate = trade.TradeOpened,
                     ExitDate = trade.TradeClosed,
-                    EntryPrice = trade.TradePrice,
-                    ExitPrice = trade.ClosePrice,
-                    Quantity = Math.Abs(trade.Quantity),
-                    Pnl = trade.RealizedPnL,
+                    EntryPrice = Convert.ToDecimal(trade.TradePrice),
+                    ExitPrice = Convert.ToDecimal(trade.ClosePrice),
+                    Quantity = Math.Abs(Convert.ToDecimal(trade.Quantity)),
+                    Pnl = Convert.ToDecimal(trade.RealizedPnL),
                     BuySell = trade.Quantity > 0 ? "BUY" : "SELL"
                 }).ToList());
             }
@@ -91,9 +91,9 @@ namespace traderview.Server.Services
                 {
                     Id = e.Id,
                     PositionId = positionId,
-                    InstrumentId = e.InstrumentId,
+                    InstrumentId = e.Position.InstrumentId,
                     Symbol = e.Symbol,
-                    TradeID = e.TradeID,
+                    TradeId = e.TradeId,
                     DateTime = e.DateTime.ToString("yyyyMMdd"),
                     TradeDate = e.TradeDate,  
                     Quantity = e.Quantity,  
@@ -228,7 +228,7 @@ namespace traderview.Server.Services
                     InstrumentId = reader.GetInt32("InstrumentId"),
                     PositionId = positionId,
                     Symbol = reader.IsDBNull("symbol") ? null : reader.GetString("symbol"),
-                    TradeID = reader.IsDBNull("tradeID") ? null : reader.GetInt64("tradeID"),
+                    TradeId = reader.IsDBNull("tradeID") ? null : reader.GetInt64("tradeID"),
                     DateTime = reader.IsDBNull("dateTime") ? null : reader.GetString("dateTime"),
                     TradeDate = reader.IsDBNull("tradeDate") ? null : reader.GetDateTime("tradeDate"),
                     Quantity = reader.IsDBNull("quantity") ? null : reader.GetDecimal("quantity"),

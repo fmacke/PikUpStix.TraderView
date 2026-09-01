@@ -243,10 +243,6 @@ namespace TraderView.Infrastructure.DbContexts
                 entity.HasOne(d => d.Position).WithMany(p => p.Notes)
                     .HasForeignKey(d => d.PositionId)
                     .HasConstraintName("FK_Notes_Positions");
-
-                entity.HasOne(d => d.TradeType).WithMany(p => p.Notes)
-                    .HasForeignKey(d => d.TradeTypeId)
-                    .HasConstraintName("FK_Notes_Lists");
             });
 
             modelBuilder.Entity<Position>(entity =>

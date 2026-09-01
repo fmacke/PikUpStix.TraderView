@@ -135,9 +135,8 @@ namespace traderview.Server.Controllers
                     TradeExecutionId = n.TradeExecutionId,
                     Comment = n.Comment,
                     EntryDate = n.EntryDate,
-                    TradeTypeId = n.TradeTypeId,
-                    Category = n.Category,
-                    Name = n.Name
+                    UpdatedAt = n.UpdatedAt,
+                    TradeTypeId = n.TradeTypeId
                 }).ToList();
 
                 return Ok(noteDtos);

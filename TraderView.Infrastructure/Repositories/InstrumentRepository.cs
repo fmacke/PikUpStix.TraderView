@@ -37,6 +37,8 @@ namespace TraderView.Infrastructure.Repositories
                     TransactionType = confirm.TransactionType,
                     Exchange = confirm.Exchange,
                     ListingExchange = confirm.ListingExchange,
+                    Position = new Position { Id = 0, InstrumentId = 0},
+                    PositionId =0
                 };
                 tradeExecutions.Add(execution);
             }
@@ -95,14 +97,14 @@ namespace TraderView.Infrastructure.Repositories
                 Console.WriteLine($"Error upserting instruments: {ex.Message}");
                 throw;
             }
-            foreach (var trade in trades.Where(x => x.InstrumentId == 0))
+            foreach (var trade in trades.Where(x => x.Position.InstrumentId == 0))
             {
                 if (!string.IsNullOrEmpty(trade.Conid))
                 {
                     int? instrumentId = GetInstrumentIdByConId(trade.Conid);
                     if (instrumentId.HasValue)
                     {
-                        trade.InstrumentId = instrumentId.Value;
+                        trade.Position.InstrumentId = instrumentId.Value;
                     }
                 }
             }

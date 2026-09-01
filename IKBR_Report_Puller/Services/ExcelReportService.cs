@@ -88,10 +88,10 @@ namespace PikUpStix.TraderView.Services
                     string accountId = position.TradeExecutions.First().AccountId;
                     string symbol = position.TradeExecutions.First().Symbol;
                     long? conid = TypeConverters.ConvertToLong(position.Instrument.ConId);
-                    decimal currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
-                    decimal costBasisPrice = CalculateAverageCost(position.TradeExecutions);
-                    decimal positionValue = position.LastReportedPrice * currentPositionQuantity;
-                    decimal unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
+                    decimal? currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
+                    decimal? costBasisPrice = CalculateAverageCost(position.TradeExecutions);
+                    decimal? positionValue = position.LastReportedPrice * currentPositionQuantity;
+                    decimal? unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
                     DateTime? dateOpened = position.OpenDate;
                     var trades = _tradeExecutionRepository.GetTradeExecutionsByConIdAndAccount(conid, accountId);
 
@@ -137,17 +137,17 @@ namespace PikUpStix.TraderView.Services
                         : null;
 
                     // Calculate Average Price
-                    decimal averagePrice = currentPositionQuantity != 0
+                    decimal? averagePrice = currentPositionQuantity != 0
                         ? positionValue / currentPositionQuantity
                         : 0;
 
                     // Calculate % Change
-                    decimal percentChange = costBasisPrice != 0
+                    decimal? percentChange = costBasisPrice != 0
                         ? (averagePrice - costBasisPrice) / costBasisPrice
                         : 0;
 
                     // Calculate Current Margin
-                    decimal currentMargin = positionValue - (currentPositionQuantity * costBasisPrice);
+                    decimal? currentMargin = positionValue - (currentPositionQuantity * costBasisPrice);
                    
                     reportDataList.Add(new OpenPositionReportData
                     {
@@ -174,13 +174,23 @@ namespace PikUpStix.TraderView.Services
             return reportDataList;
         }
 
-        private decimal CalculateAverageCost(List<TradeExecution> tradeExecutions)
+        private decimal? CalculateAverageCost(ICollection<TradeExecution> tradeExecutions)
         {
+            if (tradeExecutions == null || !tradeExecutions.Any())
+            {
+                return 0;
+            }
+
             // this is an approximation of the average cost basis for the current open position
-            decimal totalCost = 0;
-            decimal totalQuantity = tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Sum(x => x.Quantity);
+            decimal? totalCost = 0;
+            decimal? totalQuantity = tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Sum(x => x.Quantity);
             foreach (var tre in tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")))
             {
+                if(tre.TradePrice == null || tre.Quantity == null)
+                {
+                    totalCost += 0;
+                    continue;
+                }
                 totalCost += tre.TradePrice * tre.Quantity;
             }
             return totalQuantity != 0 ? totalCost / totalQuantity : 0;
@@ -280,8 +290,20 @@ namespace PikUpStix.TraderView.Services
             int currentRow = 2;
             foreach (var historicalTrade in trades.OrderByDescending(x => x.TradeClosed))
             {
-                var quant = Math.Round(historicalTrade.Quantity, 2);
-                worksheet.Cells[currentRow, 1].Value = historicalTrade.IbExecID;
+                var quant = 0m;
+                if (historicalTrade != null)
+                {
+                    if(historicalTrade.Quantity == null)
+                    {
+                        quant = 0;
+                    }
+                    else
+                    {
+                        quant = Math.Round(Convert.ToDecimal(historicalTrade.Quantity.Value), 2);
+                    }
+                }
+                
+                worksheet.Cells[currentRow, 1].Value = historicalTrade.IbExecId;
                 worksheet.Cells[currentRow, 2].Value = historicalTrade.Symbol;
                 worksheet.Cells[currentRow, 3].Value = historicalTrade.TradeOpened;
                 worksheet.Cells[currentRow, 3].Style.Numberformat.Format = "yyyy-MM-dd";
@@ -289,11 +311,11 @@ namespace PikUpStix.TraderView.Services
                 worksheet.Cells[currentRow, 4].Style.Numberformat.Format = "yyyy-MM-dd";
                 worksheet.Cells[currentRow, 5].Value = (historicalTrade.TradeClosed - historicalTrade.TradeOpened).TotalDays;
                 worksheet.Cells[currentRow, 6].Value = quant;
-                worksheet.Cells[currentRow, 7].Value = Math.Round(historicalTrade.TradePrice, 2);
-                worksheet.Cells[currentRow, 8].Value = Math.Round(historicalTrade.ClosePrice, 2);
-                worksheet.Cells[currentRow, 9].Value = Math.Round(historicalTrade.TotalCost, 2);
-                worksheet.Cells[currentRow, 10].Value = Math.Round(historicalTrade.MarketValue, 2);
-                worksheet.Cells[currentRow, 11].Value = Math.Round(historicalTrade.IbCommission, 2);
+                worksheet.Cells[currentRow, 7].Value = Math.Round(Convert.ToDecimal(historicalTrade.TradePrice), 2);
+                worksheet.Cells[currentRow, 8].Value = Math.Round(Convert.ToDecimal(historicalTrade.ClosePrice), 2);
+                worksheet.Cells[currentRow, 9].Value = Math.Round(Convert.ToDecimal(historicalTrade.TotalCost), 2);
+                worksheet.Cells[currentRow, 10].Value = Math.Round(Convert.ToDecimal(historicalTrade.MarketValue), 2);
+                worksheet.Cells[currentRow, 11].Value = Math.Round(Convert.ToDecimal(historicalTrade.IbCommission), 2);
                 worksheet.Cells[currentRow, 11].Style.Numberformat.Format = "#,##0.00";
                 worksheet.Cells[currentRow, 12].Value = historicalTrade.IbCommissionCurrency;
                 worksheet.Cells[currentRow, 13].Value = Math.Round(historicalTrade.RealizedPnL, 2);

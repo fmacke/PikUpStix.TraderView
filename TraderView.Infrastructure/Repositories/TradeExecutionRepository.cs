@@ -39,24 +39,24 @@ namespace TraderView.Infrastructure.Repositories
 
             foreach (var trade in trades)
             {
-                string ibExecID = trade.IbExecID;
+                string ibExecID = trade.IbExecId;
                 bool executionExists = false;
                 if (string.IsNullOrEmpty(ibExecID))
                 {
                     continue;
                 }
-                executionExists = DoesExecutionExist(ibExecID);
+                executionExists = TradeExists(ibExecID);
 
                 if (!executionExists)
                 {
                     try
                     {
-                        trade.InstrumentId = _instrumentRepository.GetInstrumentIdByConId(trade.Conid).Value;
-                        trade.PositionId = GetOpenPosition(trade.InstrumentId)?.Id ?? CreatePosition(trade.InstrumentId, trade.Symbol, trade.TradeDate, trade.TradePrice, "O");
+                        trade.Position.InstrumentId = Convert.ToInt32(_instrumentRepository.GetInstrumentIdByConId(trade.Conid).Value);
+                        trade.PositionId = Convert.ToInt32(GetOpenPosition(trade.Position.InstrumentId)?.Id ?? CreatePosition(trade.Position.InstrumentId, trade.Symbol, trade.TradeDate, Convert.ToDecimal(trade.TradePrice), "O"));
                         trade.Id = CreateTradeExecution(trade);
-                        var totalQuantity = GetTotalQuantityForPosition(trade.PositionId);
+                        var totalQuantity = GetTotalQuantityForPosition(Convert.ToInt32(trade.PositionId));
                         if (totalQuantity == 0)
-                            ClosePosition(trade.PositionId, trade.DateTime);
+                            ClosePosition(Convert.ToInt32(trade.PositionId), trade.DateTime);
                     }
                     catch (Exception ex)
                     {
@@ -66,7 +66,7 @@ namespace TraderView.Infrastructure.Repositories
                 else
                 {
                     var tradeExecInDb = GetTradeExecutionByExecID(ibExecID);
-                    if(!tradeExecInDb.TransactionID.HasValue)
+                    if(!tradeExecInDb.TransactionId.HasValue)
                     {
                         // Entry was made by TradeConfirmation so will be missing key details. Update the record with the new trade execution details.
                         trade.Id = tradeExecInDb.Id; // Ensure we have the correct Id for the update
@@ -77,7 +77,7 @@ namespace TraderView.Infrastructure.Repositories
             }
         }
 
-        private bool DoesExecutionExist(string ibExecID)
+        private bool TradeExists(string ibExecID)
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -127,8 +127,8 @@ namespace TraderView.Infrastructure.Repositories
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             PositionId = GetIntVal("PositionId") ?? 0,
                             Symbol = GetStringVal("symbol"),
-                            SecurityID = GetStringVal("securityID"),
-                            TradeID = GetLongVal("tradeID") ?? 0,
+                            SecurityId = GetStringVal("securityID"),
+                            TradeId = GetLongVal("tradeID") ?? 0,
                             DateTime = GetDateTimeVal("dateTime") ?? default,
                             TradeDate = GetDateTimeVal("tradeDate") ?? default,
                             Quantity = GetDecimalVal("quantity") ?? 0m,
@@ -139,13 +139,13 @@ namespace TraderView.Infrastructure.Repositories
                             Cost = GetDecimalVal("cost") ?? 0m,
                             FifoPnlRealized = GetDecimalVal("fifoPnlRealized") ?? 0m,
                             BuySell = GetStringVal("buySell"),
-                            TransactionID = GetLongVal("transactionID"),
-                            IbExecID = GetStringVal("ibExecID"),
-                            BrokerageOrderID = GetStringVal("brokerageOrderID"),
+                            TransactionId = GetLongVal("transactionID"),
+                            IbExecId = GetStringVal("ibExecID"),
+                            BrokerageOrderId = GetStringVal("brokerageOrderID"),
                             ExchOrderId = GetStringVal("exchOrderId"),
-                            ExtExecID = GetStringVal("extExecID"),
+                            ExtExecId = GetStringVal("extExecID"),
                             OrderType = GetStringVal("orderType"),
-                            TraderID = GetStringVal("traderID"),
+                            TraderId = GetStringVal("traderID"),
                             Currency = GetStringVal("currency"),
                             Description = GetStringVal("description"),
                             Conid = GetStringVal("conid"),
@@ -159,10 +159,10 @@ namespace TraderView.Infrastructure.Repositories
                             MtmPnl = GetDecimalVal("mtmPnl"),
                             OrigTradePrice = GetDecimalVal("origTradePrice"),
                             OrigTradeDate = GetStringVal("origTradeDate"),
-                            OrigTradeID = GetStringVal("origTradeID"),
-                            OrigOrderID = GetLongVal("origOrderID"),
-                            OrigTransactionID = GetLongVal("origTransactionID"),
-                            IbOrderID = GetLongVal("ibOrderID"),
+                            OrigTradeId = GetStringVal("origTradeID"),
+                            OrigOrderId = GetLongVal("origOrderID"),
+                            OrigTransactionId = GetLongVal("origTransactionID"),
+                            IbOrderId = GetLongVal("ibOrderID"),
                             OpenDateTime = GetStringVal("openDateTime"),
                             InitialInvestment = GetDecimalVal("initialInvestment"),
                             AccountId = GetStringVal("accountId"),
@@ -170,29 +170,29 @@ namespace TraderView.Infrastructure.Repositories
                             Model = GetStringVal("model"),
                             FxRateToBase = GetDecimalVal("fxRateToBase"),
                             SubCategory = GetStringVal("subCategory"),
-                            SecurityIDType = GetStringVal("securityIDType"),
+                            SecurityIdtype = GetStringVal("securityIDType"),
                             Cusip = GetStringVal("cusip"),
                             Isin = GetStringVal("isin"),
                             Figi = GetStringVal("figi"),
                             ListingExchange = GetStringVal("listingExchange"),
                             UnderlyingConid = GetStringVal("underlyingConid"),
                             UnderlyingSymbol = GetStringVal("underlyingSymbol"),
-                            UnderlyingSecurityID = GetStringVal("underlyingSecurityID"),
+                            UnderlyingSecurityId = GetStringVal("underlyingSecurityID"),
                             UnderlyingListingExchange = GetStringVal("underlyingListingExchange"),
                             Issuer = GetStringVal("issuer"),
                             IssuerCountryCode = GetStringVal("issuerCountryCode"),
                             Multiplier = GetIntVal("multiplier"),
-                            RelatedTradeID = GetStringVal("relatedTradeID"),
+                            RelatedTradeId = GetStringVal("relatedTradeID"),
                             Strike = GetDecimalVal("strike"),
-                            ReportDate = Convert.ToDateTime(GetStringVal("reportDate")),
+                            ReportDate = Convert.ToDateTime(GetStringVal("reportDate")).ToLongDateString(),
                             PutCall = GetStringVal("putCall"),
                             PrincipalAdjustFactor = GetDecimalVal("principalAdjustFactor"),
-                            SettleDateTarget = Convert.ToDateTime(GetStringVal("settleDateTarget")),
+                            SettleDateTarget = Convert.ToDateTime(GetStringVal("settleDateTarget")).ToLongDateString(),
                             TradeMoney = GetDecimalVal("tradeMoney"),
                             OpenCloseIndicator = GetStringVal("openCloseIndicator"),
                             Notes = GetStringVal("notes"),
-                            ClearingFirmID = GetStringVal("clearingFirmID"),
-                            RelatedTransactionID = GetStringVal("relatedTransactionID"),
+                            ClearingFirmId = GetStringVal("clearingFirmID"),
+                            RelatedTransactionId = GetStringVal("relatedTransactionID"),
                             Rtn = GetStringVal("rtn"),
                             OrderReference = GetStringVal("orderReference"),
                             VolatilityOrderLink = GetStringVal("volatilityOrderLink"),
@@ -203,9 +203,9 @@ namespace TraderView.Infrastructure.Repositories
                             LevelOfDetail = GetStringVal("levelOfDetail"),
                             ChangeInPrice = GetDecimalVal("changeInPrice"),
                             ChangeInQuantity = GetDecimalVal("changeInQuantity"),
-                            IsAPIOrder = GetStringVal("isAPIOrder"),
+                            IsApiorder = GetStringVal("isAPIOrder"),
                             AccruedInt = GetDecimalVal("accruedInt"),
-                            PositionActionID = GetStringVal("positionActionID"),
+                            PositionActionId = GetStringVal("positionActionID"),
                             SerialNumber = GetStringVal("serialNumber"),
                             DeliveryType = GetStringVal("deliveryType"),
                             CommodityType = GetStringVal("commodityType"),
@@ -282,7 +282,7 @@ namespace TraderView.Infrastructure.Repositories
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
                         PositionId = reader.GetInt32(reader.GetOrdinal("PositionId")),
                         Symbol = reader.GetString("symbol"),
-                        TradeID = reader.GetInt64("tradeID"),
+                        TradeId = reader.GetInt64("tradeID"),
                         DateTime = reader.GetDateTime("dateTime"),
                         TradeDate = reader.GetDateTime("tradeDate"),
                         Quantity = reader.GetDecimal("quantity"),
@@ -300,7 +300,10 @@ namespace TraderView.Infrastructure.Repositories
                 {
                     if (executionLookup.Contains(position.Id))
                     {
-                        position.TradeExecutions.AddRange(executionLookup[position.Id]);
+                        foreach (var execution in executionLookup[position.Id])
+                        {
+                            position.TradeExecutions.Add(execution);
+                        }
                     }
                 }
 
@@ -317,8 +320,8 @@ namespace TraderView.Infrastructure.Repositories
                 { "@Id", execution.Id },
                 { "@PositionId", execution.PositionId },
                 { "@Symbol", execution.Symbol ?? (object)DBNull.Value },
-                { "@SecurityID", execution.SecurityID ?? (object)DBNull.Value },
-                { "@TradeID", execution.TradeID },
+                { "@SecurityID", execution.SecurityId ?? (object)DBNull.Value },
+                { "@TradeID", execution.TradeId },
                 { "@DateTime", execution.DateTime },
                 { "@TradeDate", execution.TradeDate },
                 { "@Quantity", execution.Quantity },
@@ -329,13 +332,13 @@ namespace TraderView.Infrastructure.Repositories
                 { "@Cost", execution.Cost },
                 { "@FifoPnlRealized", execution.FifoPnlRealized },
                 { "@BuySell", execution.BuySell ?? (object)DBNull.Value },
-                { "@TransactionID", execution.TransactionID ?? (object)DBNull.Value },
-                { "@IbExecID", execution.IbExecID ?? (object)DBNull.Value },
-                { "@BrokerageOrderID", execution.BrokerageOrderID ?? (object)DBNull.Value },
+                { "@TransactionID", execution.TransactionId ?? (object)DBNull.Value },
+                { "@IbExecID", execution.IbExecId ?? (object)DBNull.Value },
+                { "@BrokerageOrderID", execution.BrokerageOrderId ?? (object)DBNull.Value },
                 { "@ExchOrderId", execution.ExchOrderId ?? (object)DBNull.Value },
-                { "@ExtExecID", execution.ExtExecID ?? (object)DBNull.Value },
+                { "@ExtExecID", execution.ExtExecId ?? (object)DBNull.Value },
                 { "@OrderType", execution.OrderType ?? (object)DBNull.Value },
-                { "@TraderID", execution.TraderID ?? (object)DBNull.Value },
+                { "@TraderID", execution.TraderId ?? (object)DBNull.Value },
                 { "@Currency", execution.Currency ?? (object)DBNull.Value },
                 { "@Description", execution.Description ?? (object)DBNull.Value },
                 { "@Conid", execution.Conid ?? (object)DBNull.Value },
@@ -349,10 +352,10 @@ namespace TraderView.Infrastructure.Repositories
                 { "@MtmPnl", execution.MtmPnl ?? (object)DBNull.Value },
                 { "@OrigTradePrice", execution.OrigTradePrice ?? (object)DBNull.Value },
                 { "@OrigTradeDate", execution.OrigTradeDate ?? (object)DBNull.Value },
-                { "@OrigTradeID", execution.OrigTradeID ?? (object)DBNull.Value },
-                { "@OrigOrderID", execution.OrigOrderID ?? (object)DBNull.Value },
-                { "@OrigTransactionID", execution.OrigTransactionID ?? (object)DBNull.Value },
-                { "@IbOrderID", execution.IbOrderID ?? (object)DBNull.Value },
+                { "@OrigTradeID", execution.OrigTradeId ?? (object)DBNull.Value },
+                { "@OrigOrderID", execution.OrigOrderId ?? (object)DBNull.Value },
+                { "@OrigTransactionID", execution.OrigTransactionId ?? (object)DBNull.Value },
+                { "@IbOrderID", execution.IbOrderId ?? (object)DBNull.Value },
                 { "@OpenDateTime", execution.OpenDateTime ?? (object)DBNull.Value },
                 { "@InitialInvestment", execution.InitialInvestment ?? (object)DBNull.Value },
                 { "@AccountId", execution.AccountId ?? (object)DBNull.Value },
@@ -360,19 +363,19 @@ namespace TraderView.Infrastructure.Repositories
                 { "@Model", execution.Model ?? (object)DBNull.Value },
                 { "@FxRateToBase", execution.FxRateToBase ?? (object)DBNull.Value },
                 { "@SubCategory", execution.SubCategory ?? (object)DBNull.Value },
-                { "@SecurityIDType", execution.SecurityIDType ?? (object)DBNull.Value },
+                { "@SecurityIDType", execution.SecurityIdtype ?? (object)DBNull.Value },
                 { "@Cusip", execution.Cusip ?? (object)DBNull.Value },
                 { "@Isin", execution.Isin ?? (object)DBNull.Value },
                 { "@Figi", execution.Figi ?? (object)DBNull.Value },
                 { "@ListingExchange", execution.ListingExchange ?? (object)DBNull.Value },
                 { "@UnderlyingConid", execution.UnderlyingConid ?? (object)DBNull.Value },
                 { "@UnderlyingSymbol", execution.UnderlyingSymbol ?? (object)DBNull.Value },
-                { "@UnderlyingSecurityID", execution.UnderlyingSecurityID ?? (object)DBNull.Value },
+                { "@UnderlyingSecurityID", execution.UnderlyingSecurityId ?? (object)DBNull.Value },
                 { "@UnderlyingListingExchange", execution.UnderlyingListingExchange ?? (object)DBNull.Value },
                 { "@Issuer", execution.Issuer ?? (object)DBNull.Value },
                 { "@IssuerCountryCode", execution.IssuerCountryCode ?? (object)DBNull.Value },
                 { "@Multiplier", execution.Multiplier ?? (object)DBNull.Value },
-                { "@RelatedTradeID", execution.RelatedTradeID ?? (object)DBNull.Value },
+                { "@RelatedTradeID", execution.RelatedTradeId ?? (object)DBNull.Value },
                 { "@Strike", execution.Strike ?? (object)DBNull.Value },
                 { "@ReportDate", execution.ReportDate },
                 { "@PutCall", execution.PutCall ?? (object)DBNull.Value },
@@ -381,8 +384,8 @@ namespace TraderView.Infrastructure.Repositories
                 { "@TradeMoney", execution.TradeMoney ?? (object)DBNull.Value },
                 { "@OpenCloseIndicator", execution.OpenCloseIndicator ?? (object)DBNull.Value },
                 { "@Notes", execution.Notes ?? (object)DBNull.Value },
-                { "@ClearingFirmID", execution.ClearingFirmID ?? (object)DBNull.Value },
-                { "@RelatedTransactionID", execution.RelatedTransactionID ?? (object)DBNull.Value },
+                { "@ClearingFirmID", execution.ClearingFirmId ?? (object)DBNull.Value },
+                { "@RelatedTransactionID", execution.RelatedTransactionId ?? (object)DBNull.Value },
                 { "@Rtn", execution.Rtn ?? (object)DBNull.Value },
                 { "@OrderReference", execution.OrderReference ?? (object)DBNull.Value },
                 { "@VolatilityOrderLink", execution.VolatilityOrderLink ?? (object)DBNull.Value },
@@ -393,9 +396,9 @@ namespace TraderView.Infrastructure.Repositories
                 { "@LevelOfDetail", execution.LevelOfDetail ?? (object)DBNull.Value },
                 { "@ChangeInPrice", execution.ChangeInPrice ?? (object)DBNull.Value },
                 { "@ChangeInQuantity", execution.ChangeInQuantity ?? (object)DBNull.Value },
-                { "@IsAPIOrder", execution.IsAPIOrder ?? (object)DBNull.Value },
+                { "@IsAPIOrder", execution.IsApiorder ?? (object)DBNull.Value },
                 { "@AccruedInt", execution.AccruedInt ?? (object)DBNull.Value },
-                { "@PositionActionID", execution.PositionActionID ?? (object)DBNull.Value },
+                { "@PositionActionID", execution.PositionActionId ?? (object)DBNull.Value },
                 { "@SerialNumber", execution.SerialNumber ?? (object)DBNull.Value },
                 { "@DeliveryType", execution.DeliveryType ?? (object)DBNull.Value },
                 { "@CommodityType", execution.CommodityType ?? (object)DBNull.Value },
@@ -550,15 +553,15 @@ namespace TraderView.Infrastructure.Repositories
                             tradeExecutions.Add(new TradeExecution
                             {
                                 PositionId = reader.GetInt32("PositionID"),
-                                IbOrderID = reader.GetInt64("ibOrderID"),
+                                IbOrderId = reader.GetInt64("ibOrderID"),
                                 Symbol = reader.GetString("symbol"),
                                 TradeDate = DateTime.ParseExact(reader.GetString("tradeDate"), "yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture),
                                 Quantity = reader.GetDecimal("quantity"),
                                 TradePrice = reader.GetDecimal("tradePrice"),
-                                InstrumentId = reader.GetInt32("InstrumentId"),
+                                Position = new Position { InstrumentId = reader.GetInt32("InstrumentId") },
                                 Currency = reader.GetString("currency"),
                                 Conid = reader.GetString("conid"),
-                                IbExecID = reader.GetString("ibExecID"),
+                                IbExecId = reader.GetString("ibExecID"),
                                 IbCommission = reader["ibCommission"] is DBNull ? null : Convert.ToDecimal(reader["ibCommission"]),
                                 IbCommissionCurrency = reader["ibCommissionCurrency"] is DBNull ? null : reader["ibCommissionCurrency"].ToString(),
                                 ListingExchange = reader.GetString("ListingExchange")
@@ -589,9 +592,8 @@ namespace TraderView.Infrastructure.Repositories
                     Console.WriteLine("TradeExecution confirmation missing execID. Skipping.");
                     continue;
                 }
-                bool tradeExecutionExists = DoesExecutionExist(tradeConfirm.IbExecID);
 
-                if (!tradeExecutionExists)
+                if (!TradeExists(tradeConfirm.IbExecID))
                 {
                     var instrumentId = _instrumentRepository.GetInstrumentIdByConId(tradeConfirm.Conid);
                     
@@ -604,7 +606,7 @@ namespace TraderView.Infrastructure.Repositories
 
                         if (existingPosition != null)
                         {
-                            tradeConfirm.OpenCloseIndicator = (existingPosition.Quantity + tradeConfirm.Quantity) == 0 ? "O" : "C";                            
+                            tradeConfirm.OpenCloseIndicator = (Convert.ToDecimal(existingPosition.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity) == 0 ? "C" : "O");                            
                             tradeConfirm.PositionId = existingPosition.Id;
                         }
                         else
@@ -842,10 +844,10 @@ namespace TraderView.Infrastructure.Repositories
                     mapFunction: reader => new TradeExecution
                     {
                         Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                        InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")),
+                        Position = new Position { InstrumentId = reader.GetInt32(reader.GetOrdinal("InstrumentId")) }   ,
                         PositionId = positionId,
                         Symbol = reader.GetString(reader.GetOrdinal("symbol")),
-                        TradeID = reader.GetInt64(reader.GetOrdinal("tradeID")),
+                        TradeId = reader.GetInt64(reader.GetOrdinal("tradeID")),
                         DateTime = reader.GetDateTime(reader.GetOrdinal("dateTime")),
                         TradeDate = reader.GetDateTime(reader.GetOrdinal("tradeDate")),
                         Quantity = reader.GetDecimal(reader.GetOrdinal("quantity")),
@@ -884,22 +886,7 @@ namespace TraderView.Infrastructure.Repositories
                         // Ensure instrument executionExists before upserting position
                         if (position.Id == 0)
                         {
-                            // New Position
-                            // Insert new position
-                            string insertQuery = @"
-                                INSERT INTO [dbo].[Positions] (OpenDate, Status, InstrumentId, LastReportedPrice, LastReportedPriceUpdated)
-                                VALUES (@openDate, @status, @instrumentId, @lastReportedPrice, @lastReportedPriceUpdated)";
-
-                            var insertParameters = new Dictionary<string, object>
-                            {
-                                { "@openDate", position.OpenDate },
-                                { "@status", position.Status },
-                                { "@instrumentId", position.InstrumentId },
-                                { "@lastReportedPrice", position.LastReportedPrice },
-                                { "@lastReportedPriceUpdated", position.LastReportedPriceUpdated ?? (object)DBNull.Value }
-                            };
-
-                            ExecuteCommand(connection, transaction, insertQuery, insertParameters);
+                            CreatePosition(position.InstrumentId, position.Instrument?.Symbol ?? "Unknown", position.OpenDate, position.LastReportedPrice ?? 0m, "O");finished ehre
                             insertedCount++;
                         }
                         else

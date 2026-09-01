@@ -1,5 +1,4 @@
 using TraderView.Application.Interfaces.Services;
-using TraderView.Application.Models.FMP;
 
 namespace TraderView.Console
 {

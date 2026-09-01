@@ -25,11 +25,11 @@ namespace PikUpStix.TraderView.Services
 
                 foreach (var exec in group)
                 {
-                    decimal qtyRemaining = exec.Quantity;
-                    decimal execPrice = exec.TradePrice;
+                    decimal? qtyRemaining = exec.Quantity;
+                    decimal execPrice = Convert.ToDecimal(exec.TradePrice);
                     DateTime execTime = exec.TradeDate;
-                    long ibOrderId = (long)(exec.IbOrderID ?? 0);
-                    int instrumentId = exec.InstrumentId;
+                    long ibOrderId = (long)(exec.IbOrderId ?? 0);
+                    int instrumentId = exec.Position.InstrumentId;
 
 
                     // Case A: Buy Transaction (Opens Long / Closes Short)
@@ -38,23 +38,23 @@ namespace PikUpStix.TraderView.Services
                         while (shortInventory.Count > 0 && qtyRemaining > 0)
                         {
                             var shortMatch = shortInventory.Peek();
-                            decimal matchQty = Math.Min(shortMatch.Quantity, qtyRemaining);
+                            decimal matchQty = Math.Min(shortMatch.Quantity, qtyRemaining ?? 0);
 
                             // Calculate prorated commission for this closing execution
-                            decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(exec.Quantity));
+                            decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(exec.Quantity ?? 0));
                             // Calculate prorated commission from the opening execution
                             decimal openingCommission = shortMatch.Commission * (matchQty / shortMatch.Quantity);
 
                             TradeHistory.Add(new HistoricalTrade    
                             {
                                 PositionId = exec.PositionId,
-                                IbExecID = exec.IbExecID,
+                                IbExecId = exec.IbExecId,
                                 Symbol = symbol,
                                 Quantity = -matchQty, // Kept negative to reflect original Short position orientation
                                 TradePrice = shortMatch.Price, // Short entry price
                                 ClosePrice = execPrice,          // Cost to buy back and cover
-                                OpenIbOrderID = shortMatch.IbOrderID,
-                                CloseIbOrderID = shortMatch.IbOrderID,
+                                //OpenIbOrderID = shortMatch.IbOrderId,
+                                //CloseIbOrderID = shortMatch.IbOrderId,
                                 TradeOpened = shortMatch.Timestamp,
                                 TradeClosed = execTime,
                                 IbCommission = openingCommission + closingCommission,
@@ -76,17 +76,17 @@ namespace PikUpStix.TraderView.Services
                             longInventory.Enqueue(new ExecutionQueueItem
                             {
                                 Timestamp = execTime,
-                                Quantity = qtyRemaining,
+                                Quantity = Convert.ToDecimal(qtyRemaining),
                                 Price = execPrice,
                                 IbOrderID = ibOrderId,
-                                Commission = (exec.IbCommission ?? 0) * (qtyRemaining / Math.Abs(exec.Quantity))
+                                Commission = (exec.IbCommission ?? 0) * (Convert.ToDecimal(qtyRemaining) / Math.Abs(Convert.ToDecimal(exec.Quantity)))
                             });
                         }
                     }
                     // Case B: Sell Transaction (Closes Long / Opens Short)
                     else
                     {
-                        decimal sellQtyAbs = Math.Abs(qtyRemaining);
+                        decimal sellQtyAbs = Math.Abs(Convert.ToDecimal(qtyRemaining));
 
                         while (longInventory.Count > 0 && sellQtyAbs > 0)
                         {
@@ -94,14 +94,14 @@ namespace PikUpStix.TraderView.Services
                             decimal matchQty = Math.Min(longMatch.Quantity, sellQtyAbs);
                             
                             // Calculate prorated commission for this closing execution
-                            decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(exec.Quantity));
+                            decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(Convert.ToDecimal(exec.Quantity)));
                             // Calculate prorated commission from the opening execution
                             decimal openingCommission = longMatch.Commission * (matchQty / longMatch.Quantity);
 
                             TradeHistory.Add(new HistoricalTrade
                             {
                                 PositionId = exec.PositionId,
-                                IbExecID = exec.IbExecID,
+                                IbExecId = exec.IbExecId,
                                 Symbol = symbol,
                                 Quantity = matchQty, // Positive for Long positions
                                 TradePrice = longMatch.Price, // Entry buy price
@@ -132,7 +132,7 @@ namespace PikUpStix.TraderView.Services
                                 Quantity = sellQtyAbs,
                                 Price = execPrice,
                                 IbOrderID = ibOrderId,
-                                Commission = (exec.IbCommission ?? 0) * (sellQtyAbs / Math.Abs(exec.Quantity))
+                                Commission = (exec.IbCommission ?? 0) * (sellQtyAbs / Math.Abs(Convert.ToDecimal(exec.Quantity)))
                             });
                         }
                     }

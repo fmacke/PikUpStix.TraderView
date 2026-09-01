@@ -8,7 +8,7 @@
                     "i.InstrumentName, i.DataName, i.DataSource, i.Currency, i.ConId, i.ContractUnitType " +
                     "FROM [dbo].[Positions] p " +
                     "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
-                    "WHERE p.Status = 'Open' " +
+                    "WHERE p.Status = 'Open' AND i.ContractUnitType != 'CASH'" +
                     "ORDER BY p.OpenDate DESC";
         }
     }

@@ -65,9 +65,9 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var notes = new List<Note>();
-                var query = @"SELECT n.Id, n.PositionId, n.TradeExecutionId, n.Comment, n.EntryDate, n.TradeTypeId, 
+                var query = @"SELECT n.Id, n.PositionId, n.TradeExecutionId, n.Comment, n.EntryDate, n.UpdatedAt, n.TradeTypeId, 
                     l.Category, l.Name 
-                    FROM Notes n inner join Lists l on n.TradeTypeId = l.Id 
+                    FROM Notes n inner join ListItems l on n.TradeTypeId = l.Id 
                     WHERE PositionId = @PositionId ORDER BY EntryDate DESC";
 
                 using var command = new SqlCommand(query, connection);
@@ -137,8 +137,8 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var query = @"
-                    INSERT INTO Notes (PositionId, TradeExecutionId, Comment, EntryDate, TradeTypeId) 
-                    VALUES (@PositionId, @TradeExecutionId, @Comment, @EntryDate, @TradeTypeId);
+                    INSERT INTO Notes (PositionId, TradeExecutionId, Comment, EntryDate, UpdatedAt, TradeTypeId) 
+                    VALUES (@PositionId, @TradeExecutionId, @Comment, @EntryDate, @UpdatedAt, @TradeTypeId);
                     SELECT CAST(SCOPE_IDENTITY() as int);";
 
                 using var command = new SqlCommand(query, connection);
@@ -146,6 +146,7 @@ namespace TraderView.Infrastructure.Repositories
                 command.Parameters.AddWithValue("@TradeExecutionId", tradeExecutionId.HasValue ? (object)tradeExecutionId.Value : DBNull.Value);
                 command.Parameters.AddWithValue("@Comment", comment);
                 command.Parameters.AddWithValue("@EntryDate", entryDate);
+                command.Parameters.AddWithValue("@UpdatedAt", entryDate);
                 command.Parameters.AddWithValue("@TradeTypeId", tradeTypeId);
 
                 var newId = command.ExecuteScalar();
@@ -236,8 +237,7 @@ namespace TraderView.Infrastructure.Repositories
                 Comment = reader.GetString(reader.GetOrdinal("Comment")),
                 EntryDate = reader.GetDateTime(reader.GetOrdinal("EntryDate")),
                 TradeTypeId = reader.GetInt32(reader.GetOrdinal("TradeTypeId")),
-                Category = reader.IsDBNull(reader.GetOrdinal("Category")) ? string.Empty : reader.GetString(reader.GetOrdinal("Category")),
-                Name = reader.IsDBNull(reader.GetOrdinal("Name")) ? string.Empty : reader.GetString(reader.GetOrdinal("Name"))
+                UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
             };
         }
     }
