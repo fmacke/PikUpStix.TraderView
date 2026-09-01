@@ -366,3 +366,4 @@ FodyWeavers.xsd
 # Backup files
 *.bak
 /.env
+/.env.example
