@@ -10,6 +10,7 @@ namespace TraderView.Infrastructure.Repositories
     {
         public static Dictionary<string, object> GetTradeConfirmationParams(TradeConfirm tradeConfirm)
         {
+            
             return new Dictionary<string, object>
             {
                 { "@positionId", tradeConfirm.PositionId },
@@ -50,6 +51,7 @@ namespace TraderView.Infrastructure.Repositories
                 { "@ibCommissionCurrency", tradeConfirm.CommissionCurrency },
                 { "@NetCash", tradeConfirm.NetCash },
                 { "@Cost", tradeConfirm.Amount },
+                { "@ClosePrice", tradeConfirm.TradePrice },
                 { "@OrigTradePrice", tradeConfirm.OrigTradePrice },
                 { "@OrigTradeDate", tradeConfirm.OrigTradeDate },
                 { "@OrigTradeID", tradeConfirm.OrigTradeID },

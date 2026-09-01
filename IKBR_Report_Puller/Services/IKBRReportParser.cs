@@ -235,6 +235,7 @@ namespace TraderView.Application.Services
                 Proceeds = ConvertToDecimal(tradeConfirm.Attribute("proceeds")?.Value),
                 Taxes = ConvertToDecimal(tradeConfirm.Attribute("taxes")?.Value),
                 NetCash = ConvertToDecimal(tradeConfirm.Attribute("netCash")?.Value),
+                Amount = ConvertToDecimal(tradeConfirm.Attribute("cost")?.Value),
                 Notes = tradeConfirm.Attribute("notes")?.Value,
                 TransactionType = tradeConfirm.Attribute("transactionType")?.Value,
                 SettleDateTarget = Convert.ToDateTime(TypeConverters.ConvertToNullableDate(tradeConfirm.Attribute("settleDateTarget")?.Value)),

@@ -26,7 +26,7 @@ if (-not (Test-Path ".env")) {
 }
 
 # Read the SQL password from User Secrets
-$sqlPassword = "booof"  # Default password
+$sqlPassword = "gogogo123!"  # Default password
 
 # Try all User Secrets locations
 $userSecretsIds = @(
@@ -48,7 +48,7 @@ foreach ($secretId in $userSecretsIds) {
 
             if (-not [string]::IsNullOrWhiteSpace($password)) {
                 $sqlPassword = $password
-                Write-Host "`n✓ Found password in User Secrets ($secretId)" -ForegroundColor Cyan
+                Write-Host "`n✓ Found password $password in User Secrets ($secretId)" -ForegroundColor Cyan
                 break
             }
         } catch {

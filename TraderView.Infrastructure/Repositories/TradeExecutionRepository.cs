@@ -603,17 +603,27 @@ namespace TraderView.Infrastructure.Repositories
  
                         // Check for open position for the trade's symbol and instrument (within the same transaction)
                         existingPosition = GetOpenPosition(instrumentId.Value);
+                        var openDirection = existingPosition.TradeExecutions.MinBy(x => x.Id).BuySell;
+                        tradeConfirm.PositionId = existingPosition.Id;
+                        tradeConfirm.OpenCloseIndicator = "O";
+                        tradeConfirm.PositionId = existingPosition.Id;
 
                         if (existingPosition != null)
                         {
-                            tradeConfirm.OpenCloseIndicator = (Convert.ToDecimal(existingPosition.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity) == 0 ? "C" : "O");                            
-                            tradeConfirm.PositionId = existingPosition.Id;
+                            if (tradeConfirm.BuySell != openDirection)
+                            {
+                                tradeConfirm.OpenCloseIndicator = "C";
+                                if (existingPosition?.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity == 0)
+                                {
+                                    ClosePosition(existingPosition.Id, tradeConfirm.DateTime);
+                                }
+                            }
                         }
                         else
                         {
                             tradeConfirm.OpenCloseIndicator = "O";
                             tradeConfirm.PositionId = CreatePosition(instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice, tradeConfirm.OpenCloseIndicator);
-                        }                       
+                        }
                         tradeConfirm.Id = CreateTradeConfirmation(tradeConfirm);
                     }
                     else
@@ -655,6 +665,48 @@ namespace TraderView.Infrastructure.Repositories
                     {
                         transaction.Rollback();
                         Console.WriteLine($"Error inserting position for instrumentId {instrumentId} on {openDate:yyyy-MM-dd}: {ex.Message}");
+                        throw;
+                    }
+                }
+            });
+        }
+        private void UpdatePosition(int positionId, DateTime latestPriceUpdated, decimal latestPrice, string openCloseIndicator)
+        {
+            ExecuteDatabaseOperation(connection =>
+            {
+                using (var transaction = connection.BeginTransaction())
+                {
+                    try
+                    {
+                        // Check if position already executionExists for the same InstrumentId and OpenDate
+                        bool exists = RecordExists(connection, transaction,
+                            "SELECT COUNT(*) FROM dbo.Positions WHERE Id = @positionId",
+                            new Dictionary<string, object>
+                            {
+                                { "@positionId", positionId }
+                            });
+
+                        if (exists)
+                        {
+                            // Update existing position
+                            string updateQuery = new UpdatePositionPricesCommand().Script();
+
+                            var updateParameters = new Dictionary<string, object>
+                            { 
+                                { "@positionId", positionId },
+                                { "@lastReportedPrice", latestPrice },
+                                { "@lastReportedPriceUpdated", latestPriceUpdated  }
+                            };
+
+                            ExecuteCommand(connection, transaction, updateQuery, updateParameters);
+                            transaction.Commit();
+                        }
+
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        Console.WriteLine($"Error updating position for positionId {positionId }: {ex.Message}");
                         throw;
                     }
                 }
@@ -874,57 +926,24 @@ namespace TraderView.Infrastructure.Repositories
                 return;
             }
 
-            ExecuteDatabaseOperation(connection =>
+            int insertedCount = 0;
+            int updatedCount = 0;
+
+            foreach (var position in positions)
             {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    int insertedCount = 0;
-                    int updatedCount = 0;
-
-                    foreach (var position in positions)
-                    {
-                        // Ensure instrument executionExists before upserting position
-                        if (position.Id == 0)
-                        {
-                            CreatePosition(position.InstrumentId, position.Instrument?.Symbol ?? "Unknown", position.OpenDate, position.LastReportedPrice ?? 0m, "O");finished ehre
-                            insertedCount++;
-                        }
-                        else
-                        {
-                            // Check if position already executionExists for the same InstrumentId and OpenDate
-                            bool exists = RecordExists(connection, transaction,
-                                "SELECT COUNT(*) FROM dbo.Positions WHERE Id = @positionId",
-                                new Dictionary<string, object>
-                                {
-                                { "@positionId", position.Id }
-                                });
-
-                            if (exists)
-                            {
-                                // Update existing position
-                                string updateQuery = @"
-                                UPDATE [dbo].[Positions]
-                                SET Status = @status, LastReportedPrice = @lastReportedPrice, LastReportedPriceUpdated = @lastReportedPriceUpdated
-                                WHERE Id = @positionId";
-
-                                var updateParameters = new Dictionary<string, object>
-                            {
-                                { "@status", position.Status },
-                                { "@positionId", position.Id },
-                                { "@lastReportedPrice", position.LastReportedPrice },
-                                { "@lastReportedPriceUpdated", position.LastReportedPriceUpdated ?? (object)DBNull.Value }
-                            };
-
-                                ExecuteCommand(connection, transaction, updateQuery, updateParameters);
-                                updatedCount++;
-                            }
-                        }
-                    }
-                    transaction.Commit();
-
-                    Console.WriteLine($"Successfully processed {positions.Count} positions: {insertedCount} inserted, {updatedCount} updated.");
+                // Ensure instrument executionExists before upserting position
+                if (position.Id == 0)
+                {  
+                    CreatePosition(position.InstrumentId, position.Instrument?.DataName ?? "Unknown",position.OpenDate, position.LastReportedPrice ?? 0m, "O"); 
+                    insertedCount++;
                 }
-            });
+                else
+                {
+                    UpdatePosition(position.InstrumentId, position.OpenDate, position.LastReportedPrice ?? 0m, "O");
+                    updatedCount++;
+                }
+            }
+            Console.WriteLine($"Successfully processed {positions.Count} positions: {insertedCount} inserted, {updatedCount} updated.");
         }
     }
 }
