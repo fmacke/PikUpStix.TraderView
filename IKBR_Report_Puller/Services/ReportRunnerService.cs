@@ -53,6 +53,7 @@ namespace PikUpStix.TraderView.Services
                 var executions = _tradeExecutionRepository.GetTradeExecutions();
 
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+                //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
                 SaveTradeConfirms(todayReportXml);
 
                 if (writeOutputtoExcel)
@@ -61,24 +62,24 @@ namespace PikUpStix.TraderView.Services
                     _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
                     await WriteTodayReportToExcel(todayReportXml);
                 }
-                //if (updateMarketData)
-                //{
-                //    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                //    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                if (updateMarketData)
+                {
+                    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
+                    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
 
-                //    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                //    await _marketDataService.FetchAndSaveChartData(new List<string>()
-                //    {
-                //        "^GSPC",//spx
-                //        "^RUT",//iwm
-                //        //"CLUSD",//wti crude oil
-                //        "BTCUSD",//bitcoin
-                //        "GCUSD",//gold
-                //        "XAGUSD",//silver
-                //        "QQQ",//nasdaq
-                //        "^VIX"
-                //     }, 300);
-                //}
+                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                    await _marketDataService.FetchAndSaveChartData(new List<string>()
+                    {
+                        "^GSPC",//spx
+                        "^RUT",//iwm
+                        //"CLUSD",//wti crude oil
+                        "BTCUSD",//bitcoin
+                        "GCUSD",//gold
+                        "XAGUSD",//silver
+                        "QQQ",//nasdaq
+                        "^VIX"
+                     }, 300);
+                }
             }
             catch (Exception ex)
             {

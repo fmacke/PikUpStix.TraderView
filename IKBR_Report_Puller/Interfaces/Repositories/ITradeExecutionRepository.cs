@@ -21,7 +21,7 @@ namespace TraderView.Application.Interfaces.Repositories
         /// </summary>
         /// <param name="positionId">The position ID</param>
         /// <returns>List of trade executions for the position</returns>
-        List<TradeExecution> GetByPositionId(int positionId);
+        List<TradeExecution> GetTradeExecutionsByPositionId(int positionId);
         /// <summary>
         /// Gets trade summary for a specific position ID
         /// </summary>

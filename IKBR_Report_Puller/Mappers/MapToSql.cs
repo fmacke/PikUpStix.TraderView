@@ -1,12 +1,12 @@
 using TraderView.Domain.Entities;
 using TraderView.Domain.Entities.FMP;
 
-namespace TraderView.Infrastructure.Repositories
+namespace TraderView.Application.Mappers
 {
     /// <summary>
     /// Builds parameter dictionaries for TradeExecution database operations
     /// </summary>
-    public static class TradeParameterBuilder
+    public static class MapToSql
     {
         public static Dictionary<string, object> GetTradeConfirmationParams(TradeConfirm tradeConfirm)
         {
@@ -66,6 +66,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return new Dictionary<string, object>
             {
+                { "@Id", trade.Id },
                 { "@PositionId", trade.PositionId },
                 { "@InstrumentId", trade.Position.InstrumentId },
                 { "@symbol", trade.Symbol },
@@ -156,7 +157,7 @@ namespace TraderView.Infrastructure.Repositories
             };
         }
 
-        internal static Dictionary<string, object> GetCanSlimAnnualHistory(CanSlimCandidateAnnualHistory annualHistory)
+        public static Dictionary<string, object> GetCanSlimAnnualHistory(CanSlimCandidateAnnualHistory annualHistory)
         {
             return new Dictionary<string, object>
             {
@@ -170,7 +171,7 @@ namespace TraderView.Infrastructure.Repositories
             };
         }
 
-        internal static Dictionary<string, object> GetCanSlimCandidate(CanSlimCandidate candidate)
+        public static Dictionary<string, object> GetCanSlimCandidate(CanSlimCandidate candidate)
         {
             return new Dictionary<string, object>
             {

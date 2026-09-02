@@ -1,12 +1,17 @@
 ﻿namespace TraderView.Application.Features.CanSlimScreener.Query.GetBy
 {
-    public class GetLatestScreenerSnapshot
+    public class GetLatestScreenerSnapshot : IQueryWithParameters
     {
-        public string Script()
+        public string Script
         {
-            return @"SELECT TOP 1 [Id], [CreatedAt]
+            get => @"SELECT TOP 1 [Id], [CreatedAt]
                       FROM [TradingBE].[dbo].[CanSlimScreenerSnapshots]
                       ORDER BY [CreatedAt] DESC";
+        }
+
+        public Dictionary<string, object> Parameters
+        {
+            get => new Dictionary<string, object>();
         }
     }
 }

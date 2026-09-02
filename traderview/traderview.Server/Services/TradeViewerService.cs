@@ -87,7 +87,7 @@ namespace traderview.Server.Services
                 };
 
 
-                var executions = _tradeExecutionRepository.GetByPositionId(positionId).Select(e => new TradeExecutionDto
+                var executions = _tradeExecutionRepository.GetTradeExecutionsByPositionId(positionId).Select(e => new TradeExecutionDto
                 {
                     Id = e.Id,
                     PositionId = positionId,

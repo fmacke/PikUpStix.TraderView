@@ -1,15 +1,22 @@
 ﻿namespace TraderView.Application.Features.Positions.Query.GetBy
 {
-    public class GetOpenPositionsQuery
+    public class GetOpenPositionsQuery : IQueryWithParameters
     {
-        public string Script()
+        public Dictionary<string, object> Parameters
         {
-            return @"SELECT p.Id, p.OpenDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedPriceUpdated, " +
+            get => new Dictionary<string, object>();
+        }
+        public string Script
+        {
+            get
+            {
+                return @"SELECT p.Id, p.OpenDate, p.Status, p.InstrumentId, p.LastReportedPrice, p.LastReportedPriceUpdated, " +
                     "i.InstrumentName, i.DataName, i.DataSource, i.Currency, i.ConId, i.ContractUnitType " +
                     "FROM [dbo].[Positions] p " +
                     "INNER JOIN [dbo].[Instruments] i ON p.InstrumentId = i.Id " +
                     "WHERE p.Status = 'Open' AND i.ContractUnitType != 'CASH'" +
                     "ORDER BY p.OpenDate DESC";
+            }
         }
     }
 }

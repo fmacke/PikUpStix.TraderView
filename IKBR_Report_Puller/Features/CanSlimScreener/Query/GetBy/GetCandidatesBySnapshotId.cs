@@ -1,6 +1,6 @@
 ﻿namespace TraderView.Application.Features.Instruments.Query.GetBy
 {
-    public class GetCandidatesBySnapshotIdQuery : IQuery<string>
+    public class GetCandidatesBySnapshotIdQuery : IQueryWithParameters
     {
         private readonly int _snapshotId;
 
@@ -8,10 +8,15 @@
         {
             _snapshotId = snapshotId;
         }
-
-        public string Script()
+       
+        public Dictionary<string, object> Parameters
         {
-            return $@"SELECT [Id]
+            get => new Dictionary<string, object>();
+        }
+
+        public string Script
+        {
+            get => $@"SELECT [Id]
                       ,[Symbol]
                       ,[Exchange]
                       ,[CompanyName]

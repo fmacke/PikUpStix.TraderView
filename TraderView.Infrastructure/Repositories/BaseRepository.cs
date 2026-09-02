@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using TraderView.Application.Features;
 
 namespace TraderView.Infrastructure.Repositories
 {
@@ -63,12 +64,12 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Executes a parameterized SQL command within a transaction
         /// </summary>
-        protected void ExecuteCommand(SqlConnection connection, SqlTransaction transaction, string query, Dictionary<string, object> parameters)
+        protected void ExecuteCommand(SqlConnection connection, SqlTransaction transaction, IQueryWithParameters queryWithParameters)
         {
             try
             {
-                using SqlCommand cmd = new SqlCommand(query, connection, transaction);
-                foreach (var param in parameters)
+                using SqlCommand cmd = new SqlCommand(queryWithParameters.Script, connection, transaction);
+                foreach (var param in queryWithParameters.Parameters)
                 {
                     cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
                 }
@@ -89,7 +90,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Executes a scalar query and returns a single value
         /// </summary>
-        protected T ExecuteScalar<T>(SqlConnection connection, SqlTransaction transaction, string query, Dictionary<string, object> parameters = null)
+        protected T ExecuteScalar<T>(SqlConnection connection, SqlTransaction transaction, IQueryWithParameters queryWithParams)
         {
             try
             {
@@ -98,11 +99,11 @@ namespace TraderView.Infrastructure.Repositories
                     connection.Open();
                 }
 
-                using SqlCommand cmd = new SqlCommand(query, connection, transaction);
+                using SqlCommand cmd = new SqlCommand(queryWithParams.Script, connection, transaction);
 
-                if (parameters != null)
+                if (queryWithParams.Parameters != null)
                 {
-                    foreach (var param in parameters)
+                    foreach (var param in queryWithParams.Parameters)
                     {
                         cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
                     }
@@ -136,9 +137,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Executes a query within an optional transaction and maps the first matching record, returning null if not found.
         /// </summary>
-        protected T? ExecuteSingle<T>(SqlConnection connection, SqlTransaction? transaction, string query,
-            Func<SqlDataReader, T> mapFunction,
-            Dictionary<string, object>? parameters = null) where T : class
+        protected T? ExecuteSingle<T>(SqlConnection connection, SqlTransaction? transaction, Func<SqlDataReader, T> mapFunction, IQueryWithParameters queryWithParameters) where T : class
         {
             try
             {
@@ -147,11 +146,11 @@ namespace TraderView.Infrastructure.Repositories
                     connection.Open();
                 }
 
-                using SqlCommand cmd = new SqlCommand(query, connection, transaction);
+                using SqlCommand cmd = new SqlCommand(queryWithParameters.Script, connection, transaction);
 
-                if (parameters != null)
+                if (queryWithParameters.Parameters != null)
                 {
-                    foreach (var param in parameters)
+                    foreach (var param in queryWithParameters.Parameters)
                     {
                         cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
                     }
@@ -174,7 +173,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Executes a query within an optional transaction and maps all matching records to a list.
         /// </summary>
-        protected List<T> ExecuteList<T>(SqlConnection connection, SqlTransaction? transaction, string query, Func<SqlDataReader, T> mapFunction, Dictionary<string, object>? parameters = null)
+        protected List<T> ExecuteList<T>(SqlConnection connection, SqlTransaction? transaction, Func<SqlDataReader, T> mapFunction, IQueryWithParameters queryWithParameters)
         {
             try
             {
@@ -183,11 +182,11 @@ namespace TraderView.Infrastructure.Repositories
                     connection.Open();
                 }
 
-                using SqlCommand cmd = new SqlCommand(query, connection, transaction);
+                using SqlCommand cmd = new SqlCommand(queryWithParameters.Script, connection, transaction);
 
-                if (parameters != null)
+                if (queryWithParameters.Parameters != null)
                 {
-                    foreach (var param in parameters)
+                    foreach (var param in queryWithParameters.Parameters)
                     {
                         cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
                     }
@@ -217,11 +216,11 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Checks if a record exists based on a query
         /// </summary>
-        protected bool RecordExists(SqlConnection connection, SqlTransaction transaction, string query, Dictionary<string, object> parameters)
+        protected bool RecordExists(SqlConnection connection, SqlTransaction transaction, IQueryWithParameters queryWithParameters)
         {
             try
             {
-                int count = ExecuteScalar<int>(connection, transaction, query, parameters);
+                int count = ExecuteScalar<int>(connection, transaction, queryWithParameters);
                 return count > 0;
             }
             catch (SqlException e)

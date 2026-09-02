@@ -1,10 +1,19 @@
-﻿namespace TraderView.Application.Features.CanSlimScreener.Command
+﻿using System.Windows.Input;
+using TraderView.Application.Mappers;
+using TraderView.Domain.Entities.FMP;
+namespace TraderView.Application.Features.CanSlimScreener.Command
 {
-    public class CreateCanSlimCandidateCommand
+    public class CreateCanSlimCandidateCommand : IQueryWithParameters
     {
-        public string Script()
+        private readonly CanSlimCandidate candidate;
+        public CreateCanSlimCandidateCommand(CanSlimCandidate candidate)
         {
-            return @"
+            this.candidate = candidate;
+        }
+        public Dictionary<string, object> Parameters { get => MapToSql.GetCanSlimCandidate(candidate); }
+        public string Script
+        {
+            get => @"
                 INSERT INTO [dbo].[CanSlimCandidates]
                    ([CanSlimScreenerSnapshotId]
                    ,[Symbol]
@@ -74,11 +83,19 @@
                    ,@CreatedAtUtc)";
         }
     }
-    public class CreateCanSlimScreentSnapshotCommand
+    public class CreateCanSlimScreenSnapshotCommand : IQueryWithParameters
     {
-        public string Script()
+        public Dictionary<string, object> Parameters
         {
-            return @"
+            get => new Dictionary<string, object>
+            {
+                { "@CreatedAt", DateTime.UtcNow }
+            };
+        }
+
+        public string Script
+        {
+            get => @"
                 INSERT INTO [dbo].[CanSlimScreenerSnapshots]
                            ([CreatedAt])
                      OUTPUT INSERTED.Id
@@ -86,11 +103,16 @@
                            (@CreatedAt)";
         }
     }
-    public class CreateCanSlimCandidateAnnualHistoryCommand
+    public class CreateCanSlimCandidateAnnualHistoryCommand : IQueryWithParameters
     {
-        public string Script()
+        public CreateCanSlimCandidateAnnualHistoryCommand(CanSlimCandidateAnnualHistory annualHistory)
         {
-            return @"
+            Parameters = MapToSql.GetCanSlimAnnualHistory(annualHistory);
+        }
+        public Dictionary<string, object> Parameters { get; }
+        public string Script
+        {
+            get => @"
                 INSERT INTO [dbo].[CanSlimCandidateAnnualHistory]
                        ([CandidateId]
                        ,[CalendarYear]

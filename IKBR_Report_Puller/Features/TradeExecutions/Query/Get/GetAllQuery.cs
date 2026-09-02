@@ -1,22 +1,12 @@
-﻿namespace TraderView.Application.Features.TradeExecutions.Query.GetBy
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace TraderView.Application.Features.TradeExecutions.Query.Get
 {
-    public class GetByIbExecIdQuery : IQueryWithParameters
+    public class GetAllTradeExecutionsQuery : IQueryWithParameters
     {
-        private string _ibExecID;
-        public GetByIbExecIdQuery(string ibExecID)
-        {
-            _ibExecID = ibExecID;
-        }
-        public Dictionary<string, object> Parameters
-        {
-            get => new Dictionary<string, object>
-            {
-                { "@ibExecID", _ibExecID }
-            };
-        }
-        public string Script
-        {
-            get => @"SELECT te.[Id]
+        public string Script { get => @"SELECT te.[Id]
                       ,te.[PositionId]
                       ,te.[symbol]
                       ,te.[securityID]
@@ -106,10 +96,11 @@
                       ,p.[InstrumentId]
                       ,p.[Status]
                       ,p.[OpenDate]
-                      ,p.[CloseDate]     
+                      ,p.[CloseDate] 
                   FROM [TradingBE].[dbo].[TradeExecutions] te
-                  inner join [TradingBE].[dbo].[Positions] p on te.PositionId = p.Id
-                  where ibExecID = @ibExecID";
-        }
+                  inner join [TradingBE].[dbo].[Positions] p on te.PositionId = p.Id                 
+            ORDER BY te.[ibOrderID], te.[tradeDate] ASC, te.[dateTime] ASC";  }
+
+        public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
     }
 }

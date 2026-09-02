@@ -1,4 +1,5 @@
 using Microsoft.Data.SqlClient;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.Engineering;
 using TraderView.Application.Features.Instruments.Command.Create;
 using TraderView.Application.Features.Instruments.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
@@ -199,9 +200,7 @@ namespace TraderView.Infrastructure.Repositories
             {
                 using (var transaction = connection.BeginTransaction())
                 {
-                    string query = new GetInstrumentByConIdQuery().Script();
-                    var parameters = new Dictionary<string, object>{{ "@conid", conid }};
-                    instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
+                    instrumentId = ExecuteScalar<int>(connection, transaction, new GetInstrumentByConIdQuery(conid));
                     transaction.Commit();
                 }
             });
@@ -232,15 +231,7 @@ namespace TraderView.Infrastructure.Repositories
 
         private int? GetInstrumentIdBySymbol(SqlConnection connection, SqlTransaction transaction, string symbol, string provider)
         {
-            const string query = "SELECT Id FROM dbo.Instruments WHERE Symbol = @symbol AND Provider = @provider";
-
-            var parameters = new Dictionary<string, object>
-            {
-                { "@symbol", symbol },
-                { "@provider", provider }
-            };
-
-            int instrumentId = ExecuteScalar<int>(connection, transaction, query, parameters);
+            int instrumentId = ExecuteScalar<int>(connection, transaction, new GetInstrumentBySymbolAndProviderQuery(symbol, provider));
             transaction.Commit();
             return instrumentId > 0 ? instrumentId : (int?)null;
         }
@@ -259,25 +250,7 @@ namespace TraderView.Infrastructure.Repositories
             {
                 using (var transaction = connection.BeginTransaction())
                 {
-                    string insertQuery = new CreateInstrumentCommand().Script();
-
-                    var parameters = new Dictionary<string, object>
-                    {
-                        { "@instrumentName", symbol ?? "Unknown" },
-                        { "@provider", provider ?? "Unknown" },
-                        { "@dataName", symbol ?? "Unknown" },
-                        { "@dataSource", dataSource ?? "Unknown" },
-                        { "@format", "TradeExecution" },
-                        { "@frequency", "TradeExecution" },
-                        { "@contractUnit", DBNull.Value },
-                        { "@contractUnitType", assetCategory },
-                        { "@priceQuotation", DBNull.Value },
-                        { "@minimumPriceFluctuation", DBNull.Value },
-                        { "@currency", (object)currency ?? DBNull.Value },
-                        { "@listingExchange", (object)listingExchange ?? DBNull.Value },
-                        { "@conId", conid }
-                    };
-                    newInstrumentId = ExecuteScalar<int>(connection, transaction, insertQuery, parameters);
+                    newInstrumentId = ExecuteScalar<int>(connection, transaction, new CreateInstrumentCommand(symbol, provider, symbol, dataSource, "TradeExecution", "D", null, assetCategory, null, null, currency, listingExchange, int.Parse(conid)));
                     transaction.Commit();
                 }
             });

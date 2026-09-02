@@ -1,10 +1,19 @@
-﻿namespace TraderView.Application.Features.TradeExecutions.Command.Create
+﻿using TraderView.Application.Mappers;
+using TraderView.Domain.Entities;
+
+namespace TraderView.Application.Features.TradeExecutions.Command.Create
 {
-    public class InsertTradeExecutionCommand
+    public class InsertTradeExecutionCommand : IQueryWithParameters
     {
-        public string Script()
+        public InsertTradeExecutionCommand(TradeExecution trade) { Trade = trade; }
+        public TradeExecution Trade { get; }
+        public Dictionary<string, object> Parameters
         {
-            return @"
+            get => MapToSql.GetTradeExecutionParams(Trade);
+        }
+        public string Script
+        {
+            get => @"
                 INSERT INTO [dbo].[TradeExecutions]
                 ([PositionID], [symbol], [securityID], [tradeID], [dateTime], [tradeDate], [quantity], [tradePrice], [ibCommission],
                  [ibCommissionCurrency], [closePrice], [cost], [fifoPnlRealized], [buySell], [transactionID], [ibExecID],

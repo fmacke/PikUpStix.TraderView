@@ -34,6 +34,9 @@ namespace TraderView.Domain.Entities
         public string Exchange { get; set; }
         public decimal Quantity { get; set; }
         public decimal TradePrice { get; set; }
+        public decimal ClosePrice { get; set; }
+        public decimal Cost { get; set; }
+        public string LevelOfDetail { get; set; }
         public decimal? TradeMoney { get; set; }
         public decimal? Proceeds { get; set; }
         public decimal? Taxes { get; set; }

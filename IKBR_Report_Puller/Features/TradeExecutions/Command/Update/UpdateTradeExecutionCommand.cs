@@ -1,10 +1,22 @@
-﻿namespace TraderView.Application.Features.TradeExecutions.Command.Update
+﻿using TraderView.Application.Mappers;
+using TraderView.Domain.Entities;
+
+namespace TraderView.Application.Features.TradeExecutions.Command.Update
 {
-    public class UpdateTradeExecutionCommand
+    public class UpdateTradeExecutionCommand : IQueryWithParameters
     {
-       public string Script()
+        private readonly TradeExecution TradeExecution;
+        public UpdateTradeExecutionCommand(TradeExecution tradeExecution) 
+        { 
+            TradeExecution = tradeExecution;
+        }
+        public Dictionary<string, object> Parameters
         {
-            return @"
+            get => MapToSql.GetTradeExecutionParams(TradeExecution);
+        }
+        public string Script
+        {
+            get => @"
             UPDATE [TradingBE].[dbo].[TradeExecutions]
             SET [PositionId] = @PositionId,
                 [symbol] = @Symbol,

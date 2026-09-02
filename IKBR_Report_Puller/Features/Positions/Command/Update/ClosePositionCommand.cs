@@ -7,11 +7,29 @@ using System.Threading.Tasks;
 
 namespace TraderView.Application.Features.Positions.Command.Update
 {
-    public class ClosePositionCommand
+    public class ClosePositionCommand : IQueryWithParameters
     {
-        public string Script()
+        public ClosePositionCommand(int positionId, DateTime closeDate)
         {
-            return @"
+            PositionId = positionId;
+            CloseDate = closeDate;
+        }
+
+        public int PositionId { get; }
+        public DateTime CloseDate { get; }
+
+        public Dictionary<string, object> Parameters
+        {
+            get => new Dictionary<string, object>
+            {
+                { "@positionId", PositionId },
+                { "@closeDate", CloseDate }
+            };
+        }   
+
+        public string Script
+        {
+            get => @"
                 UPDATE [dbo].[Positions]
                 SET Status = 'Closed', CloseDate = @closeDate
                 WHERE Id = @positionId";
