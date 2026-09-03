@@ -21,14 +21,14 @@ namespace TraderView.Application.Features.TradeExecutions.Command.Create
                         listingExchange, UnderlyingConid, UnderlyingSymbol, UnderlyingSecurityID, UnderlyingListingExchange,
                         Issuer, IssuerCountryCode, Multiplier, Strike, Expiry, PutCall, PrincipalAdjustFactor, TransactionType,
                         Exchange, Proceeds, ibCommissionCurrency, NetCash, Cost, OrigTradePrice, OrigTradeDate, OrigTradeID, OrigOrderID,
-                        OrigTransactionID, ClearingFirmID, BuySell, openCloseIndicator) 
+                        OrigTransactionID, ClearingFirmID, BuySell, openCloseIndicator, closePrice) 
                         OUTPUT INSERTED.Id
                         VALUES (@positionId, @ibOrderID, @ibexecID, @symbol, @tradeDate, @dateTime, @quantity, @tradePrice, @currency, 
                         @conid, @tradeID, @fifoPnlRealized, @ibCommission, @assetCategory, @description, @securityIDType, @cusip,
                         @accountId, @isin, @figi, @listingExchange, @UnderlyingConid, @UnderlyingSymbol, @UnderlyingSecurityID, @UnderlyingListingExchange,
                         @Issuer, @IssuerCountryCode, @Multiplier, @Strike, @Expiry, @PutCall, @PrincipalAdjustFactor, @TransactionType,
                         @Exchange, @Proceeds, @ibCommissionCurrency, @NetCash, @Cost, @OrigTradePrice, @OrigTradeDate, @OrigTradeID, @OrigOrderID,
-                        @OrigTransactionID, @ClearingFirmID, @BuySell, @OpenCloseIndicator)";
+                        @OrigTransactionID, @ClearingFirmID, @BuySell, @OpenCloseIndicator, @ClosePrice)";
         }
     }
 }

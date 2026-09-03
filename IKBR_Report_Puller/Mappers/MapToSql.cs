@@ -50,7 +50,7 @@ namespace TraderView.Application.Mappers
                 { "@Proceeds", tradeConfirm.Proceeds },
                 { "@ibCommissionCurrency", tradeConfirm.CommissionCurrency },
                 { "@NetCash", tradeConfirm.NetCash },
-                { "@Cost", tradeConfirm.Amount },
+                { "@cost", tradeConfirm.Cost },
                 { "@ClosePrice", tradeConfirm.TradePrice },
                 { "@OrigTradePrice", tradeConfirm.OrigTradePrice },
                 { "@OrigTradeDate", tradeConfirm.OrigTradeDate },

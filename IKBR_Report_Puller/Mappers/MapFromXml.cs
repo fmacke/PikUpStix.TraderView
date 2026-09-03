@@ -24,7 +24,7 @@ namespace TraderView.Application.Mappers
                     Quantity = (decimal)ConvertToDecimal(tradeConfirm.Attribute("quantity").Value),
                     TradePrice = (decimal)ConvertToDecimal(tradeConfirm.Attribute("price").Value),
                     ClosePrice = (decimal)ConvertToDecimal(tradeConfirm.Attribute("price").Value),
-                    Cost = (decimal)ConvertToDecimal(tradeConfirm.Attribute("price").Value),
+                    Cost = (decimal)ConvertToDecimal(tradeConfirm.Attribute("amount").Value),//this one
                     LevelOfDetail = "TRADE_CONFIRM",
                     Conid = tradeConfirm.Attribute("conid")?.Value,
                     Currency = tradeConfirm.Attribute("currency")?.Value,
