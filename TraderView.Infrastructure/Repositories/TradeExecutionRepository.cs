@@ -309,13 +309,14 @@ namespace TraderView.Infrastructure.Repositories
         }
         private int CreatePosition(int instrumentId, string symbol, DateTime openDate, decimal openPrice, string openCloseIndicator)
         {
+            var instrument = _instrumentRepository.Get(instrumentId);
             return ExecuteDatabaseOperation(connection =>
             {
                 using (var transaction = connection.BeginTransaction())
                 {
                     try
-                    {
-                        int newPositionId = ExecuteScalar<int>(connection, transaction, new CreatePositionCommand(instrumentId, openDate, openPrice, openCloseIndicator));
+                    {                        
+                        int newPositionId = ExecuteScalar<int>(connection, transaction, new CreatePositionCommand(instrumentId, openDate, openPrice, openCloseIndicator, instrument.ContractUnitType == "CASH" ? true : false));
                         transaction.Commit();
                         Console.WriteLine($"Created new Position (Id: {newPositionId}) for symbol {symbol}, InstrumentId {instrumentId} on {openDate:yyyy-MM-dd}");
                         return newPositionId;
@@ -553,7 +554,7 @@ namespace TraderView.Infrastructure.Repositories
                 }
                 else
                 {
-                    UpdatePosition(position.InstrumentId, position.OpenDate, position.LastReportedPrice ?? 0m, "O");
+                    UpdatePosition(position.Id, DateTime.Now, position.LastReportedPrice ?? 0m, "O");
                     updatedCount++;
                 }
             }

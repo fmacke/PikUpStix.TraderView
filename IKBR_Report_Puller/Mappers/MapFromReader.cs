@@ -1,13 +1,4 @@
-﻿using DocumentFormat.OpenXml.Bibliography;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.EMMA;
-using DocumentFormat.OpenXml.ExtendedProperties;
-using DocumentFormat.OpenXml.Office2010.Excel;
-using DocumentFormat.OpenXml.VariantTypes;
-using Microsoft.Data.SqlClient;
-using OfficeOpenXml.Export.HtmlExport.StyleCollectors.StyleContracts;
-using System.Diagnostics;
-using System.Transactions;
+﻿using Microsoft.Data.SqlClient;
 using TraderView.Domain.Entities;
 using TraderView.Domain.Entities.FMP;
 
@@ -173,6 +164,30 @@ namespace TraderView.Application.Mappers
                 LastReportedPriceUpdated = reader.IsDBNull(reader.GetOrdinal("LastReportedPriceUpdated"))
                     ? null
                     : reader.GetDateTime(reader.GetOrdinal("LastReportedPriceUpdated"))
+            };
+        }
+        public static Instrument MapInstrument(SqlDataReader reader)
+        {
+            return new Instrument
+            {
+                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                InstrumentName = reader["InstrumentName"]?.ToString(),
+                DataName = reader["DataName"]?.ToString(),
+                DataSource = reader.GetString(reader.GetOrdinal("DataSource")),
+                Currency = reader["Currency"]?.ToString(),
+                ConId = reader["ConId"]?.ToString(),
+                ContractUnitType = reader["ContractUnitType"]?.ToString(),
+                Provider = reader["Provider"]?.ToString(),
+                ListingExchange = reader["ListingExchange"]?.ToString(),
+                Format = reader["Format"]?.ToString(),
+                Frequency = reader["Frequency"]?.ToString(),
+                ContractUnit = reader.IsDBNull(reader.GetOrdinal("ContractUnit"))
+                    ? null
+                    : reader.GetDouble(reader.GetOrdinal("ContractUnit")),
+                PriceQuotation = reader["PriceQuotation"]?.ToString(),
+                MinimumPriceFluctuation = reader.IsDBNull(reader.GetOrdinal("MinimumPriceFluctuation"))
+                    ? null
+                    : reader.GetDouble(reader.GetOrdinal("MinimumPriceFluctuation"))
             };
         }
         public static CanSlimScreenerSnapshot MapScreenerSnapshot(SqlDataReader reader)

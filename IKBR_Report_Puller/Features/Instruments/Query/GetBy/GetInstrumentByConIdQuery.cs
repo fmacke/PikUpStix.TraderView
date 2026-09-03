@@ -12,7 +12,7 @@
                             { "@conid", _conId }
                         }; }
         public string Script { get => "SELECT Id FROM dbo.Instruments WHERE ConId = @conid"; }
-    }; 
+    };
 }
 
 

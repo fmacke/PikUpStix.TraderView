@@ -9,13 +9,13 @@ namespace TraderView.Application.Features.Positions.Command.Create
 {
     public class CreatePositionCommand : IQueryWithParameters
     {
-        public CreatePositionCommand(int instrumentId, DateTime openDate, decimal lastReportedPrice, string openCloseIndicator)
+        public CreatePositionCommand(int instrumentId, DateTime openDate, decimal lastReportedPrice, string openCloseIndicator, bool isCurrencyTransaction)
         {
             InstrumentId = instrumentId;
             LastReportedPrice = lastReportedPrice;
             OpenCloseIndicator = openCloseIndicator;
             OpenDate = openDate;
-            Status = "Open";
+            Status = isCurrencyTransaction ? "Closed" : "Open";
         }
 
         public int InstrumentId { get; }

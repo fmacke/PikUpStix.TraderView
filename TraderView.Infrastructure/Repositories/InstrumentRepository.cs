@@ -2,7 +2,9 @@ using Microsoft.Data.SqlClient;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Engineering;
 using TraderView.Application.Features.Instruments.Command.Create;
 using TraderView.Application.Features.Instruments.Query.GetBy;
+using TraderView.Application.Features.TradeExecutions.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Mappers;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Infrastructure.Repositories
@@ -111,86 +113,26 @@ namespace TraderView.Infrastructure.Repositories
             }
         }
 
-        
+
 
         #region Private Helper Methods
         public Instrument Get(int instrumentId)
         {
-            Instrument instrument = null;
-            ExecuteDatabaseOperation(connection =>
+            try
             {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    try
-                    {
-                        const string query = @"
-                            SELECT Id, InstrumentName, Provider, DataName, DataSource, Format, Frequency, 
-                                   ContractUnit, ContractUnitType, PriceQuotation, MinimumPriceFluctuation, 
-                                   Currency, ListingExchange, ConId 
-                            FROM dbo.Instruments 
-                            WHERE Id = @instrumentId";
-
-                        var parameters = new Dictionary<string, object>
-                        {
-                            { "@instrumentId", instrumentId }
-                        };
-
-                        using (var cmd = new SqlCommand(query, connection, transaction))
-                        {
-                            foreach (var param in parameters)
-                            {
-                                cmd.Parameters.AddWithValue(param.Key, param.Value ?? DBNull.Value);
-                            }
-
-                            using (var reader = cmd.ExecuteReader())
-                            {
-                                if (reader.Read())
-                                {
-                                    instrument = new Instrument
-                                    {
-                                        Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                                        InstrumentName = reader.IsDBNull(reader.GetOrdinal("InstrumentName")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("InstrumentName")),
-                                        Provider = reader.IsDBNull(reader.GetOrdinal("Provider")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("Provider")),
-                                        DataName = reader.IsDBNull(reader.GetOrdinal("DataName")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("DataName")),
-                                        DataSource = reader.IsDBNull(reader.GetOrdinal("DataSource")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("DataSource")),
-                                        Format = reader.IsDBNull(reader.GetOrdinal("Format")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("Format")),
-                                        Frequency = reader.IsDBNull(reader.GetOrdinal("Frequency")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("Frequency")),
-                                        ContractUnit = reader.IsDBNull(reader.GetOrdinal("ContractUnit")) 
-                                            ? null : reader.GetDouble(reader.GetOrdinal("ContractUnit")),
-                                        ContractUnitType = reader.IsDBNull(reader.GetOrdinal("ContractUnitType")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("ContractUnitType")),
-                                        PriceQuotation = reader.IsDBNull(reader.GetOrdinal("PriceQuotation")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("PriceQuotation")),
-                                        MinimumPriceFluctuation = reader.IsDBNull(reader.GetOrdinal("MinimumPriceFluctuation")) 
-                                            ? null : reader.GetDouble(reader.GetOrdinal("MinimumPriceFluctuation")),
-                                        Currency = reader.IsDBNull(reader.GetOrdinal("Currency")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("Currency")),
-                                        ListingExchange = reader.IsDBNull(reader.GetOrdinal("ListingExchange")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("ListingExchange")),
-                                        ConId = reader.IsDBNull(reader.GetOrdinal("ConId")) 
-                                            ? null : reader.GetString(reader.GetOrdinal("ConId"))
-                                    };
-                                }
-                            }
-                        }
-
-                        transaction.Commit();
-                    }
-                    catch (Exception ex)
-                    {
-                        transaction.Rollback();
-                        Console.WriteLine($"Error retrieving instrument by ID: {ex.Message}");
-                        throw;
-                    }
-                }
-            });
-            return instrument;
+                var instrument = ExecuteDatabaseOperation(connection =>
+                {                    
+                    return ExecuteSingle(connection, null, MapFromReader.MapInstrument, new GetInstrumentByIdQuery(instrumentId));
+                });
+                if (instrument == null)
+                    throw new InvalidOperationException($"Instrument with Id {instrumentId} was not found.");                
+                return instrument;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error retrieving instrument by ID {instrumentId}: {ex.Message}");
+                throw;
+            }
         }
 
         public int? GetInstrumentIdByConId(string conid)

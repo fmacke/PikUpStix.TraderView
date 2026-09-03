@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Xml.Linq;
 using TraderView.Application.Mappers;
-using TraderView.Application.Utils;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Services
