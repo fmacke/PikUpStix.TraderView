@@ -46,10 +46,10 @@ namespace PikUpStix.TraderView.Services
         {
             try
             {
-                //(IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
-                //_instrumentRepository.UpsertInstruments(mainReport.Trades, _marketDataService.SourceName);
-                //_tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-                //await UpdateOpenPositionPrices();
+                (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
+                _instrumentRepository.UpsertInstruments(mainReport.Trades, _marketDataService.SourceName);
+                _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
+                await UpdateOpenPositionPrices();
                 var executions = _tradeExecutionRepository.GetTradeExecutions();
 
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);

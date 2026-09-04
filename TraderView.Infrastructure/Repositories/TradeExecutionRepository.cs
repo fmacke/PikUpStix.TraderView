@@ -287,7 +287,7 @@ namespace TraderView.Infrastructure.Repositories
                                 tradeConfirm.OpenCloseIndicator = "C";
                                 if (existingPosition?.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity == 0)
                                 {
-                                    ClosePosition(existingPosition.Id, tradeConfirm.DateTime);
+                                    ClosePosition(existingPosition.Id, tradeConfirm.TradeDate);
                                 }
                             }
                         }
