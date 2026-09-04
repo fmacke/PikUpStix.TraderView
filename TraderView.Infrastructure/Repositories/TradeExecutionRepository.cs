@@ -274,14 +274,14 @@ namespace TraderView.Infrastructure.Repositories
                         Position? existingPosition = null;
  
                         // Check for open position for the trade's symbol and instrument (within the same transaction)
-                        existingPosition = GetOpenPosition(instrumentId.Value);
-                        var openDirection = existingPosition.TradeExecutions.MinBy(x => x.Id).BuySell;
-                        tradeConfirm.PositionId = existingPosition.Id;
-                        tradeConfirm.OpenCloseIndicator = "O";
-                        tradeConfirm.PositionId = existingPosition.Id;
+                        existingPosition = GetOpenPosition(instrumentId.Value);                        
 
                         if (existingPosition != null)
                         {
+                            var openDirection = existingPosition.TradeExecutions.MinBy(x => x.Id).BuySell;
+                            tradeConfirm.PositionId = existingPosition.Id;
+                            tradeConfirm.OpenCloseIndicator = "O";
+                            tradeConfirm.PositionId = existingPosition.Id;
                             if (tradeConfirm.BuySell != openDirection)
                             {
                                 tradeConfirm.OpenCloseIndicator = "C";

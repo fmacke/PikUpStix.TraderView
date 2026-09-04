@@ -1,4 +1,6 @@
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Models.ResultBasedForecasting;
+using TraderView.Application.Services;
 
 namespace TraderView.Console
 {
@@ -26,17 +28,26 @@ namespace TraderView.Console
         {
             await _reportRunnerService.RunReportAsync(true, true);
 
-            //var screenerList = await _financialDataService.RunScreenerAsync(new CanSlimScreenerCriteria());
-            //foreach (var screener in screenerList)
-            //{
-            //    System.Console.WriteLine($"Symbol: {screener.Symbol}, Sector: {screener.Sector}");
-            //}
-            //var lethavealook = await _financialDataService.GetKeyMetricsTtmAsync("NVDA");
-            //System.Console.WriteLine($"NVDA TTM Revenue:");
-            // Win rates matching columns: 30%, 40%, 50%, and Custom (42.11%)
-            //RunRiskMatrixTest();
+            var roiResult = new ResultBasedAssumptionForecastInputs(100000m, 0.1m, 0.4m, 0.0054m, 0.0029m, 0.36m);
+            //var servoce = new ResultsBasedAssumptionForecastService();
+            //var forecastResult = servoce.CalculateForecast(roiResult);
+
+            //System.Console.WriteLine($"Average Currency Gain on Winning Trade: {forecastResult.AverageCurrencyGainOnWinningTrade}");
+            //System.Console.WriteLine($"Number of Winning Trades: {forecastResult.NumberOfWinningTrades}");
+            //System.Console.WriteLine($"Average Currency Loss on Losing Trade: {forecastResult.AverageCurrencyLossOnLosingTrade}");
+            //System.Console.WriteLine($"Number of Losing Trades: {forecastResult.NumberOfLosingTrades}");
+            //System.Console.WriteLine($"Gain/Loss Ratio: {forecastResult.GainLossRatio}");
+            //System.Console.WriteLine($"Position Size: {forecastResult.PositionSize}");
+            //System.Console.WriteLine($"Expected Net Return (%): {forecastResult.ExpectedNetReturnPercent}");
+            //System.Console.WriteLine($"Expected Net Return (Currency): {forecastResult.ExpectedNetReturnCurrency}");
+            //System.Console.WriteLine($"Goal (Currency): {forecastResult.GoalCurrency}");
+            //System.Console.WriteLine($"Number of Trades Needed to Reach Goal: {forecastResult.NumberOfTradesNeededToReachGoal}");
+            //System.Console.WriteLine($"Adjusted Gain/Loss Ratio: {forecastResult.AdjustedGainLossRatio}");
+            //System.Console.WriteLine($"Optimal F: {forecastResult.OtpimalF}");
 
             await Task.CompletedTask;
+
+            
         }
 
         private void RunRiskMatrixTest()
