@@ -66,7 +66,6 @@ namespace PikUpStix.TraderView.Services
                 {
                     _tradeHistoryReportService.CreateTradeHistoryReport(executions);
                     await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-
                     await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                     await _marketDataService.FetchAndSaveChartData(new List<string>()
                     {

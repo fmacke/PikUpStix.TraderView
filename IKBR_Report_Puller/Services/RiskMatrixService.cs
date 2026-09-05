@@ -1,4 +1,5 @@
-﻿using TraderView.Application.Interfaces.Services;
+﻿using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
 using TraderView.Domain.Entities.FMP;
 
 namespace TraderView.Application.Services
@@ -15,19 +16,18 @@ namespace TraderView.Application.Services
         /// <param name="request"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public RiskMatrixCalculationResult CalculateExpectedRoi(RiskMatrixCalculationRequest request)
+        public async Task<RiskMatrixCalculationResult> CalculateExpectedRoi(RiskMatrixCalculationRequest request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            return CalculateExpectedRoi(
-                request.GainPercentage,
+            return await Task.Run(() => CalculateExpectedRoi(request.GainPercentage,
                 request.LossPercentage,
                 request.WinRatePercentage,
-                request.NumberOfTrades);
+                request.NumberOfTrades));
         }
 
-        public RiskMatrixCalculationResult CalculateExpectedRoi(
+        public async Task<RiskMatrixCalculationResult> CalculateExpectedRoi(
             decimal gainPercentage,
             decimal lossPercentage,
             decimal winRatePercentage,
@@ -60,7 +60,7 @@ namespace TraderView.Application.Services
 
             decimal compoundedRoi = (decimal)(compoundedMultiplier - 1.0);
 
-            return new RiskMatrixCalculationResult
+            return await Task.Run(() => new RiskMatrixCalculationResult
             {
                 GainPercentage = gainPercentage,
                 LossPercentage = Math.Abs(lossPercentage),
@@ -71,7 +71,7 @@ namespace TraderView.Application.Services
                 ExpectedReturnPerTrade = Math.Round(evPerTrade * 100m, 4),
                 SimpleRoi = Math.Round(simpleRoi * 100m, 4),
                 CompoundedRoi = Math.Round(compoundedRoi * 100m, 4)
-            };
+            });
         }
     }
 }

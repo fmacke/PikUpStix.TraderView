@@ -11,7 +11,7 @@ namespace traderview.Server.Services
         /// Gets all trades asynchronously
         /// </summary>
         /// <returns>List of all trades</returns>
-        Task<List<TradeDto>> GetAllTradesAsync();
+        Task<List<TradeDto>>    GetAllTradesAsync();
 
         /// <summary>
         /// Gets detailed information for a specific trade asynchronously

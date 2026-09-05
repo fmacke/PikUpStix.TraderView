@@ -26,7 +26,17 @@ namespace IKBR_Report_Puller.Tests.Services
                     Quantity = 100,
                     TradePrice = 150.00m,
                     IbOrderId = 1,
-                    TradeDate = DateTime.Now
+                    TradeDate = DateTime.Now,
+                    Position = new Position() { Id = 1, InstrumentId = 1}
+                },
+                new TradeExecution
+                {
+                    Symbol = "AAPL",
+                    Quantity = -100,
+                    TradePrice = 150.00m,
+                    IbOrderId = 1,
+                    TradeDate = DateTime.Now,
+                    Position = new Position() { Id = 1, InstrumentId = 1}
                 }
             };
 
@@ -34,7 +44,7 @@ namespace IKBR_Report_Puller.Tests.Services
             _service.CreateTradeHistoryReport(tradeExecutions);
 
             // Assert
-            Assert.AreEqual(1, _service.positions.Count);
+            Assert.AreEqual(1, _service.TradeHistory.Count);
             //Assert.AreEqual("AAPL", _service.positions[0].Symbol);
             //Assert.AreEqual(100, _service.positions[0].Quantity);
             //Assert.AreEqual(150.00m, _service.positions[0].TradePrice);
@@ -63,7 +73,17 @@ namespace IKBR_Report_Puller.Tests.Services
                     Quantity = 50,
                     TradePrice = 155.00m,
                     IbOrderId = 2,
-                    TradeDate = DateTime.Now.AddDays(1)
+                    TradeDate = DateTime.Now.AddDays(1),
+                    Position = new Position() { Id = 1, InstrumentId = 1}
+                },
+                new TradeExecution
+                {
+                    Symbol = "AAPL",
+                    Quantity = -50,
+                    TradePrice = 155.00m,
+                    IbOrderId = 2,
+                    TradeDate = DateTime.Now.AddDays(1),
+                    Position = new Position() { Id = 1, InstrumentId = 1}
                 }
             };
 
@@ -71,7 +91,7 @@ namespace IKBR_Report_Puller.Tests.Services
             _service.CreateTradeHistoryReport(tradeExecutions);
 
             // Assert
-            Assert.AreEqual(1, _service.positions.Count);
+            Assert.AreEqual(1, _service.TradeHistory.Count);
             //Assert.AreEqual(150, _service.positions[0].Quantity);
         }
 
@@ -87,7 +107,17 @@ namespace IKBR_Report_Puller.Tests.Services
                     Quantity = 100,
                     TradePrice = 150.00m,
                     IbOrderId = 1,
-                    TradeDate = DateTime.Now
+                    TradeDate = DateTime.Now,
+                    Position = new Position { Id = 1, InstrumentId = 1 }
+                },
+                new TradeExecution
+                {
+                    Symbol = "AAPL",
+                    Quantity = -100,
+                    TradePrice = 150.00m,
+                    IbOrderId = 1,
+                    TradeDate = DateTime.Now,
+                    Position = new Position { Id = 1, InstrumentId = 1 }
                 },
                 new TradeExecution       
                 {
@@ -95,7 +125,17 @@ namespace IKBR_Report_Puller.Tests.Services
                     Quantity = 50,
                     TradePrice = 200.00m,
                     IbOrderId = 2,
-                    TradeDate = DateTime.Now
+                    TradeDate = DateTime.Now,
+                    Position = new Position { Id = 2,  InstrumentId = 2 }
+                },
+                new TradeExecution
+                {
+                    Symbol = "MSFT",
+                    Quantity = -50,
+                    TradePrice = 200.00m,
+                    IbOrderId = 2,
+                    TradeDate = DateTime.Now,
+                    Position = new Position { Id = 2,  InstrumentId = 2 }
                 }
             };
 
@@ -103,7 +143,7 @@ namespace IKBR_Report_Puller.Tests.Services
             _service.CreateTradeHistoryReport(tradeExecutions);
 
             // Assert
-            Assert.AreEqual(2, _service.positions.Count);
+            Assert.AreEqual(2, _service.TradeHistory.Count);
         }
     }
 }

@@ -1,11 +1,13 @@
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using PikUpStix.TraderView.Services;
 using PikUpStix.TraderView.Services.MarketData;
+using traderview.Server.DTOs.Mappers;
 using traderview.Server.Services;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
 using TraderView.Infrastructure.Repositories;
+using AutoMapper;
 
 public partial class Program
 {
@@ -84,8 +86,6 @@ public partial class Program
             var positionRepo = provider.GetRequiredService<IPositionRepository>();
             return new TradeExecutionService(tradeExecutionRepo, positionRepo);
         });
-
-        // Register FinancialModellingPrepService
         builder.Services.AddScoped<FinancialModellingPrepService>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
@@ -100,7 +100,6 @@ public partial class Program
             var outputFilePath = config["FinancialModelingPrep:OutputFilePath"];
             return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, canSlimCandidateService, apiKey, baseUrl, outputFilePath);
         });
-
         builder.Services.AddScoped<IMarketDataService>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
@@ -123,6 +122,12 @@ public partial class Program
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
+
+        // Register mapping for static assets
+        builder.Services.AddAutoMapper(cfg =>
+        {
+            cfg.AddProfile<RiskMatrixCalculationResultProfile>();
+        });
 
         var app = builder.Build();
 

@@ -50,7 +50,7 @@ namespace TraderView.Console
             
         }
 
-        private void RunRiskMatrixTest()
+        private async Task RunRiskMatrixTest()
         {
             decimal[] winRates = { 30.0m, 40.0m, 50.0m, 42.11m };
             const int tradesCount = 10;
@@ -87,10 +87,10 @@ namespace TraderView.Console
             {
                 decimal glRatio = loss == 0 ? 0 : (gain / loss) * 100m;
 
-                var res30 = _riskMatrixService.CalculateExpectedRoi(gain, loss, 30.0m, tradesCount);
-                var res40 = _riskMatrixService.CalculateExpectedRoi(gain, loss, 40.0m, tradesCount);
-                var res50 = _riskMatrixService.CalculateExpectedRoi(gain, loss, 50.0m, tradesCount);
-                var resCustom = _riskMatrixService.CalculateExpectedRoi(gain, loss, 42.11m, tradesCount);
+                var res30 = await _riskMatrixService.CalculateExpectedRoi(gain, loss, 30.0m, tradesCount);
+                var res40 = await _riskMatrixService.CalculateExpectedRoi(gain, loss, 40.0m, tradesCount);
+                var res50 = await _riskMatrixService.CalculateExpectedRoi(gain, loss, 50.0m, tradesCount);
+                var resCustom = await _riskMatrixService.CalculateExpectedRoi(gain, loss, 42.11m, tradesCount);
 
                 System.Console.WriteLine(
                     $"{gain,8:F2}% " +

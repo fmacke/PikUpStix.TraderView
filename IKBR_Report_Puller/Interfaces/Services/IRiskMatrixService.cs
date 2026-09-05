@@ -4,12 +4,7 @@ namespace TraderView.Application.Interfaces.Services
 {
     public interface IRiskMatrixService
     {
-        RiskMatrixCalculationResult CalculateExpectedRoi(RiskMatrixCalculationRequest request);
-
-        RiskMatrixCalculationResult CalculateExpectedRoi(
-            decimal gainPercentage,
-            decimal lossPercentage,
-            decimal winRatePercentage,
-            int numberOfTrades);
+        Task<RiskMatrixCalculationResult> CalculateExpectedRoi(RiskMatrixCalculationRequest request);
+        Task<RiskMatrixCalculationResult> CalculateExpectedRoi(decimal gainPercentage, decimal lossPercentage, decimal winRatePercentage, int numberOfTrades);
     }
 }

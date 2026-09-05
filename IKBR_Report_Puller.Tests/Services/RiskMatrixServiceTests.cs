@@ -17,7 +17,7 @@ namespace IKBR_Report_Puller.Tests.Services
         }
 
         [TestMethod]
-        public void CalculateExpectedRoi_WithValidInputs_CalculatesCorrectExpectancyAndSimpleRoi()
+        public async Task CalculateExpectedRoi_WithValidInputs_CalculatesCorrectExpectancyAndSimpleRoi()
         {
             // Arrange (30% win rate, +4% gain, -2% loss, 10 trades)
             decimal gain = 4.00m;
@@ -26,7 +26,7 @@ namespace IKBR_Report_Puller.Tests.Services
             int trades = 10;
 
             // Act
-            var result = _riskMatrixService.CalculateExpectedRoi(gain, loss, winRate, trades);
+            var result = await _riskMatrixService.CalculateExpectedRoi(gain, loss, winRate, trades);
 
             // Assert
             Assert.AreEqual(2.00m, result.RewardToRiskRatio, "Reward-to-risk ratio calculation failed.");
@@ -59,7 +59,8 @@ namespace IKBR_Report_Puller.Tests.Services
         [DataRow(24.00, 12.00, 42.11, 18.02)]
         [DataRow(54.00, 27.00, 42.11, -0.3618)]
         [DataRow(100.00, 50.00, 42.11, -66.5054)]
-        public void CalculateExpectedRoi_WithSpreadsheetValues_MatchesExpectedCompoundedRoi(
+        
+        public async Task CalculateExpectedRoi_WithSpreadsheetValues_MatchesExpectedCompoundedRoi(
             double gain,
             double loss,
             double winRate,
@@ -73,7 +74,7 @@ namespace IKBR_Report_Puller.Tests.Services
             decimal expectedRoiDecimal = (decimal)expectedCompoundedRoi;
 
             // Act
-            var result = _riskMatrixService.CalculateExpectedRoi(gainDecimal, lossDecimal, winRateDecimal, tradesCount);
+            var result = await _riskMatrixService.CalculateExpectedRoi(gainDecimal, lossDecimal, winRateDecimal, tradesCount);
 
             // Assert
             Assert.AreEqual((double)expectedRoiDecimal, (double)result.CompoundedRoi, 0.02,
@@ -81,10 +82,10 @@ namespace IKBR_Report_Puller.Tests.Services
         }
 
         [TestMethod]
-        public void CalculateExpectedRoi_WithZeroTrades_ThrowsArgumentException()
+        public async Task CalculateExpectedRoi_WithZeroTrades_ThrowsArgumentException()
         {
             // Act
-            Assert.Throws<ArgumentException>(() => _riskMatrixService.CalculateExpectedRoi(4.00m, 2.00m, 30.0m, 0));
+            await Assert.ThrowsAsync<ArgumentException>(async () => await _riskMatrixService.CalculateExpectedRoi(4.00m, 2.00m, 30.0m, 0));
         }
     }
 }
