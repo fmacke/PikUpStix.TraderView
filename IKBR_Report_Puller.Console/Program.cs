@@ -122,11 +122,11 @@ namespace TraderView.Console
                     });
                     services.AddSingleton<IReportRunnerService, ReportRunnerService>();
                     services.AddSingleton<IExcelReportService, ExcelReportService>();
-                    services.AddScoped<ITradeExecutionService, TradeExecutionService>(provider =>
+                    services.AddScoped<IOpenPositionsService, OpenPositionsService>(provider =>
                     {
                         var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
                         var positionRepo = provider.GetRequiredService<IPositionRepository>();
-                        return new TradeExecutionService(tradeExecutionRepo, positionRepo);
+                        return new OpenPositionsService(tradeExecutionRepo, positionRepo);
                     });
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();

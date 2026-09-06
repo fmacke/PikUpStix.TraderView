@@ -1,21 +1,23 @@
-using TraderView.Domain.Entities;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Domain.Entities;
 
-namespace PikUpStix.TraderView.Services
+namespace TraderView.Application.Services
 {
     public class TradeExecutionService : ITradeExecutionService
     {
-        private readonly ITradeExecutionRepository _tradeExecutionRepository;
-
-        public TradeExecutionService(ITradeExecutionRepository tradeExecutionRepository, IPositionRepository positionRepository)
+        private readonly ITradeExecutionRepository _repository;
+        public TradeExecutionService(ITradeExecutionRepository repository)
         {
-            _tradeExecutionRepository = tradeExecutionRepository;
+            _repository = repository;
         }
-
-        async Task<List<Position>> ITradeExecutionService.GetOpenPositionsAsync()
+        Task<List<TradeExecution>> ITradeExecutionService.GetTradeExecutions()
         {
-            return await Task.Run(() => _tradeExecutionRepository.GetOpenPositions());
+            var executions = _repository.GetTradeExecutions();
+            return Task.FromResult(executions);
         }
     }
 }

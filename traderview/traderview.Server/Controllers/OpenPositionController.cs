@@ -9,16 +9,16 @@ namespace traderview.Server.Controllers
     public class OpenPositionController : ControllerBase
     {
         private readonly ILogger<OpenPositionController> _logger;
-        private readonly ITradeExecutionService _tradeExecutionService;
+        private readonly IOpenPositionsService _openPositionService;
         private readonly IExcelReportService _excelReportService;
 
         public OpenPositionController(
             ILogger<OpenPositionController> logger,
-            ITradeExecutionService tradeExecutionService,
+            IOpenPositionsService openPositionsService,
             IExcelReportService excelReportService)
         {
             _logger = logger;
-            _tradeExecutionService = tradeExecutionService;
+            _openPositionService = openPositionsService;
             _excelReportService = excelReportService;
         }
 
@@ -34,7 +34,7 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("Fetching all open positions");
-                var openPositions = await _tradeExecutionService.GetOpenPositionsAsync();
+                var openPositions = await _openPositionService.GetOpenPositionsAsync();
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
 
                 // Use the shared report data preparation method

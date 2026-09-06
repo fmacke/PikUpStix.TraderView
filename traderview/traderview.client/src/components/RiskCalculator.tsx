@@ -1,13 +1,21 @@
-import './RiskCalculator.css';
+import React from 'react';
+import RiskMatrixCard from './RiskMatrixCard';
 
-function RiskCalculator() {
+export const RiskCalculator: React.FC = () => {
     return (
-        <div className="page-container">
-            <h1>Risk Calculator</h1>
-            <p>Risk calc page-aroo</p>
-                
+        <div className="container mx-auto p-6">
+            <h1 className="text-2xl font-bold mb-6">Risk & Performance Calculator</h1>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Existing calculator inputs/forms can go here */}
+
+                {/* Position Review Matrix Card */}
+                <div>
+                    <RiskMatrixCard />
+                </div>
+            </div>
         </div>
     );
-}
+};
 
 export default RiskCalculator;

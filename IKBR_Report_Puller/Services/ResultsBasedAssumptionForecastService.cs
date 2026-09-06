@@ -81,18 +81,18 @@ namespace TraderView.Application.Services
 
             return new ResultBasedAssumptionForecastResults
             {
-                AverageCurrencyGainOnWinningTrade = avgGainCurrency,
+                AverageCurrencyGainOnWinningTrade = Math.Round(avgGainCurrency,1),
                 NumberOfWinningTrades = winningTrades,
-                AverageCurrencyLossOnLosingTrade = avgLossCurrency,
+                AverageCurrencyLossOnLosingTrade = Math.Round(avgLossCurrency,1),
                 NumberOfLosingTrades = losingTrades,
-                GainLossRatio = gainLossRatio,
-                PositionSize = positionSize,
-                ExpectedNetReturnPercent = expectedNetReturnPercent,
-                ExpectedNetReturnCurrency = expectedNetReturnCurrency,
-                GoalCurrency = goalCurrency,
+                GainLossRatio = Math.Round(gainLossRatio,1),
+                PositionSize = Math.Round(positionSize,1),
+                ExpectedNetReturnPercent = Math.Round(expectedNetReturnPercent,1),
+                ExpectedNetReturnCurrency = Math.Round(expectedNetReturnCurrency,1),
+                GoalCurrency = Math.Round(goalCurrency,1),
                 NumberOfTradesNeededToReachGoal = tradesNeeded,
-                AdjustedGainLossRatio = adjustedGainLossRatio,
-                OtpimalF = optimalF
+                AdjustedGainLossRatio = Math.Round(adjustedGainLossRatio,1),
+                OtpimalF = Math.Round(optimalF,1)
             };
         }
     }

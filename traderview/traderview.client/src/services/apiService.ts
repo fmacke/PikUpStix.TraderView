@@ -1,6 +1,19 @@
 import axios from 'axios';
 import type { Trade, TradeContext, RSIndicatorData, OpenPosition, Note, CreateNoteRequest, ListItem, CanSlimCandidate } from '../types/api';
 
+// Define interface for the Risk Matrix calculation result[cite: 2]
+export interface RiskMatrixCalculationResult {
+    gainPercentage: number;
+    lossPercentage: number;
+    rewardToRiskRatio: number;
+    winRatePercentage: number;
+    lossRatePercentage: number;
+    numberOfTrades: number;
+    expectedReturnPerTrade: number;
+    simpleRoi: number;
+    compoundedRoi: number;
+}
+
 // API base URL - will use the proxy configured in vite.config.ts in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -66,9 +79,9 @@ export const apiService = {
 
     // Get RS indicator data for a specific trade
     async getRSIndicator(
-        tradeId: number, 
-        benchmarkSymbol: string = '^GSPC', 
-        daysBefore: number = 150, 
+        tradeId: number,
+        benchmarkSymbol: string = '^GSPC',
+        daysBefore: number = 150,
         daysAfter: number = 150
     ): Promise<RSIndicatorData> {
         console.log(`Making API call to /tradeviewer/trades/${tradeId}/rs-indicator`);
@@ -186,6 +199,19 @@ export const apiService = {
             return response.data;
         } catch (error) {
             console.error('Get EntryMethod list items API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Get position review risk matrix calculation from RiskController[cite: 1, 2]
+    async getPositionReview(): Promise<RiskMatrixCalculationResult> {
+        console.log('Making API call to /api/risk/positionreview');
+        try {
+            const response = await apiClient.get<RiskMatrixCalculationResult>('/risk/positionreview');
+            console.log('Position review API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Position review API call failed:', error);
             throw error;
         }
     },

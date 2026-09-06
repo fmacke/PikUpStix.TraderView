@@ -4,6 +4,7 @@ using TraderView.Application.Interfaces.Services;
 
 namespace PikUpStix.TraderView.Services
 {
+
     /// <summary>
     /// Service for List operations
     /// </summary>

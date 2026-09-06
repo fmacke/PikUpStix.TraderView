@@ -80,11 +80,12 @@ public partial class Program
         builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();
         builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
-        builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>(provider =>
+        builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>();
+        builder.Services.AddScoped<IOpenPositionsService, OpenPositionsService>(provider =>
         {
             var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
             var positionRepo = provider.GetRequiredService<IPositionRepository>();
-            return new TradeExecutionService(tradeExecutionRepo, positionRepo);
+            return new OpenPositionsService(tradeExecutionRepo, positionRepo);
         });
         builder.Services.AddScoped<FinancialModellingPrepService>(provider =>
         {

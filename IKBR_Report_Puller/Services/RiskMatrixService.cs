@@ -21,17 +21,10 @@ namespace TraderView.Application.Services
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
 
-            return await Task.Run(() => CalculateExpectedRoi(request.GainPercentage,
-                request.LossPercentage,
-                request.WinRatePercentage,
-                request.NumberOfTrades));
+            return await Task.Run(() => CalculateExpectedRoi(request.GainPercentage, request.LossPercentage, request.WinRatePercentage, request.NumberOfTrades));
         }
 
-        public async Task<RiskMatrixCalculationResult> CalculateExpectedRoi(
-            decimal gainPercentage,
-            decimal lossPercentage,
-            decimal winRatePercentage,
-            int numberOfTrades)
+        public async Task<RiskMatrixCalculationResult> CalculateExpectedRoi(decimal gainPercentage, decimal lossPercentage,decimal winRatePercentage, int numberOfTrades)
         {
             if (numberOfTrades <= 0)
                 throw new ArgumentException("Number of trades must be greater than zero.", nameof(numberOfTrades));
