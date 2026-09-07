@@ -15,9 +15,8 @@ namespace TraderView.Application.Services
             _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
         }
-        public ResultBasedAssumptionForecastInputs GetInputsFromTradingHistory(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent)        
+        public ResultBasedAssumptionForecastInputs GetInputsFromTradingHistory(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent, List<TradeExecution> tradeExecutions)        
         {
-            var tradeExecutions = _tradeExecutionRepository.GetTradeExecutions();
             _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
             var trades = _tradeHistoryReportService.TradeHistoryAggregated;
 

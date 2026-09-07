@@ -1,18 +1,15 @@
 import axios from 'axios';
-import type { Trade, TradeContext, RSIndicatorData, OpenPosition, Note, CreateNoteRequest, ListItem, CanSlimCandidate } from '../types/api';
-
-// Define interface for the Risk Matrix calculation result[cite: 2]
-export interface RiskMatrixCalculationResult {
-    gainPercentage: number;
-    lossPercentage: number;
-    rewardToRiskRatio: number;
-    winRatePercentage: number;
-    lossRatePercentage: number;
-    numberOfTrades: number;
-    expectedReturnPerTrade: number;
-    simpleRoi: number;
-    compoundedRoi: number;
-}
+import type {
+    Trade,
+    TradeContext,
+    RSIndicatorData,
+    OpenPosition,
+    Note,
+    CreateNoteRequest,
+    ListItem,
+    CanSlimCandidate,
+    RiskMatrixCalculationResultDto
+} from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -58,7 +55,6 @@ export const apiService = {
     },
 
     // Get candlestick data for a specific trade
-    // Uses calendar days to fetch data - ~150 days typically provides ~100 trading days
     async getTradeCandlesticks(positionId: number, daysBefore: number = 150, daysAfter: number = 150): Promise<TradeContext> {
         console.log(`Making API call to /tradeviewer/trades/${positionId}/candlesticks`);
         try {
@@ -203,15 +199,28 @@ export const apiService = {
         }
     },
 
-    // Get position review risk matrix calculation from RiskController[cite: 1, 2]
-    async getPositionReview(): Promise<RiskMatrixCalculationResult> {
-        console.log('Making API call to /api/risk/positionreview');
+    // Get position review risk matrix calculation from RiskController
+    async getPositionReview(): Promise<any> {
+        console.log('Making API call to /risk/currentperformance');
         try {
-            const response = await apiClient.get<RiskMatrixCalculationResult>('/risk/positionreview');
+            const response = await apiClient.get('/risk/positionreview');
             console.log('Position review API response received:', response.data);
             return response.data;
         } catch (error) {
             console.error('Position review API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Get desired performance calculation from RiskController
+    async getDesiredPerformance(): Promise<RiskMatrixCalculationResultDto> {
+        console.log('Making API call to /risk/desiredperformance');
+        try {
+            const response = await apiClient.get<RiskMatrixCalculationResultDto>('/risk/desiredperformance');
+            console.log('Desired performance API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Desired performance API call failed:', error);
             throw error;
         }
     },

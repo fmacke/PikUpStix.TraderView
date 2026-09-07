@@ -1,5 +1,6 @@
 import React from 'react';
 import RiskMatrixCard from './RiskMatrixCard';
+import DesiredPerformanceView from './DesiredPerformanceCard';
 
 export const RiskCalculator: React.FC = () => {
     return (
@@ -7,11 +8,11 @@ export const RiskCalculator: React.FC = () => {
             <h1 className="text-2xl font-bold mb-6">Risk & Performance Calculator</h1>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Existing calculator inputs/forms can go here */}
-
-                {/* Position Review Matrix Card */}
                 <div>
                     <RiskMatrixCard />
+                </div>
+                <div>
+                    <DesiredPerformanceView />
                 </div>
             </div>
         </div>

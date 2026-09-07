@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { apiService, type RiskMatrixCalculationResult } from '../services/apiService';
+import { apiService } from '../services/apiService';
+import { type RiskMatrixCalculationResult } from '../types/api';
 
 export const RiskMatrixCard: React.FC = () => {
     const [data, setData] = useState<RiskMatrixCalculationResult | null>(null);

@@ -146,3 +146,28 @@ export interface CanSlimCandidate {
     volume: number;
     marketCap: number;
 }
+export interface RiskMatrixCalculationResultDto {
+    averageCurrencyGainOnWinningTrade: number;
+    numberOfWinningTrades: number;
+    averageCurrencyLossOnLosingTrade: number;
+    numberOfLosingTrades: number;
+    gainLossRatio: number;
+    positionSize: number;
+    expectedNetReturnPercent: number;
+    expectedNetReturnCurrency: number;
+    goalCurrency: number;
+    numberOfTradesNeededToReachGoal: number;
+    adjustedGainLossRatio: number;
+    otpimalF: number; // Note: maintaining spelling from backend DTO
+}
+export interface RiskMatrixCalculationResult {
+    gainPercentage: number;
+    lossPercentage: number;
+    rewardToRiskRatio: number;
+    winRatePercentage: number;
+    lossRatePercentage: number;
+    numberOfTrades: number;
+    expectedReturnPerTrade: number;
+    simpleRoi: number;
+    compoundedRoi: number;
+}

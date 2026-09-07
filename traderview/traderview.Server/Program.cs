@@ -120,7 +120,10 @@ public partial class Program
         builder.Services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
         builder.Services.AddScoped<IRiskMatrixService, RiskMatrixService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
-        builder.Services.AddControllers();
+        builder.Services.AddScoped<IResultsBasedAssumptionForecastService, ResultsBasedAssumptionForecastService>();
+
+
+    builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 
@@ -128,6 +131,7 @@ public partial class Program
         builder.Services.AddAutoMapper(cfg =>
         {
             cfg.AddProfile<RiskMatrixCalculationResultProfile>();
+            cfg.AddProfile<ResultBasedAssumptionForecastResultsProfile>();
         });
 
         var app = builder.Build();

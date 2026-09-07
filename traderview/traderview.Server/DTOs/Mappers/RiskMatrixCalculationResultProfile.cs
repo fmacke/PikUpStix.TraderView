@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using TraderView.Application.Models.ResultBasedForecasting;
 using TraderView.Domain.Entities.FMP;
 
 namespace traderview.Server.DTOs.Mappers
@@ -8,6 +9,13 @@ namespace traderview.Server.DTOs.Mappers
         public RiskMatrixCalculationResultProfile()
         {
             CreateMap<RiskMatrixCalculationResult, RiskMatrixCalculationResultDto>();
+        }
+    }
+    public class ResultBasedAssumptionForecastResultsProfile : Profile
+    {
+        public ResultBasedAssumptionForecastResultsProfile()
+        {
+            CreateMap<ResultBasedAssumptionForecastResults, ResultBasedAssumptionForecastResultsDto>();
         }
     }
 }

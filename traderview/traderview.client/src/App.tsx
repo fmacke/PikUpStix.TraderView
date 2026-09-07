@@ -5,7 +5,7 @@ import type { Trade } from './types/api';
 import TradeList from './components/TradeList';
 import TradeDetail from './components/TradeDetail';
 import OpenPositionList from './components/OpenPositionList';
-import RiskCalculator from './components/RiskCalculator';
+import RiskCalculator from './components/RiskCalculatorView';
 import StockScreener from './components/StockScreener';
 import SyncButton from './components/SyncButton';
 

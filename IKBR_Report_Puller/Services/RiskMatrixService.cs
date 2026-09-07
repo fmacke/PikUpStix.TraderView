@@ -55,15 +55,15 @@ namespace TraderView.Application.Services
 
             return await Task.Run(() => new RiskMatrixCalculationResult
             {
-                GainPercentage = gainPercentage,
-                LossPercentage = Math.Abs(lossPercentage),
-                RewardToRiskRatio = Math.Round(rewardToRiskRatio, 2),
-                WinRatePercentage = winRatePercentage,
-                LossRatePercentage = (1.0m - winRate) * 100m,
+                GainPercentage = Math.Round(gainPercentage, 1),
+                LossPercentage = Math.Round(lossPercentage,1),
+                RewardToRiskRatio = Math.Round(rewardToRiskRatio, 1),
+                WinRatePercentage = Math.Round(winRatePercentage,1),
+                LossRatePercentage = Math.Round((1.0m - winRate) * 100m,1),
                 NumberOfTrades = numberOfTrades,
-                ExpectedReturnPerTrade = Math.Round(evPerTrade * 100m, 4),
+                ExpectedReturnPerTrade = Math.Round(evPerTrade * 100m, 2),
                 SimpleRoi = Math.Round(simpleRoi * 100m, 4),
-                CompoundedRoi = Math.Round(compoundedRoi * 100m, 4)
+                CompoundedRoi = Math.Round(compoundedRoi * 100m, 2)
             });
         }
     }
