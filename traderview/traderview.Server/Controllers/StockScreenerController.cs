@@ -74,9 +74,8 @@ namespace traderview.Server.Controllers
             }
         }
         /// <summary>
-        /// Run the stock screener to get a list of qualifying CAN SLIM candidates
+        /// Get the latest list of qualifying CAN SLIM candidates
         /// </summary>
-        /// <param name="symbol">The stock symbol to screen for CAN SLIM candidates</param>
         /// <returns>A list of qualifying CAN SLIM candidates</returns>
         [HttpGet("GetCanSlimCandidates")]
         [ProducesResponseType(typeof(IReadOnlyList<CanSlimCandidate>), StatusCodes.Status200OK)]
@@ -86,7 +85,7 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("Fetching all qualifying CAN SLIM candidates");
-                var stocksShortList = await _marketDataService.RunScreenerAsync(new CanSlimScreenerCriteria());
+                var stocksShortList = await _marketDataService.GetLatestScreenerResults();
                 return Ok(stocksShortList);
             }
             catch (Exception ex)

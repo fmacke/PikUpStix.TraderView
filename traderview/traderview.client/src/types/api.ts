@@ -145,6 +145,8 @@ export interface CanSlimCandidate {
     price: number;
     volume: number;
     marketCap: number;
+    createdAtUtc: string;
+    evaluationDateUtc: Date;
 }
 export interface RiskMatrixCalculationResultDto {
     averageCurrencyGainOnWinningTrade: number;
@@ -160,7 +162,7 @@ export interface RiskMatrixCalculationResultDto {
     adjustedGainLossRatio: number;
     otpimalF: number; // Note: maintaining spelling from backend DTO
 }
-export interface RiskMatrixCalculationResult {
+export interface CurrentPerformanceResult {
     gainPercentage: number;
     lossPercentage: number;
     rewardToRiskRatio: number;

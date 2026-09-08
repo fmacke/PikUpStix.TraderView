@@ -134,19 +134,18 @@ export const apiService = {
             throw error;
         }
     },
-
-    async getCanSlimCandidates(): Promise<CanSlimCandidate[]> {
-        console.log('Making API call to /GetCanSlimCandidates');
+    // Get the latest screener results
+    async getLatestScreenerResults(): Promise<CanSlimCandidate[]> {
+        console.log('Making API call to /stockscreener/GetLatestScreenerResults');
         try {
             const response = await apiClient.get<CanSlimCandidate[]>('/stockscreener/GetCanSlimCandidates');
-            console.log('GetCanSlimCandidates API response received:', response.data);
+            console.log('GetLatestScreenerResults API response received:', response.data);
             return response.data;
         } catch (error) {
-            console.error('GetCanSlimCandidates API call failed:', error);
+            console.error('GetLatestScreenerResults API call failed:', error);
             throw error;
         }
     },
-
     // Get all open positions
     async getOpenPositions(): Promise<OpenPosition[]> {
         console.log('Making API call to /openpositions');
@@ -200,23 +199,29 @@ export const apiService = {
     },
 
     // Get position review risk matrix calculation from RiskController
-    async getPositionReview(): Promise<any> {
+    async getCurrentPerformance(): Promise<any> {
         console.log('Making API call to /risk/currentperformance');
         try {
-            const response = await apiClient.get('/risk/positionreview');
-            console.log('Position review API response received:', response.data);
+            const response = await apiClient.get('/risk/currentperformance');
+            console.log('Current Performance API response received:', response.data);
             return response.data;
         } catch (error) {
-            console.error('Position review API call failed:', error);
+            console.error('Current Performance  API call failed:', error);
             throw error;
         }
     },
 
-    // Get desired performance calculation from RiskController
-    async getDesiredPerformance(): Promise<RiskMatrixCalculationResultDto> {
-        console.log('Making API call to /risk/desiredperformance');
+    // Get desired performance calculation from RiskController with input parameters
+    async getDesiredPerformance(
+        portfolioSize: number,
+        positionSizePercent: number,
+        desiredReturnPercent: number
+    ): Promise<RiskMatrixCalculationResultDto> {
+        console.log('Making API call to /risk/desiredperformance', { portfolioSize, positionSizePercent, desiredReturnPercent });
         try {
-            const response = await apiClient.get<RiskMatrixCalculationResultDto>('/risk/desiredperformance');
+            const response = await apiClient.get<RiskMatrixCalculationResultDto>('/risk/desiredperformance', {
+                params: { portfolioSize, positionSizePercent, desiredReturnPercent }
+            });
             console.log('Desired performance API response received:', response.data);
             return response.data;
         } catch (error) {

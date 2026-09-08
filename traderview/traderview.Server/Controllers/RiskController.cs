@@ -11,13 +11,13 @@ namespace traderview.Server.Controllers
     public class RiskController : ControllerBase
     {
         private readonly ILogger<RiskController> _logger;
-        private readonly IRiskMatrixService _riskMatrixService;
+        private readonly ICurrentPerformanceService _riskMatrixService;
         private readonly ITradeHistoryReportService _tradeHistoryService;
         private readonly ITradeExecutionService _tradeExecutionService;
-        private readonly IResultsBasedAssumptionForecastService _resultsBasedAssumptionForecastService;
+        private readonly IDesiredPerformanceForecastService _resultsBasedAssumptionForecastService;
 
         private readonly IMapper _mapper;
-        public RiskController(ILogger<RiskController> logger, IRiskMatrixService riskMatrixService, IMapper mapper, ITradeHistoryReportService tradeHistoryService, ITradeExecutionService tradeExecutionService, IResultsBasedAssumptionForecastService resultsBasedAssumptionForecastService) {
+        public RiskController(ILogger<RiskController> logger, ICurrentPerformanceService riskMatrixService, IMapper mapper, ITradeHistoryReportService tradeHistoryService, ITradeExecutionService tradeExecutionService, IDesiredPerformanceForecastService resultsBasedAssumptionForecastService) {
             _logger = logger;
             _tradeHistoryService = tradeHistoryService;
             _tradeExecutionService = tradeExecutionService;
@@ -27,16 +27,16 @@ namespace traderview.Server.Controllers
             _mapper = mapper;
         }
         [HttpGet("currentperformance")]
-        [ProducesResponseType(typeof(RiskMatrixCalculationResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(CurrentPerformanceResultDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RiskMatrixCalculationResultDto>> CurrentPerformance()
+        public async Task<ActionResult<CurrentPerformanceResultDto>> CurrentPerformance()
         {       
             try
             {
                 var executions = await _tradeExecutionService.GetTradeExecutions();
                 _tradeHistoryService.CreateTradeHistoryReport(executions);
                 var trades = await _riskMatrixService.CalculateExpectedRoi(_tradeHistoryService.RiskMatrixCalculationRequest);
-                var tradesDto = _mapper.Map<RiskMatrixCalculationResultDto>(trades);
+                var tradesDto = _mapper.Map<CurrentPerformanceResultDto>(trades);
                 return Ok(tradesDto);
             }
             catch (Exception ex)
@@ -49,15 +49,15 @@ namespace traderview.Server.Controllers
             }
         }
         [HttpGet("desiredperformance")]
-        [ProducesResponseType(typeof(RiskMatrixCalculationResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(CurrentPerformanceResultDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RiskMatrixCalculationResultDto>> DesiredPerformance()
+        public async Task<ActionResult<CurrentPerformanceResultDto>> DesiredPerformance(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent)
         {
             try
             {
                 var executions = await _tradeExecutionService.GetTradeExecutions();
-                var inputs = _resultsBasedAssumptionForecastService.GetInputsFromTradingHistory(200000, 0.25m, 0.40m, executions);
-                var outputsDto = _mapper.Map<ResultBasedAssumptionForecastResultsDto>(_resultsBasedAssumptionForecastService.CalculateForecast(inputs)  );
+                var inputs = _resultsBasedAssumptionForecastService.GetInputsFromTradingHistory(portfolioSize, positionSizePercent, desiredReturnPercent, executions);
+                var outputsDto = _mapper.Map<DesiredPerformanceResultsDto>(_resultsBasedAssumptionForecastService.CalculateForecast(inputs)  );
                 return Ok(outputsDto);
             }
             catch (Exception ex)

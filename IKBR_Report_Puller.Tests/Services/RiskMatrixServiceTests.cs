@@ -8,12 +8,12 @@ namespace IKBR_Report_Puller.Tests.Services
     [TestClass]
     public class RiskMatrixServiceTests
     {
-        private RiskMatrixService _riskMatrixService = null!;
+        private CurrentPerformanceService _riskMatrixService = null!;
 
         [TestInitialize]
         public void Setup()
         {
-            _riskMatrixService = new RiskMatrixService();
+            _riskMatrixService = new CurrentPerformanceService();
         }
 
         [TestMethod]

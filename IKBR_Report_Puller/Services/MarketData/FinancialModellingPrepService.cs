@@ -462,6 +462,18 @@ namespace PikUpStix.TraderView.Services.MarketData
             else
                 return await _canSlimScreenerService.GetAllBySnapshotIdAsync(latestScreener.Id);
         }
+        async Task<IReadOnlyList<CanSlimCandidate>> IMarketDataService.GetLatestScreenerResults()
+        {
+            var latestScreener = await _canSlimScreenerService.GetLatestScreenerSnapShot();
+            if (latestScreener == null)
+            {
+                return Array.Empty<CanSlimCandidate>();
+            }
+            else
+            {
+                return await _canSlimScreenerService.GetAllBySnapshotIdAsync(latestScreener.Id);
+            }
+        }     
         private async Task<IReadOnlyList<CanSlimCandidate>> GetNewScreenerData(CanSlimScreenerCriteria criteria)
         {
             // CALL FMP API to get new candidates and save to database

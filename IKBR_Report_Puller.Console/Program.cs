@@ -131,7 +131,7 @@ namespace TraderView.Console
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddSingleton<ICanSlimScreenerService, CanSlimScreenerService>();
-                    services.AddSingleton<IRiskMatrixService, RiskMatrixService>();
+                    services.AddSingleton<ICurrentPerformanceService, CurrentPerformanceService>();
                     services.AddSingleton<Application>();
                 })
                 .Build();

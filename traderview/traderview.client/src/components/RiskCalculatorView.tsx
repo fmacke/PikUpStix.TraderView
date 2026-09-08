@@ -1,5 +1,5 @@
 import React from 'react';
-import RiskMatrixCard from './RiskMatrixCard';
+import CurrentPerformanceCard from './CurrentPerformanceCard';
 import DesiredPerformanceView from './DesiredPerformanceCard';
 
 export const RiskCalculator: React.FC = () => {
@@ -9,7 +9,7 @@ export const RiskCalculator: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <RiskMatrixCard />
+                    <CurrentPerformanceCard />
                 </div>
                 <div>
                     <DesiredPerformanceView />

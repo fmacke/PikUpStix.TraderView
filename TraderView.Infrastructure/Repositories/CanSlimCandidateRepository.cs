@@ -12,7 +12,6 @@ namespace TraderView.Infrastructure.Repositories
         public CanSlimCandidateRepository(string connectionString) : base(connectionString)
         {
         }
-
         List<CanSlimCandidate> ICanSlimCandidateRepository.GetAllBySnapshotId(int snapshotId)
         {
             return ExecuteDatabaseOperation(connection =>
@@ -20,14 +19,13 @@ namespace TraderView.Infrastructure.Repositories
                 var candidates = ExecuteList(
                     connection,
                     transaction: null,
-                    MapFromReader.MapCanSlimCandiate,
+                    MapFromReader.MapCanSlimCandidate,
                     new GetCandidatesBySnapshotIdQuery(snapshotId)
                     
                 );
                 return candidates;
             });
         }
-
         CanSlimScreenerSnapshot? ICanSlimCandidateRepository.GetLatestScreenerSnapShot()
         {
             return ExecuteDatabaseOperation(connection =>
@@ -39,27 +37,33 @@ namespace TraderView.Infrastructure.Repositories
                 }
             });
         }
-
         int ICanSlimCandidateRepository.Insert(CanSlimCandidate candidate)
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                using (var transaction = connection.BeginTransaction())
+                try
                 {
-                    var canSlimCandidateId = ExecuteScalar<int>(connection, transaction, new CreateCanSlimCandidateCommand(candidate));
-
-                    foreach (var annualHistory in candidate.CanSlimCandidateAnnualHistories)
+                    using (var transaction = connection.BeginTransaction())
                     {
-                        annualHistory.CandidateId = canSlimCandidateId;
-                        ExecuteScalar<int>(connection, transaction, new CreateCanSlimCandidateAnnualHistoryCommand(annualHistory));
-                    }
-                    transaction.Commit();
-                    Console.WriteLine($"Created new CanSlimCandidate (Id: {canSlimCandidateId}) for symbol {candidate.Symbol}, on {candidate.EvaluationDateUtc:yyyy-MM-dd}");
-                    return canSlimCandidateId;
-                }
-            });
-        }
+                        var canSlimCandidateId = ExecuteScalar<int>(connection, transaction, new CreateCanSlimCandidateCommand(candidate));
 
+                        foreach (var annualHistory in candidate.CanSlimCandidateAnnualHistories)
+                        {
+                            annualHistory.CandidateId = canSlimCandidateId;
+                            ExecuteScalar<int>(connection, transaction, new CreateCanSlimCandidateAnnualHistoryCommand(annualHistory));
+                        }
+                        transaction.Commit();
+                        Console.WriteLine($"Created new CanSlimCandidate (Id: {canSlimCandidateId}) for symbol {candidate.Symbol}, on {candidate.EvaluationDateUtc:yyyy-MM-dd}");
+                        return canSlimCandidateId;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error inserting CanSlimCandidate: {ex.Message}");
+                    return -1;
+                }
+            });            
+        }
         int ICanSlimCandidateRepository.InsertScreenerSnapShot()
         {
             return ExecuteDatabaseOperation(connection =>

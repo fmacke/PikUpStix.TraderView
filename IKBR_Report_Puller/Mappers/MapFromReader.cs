@@ -198,7 +198,7 @@ namespace TraderView.Application.Mappers
                 CreatedAt = reader.GetDateTime(reader.GetOrdinal("CreatedAt"))
             };
         }
-        public static CanSlimCandidate MapCanSlimCandiate(SqlDataReader reader)
+        public static CanSlimCandidate MapCanSlimCandidate(SqlDataReader reader)
         {
             return new CanSlimCandidate
             {
@@ -211,6 +211,7 @@ namespace TraderView.Application.Mappers
                 Exchange = reader.GetString(reader.GetOrdinal("Exchange")),
                 Sector = reader.GetString(reader.GetOrdinal("Sector")),
                 Industry = reader.GetString(reader.GetOrdinal("Industry")),
+                CreatedAtUtc = DateTime.UtcNow,
                 CurrentQuarterLatestQuarterDate = reader.GetString(reader.GetOrdinal("CurrentQuarter_LatestQuarterDate")),
                 CurrentQuarterLatestQuarterEps = reader.GetDecimal(reader.GetOrdinal("CurrentQuarter_LatestQuarterEps")),
                 CurrentQuarterPriorYearQuarterEps = reader.GetDecimal(reader.GetOrdinal("CurrentQuarter_PriorYearQuarterEps")),

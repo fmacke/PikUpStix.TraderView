@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
-import { type RiskMatrixCalculationResult } from '../types/api';
+import { type CurrentPerformanceResult } from '../types/api';
 
-export const RiskMatrixCard: React.FC = () => {
-    const [data, setData] = useState<RiskMatrixCalculationResult | null>(null);
+export const CurrentPerformanceCard: React.FC = () => {
+    const [data, setData] = useState<CurrentPerformanceResult | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -11,7 +11,7 @@ export const RiskMatrixCard: React.FC = () => {
         const fetchRiskMatrix = async () => {
             try {
                 setLoading(true);
-                const result = await apiService.getPositionReview();
+                const result = await apiService.getCurrentPerformance();
                 setData(result);
             } catch (err: unknown) {
                 if (err instanceof Error) {
@@ -92,4 +92,4 @@ export const RiskMatrixCard: React.FC = () => {
     );
 };
 
-export default RiskMatrixCard;
+export default CurrentPerformanceCard;

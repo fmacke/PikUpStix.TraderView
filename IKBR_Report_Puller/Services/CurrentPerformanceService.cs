@@ -4,11 +4,10 @@ using TraderView.Domain.Entities.FMP;
 
 namespace TraderView.Application.Services
 {
-
     /// <summary>
     /// Calculates the expected ROI based on the provided risk matrix parameters.  See Think And Trade Like A Champion by Mark Minervini p. 62 Results Based Assumptions
     /// </summary>
-    public class RiskMatrixService : IRiskMatrixService
+    public class CurrentPerformanceService : ICurrentPerformanceService
     {
         /// <summary>
         /// Calculates the expected ROI based on the provided risk matrix parameters.  
@@ -16,7 +15,7 @@ namespace TraderView.Application.Services
         /// <param name="request"></param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public async Task<RiskMatrixCalculationResult> CalculateExpectedRoi(RiskMatrixCalculationRequest request)
+        public async Task<CurrentPerformanceResult> CalculateExpectedRoi(RiskMatrixCalculationRequest request)
         {
             if (request == null)
                 throw new ArgumentNullException(nameof(request));
@@ -24,7 +23,7 @@ namespace TraderView.Application.Services
             return await Task.Run(() => CalculateExpectedRoi(request.GainPercentage, request.LossPercentage, request.WinRatePercentage, request.NumberOfTrades));
         }
 
-        public async Task<RiskMatrixCalculationResult> CalculateExpectedRoi(decimal gainPercentage, decimal lossPercentage,decimal winRatePercentage, int numberOfTrades)
+        public async Task<CurrentPerformanceResult> CalculateExpectedRoi(decimal gainPercentage, decimal lossPercentage,decimal winRatePercentage, int numberOfTrades)
         {
             if (numberOfTrades <= 0)
                 throw new ArgumentException("Number of trades must be greater than zero.", nameof(numberOfTrades));
@@ -53,7 +52,7 @@ namespace TraderView.Application.Services
 
             decimal compoundedRoi = (decimal)(compoundedMultiplier - 1.0);
 
-            return await Task.Run(() => new RiskMatrixCalculationResult
+            return await Task.Run(() => new CurrentPerformanceResult
             {
                 GainPercentage = Math.Round(gainPercentage, 1),
                 LossPercentage = Math.Round(lossPercentage,1),

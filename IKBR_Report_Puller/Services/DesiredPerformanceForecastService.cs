@@ -5,28 +5,27 @@ using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Services
 {
-    public class ResultsBasedAssumptionForecastService : IResultsBasedAssumptionForecastService
+    public class DesiredPerformanceForecastService : IDesiredPerformanceForecastService
     {
-        private ITradeExecutionRepository _tradeExecutionRepository;
-        private ITradeHistoryReportService _tradeHistoryReportService;
+        private readonly ITradeExecutionRepository _tradeExecutionRepository;
+        private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
-        public ResultsBasedAssumptionForecastService(ITradeExecutionRepository tradeExecutionRepository, ITradeHistoryReportService tradeHistoryReportService)
+        public DesiredPerformanceForecastService(ITradeExecutionRepository tradeExecutionRepository, ITradeHistoryReportService tradeHistoryReportService)
         {
             _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
         }
-        public ResultBasedAssumptionForecastInputs GetInputsFromTradingHistory(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent, List<TradeExecution> tradeExecutions)        
+        public DesiredPerformanceInputs GetInputsFromTradingHistory(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent, List<TradeExecution> tradeExecutions)        
         {
             _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
             var trades = _tradeHistoryReportService.TradeHistoryAggregated;
-
             var averageGainPercent = trades.Sum(x => x.RealizedPnL > 0 ? x.RealizedPnL : 0) / trades.Count(x => x.RealizedPnL > 0);
             var averageLossPercent = trades.Sum(x => x.RealizedPnL < 0 ? Math.Abs(x.RealizedPnL) : 0) / trades.Count(x => x.RealizedPnL < 0);
             var winningTradePercent = (decimal)trades.Count(x => x.RealizedPnL > 0) / trades.Count;
-            var inputs = new ResultBasedAssumptionForecastInputs(portfolioSize,positionSizePercent, desiredReturnPercent, averageGainPercent, averageLossPercent, winningTradePercent);
+            var inputs = new DesiredPerformanceInputs(portfolioSize,positionSizePercent, desiredReturnPercent, averageGainPercent, averageLossPercent, winningTradePercent);
             return inputs;
         }
-        public ResultBasedAssumptionForecastResults CalculateForecast(ResultBasedAssumptionForecastInputs inputs)
+        public DesiredPerformanceResults CalculateForecast(DesiredPerformanceInputs inputs)
         {
             if (inputs == null)
                 throw new ArgumentNullException(nameof(inputs));
@@ -78,7 +77,7 @@ namespace TraderView.Application.Services
             // Kelly Criterion / Optimal f: (b * p - q) / b = (2 * 0.46 - 0.54) / 2 = 0.38 / 2 = 0.19
             decimal optimalF = ((b * inputs.WinningTradePercent) - (1m - inputs.WinningTradePercent)) / b;
 
-            return new ResultBasedAssumptionForecastResults
+            return new DesiredPerformanceResults
             {
                 AverageCurrencyGainOnWinningTrade = Math.Round(avgGainCurrency,1),
                 NumberOfWinningTrades = winningTrades,

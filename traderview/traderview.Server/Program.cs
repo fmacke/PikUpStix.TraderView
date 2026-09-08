@@ -118,9 +118,9 @@ public partial class Program
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();
         builder.Services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
-        builder.Services.AddScoped<IRiskMatrixService, RiskMatrixService>();
+        builder.Services.AddScoped<ICurrentPerformanceService, CurrentPerformanceService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
-        builder.Services.AddScoped<IResultsBasedAssumptionForecastService, ResultsBasedAssumptionForecastService>();
+        builder.Services.AddScoped<IDesiredPerformanceForecastService, DesiredPerformanceForecastService>();
 
 
     builder.Services.AddControllers();
@@ -130,8 +130,8 @@ public partial class Program
         // Register mapping for static assets
         builder.Services.AddAutoMapper(cfg =>
         {
-            cfg.AddProfile<RiskMatrixCalculationResultProfile>();
-            cfg.AddProfile<ResultBasedAssumptionForecastResultsProfile>();
+            cfg.AddProfile<CurrentPerformanceProfile>();
+            cfg.AddProfile<DesiredPerformanceResultsProfile>();
         });
 
         var app = builder.Build();

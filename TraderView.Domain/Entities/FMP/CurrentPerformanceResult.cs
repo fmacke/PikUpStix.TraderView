@@ -8,7 +8,7 @@
         public int NumberOfTrades { get; set; } = 10;        // e.g., 10
     }
 
-    public class RiskMatrixCalculationResult
+    public class CurrentPerformanceResult
     {
         public decimal GainPercentage { get; set; }
         public decimal LossPercentage { get; set; }

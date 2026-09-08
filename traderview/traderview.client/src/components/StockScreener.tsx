@@ -5,6 +5,7 @@ import { SortableTableHeader } from './SortableTableHeader';
 import type { SortConfig } from './SortableTableHeader';
 import SyncButton from './SyncButton';
 import './OpenPositionList.css';
+import { formatUtcDateTime } from '../utils/helpers'
 
 function StockScreener() {
     const [candidates, setCandidates] = useState<CanSlimCandidate[]>([]);
@@ -20,7 +21,7 @@ function StockScreener() {
         try {
             setLoading(true);
             setError(null);
-            const data = await apiService.getCanSlimCandidates();
+            const data = await apiService.getLatestScreenerResults();
             setCandidates(data);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to load CAN SLIM candidates';
@@ -159,6 +160,7 @@ function StockScreener() {
                     onSync={handleDownloadWatchList}
                     onSuccess={() => { }}
                 />
+                <p>Latest screener results as of {formatUtcDateTime(sortedCandidates.findLast(candidate => candidate.createdAtUtc)?.createdAtUtc)}</p>
                 <table className="positions-table">
                     <thead>
                         <tr>

@@ -9,7 +9,7 @@ namespace IKBR_Report_Puller.Tests.Services
     [TestClass]
     public class ResultBasedAssumptionForecastServiceTests
     {
-        private Mock<ResultsBasedAssumptionForecastService> _forecastService = null!;
+        private Mock<DesiredPerformanceForecastService> _forecastService = null!;
         private Mock<ITradeExecutionRepository> _mockTradeExecutionRepository;
         private Mock<ITradeHistoryReportService> _mockTradeHistoryReportService;
 
@@ -18,13 +18,13 @@ namespace IKBR_Report_Puller.Tests.Services
         {
             _mockTradeExecutionRepository = new Mock<ITradeExecutionRepository>();
             _mockTradeHistoryReportService = new Mock<ITradeHistoryReportService>();
-            _forecastService = new Mock<ResultsBasedAssumptionForecastService>(_mockTradeExecutionRepository.Object, _mockTradeHistoryReportService.Object);
+            _forecastService = new Mock<DesiredPerformanceForecastService>(_mockTradeExecutionRepository.Object, _mockTradeHistoryReportService.Object);
         }
         [TestMethod]
         public void CalculateForecast_WithValidInputs_ReturnsExpectedResults()
         {
             // Arrange
-            var inputs = new ResultBasedAssumptionForecastInputs(200000m, 0.25m, 0.4m, 0.14m, 0.07m, 0.46m);
+            var inputs = new DesiredPerformanceInputs(200000m, 0.25m, 0.4m, 0.14m, 0.07m, 0.46m);
             // Act
             var result = _forecastService.Object.CalculateForecast(inputs);
             // Assert

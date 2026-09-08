@@ -8,13 +8,13 @@ namespace TraderView.Console
     {
         private readonly IReportRunnerService _reportRunnerService;
         private readonly IMarketDataService _financialDataService;
-        private readonly IRiskMatrixService _riskMatrixService;
+        private readonly ICurrentPerformanceService _riskMatrixService;
         private readonly ICanSlimScreenerService _canSlimScreenerService;
 
         public Application(
             IReportRunnerService reportRunnerService,
             IMarketDataService financialDataService,
-            IRiskMatrixService riskMatrixService,
+            ICurrentPerformanceService riskMatrixService,
             ICanSlimScreenerService canSlimScreenerService)
         {
             _reportRunnerService = reportRunnerService;
@@ -28,8 +28,8 @@ namespace TraderView.Console
         {
             await _reportRunnerService.RunReportAsync(true, true);
 
-            var roiResult = new ResultBasedAssumptionForecastInputs(100000m, 0.1m, 0.4m, 0.0054m, 0.0029m, 0.36m);
-            //var servoce = new ResultsBasedAssumptionForecastService();
+            var roiResult = new DesiredPerformanceInputs(100000m, 0.1m, 0.4m, 0.0054m, 0.0029m, 0.36m);
+            //var servoce = new DesiredPerformanceForecastService();
             //var forecastResult = servoce.CalculateForecast(roiResult);
 
             //System.Console.WriteLine($"Average Currency Gain on Winning Trade: {forecastResult.AverageCurrencyGainOnWinningTrade}");
