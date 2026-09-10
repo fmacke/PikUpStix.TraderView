@@ -4,10 +4,9 @@ import type { CanSlimCandidate } from '../types/api';
 import { SortableTableHeader } from './SortableTableHeader';
 import type { SortConfig } from './SortableTableHeader';
 import SyncButton from './SyncButton';
-import './OpenPositionList.css';
 import { formatUtcDateTime } from '../utils/helpers'
 
-function StockScreener() {
+function StockScreenerView() {
     const [candidates, setCandidates] = useState<CanSlimCandidate[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -200,4 +199,4 @@ function StockScreener() {
     );
 }
 
-export default StockScreener;
+export default StockScreenerView;

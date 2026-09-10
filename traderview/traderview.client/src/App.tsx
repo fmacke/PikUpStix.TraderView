@@ -4,9 +4,9 @@ import { apiService } from './services/apiService';
 import type { Trade } from './types/api';
 import TradeList from './components/TradeList';
 import TradeDetail from './components/TradeDetail';
-import OpenPositionList from './components/OpenPositionList';
-import RiskCalculator from './components/RiskCalculatorView';
-import StockScreener from './components/StockScreenerView';
+import OpenPositionsView from './components/OpenPositionsView';
+import RiskCalculatorView from './components/RiskCalculatorView';
+import StockScreenerView from './components/StockScreenerView';
 import SyncButton from './components/SyncButton';
 
 type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener';
@@ -123,10 +123,11 @@ function App() {
                     </div>
                 </div>
             )}
-            {viewMode === 'positions' && <OpenPositionList />}
-            {viewMode === 'riskcalculator' && <RiskCalculator />}
-            {viewMode === 'stockscreener' && <StockScreener />}
+            {viewMode === 'positions' && <OpenPositionsView />}
+            {viewMode === 'riskcalculator' && <RiskCalculatorView />}
+            {viewMode === 'stockscreener' && <StockScreenerView />}
         </div>
+        
     );
 
     async function populateTradeData() {

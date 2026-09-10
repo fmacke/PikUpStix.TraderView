@@ -3,29 +3,23 @@ import { CurrentPerformanceCard } from './CurrentPerformanceCard';
 import { DesiredPerformanceCard } from './DesiredPerformanceCard';
 import { TradeCalculatorCard } from './TradeCalculatorCard';
 
-export const RiskAndTradingDashboard: React.FC = () => {
+export const RiskCalculatorView: React.FC = () => {
     return (
-        <div className="p-6 max-w-[95%] mx-auto space-y-6">
-            <h1 className="text-3xl font-bold text-gray-900">Trading & Risk Dashboard</h1>
+        <div style={{ padding: '24px', maxWidth: '95%', margin: '0 auto' }}>
+            <h1 style={{ fontSize: '30px', fontWeight: 'bold', marginBottom: '24px' }}>Trading & Risk Dashboard</h1>
 
-            {/* Main Layout Grid - Using xl breakpoint to enforce side-by-side on wide screens */}
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
+            {/* Main Layout Container forcing side-by-side via Flexbox */}
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '24px', alignItems: 'flex-start', width: '100%' }}>
 
-                {/* Left Column: Performance Cards & Forecast Stack (5 Columns) */}
-                <div className="xl:col-span-5 space-y-6">
-                    <div className="bg-white shadow-md rounded-xl p-4">
-                        <CurrentPerformanceCard />
-                    </div>
-                    <div className="bg-white shadow-md rounded-xl p-4">
-                        <DesiredPerformanceCard />
-                    </div>
+                {/* Left Column: Trade Calculator (Takes ~58% width) */}
+                <div style={{ flex: '7', minWidth: '0' }}>
+                    <TradeCalculatorCard />
                 </div>
 
-                {/* Right Column: Trade Calculator (7 Columns) */}
-                <div className="xl:col-span-7">
-                    <div className="bg-white shadow-md rounded-xl p-4">
-                        <TradeCalculatorCard />
-                    </div>
+                {/* Right Column: Performance Cards & Forecast Stack (Takes ~42% width) */}
+                <div style={{ flex: '5', display: 'flex', flexDirection: 'column', gap: '24px', minWidth: '0' }}>
+                    <CurrentPerformanceCard />
+                    <DesiredPerformanceCard />
                 </div>
 
             </div>
@@ -33,4 +27,4 @@ export const RiskAndTradingDashboard: React.FC = () => {
     );
 };
 
-export default RiskAndTradingDashboard;
+export default RiskCalculatorView;

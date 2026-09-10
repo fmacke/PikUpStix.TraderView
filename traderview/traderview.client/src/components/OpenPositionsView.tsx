@@ -4,9 +4,9 @@ import type { OpenPosition, CreateNoteRequest, Note } from '../types/api';
 import { SortableTableHeader } from './SortableTableHeader';
 import type { SortConfig } from './SortableTableHeader';
 import AddNoteModal from './AddNoteModal';
-import './OpenPositionList.css';
+import './OpenPositionsView.css';
 
-function OpenPositionList() {
+function OpenPositionsView() {
     const [openPositions, setOpenPositions] = useState<OpenPosition[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
@@ -313,4 +313,4 @@ function OpenPositionList() {
     );
 }
 
-export default OpenPositionList;
+export default OpenPositionsView;

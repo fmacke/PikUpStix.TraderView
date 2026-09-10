@@ -4,7 +4,8 @@ import './index.css'
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
+    <StrictMode>
+        <App />
+        <div><p>PikUpStix 2026</p></div>
   </StrictMode>,
 )
