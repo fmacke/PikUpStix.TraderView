@@ -8,7 +8,9 @@ import type {
     CreateNoteRequest,
     ListItem,
     CanSlimCandidate,
-    RiskMatrixCalculationResultDto
+    RiskMatrixCalculationResultDto,
+    TradeCalculationRequest,
+    TradeCalculationResponse
 } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
@@ -226,6 +228,18 @@ export const apiService = {
             return response.data;
         } catch (error) {
             console.error('Desired performance API call failed:', error);
+            throw error;
+        }
+    },
+    // Calculate trade position based on calculator input
+    async calculateTradePosition(request: TradeCalculationRequest): Promise<TradeCalculationResponse> {
+        console.log('Making API call to /tradecalculator/calculate', request);
+        try {
+            const response = await apiClient.post<TradeCalculationResponse>('/tradecalculator/calculate', request);
+            console.log('Trade calculator API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Trade calculator API call failed:', error);
             throw error;
         }
     },

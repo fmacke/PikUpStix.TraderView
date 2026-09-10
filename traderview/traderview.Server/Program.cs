@@ -121,9 +121,10 @@ public partial class Program
         builder.Services.AddScoped<ICurrentPerformanceService, CurrentPerformanceService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
         builder.Services.AddScoped<IDesiredPerformanceForecastService, DesiredPerformanceForecastService>();
+        builder.Services.AddScoped<ITradeCalculatorService, TradeCalculatorService>();
 
 
-    builder.Services.AddControllers();
+        builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
         builder.Services.AddSwaggerGen();
 

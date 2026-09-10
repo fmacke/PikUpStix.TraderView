@@ -173,3 +173,30 @@ export interface CurrentPerformanceResult {
     simpleRoi: number;
     compoundedRoi: number;
 }
+export interface TradeCalculationRequest {
+    tradeDate: string;
+    instrument: string;
+    exchangeRate: number;
+    buyPrice: number;
+    tradingCapital: number;
+    lotSizePercentage: number;
+    lot: number;
+    maxExposure: number;
+    gainLossRatio: number;
+    calculationMode: string;
+    stopLossAtInput: number;
+}
+export interface TradeCalculationResponse {
+    lotSizeGbp: number;
+    lotGbp: number;
+    lotUsd: number;
+    shares: number;
+    stopLossAt: number;
+    lossGbp: number;
+    lossUsd: number;
+    lossPercentage: number;
+    takeProfitAt: number;
+    priceTarget: number;
+    overallProfitGbp: number;
+    overallProfitUsd: number;
+}

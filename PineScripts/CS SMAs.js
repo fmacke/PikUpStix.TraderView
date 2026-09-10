@@ -1,5 +1,5 @@
 //@version=6
-indicator(title = "4x Simple Moving Average Suite", shorttitle = "4x SMA", overlay = true, timeframe = "", timeframe_gaps = true)
+indicator(title = "4x Simple Moving Average Suite", shorttitle = "4x SMA", overlay = true, timeframe = "1D", timeframe_gaps = true)
 
 // ==========================================
 // 1. GLOBAL SETTINGS
@@ -31,13 +31,13 @@ enableSM = maType != "None"
 
 // Primary Calculation Switch
 calcMa(float sourceSeries, int length, string typeStr) =>
-switch typeStr
-        "SMA"                   => ta.sma(sourceSeries, length)
-"SMA + Bollinger Bands" => ta.sma(sourceSeries, length)
-"EMA"                   => ta.ema(sourceSeries, length)
-"SMMA (RMA)"            => ta.rma(sourceSeries, length)
-"WMA"                   => ta.wma(sourceSeries, length)
-"VWMA"                  => ta.vwma(sourceSeries, length)
+    switch typeStr
+        "SMA"                 => ta.sma(sourceSeries, length)
+        "SMA + Bollinger Bands" => ta.sma(sourceSeries, length)
+        "EMA"                 => ta.ema(sourceSeries, length)
+        "SMMA (RMA)"            => ta.rma(sourceSeries, length)
+        "WMA"                 => ta.wma(sourceSeries, length)
+        "VWMA"                => ta.vwma(sourceSeries, length)
         => sourceSeries
 
 // Higher-Order Function: Calculates Base MA + Secondary Smoothing + BB Bands

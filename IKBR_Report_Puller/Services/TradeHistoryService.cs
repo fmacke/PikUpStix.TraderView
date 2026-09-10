@@ -156,45 +156,21 @@ namespace PikUpStix.TraderView.Services
                     CloseIbOrderID = group.Key,
                     TradeOpened = group.First().TradeOpened,
                     TradeClosed = group.First().TradeClosed,
-                    Currency = group.First().Currency,
+                    Currency = group.First().Currency,  
                     InstrumentId = group.First().InstrumentId,
                     PositionId = group.First().PositionId,
                     Quantity = group.Sum(trade => trade.Quantity),
                     //SecurityId = group.First().sSecurityId,
                     IbCommission = group.Sum(trade => trade.IbCommission),
                     IbCommissionCurrency = group.First().IbCommissionCurrency,
-                    ListingExchange = group.First().ListingExchange
+                    ListingExchange = group.First().ListingExchange,
+                    FifoPnlRealized = group.Sum(trade => trade.FifoPnlRealized),
                 })
                 .OrderByDescending(trade => trade.Quantity)
                 .ToList();
-            RiskMatrixCalculationRequest = new RiskMatrixCalculationRequest()
-            {
-                WinRatePercentage = CalculateWinRatePercentage(TradeHistoryAggregated),
-                GainPercentage = CalculateGainPercentage(TradeHistoryAggregated),
-                LossPercentage = CalculateLossPercentage(TradeHistoryAggregated),
-                NumberOfTrades = TradeHistoryAggregated.Count
-            };
+            RiskMatrixCalculationRequest = new RiskMatrixCalculationRequest(TradeHistoryAggregated);
         }
-        private decimal CalculateGainPercentage(List<HistoricalTrade> trades)
-        {
-            if (trades.Count == 0) return 0;
-            decimal totalGain = (decimal)trades.Where(t => t.ClosePrice > t.TradePrice).Sum(t => (t.ClosePrice - t.TradePrice) * t.Quantity);
-            decimal totalInvestment = (decimal)trades.Sum(t => t.TradePrice * t.Quantity);
-            return totalInvestment == 0 ? 0 : (totalGain / totalInvestment) * 100;
-        }
-        private decimal CalculateLossPercentage(List<HistoricalTrade> trades)
-        {
-            if (trades.Count == 0) return 0;
-            decimal totalLoss = (decimal)trades.Where(t => t.ClosePrice < t.TradePrice).Sum(t => (t.TradePrice - t.ClosePrice) * t.Quantity);
-            decimal totalInvestment = (decimal)trades.Sum(t => t.TradePrice * t.Quantity);
-            return totalInvestment == 0 ? 0 : (totalLoss / totalInvestment) * 100;
-        }
-        private decimal CalculateWinRatePercentage(List<HistoricalTrade> trades)
-        {
-            if (trades.Count == 0) return 0;
-            int winningTrades = trades.Count(t => t.ClosePrice > t.TradePrice);
-            return (decimal)winningTrades / trades.Count * 100;
-        }
+        
 
     }
     class ExecutionQueueItem

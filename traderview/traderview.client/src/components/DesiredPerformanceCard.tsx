@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { apiService } from '../services/apiService';
 import { type RiskMatrixCalculationResultDto } from '../types/api.ts';
 
-export const DesiredPerformanceView: React.FC = () => {
+export const DesiredPerformanceCard: React.FC = () => {
     // Input parameters state with default initial values
     const [portfolioSize, setPortfolioSize] = useState<number>(100000);
     const [positionSizePercent, setPositionSizePercent] = useState<number>(2.0);
@@ -129,4 +129,4 @@ export const DesiredPerformanceView: React.FC = () => {
     );
 };
 
-export default DesiredPerformanceView;
+export default DesiredPerformanceCard;
