@@ -151,7 +151,7 @@ namespace PikUpStix.TraderView.Services
                    
                     reportDataList.Add(new OpenPositionReportData
                     {
-                        //PositionId = position.Id,
+                        PositionId = position.Id,
                         AccountId = accountId,
                         Symbol = symbol,
                         DateOpened = dateOpened,
