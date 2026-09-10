@@ -9,12 +9,11 @@ export const TradeCalculatorCard: React.FC = () => {
         exchangeRate: 1.36,
         buyPrice: 520,
         tradingCapital: 100000,
-        lotSizePercentage: 5,
-        lot: 100,
+        riskPerTrade: 5,
         maxExposure: 2.5,
         gainLossRatio: 200,
         calculationMode: 'LotSize',
-        stopLossAtInput: 480,
+        stopLossAtInput: 0,
     });
 
     const [result, setResult] = useState<TradeCalculationResponse | null>(null);
@@ -42,7 +41,7 @@ export const TradeCalculatorCard: React.FC = () => {
         const { name, value } = e.target;
         setRequest(prev => ({
             ...prev,
-            [name]: ['instrument', 'calculationMode', 'tradeDate'].includes(name) ? value : parseFloat(value) || 0,
+            [name]: ['instrument', 'tradeDate'].includes(name) ? value : parseFloat(value) || 0,
         }));
     };
 
@@ -93,7 +92,7 @@ export const TradeCalculatorCard: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label>Buy Price</label>
+                    <label>Buy Price (in stock Currency)</label>
                     <input
                         type="number"
                         step="0.01"
@@ -114,21 +113,21 @@ export const TradeCalculatorCard: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label>Lot Size (%)</label>
+                    <label>Risk Per Position(%)</label>
                     <input
                         type="number"
-                        step="0.01"
-                        name="lotSizePercentage"
-                        value={request.lotSizePercentage}
+                        step="0.5"
+                        name="riskPerTrade"
+                        value={request.riskPerTrade}
                         onChange={handleChange}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
                 <div>
-                    <label>Max Exposure</label>
+                    <label>Max Exposure On Position</label>
                     <input
                         type="number"
-                        step="0.001"
+                        step="0.5"
                         name="maxExposure"
                         value={request.maxExposure}
                         onChange={handleChange}
@@ -136,23 +135,25 @@ export const TradeCalculatorCard: React.FC = () => {
                     />
                 </div>
                 <div>
-                    <label>Gain / Loss Ratio</label>
+                    <label>Gain / Loss Ratio (% Winning)</label>
                     <input
                         type="number"
-                        step="0.1"
+                        step="0.5"
                         name="gainLossRatio"
                         value={request.gainLossRatio}
                         onChange={handleChange}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
-                </div>
+                </div>            
+                <br />
+                <div><p>STOPLOSS  - SET BY STOPLOSS POINT</p></div>
                 <div>
-                    <label>Lot</label>
+                    <label>Stop Loss At</label>
                     <input
                         type="number"
                         step="0.01"
-                        name="lot"
-                        value={request.lot}
+                        name="stopLossAtInput"
+                        value={request.stopLossAtInput}
                         onChange={handleChange}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
@@ -162,10 +163,19 @@ export const TradeCalculatorCard: React.FC = () => {
             {/* Output Section */}
             {result && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-green-50 text-xs">
+                    <div className="md:col-span-3">
+                        <p>STOP LOSS DETAILS</p>
+                    </div>
                     <div>
-                        <label className="block font-medium text-gray-700">Lot Size (£)</label>
+                        <label className="block font-medium text-gray-700">Lot Size (£) / ($)</label>
                         <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
-                            £{result.lotSizeGbp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            £{result.lotGbp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${result.lotUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700">Lot Size (%)</label>
+                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                            {(result.lotPercent * 100).toFixed(1)}%
                         </div>
                     </div>
                     <div>
@@ -192,10 +202,19 @@ export const TradeCalculatorCard: React.FC = () => {
                             {(result.lossPercentage * 100).toFixed(3)}%
                         </div>
                     </div>
+                    <div className="md:col-span-3">
+                        <p>TAKE PROFIT DETAILS</p>
+                    </div>
                     <div>
                         <label className="block font-medium text-gray-700">Price Target</label>
                         <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
-                            {result.priceTarget.toFixed(2)}
+                            ${result.priceTarget.toFixed(2)}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="block font-medium text-gray-700">Take Profit At</label>
+                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                            {result.takeProfitAt.toFixed(1)}%
                         </div>
                     </div>
                     <div className="md:col-span-3">

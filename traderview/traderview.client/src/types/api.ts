@@ -179,8 +179,7 @@ export interface TradeCalculationRequest {
     exchangeRate: number;
     buyPrice: number;
     tradingCapital: number;
-    lotSizePercentage: number;
-    lot: number;
+    riskPerTrade: number;
     maxExposure: number;
     gainLossRatio: number;
     calculationMode: string;
@@ -190,6 +189,7 @@ export interface TradeCalculationResponse {
     lotSizeGbp: number;
     lotGbp: number;
     lotUsd: number;
+    lotPercent: number;
     shares: number;
     stopLossAt: number;
     lossGbp: number;
