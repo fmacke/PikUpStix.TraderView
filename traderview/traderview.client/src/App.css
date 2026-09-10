@@ -123,11 +123,6 @@
     padding: 2rem;
 }
 
-.error-container h2 {
-    color: #dc2626;
-    margin-bottom: 1rem;
-}
-
 .error-container button {
     margin-top: 1rem;
     padding: 0.5rem 1rem;

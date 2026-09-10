@@ -6,13 +6,6 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.rs-metrics-dashboard h3 {
-    margin: 0 0 15px 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #333;
-}
-
 .metrics-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

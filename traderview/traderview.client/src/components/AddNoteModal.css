@@ -54,13 +54,6 @@
     border-bottom: 1px solid #e5e7eb;
 }
 
-.modal-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1f2937;
-}
-
 .modal-close-button {
     background: none;
     border: none;

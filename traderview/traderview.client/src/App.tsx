@@ -6,7 +6,7 @@ import TradeList from './components/TradeList';
 import TradeDetail from './components/TradeDetail';
 import OpenPositionList from './components/OpenPositionList';
 import RiskCalculator from './components/RiskCalculatorView';
-import StockScreener from './components/StockScreener';
+import StockScreener from './components/StockScreenerView';
 import SyncButton from './components/SyncButton';
 
 type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener';
