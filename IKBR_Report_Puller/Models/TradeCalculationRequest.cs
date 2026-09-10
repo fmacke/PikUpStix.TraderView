@@ -11,10 +11,10 @@ namespace TraderView.Application.Models
         public decimal ExchangeRate { get; set; } = 1.36m;
         public decimal BuyPrice { get; set; } = 520.0m;
         public decimal TradingCapital { get; set; } = 100000.0m;
-        public decimal LotSizePercentage { get; set; } = 0.05m; // e.g. 0.05 (5%)
-        public decimal Lot { get; set; } = 1.0m;
-        public decimal MaxExposure { get; set; } = 0.025m;
-        public decimal GainLossRatio { get; set; } = 2.0m;
+        public decimal LotSizePercentage { get; set; } = 5.0m; // e.g. 5 (5%)
+        public decimal Lot { get; set; } = 100m;
+        public decimal MaxExposure { get; set; } = 2.5m;
+        public decimal GainLossRatio { get; set; } = 200.0m;
 
         // Mode: "LotSize" or "StopLossPoint"
         public string CalculationMode { get; set; } = "LotSize";

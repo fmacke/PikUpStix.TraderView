@@ -11,22 +11,25 @@ namespace TraderView.Application.Services
         public TradeCalculationResponse CalculatePosition(TradeCalculationRequest request)
         {
             var response = new TradeCalculationResponse();
-
-            // Lot Size £ = TradingCapital * LotSizePercentage (e.g. 100000 * 0.05 = 5000)
-            response.LotSizeGbp = request.TradingCapital * request.LotSizePercentage;
+            var gainLossRatio = request.GainLossRatio / 100;
+            var lot = request.Lot /100;
+            var maxExposure = request.MaxExposure / 100;
+            var lotSizePercentage = request.LotSizePercentage / 100;
+            // Lot Size £ = TradingCapital * LotSizePercentage (e.g. 100000 * 5/100 = 5000)
+            response.LotSizeGbp = request.TradingCapital * (lotSizePercentage);
 
             if (request.CalculationMode == "LotSize")
             {
                 // Stop Loss set by Lot Size logic
-                response.LotGbp = request.Lot * response.LotSizeGbp;
+                response.LotGbp = lot * response.LotSizeGbp;
                 response.LotUsd = response.LotGbp * request.ExchangeRate;
 
                 // SHARES = (Lot * LotSizeGBP) / BuyPrice (Approximated from excel row 14)
                 // Note: Excel formula uses =(B12*E$12)/$B$4 where E12 is USD lot value
-                response.Shares = (request.Lot * response.LotUsd) / request.BuyPrice;
+                response.Shares = (lot * response.LotUsd) / request.BuyPrice;
 
                 // STOP LOSS AT = BuyPrice - (BuyPrice * MaxExposure)
-                response.StopLossAt = request.BuyPrice - (request.BuyPrice * request.MaxExposure);
+                response.StopLossAt = request.BuyPrice - (request.BuyPrice * (maxExposure));
 
                 // LOSS = (BuyPrice - StopLossAt) * Shares
                 response.LossGbp = (request.BuyPrice - response.StopLossAt) * response.Shares;
@@ -36,7 +39,7 @@ namespace TraderView.Application.Services
                 response.LossPercentage = response.LossGbp / request.TradingCapital;
 
                 // TAKE PROFIT AT ratio calculation
-                response.TakeProfitAt = request.GainLossRatio * request.MaxExposure;
+                response.TakeProfitAt = gainLossRatio * maxExposure;
                 response.PriceTarget = request.BuyPrice + (request.BuyPrice * response.TakeProfitAt);
 
                 // OVERALL PROFIT = (PriceTarget - BuyPrice) * Shares
@@ -49,7 +52,7 @@ namespace TraderView.Application.Services
                 response.StopLossAt = request.StopLossAtInput;
 
                 // Lot calculation based on stop loss point
-                response.Shares = (request.MaxExposure * response.LotSizeGbp * request.ExchangeRate) / (request.BuyPrice - response.StopLossAt);
+                response.Shares = (maxExposure * response.LotSizeGbp * request.ExchangeRate) / (request.BuyPrice - response.StopLossAt);
                 response.LotGbp = (response.Shares * request.BuyPrice) / request.ExchangeRate; // Simplified inverse
                 response.LotUsd = response.LotGbp * request.ExchangeRate;
 
@@ -57,10 +60,10 @@ namespace TraderView.Application.Services
                 response.LossUsd = response.LossGbp / request.ExchangeRate;
                 response.LossPercentage = response.LossGbp / request.TradingCapital;
 
-                response.TakeProfitAt = request.GainLossRatio * request.MaxExposure; // Or percentage based
-                response.PriceTarget = request.BuyPrice + (request.BuyPrice * (request.GainLossRatio * (request.BuyPrice - response.StopLossAt) / request.BuyPrice));
+                response.TakeProfitAt = gainLossRatio * maxExposure; // Or percentage based
+                response.PriceTarget = request.BuyPrice + (request.BuyPrice * (gainLossRatio * (request.BuyPrice - response.StopLossAt) / request.BuyPrice));
 
-                response.OverallProfitGbp = response.LossGbp * request.GainLossRatio;
+                response.OverallProfitGbp = response.LossGbp * gainLossRatio;
                 response.OverallProfitUsd = response.OverallProfitGbp / request.ExchangeRate;
             }
 
