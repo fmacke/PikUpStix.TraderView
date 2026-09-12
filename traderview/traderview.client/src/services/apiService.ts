@@ -10,7 +10,8 @@ import type {
     CanSlimCandidate,
     RiskMatrixCalculationResultDto,
     TradeCalculationRequest,
-    TradeCalculationResponse
+    TradeCalculationResponse,
+    AssetValueChartData
 } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
@@ -240,6 +241,55 @@ export const apiService = {
             return response.data;
         } catch (error) {
             console.error('Trade calculator API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Get asset value over time for date range
+    async getAssetValueOverTime(startDate: Date, endDate: Date): Promise<AssetValueChartData[]> {
+        console.log('Making API call to /equities/asset-value-over-time');
+        try {
+            const response = await apiClient.get<AssetValueChartData[]>('/equities/asset-value-over-time', {
+                params: {
+                    startDate: startDate.toISOString().split('T')[0],
+                    endDate: endDate.toISOString().split('T')[0]
+                }
+            });
+            console.log('Asset value over time API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Asset value over time API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Get asset value over time for specific account
+    async getAssetValueOverTimeByAccount(accountId: string, startDate: Date, endDate: Date): Promise<AssetValueChartData[]> {
+        console.log(`Making API call to /equities/asset-value-over-time/${accountId}`);
+        try {
+            const response = await apiClient.get<AssetValueChartData[]>(`/equities/asset-value-over-time/${accountId}`, {
+                params: {
+                    startDate: startDate.toISOString().split('T')[0],
+                    endDate: endDate.toISOString().split('T')[0]
+                }
+            });
+            console.log('Asset value over time by account API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Asset value over time by account API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Get latest asset value
+    async getLatestAssetValue(): Promise<AssetValueChartData> {
+        console.log('Making API call to /equities/latest');
+        try {
+            const response = await apiClient.get<AssetValueChartData>('/equities/latest');
+            console.log('Latest asset value API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Latest asset value API call failed:', error);
             throw error;
         }
     },

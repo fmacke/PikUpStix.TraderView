@@ -75,6 +75,13 @@ public partial class Program
             return new ListRepository(connectionString);
         });
 
+        builder.Services.AddScoped<IEquitySummaryRepository>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new EquitySummaryRepository(connectionString);
+        });
+
         // Register custom services        
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
         builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();
@@ -122,6 +129,7 @@ public partial class Program
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
         builder.Services.AddScoped<IDesiredPerformanceForecastService, DesiredPerformanceForecastService>();
         builder.Services.AddScoped<ITradeCalculatorService, TradeCalculatorService>();
+        builder.Services.AddScoped<IEquitySummaryService, EquitySummaryService>();
 
 
         builder.Services.AddControllers();

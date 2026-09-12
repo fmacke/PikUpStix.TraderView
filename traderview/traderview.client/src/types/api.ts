@@ -200,3 +200,10 @@ export interface TradeCalculationResponse {
     overallProfitGbp: number;
     overallProfitUsd: number;
 }
+
+export interface AssetValueChartData {
+    date: string;
+    totalAssetValue: number;
+    totalLongValue: number;
+    totalShortValue: number;
+}
