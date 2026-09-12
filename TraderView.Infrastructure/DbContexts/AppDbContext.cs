@@ -24,6 +24,8 @@ namespace TraderView.Infrastructure.DbContexts
 
         public virtual DbSet<EconomicCalendar> EconomicCalendars { get; set; }
 
+        public virtual DbSet<EquitySummary> EquitySummaries { get; set; }
+
         public virtual DbSet<HistoricalDatum> HistoricalData { get; set; }
 
         public virtual DbSet<Instrument> Instruments { get; set; }

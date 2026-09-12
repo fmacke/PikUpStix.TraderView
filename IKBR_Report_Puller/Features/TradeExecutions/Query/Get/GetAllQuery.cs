@@ -98,7 +98,8 @@ namespace TraderView.Application.Features.TradeExecutions.Query.Get
                       ,p.[OpenDate]
                       ,p.[CloseDate] 
                   FROM [TradingBE].[dbo].[TradeExecutions] te
-                  inner join [TradingBE].[dbo].[Positions] p on te.PositionId = p.Id                 
+                  inner join [TradingBE].[dbo].[Positions] p on te.PositionId = p.Id 
+                  WHERE te.assetCategory != 'CASH'
             ORDER BY te.[ibOrderID], te.[tradeDate] ASC, te.[dateTime] ASC";  }
 
         public Dictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();

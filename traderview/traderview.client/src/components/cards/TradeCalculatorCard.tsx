@@ -60,102 +60,102 @@ export const TradeCalculatorCard: React.FC = () => {
 
             {/* Input Section */}
             <div>
-                <div>
-                    <label>Trade Date</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Trade Date</label>
                     <input
                         type="date"
                         name="tradeDate"
                         value={request.tradeDate}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
-                <div>
-                    <label>Instrument</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Instrument</label>
                     <input
                         type="text"
                         name="instrument"
                         value={request.instrument}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
-                <div>
-                    <label>Exchange Rate</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Exchange Rate</label>
                     <input
                         type="number"
                         step="0.01"
                         name="exchangeRate"
                         value={request.exchangeRate}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
-                <div>
-                    <label>Buy Price (in stock Currency)</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Buy Price (in stock Currency)</label>
                     <input
                         type="number"
                         step="0.01"
                         name="buyPrice"
                         value={request.buyPrice}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
-                <div>
-                    <label>Trading Capital (£)</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Trading Capital (£)</label>
                     <input
                         type="number"
                         name="tradingCapital"
                         value={request.tradingCapital}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
-                <div>
-                    <label>Risk Per Position(%)</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Risk Per Position(%)</label>
                     <input
                         type="number"
                         step="0.5"
                         name="riskPerTrade"
                         value={request.riskPerTrade}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
-                <div>
-                    <label>Max Exposure On Position</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Max Exposure On Position</label>
                     <input
                         type="number"
                         step="0.5"
                         name="maxExposure"
                         value={request.maxExposure}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
-                <div>
-                    <label>Gain / Loss Ratio (% Winning)</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Gain / Loss Ratio (% Winning)</label>
                     <input
                         type="number"
                         step="0.5"
                         name="gainLossRatio"
                         value={request.gainLossRatio}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>            
                 <br />
                 <div><p>STOPLOSS  - SET BY STOPLOSS POINT</p></div>
-                <div>
-                    <label>Stop Loss At</label>
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Stop Loss At</label>
                     <input
                         type="number"
                         step="0.01"
                         name="stopLossAtInput"
                         value={request.stopLossAtInput}
                         onChange={handleChange}
-                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
             </div>
