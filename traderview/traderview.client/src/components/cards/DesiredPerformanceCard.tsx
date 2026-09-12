@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { apiService } from '../services/apiService';
-import { type RiskMatrixCalculationResultDto } from '../types/api.ts';
+import { apiService } from '../../services/apiService';
+import { type RiskMatrixCalculationResultDto } from '../../types/api.ts';
 
 export const DesiredPerformanceCard: React.FC = () => {
     const [portfolioSize, setPortfolioSize] = useState<number>(100000);

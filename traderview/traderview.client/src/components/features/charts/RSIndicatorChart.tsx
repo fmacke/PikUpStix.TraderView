@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createChart, LineSeries } from 'lightweight-charts';
 import type { IChartApi, LineData, Time } from 'lightweight-charts';
-import type { RSDataPoint } from '../types/api';
+import type { RSDataPoint } from '../../../types/api';
 import './RSIndicatorChart.css';
 
 interface RSIndicatorChartProps {

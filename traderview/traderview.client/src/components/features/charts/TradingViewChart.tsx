@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import type { IChartApi } from 'lightweight-charts';
-import type { Trade, RSDataPoint } from '../types/api';
-import { apiService } from '../services/apiService';
+import type { Trade, RSDataPoint } from '../../../types/api';
+import { apiService } from '../../../services/apiService';
 import './TradingViewChart.css';
 
 interface TradingViewChartProps {

@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
-import { apiService } from '../services/apiService';
-import type { OpenPosition, CreateNoteRequest, Note } from '../types/api';
-import { SortableTableHeader } from './SortableTableHeader';
-import type { SortConfig } from './SortableTableHeader';
-import AddNoteModal from './AddNoteModal';
+import { apiService } from '../../../services/apiService';
+import type { OpenPosition, CreateNoteRequest, Note } from '../../../types/api';
+import { SortableTableHeader } from '../../common/SortableTableHeader';
+import type { SortConfig } from '../../common/SortableTableHeader';
+import AddNoteModal from '../../common/AddNoteModal';
 import './OpenPositionsView.css';
 
 function OpenPositionsView() {

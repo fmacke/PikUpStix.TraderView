@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import { apiService } from './services/apiService';
 import type { Trade } from './types/api';
-import TradeList from './components/TradeList';
-import TradeDetail from './components/TradeDetail';
-import OpenPositionsView from './components/OpenPositionsView';
-import RiskCalculatorView from './components/RiskCalculatorView';
-import StockScreenerView from './components/StockScreenerView';
-import SyncButton from './components/SyncButton';
+import TradeList from './components/features/trade/TradeList';
+import TradeDetail from './components/features/trade/TradeDetail';
+import OpenPositionsView from './components/features/positions/OpenPositionsView';
+import RiskCalculatorView from './components/features/views/RiskCalculatorView';
+import StockScreenerView from './components/features/views/StockScreenerView';
+import SyncButton from './components/common/SyncButton';
 
 type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener';
 

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { Trade, RSIndicatorData, CreateNoteRequest, Note } from '../types/api';
-import { apiService } from '../services/apiService';
+import type { Trade, RSIndicatorData, CreateNoteRequest, Note } from '../../../types/api';
+import { apiService } from '../../../services/apiService';
 import './TradeDetail.css';
-import TradingViewChart from './TradingViewChart';
-import RSMetricsDashboard from './RSMetricsDashboard';
-import AddNoteModal from './AddNoteModal';
+import TradingViewChart from '../charts/TradingViewChart';
+import RSMetricsDashboard from '../metrics/RSMetricsDashboard';
+import AddNoteModal from '../../common/AddNoteModal';
 
 interface TradeDetailProps {
     trade: Trade | null;

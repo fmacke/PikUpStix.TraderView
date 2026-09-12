@@ -1,10 +1,10 @@
 import { useEffect, useState, useMemo } from 'react';
-import { apiService } from '../services/apiService';
-import type { CanSlimCandidate } from '../types/api';
-import { SortableTableHeader } from './SortableTableHeader';
-import type { SortConfig } from './SortableTableHeader';
-import SyncButton from './SyncButton';
-import { formatUtcDateTime } from '../utils/helpers'
+import { apiService } from '../../../services/apiService';
+import type { CanSlimCandidate } from '../../../types/api';
+import { SortableTableHeader } from '../../common/SortableTableHeader';
+import type { SortConfig } from '../../common/SortableTableHeader';
+import SyncButton from '../../common/SyncButton';
+import { formatUtcDateTime } from '../../../utils/helpers'
 
 function StockScreenerView() {
     const [candidates, setCandidates] = useState<CanSlimCandidate[]>([]);

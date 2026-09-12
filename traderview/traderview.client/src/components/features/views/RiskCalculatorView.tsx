@@ -1,7 +1,7 @@
 import React from 'react';
-import { CurrentPerformanceCard } from './CurrentPerformanceCard';
-import { DesiredPerformanceCard } from './DesiredPerformanceCard';
-import { TradeCalculatorCard } from './TradeCalculatorCard';
+import CurrentPerformanceCard from '../../cards/CurrentPerformanceCard';
+import DesiredPerformanceCard from '../../cards/DesiredPerformanceCard';
+import TradeCalculatorCard from '../../cards/TradeCalculatorCard';
 
 export const RiskCalculatorView: React.FC = () => {
     return (

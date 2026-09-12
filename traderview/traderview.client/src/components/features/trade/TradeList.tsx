@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { Trade } from '../types/api';
+import type { Trade } from '../../../types/api';
 import './TradeList.css';
 
 interface TradeListProps {

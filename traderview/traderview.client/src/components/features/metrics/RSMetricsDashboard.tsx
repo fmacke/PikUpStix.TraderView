@@ -1,4 +1,4 @@
-import type { RSMetrics } from '../types/api';
+import type { RSMetrics } from '../../../types/api';
 import './RSMetricsDashboard.css';
 
 interface RSMetricsDashboardProps {

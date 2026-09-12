@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { apiService } from '../services/apiService';
-import { type CurrentPerformanceResult } from '../types/api';
+import { apiService } from '../../services/apiService';
+import { type CurrentPerformanceResult } from '../../types/api';
 
 export const CurrentPerformanceCard: React.FC = () => {
     const [data, setData] = useState<CurrentPerformanceResult | null>(null);

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { apiService } from '../services/apiService';
-import type { TradeCalculationRequest, TradeCalculationResponse } from '../types/api';
+import { apiService } from '../../services/apiService';
+import type { TradeCalculationRequest, TradeCalculationResponse } from '../../types/api';
 
 export const TradeCalculatorCard: React.FC = () => {
     const [request, setRequest] = useState<TradeCalculationRequest>({
