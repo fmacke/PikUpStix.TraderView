@@ -3,6 +3,8 @@ using TraderView.Domain.Entities;
 using PikUpStix.TraderView.Services.MarketData;
 using System.Text;
 using System.Xml.Linq;
+using System.Globalization;
+using System.Linq;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
@@ -13,6 +15,7 @@ namespace PikUpStix.TraderView.Services
     {
         private readonly IReportFetchingService _reportFetchingService;
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
+        private readonly IEquitySummaryService _equitySummaryService;
         private readonly IInstrumentRepository _instrumentRepository;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
@@ -30,10 +33,12 @@ namespace PikUpStix.TraderView.Services
             ITradeHistoryReportService tradeHistoryReportService,
             IMarketDataService economicCalendarService,
             FinancialModellingPrepService fmpService,
+            IEquitySummaryService equitySummaryService,
             IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
             _tradeExecutionRepository = tradeExecutionRepository;
+            _equitySummaryService = equitySummaryService;
             _instrumentRepository = instrumentRepository;
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
@@ -55,30 +60,31 @@ namespace PikUpStix.TraderView.Services
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
                 //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
                 SaveTradeConfirms(todayReportXml);
+                await SaveEquitySummaries(todayReportXml);
 
-                if (writeOutputtoExcel)
-                {
-                    var openPositions = _tradeExecutionRepository.GetOpenPositions();
-                    _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
-                    await WriteTodayReportToExcel(todayReportXml);
-                }
-                if (updateMarketData)
-                {
-                    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                    await _marketDataService.FetchAndSaveChartData(new List<string>()
-                    {
-                        "^GSPC",//spx
-                        "^RUT",//iwm
-                        //"CLUSD",//wti crude oil
-                        "BTCUSD",//bitcoin
-                        "GCUSD",//gold
-                        "XAGUSD",//silver
-                        "QQQ",//nasdaq
-                        "^VIX"
-                     }, 300);
-                }
+                //if (writeOutputtoExcel)
+                //{
+                //    var openPositions = _tradeExecutionRepository.GetOpenPositions();
+                //    _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
+                //    await WriteTodayReportToExcel(todayReportXml);
+                //}
+                //if (updateMarketData)
+                //{
+                //    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
+                //    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                //    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                //    await _marketDataService.FetchAndSaveChartData(new List<string>()
+                //    {
+                //        "^GSPC",//spx
+                //        "^RUT",//iwm
+                //        //"CLUSD",//wti crude oil
+                //        "BTCUSD",//bitcoin
+                //        "GCUSD",//gold
+                //        "XAGUSD",//silver
+                //        "QQQ",//nasdaq
+                //        "^VIX"
+                //     }, 300);
+                //}
             }
             catch (Exception ex)
             {
@@ -94,7 +100,70 @@ namespace PikUpStix.TraderView.Services
             // Insert instruments first, then trade confirmations
             _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, _marketDataService.SourceName);
             _tradeExecutionRepository.InsertTradeConfirmations(todayReport.TradeConfirms);
-        }     
+        }
+
+        private async Task SaveEquitySummaries(XDocument todayReportXml)
+        {
+            if (todayReportXml == null) return;
+
+            var nodes = todayReportXml.Descendants("EquitySummaryByReportDateInBase");
+            foreach (var node in nodes)
+            {
+                try
+                {
+                    var accountId = (string)node.Attribute("accountId") ?? string.Empty;
+                    var acctAlias = (string)node.Attribute("acctAlias");
+                    var model = (string)node.Attribute("model");
+                    var currency = (string)node.Attribute("currency") ?? string.Empty;
+                    var reportDateStr = (string)node.Attribute("reportDate");
+                    if (string.IsNullOrEmpty(reportDateStr)) continue;
+
+                    if (!DateTime.TryParseExact(reportDateStr, "yyyyMMdd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var reportDate))
+                        continue;
+
+                    var existing = await _equitySummaryService.GetByAccountAndDateAsync(accountId, reportDate);
+                    if (existing != null) continue;
+
+                    decimal ParseDec(XAttribute attribute)
+                    {
+                        var value = (string)attribute;
+                        if (string.IsNullOrWhiteSpace(value)) return 0m;
+                        return decimal.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out var parsed) ? parsed : 0m;
+                    }
+
+                    var equity = new EquitySummary
+                    {
+                        AccountId = accountId,
+                        AcctAlias = acctAlias,
+                        Model = model,
+                        Currency = currency,
+                        ReportDate = reportDate,
+                        Cash = ParseDec(node.Attribute("cash")),
+                        CashLong = ParseDec(node.Attribute("cashLong")),
+                        CashShort = ParseDec(node.Attribute("cashShort")),
+                        Stock = ParseDec(node.Attribute("stock")),
+                        StockLong = ParseDec(node.Attribute("stockLong")),
+                        StockShort = ParseDec(node.Attribute("stockShort")),
+                        Funds = ParseDec(node.Attribute("funds")),
+                        FundsLong = ParseDec(node.Attribute("fundsLong")),
+                        FundsShort = ParseDec(node.Attribute("fundsShort")),
+                        DividendAccruals = ParseDec(node.Attribute("dividendAccruals")),
+                        DividendAccrualsLong = ParseDec(node.Attribute("dividendAccrualsLong")),
+                        DividendAccrualsShort = ParseDec(node.Attribute("dividendAccrualsShort")),
+                        Total = ParseDec(node.Attribute("total")),
+                        TotalLong = ParseDec(node.Attribute("totalLong")),
+                        TotalShort = ParseDec(node.Attribute("totalShort")),
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    await _equitySummaryService.CreateAsync(equity);
+                }
+                catch (Exception ex)
+                {
+                    System.Console.WriteLine($"Error saving equity summary: {ex.Message}");
+                }
+            }
+        }
 
         private async Task UpdateOpenPositionPrices()
         {

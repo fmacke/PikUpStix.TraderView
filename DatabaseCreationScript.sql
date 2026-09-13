@@ -309,6 +309,50 @@ GO
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
+
+CREATE TABLE [dbo].[EquitySummaries] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [AccountId] VARCHAR(50) NOT NULL,
+    [AcctAlias] VARCHAR(100) NULL,
+    [Model] VARCHAR(50) NULL,
+    [Currency] VARCHAR(10) NOT NULL,
+    [ReportDate] DATE NOT NULL,
+    
+    -- Cash Components
+    [Cash] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [CashLong] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [CashShort] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    
+    -- Major Asset Classes
+    [Stock] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [StockLong] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [StockShort] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    
+    [Funds] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [FundsLong] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [FundsShort] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    
+    -- Accruals & Adjustments
+    [DividendAccruals] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [DividendAccrualsLong] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [DividendAccrualsShort] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    
+    -- Totals
+    [Total] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [TotalLong] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    [TotalShort] DECIMAL(18, 6) NOT NULL DEFAULT 0,
+    
+    -- Audit Metadata
+    [CreatedAt] DATETIME2(7) NOT NULL DEFAULT SYSUTCDATETIME(),
+    
+    CONSTRAINT [PK_IbkrEquitySummaries] PRIMARY KEY CLUSTERED ([Id] ASC),
+    CONSTRAINT [IX_IbkrEquitySummaries_Account_Date] UNIQUE NONCLUSTERED ([AccountId] ASC, [ReportDate] ASC)
+);
+
+-- Optional index for date-range queries on performance dashboards
+CREATE NONCLUSTERED INDEX [IX_IbkrEquitySummaries_ReportDate] 
+ON [dbo].[IbkrEquitySummaries] ([ReportDate] DESC);
+
 GO
 CREATE TABLE [dbo].[TradeExecutions](
 	[Id] [int] IDENTITY(1,1) NOT NULL,

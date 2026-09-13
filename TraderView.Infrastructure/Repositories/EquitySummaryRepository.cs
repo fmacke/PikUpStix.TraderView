@@ -17,25 +17,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                const string query = @"
-                    SELECT 
-                        Id, AccountId, AcctAlias, Model, Currency, ReportDate,
-                        Cash, CashLong, CashShort,
-                        Stock, StockLong, StockShort,
-                        Funds, FundsLong, FundsShort,
-                        DividendAccruals, DividendAccrualsLong, DividendAccrualsShort,
-                        Total, TotalLong, TotalShort,
-                        CreatedAt
-                    FROM [dbo].[EquitySummaries]
-                    ORDER BY ReportDate DESC, AccountId ASC";
-
-                using (var cmd = new SqlCommand(query, connection))
-                {
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        return MapReaderToList(reader);
-                    }
-                }
+                return ExecuteList(connection, null, MapReaderToEntity, new TraderView.Application.Features.EquitySummaries.Query.Get.GetAllEquitySummariesSqlQuery());
             });
         }
 
@@ -46,40 +28,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                const string query = @"
-                    SELECT 
-                        Id, AccountId, AcctAlias, Model, Currency, ReportDate,
-                        Cash, CashLong, CashShort,
-                        Stock, StockLong, StockShort,
-                        Funds, FundsLong, FundsShort,
-                        DividendAccruals, DividendAccrualsLong, DividendAccrualsShort,
-                        Total, TotalLong, TotalShort,
-                        CreatedAt
-                    FROM [dbo].[EquitySummaries]
-                    WHERE Id = @id";
-
-                var parameters = new Dictionary<string, object>
-                {
-                    { "@id", id }
-                };
-
-                using (var cmd = new SqlCommand(query, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            return MapReaderToEntity(reader);
-                        }
-                    }
-                }
-
-                return null;
+                return ExecuteSingle(connection, null, MapReaderToEntity, new TraderView.Application.Features.EquitySummaries.Query.GetBy.GetEquitySummaryByIdSqlQuery(id));
             });
         }
 
@@ -90,42 +39,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                const string query = @"
-                    SELECT 
-                        Id, AccountId, AcctAlias, Model, Currency, ReportDate,
-                        Cash, CashLong, CashShort,
-                        Stock, StockLong, StockShort,
-                        Funds, FundsLong, FundsShort,
-                        DividendAccruals, DividendAccrualsLong, DividendAccrualsShort,
-                        Total, TotalLong, TotalShort,
-                        CreatedAt
-                    FROM [dbo].[EquitySummaries]
-                    WHERE AccountId = @accountId
-                    AND ReportDate = @reportDate";
-
-                var parameters = new Dictionary<string, object>
-                {
-                    { "@accountId", accountId },
-                    { "@reportDate", reportDate.Date }
-                };
-
-                using (var cmd = new SqlCommand(query, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        if (reader.Read())
-                        {
-                            return MapReaderToEntity(reader);
-                        }
-                    }
-                }
-
-                return null;
+                return ExecuteSingle(connection, null, MapReaderToEntity, new TraderView.Application.Features.EquitySummaries.Query.GetBy.GetEquitySummaryByAccountAndDateSqlQuery(accountId, reportDate));
             });
         }
 
@@ -136,36 +50,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                const string query = @"
-                    SELECT 
-                        Id, AccountId, AcctAlias, Model, Currency, ReportDate,
-                        Cash, CashLong, CashShort,
-                        Stock, StockLong, StockShort,
-                        Funds, FundsLong, FundsShort,
-                        DividendAccruals, DividendAccrualsLong, DividendAccrualsShort,
-                        Total, TotalLong, TotalShort,
-                        CreatedAt
-                    FROM [dbo].[EquitySummaries]
-                    WHERE AccountId = @accountId
-                    ORDER BY ReportDate DESC";
-
-                var parameters = new Dictionary<string, object>
-                {
-                    { "@accountId", accountId }
-                };
-
-                using (var cmd = new SqlCommand(query, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        return MapReaderToList(reader);
-                    }
-                }
+                return ExecuteList(connection, null, MapReaderToEntity, new TraderView.Application.Features.EquitySummaries.Query.GetBy.GetEquitySummariesByAccountIdSqlQuery(accountId));
             });
         }
 
@@ -176,99 +61,22 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                const string query = @"
-                    SELECT 
-                        Id, AccountId, AcctAlias, Model, Currency, ReportDate,
-                        Cash, CashLong, CashShort,
-                        Stock, StockLong, StockShort,
-                        Funds, FundsLong, FundsShort,
-                        DividendAccruals, DividendAccrualsLong, DividendAccrualsShort,
-                        Total, TotalLong, TotalShort,
-                        CreatedAt
-                    FROM [dbo].[EquitySummaries]
-                    WHERE ReportDate >= @startDate
-                    AND ReportDate <= @endDate
-                    ORDER BY ReportDate DESC, AccountId ASC";
-
-                var parameters = new Dictionary<string, object>
-                {
-                    { "@startDate", startDate.Date },
-                    { "@endDate", endDate.Date }
-                };
-
-                using (var cmd = new SqlCommand(query, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        return MapReaderToList(reader);
-                    }
-                }
+                return ExecuteList(connection, null, MapReaderToEntity, new TraderView.Application.Features.EquitySummaries.Query.GetBy.GetEquitySummariesByDateRangeSqlQuery(startDate, endDate));
             });
         }
 
         /// <summary>
-        /// Creates a new equity summary and returns its ID
+        /// Creates a new equity summary and returns the new ID
         /// </summary>
         public int Create(EquitySummary equitySummary)
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                const string insertQuery = @"
-                    INSERT INTO [dbo].[EquitySummaries] (
-                        AccountId, AcctAlias, Model, Currency, ReportDate,
-                        Cash, CashLong, CashShort,
-                        Stock, StockLong, StockShort,
-                        Funds, FundsLong, FundsShort,
-                        DividendAccruals, DividendAccrualsLong, DividendAccrualsShort,
-                        Total, TotalLong, TotalShort
-                    )
-                    VALUES (
-                        @accountId, @acctAlias, @model, @currency, @reportDate,
-                        @cash, @cashLong, @cashShort,
-                        @stock, @stockLong, @stockShort,
-                        @funds, @fundsLong, @fundsShort,
-                        @dividendAccruals, @dividendAccrualsLong, @dividendAccrualsShort,
-                        @total, @totalLong, @totalShort
-                    );
-                    SELECT CAST(SCOPE_IDENTITY() AS INT);";
-
-                var parameters = new Dictionary<string, object>
+                using (var transaction = connection.BeginTransaction())
                 {
-                    { "@accountId", equitySummary.AccountId },
-                    { "@acctAlias", equitySummary.AcctAlias ?? (object)DBNull.Value },
-                    { "@model", equitySummary.Model ?? (object)DBNull.Value },
-                    { "@currency", equitySummary.Currency },
-                    { "@reportDate", equitySummary.ReportDate.Date },
-                    { "@cash", equitySummary.Cash },
-                    { "@cashLong", equitySummary.CashLong },
-                    { "@cashShort", equitySummary.CashShort },
-                    { "@stock", equitySummary.Stock },
-                    { "@stockLong", equitySummary.StockLong },
-                    { "@stockShort", equitySummary.StockShort },
-                    { "@funds", equitySummary.Funds },
-                    { "@fundsLong", equitySummary.FundsLong },
-                    { "@fundsShort", equitySummary.FundsShort },
-                    { "@dividendAccruals", equitySummary.DividendAccruals },
-                    { "@dividendAccrualsLong", equitySummary.DividendAccrualsLong },
-                    { "@dividendAccrualsShort", equitySummary.DividendAccrualsShort },
-                    { "@total", equitySummary.Total },
-                    { "@totalLong", equitySummary.TotalLong },
-                    { "@totalShort", equitySummary.TotalShort }
-                };
-
-                using (var cmd = new SqlCommand(insertQuery, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-
-                    return (int)cmd.ExecuteScalar()!;
+                    var id = ExecuteScalar<int>(connection, transaction, new TraderView.Application.Features.EquitySummaries.Command.Create.InsertEquitySummarySqlCommand(equitySummary));
+                    transaction.Commit();
+                    return id;
                 }
             });
         }
@@ -280,65 +88,11 @@ namespace TraderView.Infrastructure.Repositories
         {
             ExecuteDatabaseOperation(connection =>
             {
-                const string updateQuery = @"
-                    UPDATE [dbo].[EquitySummaries]
-                    SET 
-                        AcctAlias = @acctAlias,
-                        Model = @model,
-                        Currency = @currency,
-                        ReportDate = @reportDate,
-                        Cash = @cash,
-                        CashLong = @cashLong,
-                        CashShort = @cashShort,
-                        Stock = @stock,
-                        StockLong = @stockLong,
-                        StockShort = @stockShort,
-                        Funds = @funds,
-                        FundsLong = @fundsLong,
-                        FundsShort = @fundsShort,
-                        DividendAccruals = @dividendAccruals,
-                        DividendAccrualsLong = @dividendAccrualsLong,
-                        DividendAccrualsShort = @dividendAccrualsShort,
-                        Total = @total,
-                        TotalLong = @totalLong,
-                        TotalShort = @totalShort
-                    WHERE Id = @id";
-
-                var parameters = new Dictionary<string, object>
+                using (var transaction = connection.BeginTransaction())
                 {
-                    { "@id", equitySummary.Id },
-                    { "@acctAlias", equitySummary.AcctAlias ?? (object)DBNull.Value },
-                    { "@model", equitySummary.Model ?? (object)DBNull.Value },
-                    { "@currency", equitySummary.Currency },
-                    { "@reportDate", equitySummary.ReportDate.Date },
-                    { "@cash", equitySummary.Cash },
-                    { "@cashLong", equitySummary.CashLong },
-                    { "@cashShort", equitySummary.CashShort },
-                    { "@stock", equitySummary.Stock },
-                    { "@stockLong", equitySummary.StockLong },
-                    { "@stockShort", equitySummary.StockShort },
-                    { "@funds", equitySummary.Funds },
-                    { "@fundsLong", equitySummary.FundsLong },
-                    { "@fundsShort", equitySummary.FundsShort },
-                    { "@dividendAccruals", equitySummary.DividendAccruals },
-                    { "@dividendAccrualsLong", equitySummary.DividendAccrualsLong },
-                    { "@dividendAccrualsShort", equitySummary.DividendAccrualsShort },
-                    { "@total", equitySummary.Total },
-                    { "@totalLong", equitySummary.TotalLong },
-                    { "@totalShort", equitySummary.TotalShort }
-                };
-
-                using (var cmd = new SqlCommand(updateQuery, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-
-                    cmd.ExecuteNonQuery();
+                    ExecuteCommand(connection, transaction, new TraderView.Application.Features.EquitySummaries.Command.Update.UpdateEquitySummarySqlCommand(equitySummary));
+                    transaction.Commit();
                 }
-
-                return 0;
             });
         }
 
@@ -349,24 +103,11 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                const string deleteQuery = @"
-                    DELETE FROM [dbo].[EquitySummaries]
-                    WHERE Id = @id";
-
-                var parameters = new Dictionary<string, object>
+                using (var transaction = connection.BeginTransaction())
                 {
-                    { "@id", id }
-                };
-
-                using (var cmd = new SqlCommand(deleteQuery, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        cmd.Parameters.AddWithValue(param.Key, param.Value);
-                    }
-
-                    int rowsAffected = cmd.ExecuteNonQuery();
-                    return rowsAffected > 0;
+                    var rows = ExecuteScalar<int>(connection, transaction, new TraderView.Application.Features.EquitySummaries.Command.Delete.DeleteEquitySummarySqlCommand(id));
+                    transaction.Commit();
+                    return rows > 0;
                 }
             });
         }
