@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{F2EB0427
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PineScripts", "PineScripts", "{F96080A3-73F3-45AB-BEF1-F8265B6AD653}"
 	ProjectSection(SolutionItems) = preProject
+		CS - SMA & VCP.js = CS - SMA & VCP.js
 		PineScripts\CS Distribution.js = PineScripts\CS Distribution.js
 		PineScripts\CS FTD Tracker.js = PineScripts\CS FTD Tracker.js
 		PineScripts\CS Relative Strength.js = PineScripts\CS Relative Strength.js
