@@ -73,11 +73,12 @@ function Build-DockerImages {
     
     Write-Host "`nBuilding Docker images..." -ForegroundColor Cyan
     
+    # Force plain text logging to bypass Windows console handle errors
     if ($UseNoCache) {
         Write-Host "Building with --no-cache flag..." -ForegroundColor Yellow
-        docker-compose build --no-cache
+        docker-compose build --no-cache --progress=plain
     } else {
-        docker-compose build
+        docker-compose build --progress=plain
     }
     
     if ($LASTEXITCODE -eq 0) {
