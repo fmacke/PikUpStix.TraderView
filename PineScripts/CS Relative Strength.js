@@ -1,5 +1,5 @@
 //@version=6
-indicator("CAN SLIM Relative Strength Line", overlay = false, precision = 4)
+indicator("CS - RS", overlay = false, precision = 4)
 
 // ==========================================
 // 1. INPUTS & BENCHMARK
@@ -20,7 +20,7 @@ bool   showRibbon = input.bool(true, "Show Stage 2 Ribbon Dots on RS Pane")
 string benchmark = "SPY"
 if indexMode == "AUTO"
     bool isNasdaq = (syminfo.prefix == "NASDAQ") or str.contains(syminfo.tickerid, "NASDAQ") or(str.length(syminfo.ticker) == 4 and syminfo.ticker != "HNGE")
-    benchmark:= isNasdaq ? "QQQ" : "SPY"
+benchmark:= isNasdaq ? "QQQ" : "SPY"
 else if indexMode == "SPY"
     benchmark:= "SPY"
 else if indexMode == "QQQ"
@@ -32,21 +32,21 @@ else
 // 3. DAILY STAGE 2 CALCULATION (TIMEFRAME AGNOSTIC)
 // ==========================================
 f_daily_stage2() =>
-    d_close = close
-    d_high = high
-    d_low = low
+d_close = close
+d_high = high
+d_low = low
 
-    d_sma50 = ta.sma(d_close, 50)
-    d_sma150 = ta.sma(d_close, 150)
-    d_sma200 = ta.sma(d_close, 200)
+d_sma50 = ta.sma(d_close, 50)
+d_sma150 = ta.sma(d_close, 150)
+d_sma200 = ta.sma(d_close, 200)
 
-    // 200-day SMA in an uptrend (strictly higher than ~1 month ago / 22 trading days)
-    d_sma200_slope_up = d_sma200 > d_sma200[22]
+// 200-day SMA in an uptrend (strictly higher than ~1 month ago / 22 trading days)
+d_sma200_slope_up = d_sma200 > d_sma200[22]
 
     // 52-week High/Low lookbacks (~252 trading days)
     int d_lookback = math.min(bar_index + 1, 252)
-    d_high252 = ta.highest(d_high, d_lookback)
-    d_low252 = ta.lowest(d_low, d_lookback)
+d_high252 = ta.highest(d_high, d_lookback)
+d_low252 = ta.lowest(d_low, d_lookback)
 
     // Minervini Trend Template Rules:
     // 1. Price > 150 SMA and 200 SMA
@@ -63,7 +63,7 @@ f_daily_stage2() =>
     bool is_stage2 = ma_alignment and d_sma200_slope_up and low_condition and high_condition
     float dist_from_high = ((d_high252 - d_close) / d_high252) * 100
 
-    [is_stage2, dist_from_high]
+[is_stage2, dist_from_high]
 
 // Pull daily calculation into whatever intraday timeframe is loaded
 [stage2_active, daily_dist_high] = request.security(syminfo.tickerid, "D", f_daily_stage2(), lookahead = barmerge.lookahead_off)
@@ -129,5 +129,5 @@ if barstate.islast and showLight
     string statusTxt = stage2_active ? "● STAGE 2: ON" : "○ STAGE 2: OFF"
     string detailTxt = str.tostring(daily_dist_high, "#.#") + "% off 52W high"
 
-    table.cell(s2Hud, 0, 0, statusTxt, bgcolor = lightColor, text_color = textCol, text_size = size.small)
-    table.cell(s2Hud, 1, 0, detailTxt, bgcolor = color.new(color.black, 40), text_color = color.white, text_size = size.small)
+table.cell(s2Hud, 0, 0, statusTxt, bgcolor = lightColor, text_color = textCol, text_size = size.small)
+table.cell(s2Hud, 1, 0, detailTxt, bgcolor = color.new(color.black, 40), text_color = color.white, text_size = size.small)

@@ -146,7 +146,7 @@ plot(sma10, "SMA 10", color = color.new(#248de2, 0), linewidth = 1)
 plot(sma21, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
 plot(sma50, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
 plot(sma150, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
-plot(sma200, "SMA 200", color = color.new(#3f0202, 0), linewidth = 2)
+plot(sma200, "SMA 200", color = color.new(#3f0202, 0), linewidth = 3)
 
 // Swing markers
 plotshape(show_dots and not na(ph), "Swing High", shape.triangledown,

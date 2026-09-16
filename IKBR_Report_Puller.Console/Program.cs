@@ -83,6 +83,13 @@ namespace TraderView.Console
                         return new CanSlimCandidateRepository(connectionString);
                     });
 
+                    services.AddSingleton<IEquitySummaryRepository>(provider =>
+                    {
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var connectionString = BuildConnectionString(config);
+                        return new EquitySummaryRepository(connectionString);
+                    });
+
                     // Register both market data services
                     services.AddSingleton<FinancialModellingPrepService>(provider =>
                     {
@@ -132,6 +139,7 @@ namespace TraderView.Console
                     services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddSingleton<ICanSlimScreenerService, CanSlimScreenerService>();
                     services.AddSingleton<ICurrentPerformanceService, CurrentPerformanceService>();
+                    services.AddSingleton<IEquitySummaryService, EquitySummaryService>();
                     services.AddSingleton<Application>();
                 })
                 .Build();

@@ -10,17 +10,20 @@ namespace TraderView.Console
         private readonly IMarketDataService _financialDataService;
         private readonly ICurrentPerformanceService _riskMatrixService;
         private readonly ICanSlimScreenerService _canSlimScreenerService;
+        private readonly IEquitySummaryService _equitySummaryService;
 
         public Application(
             IReportRunnerService reportRunnerService,
             IMarketDataService financialDataService,
             ICurrentPerformanceService riskMatrixService,
-            ICanSlimScreenerService canSlimScreenerService)
+            ICanSlimScreenerService canSlimScreenerService,
+            IEquitySummaryService equitySummaryService)
         {
             _reportRunnerService = reportRunnerService;
             _financialDataService = financialDataService;
             _riskMatrixService = riskMatrixService;
             _canSlimScreenerService = canSlimScreenerService;
+            _equitySummaryService = equitySummaryService;
         }
 
 

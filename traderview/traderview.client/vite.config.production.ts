@@ -1,10 +1,11 @@
 import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import plugin from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 // Production build config - no dev certificates needed
 export default defineConfig({
-    plugins: [plugin()],
+    plugins: [plugin(), tailwindcss()],
     resolve: {
         alias: {
             '@': fileURLToPath(new URL('./src', import.meta.url))
