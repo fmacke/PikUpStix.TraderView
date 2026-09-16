@@ -1,5 +1,5 @@
 //@version=6
-indicator("CS - SMA & VCP", overlay = true, max_boxes_count = 50, max_lines_count = 50)
+indicator("CS - SMA & VCP", overlay = true, max_boxes_count = 100, max_lines_count = 100, max_labels_count = 100)
 
 // -------------------------------------------------------------------------
 // 1. INPUT PARAMETERS
@@ -19,6 +19,12 @@ atr_len = input.int(20, "ATR Length", group = grp_vcp)
 vdu_thresh = input.float(0.60, "VDU Threshold (% of 50 SMA Vol)", minval = 0.1, maxval = 1.0, step = 0.05, group = grp_vcp)
 max_depth = input.float(35.0, "Max Initial Base Depth (%)", group = grp_vcp)
 
+grp_waves = "3. Wave Geometry & Contraction Display (Optional)"
+show_waves = input.bool(true, "Show Wave Diagonal Lines", group = grp_waves)
+show_labels = input.bool(true, "Show Contraction % Labels", group = grp_waves)
+show_dots = input.bool(true, "Show Swing Tops / Bottoms", group = grp_waves)
+max_history = input.int(14, "Retained Wave Lines/Labels", minval = 4, maxval = 40, group = grp_waves)
+
 // -------------------------------------------------------------------------
 // 2. TREND TEMPLATE VALIDATION (STAGE 2)
 // -------------------------------------------------------------------------
@@ -28,14 +34,6 @@ sma50 = ta.sma(close, len_50)
 sma150 = ta.sma(close, len_150)
 sma200 = ta.sma(close, len_200)
 
-// Trend Template Rules:
-// 1. Price > 150 & 200 SMA
-// 2. 150 SMA > 200 SMA
-// 3. 200 SMA trending upward (at least flat to up over 1 month / 20 trading bars)
-// 4. 50 SMA > 150 & 200 SMA
-// 5. Price > 50 SMA
-// 6. Price at least 25-30% above 52-week low
-// 7. Price within 25% of 52-week high
 high52 = ta.highest(high, 252)
 low52 = ta.lowest(low, 252)
 sma200_rising = sma200 >= sma200[20]
@@ -51,57 +49,93 @@ tt_condition = (close > sma150 and close > sma200) and
 trend_passed = use_tt ? tt_condition : true
 
 // -------------------------------------------------------------------------
-// 3. SWING DETECTION & VOLATILITY CONTRACTION
+// 3. SWING DETECTION & WAVE GEOMETRY
 // -------------------------------------------------------------------------
 ph = ta.pivothigh(high, sw_left, sw_right)
 pl = ta.pivotlow(low, sw_left, sw_right)
 
+// Custom data type to coordinate swing legs accurately
+type PivotPoint
+    int   bar
+    float price
+    bool  is_high
+
+var PivotPoint[] pivot_history = array.new < PivotPoint > ()
+var line[]  wave_lines = array.new < line > ()
+var label[] wave_labels = array.new < label > ()
+
 var float last_ph = na
+var int   last_ph_bar = na
 var float last_pl = na
-var float prev_ph = na
-var float prev_pl = na
-var float swing_hi_depth = na
-
-if not na(ph)
-prev_ph:= last_ph
-last_ph:= ph
-
-if not na(pl)
-prev_pl:= last_pl
-last_pl:= pl
-if not na(last_ph)
-// Depth of current contraction wave in percentage
-swing_hi_depth:= ((last_ph - pl) / last_ph) * 100.0
-
-// Tracking Contraction Waves (Tights)
 var float c1_depth = na
 var float c2_depth = na
 var float c3_depth = na
 
-// Evaluate wave narrowing when a new swing low forms
-if not na(pl) and not na(swing_hi_depth)
+// Garbage collection to stay within max element limits
+f_prune_objects() =>
+if array.size(wave_lines) > max_history
+        line.delete(array.shift(wave_lines))
+if array.size(wave_labels) > max_history
+        label.delete(array.shift(wave_labels))
+
+// Pivot High Confirmed
+if not na(ph)
+ph_bar = bar_index - sw_right
+last_ph:= ph
+last_ph_bar:= ph_bar
+array.push(pivot_history, PivotPoint.new(ph_bar, ph, true))
+
+// Draw upward diagonal connecting prior low to current high
+if array.size(pivot_history) >= 2
+        prev = array.get(pivot_history, array.size(pivot_history) - 2)
+if not prev.is_high and show_waves
+ln = line.new(prev.bar, prev.price, ph_bar, ph,
+    color = color.new(color.gray, 50), width = 1, style = line.style_dotted)
+array.push(wave_lines, ln)
+f_prune_objects()
+
+// Pivot Low Confirmed
+if not na(pl)
+pl_bar = bar_index - sw_right
+last_pl:= pl
+array.push(pivot_history, PivotPoint.new(pl_bar, pl, false))
+
+if not na(last_ph)
+depth = ((last_ph - pl) / last_ph) * 100.0
 c3_depth:= c2_depth
 c2_depth:= c1_depth
-c1_depth:= swing_hi_depth
+c1_depth:= depth
 
-// Condition: Each subsequent wave is shallower than the prior wave
+// Draw downward contraction leg from top to bottom
+if show_waves
+            ln = line.new(last_ph_bar, last_ph, pl_bar, pl,
+    color = color.new(#9c27b0, 20), width = 2)
+array.push(wave_lines, ln)
+f_prune_objects()
+
+// Plot contraction percentage beneath trough
+if show_labels
+            lbl = label.new(pl_bar, pl, text = "-" + str.tostring(depth, "#.#") + "%",
+    color = color.new(#1a237e, 10), textcolor = color.white,
+    style = label.style_label_up, size = size.small)
+array.push(wave_labels, lbl)
+f_prune_objects()
+
+// -------------------------------------------------------------------------
+// 4. CONTRACTION RATIOS, ATR COILING & VDU
+// -------------------------------------------------------------------------
 is_contracting = not na(c1_depth) and not na(c2_depth) and
     (c1_depth < c2_depth) and
         (c2_depth <= max_depth) and
-            (c1_depth < 15.0) // Final tight contraction typically < 10-15%
+            (c1_depth < 15.0)
 
-// -------------------------------------------------------------------------
-// 4. VOLUME DRY-UP (VDU) & TIGHT CONSOLIDATION
-// -------------------------------------------------------------------------
 vol_ma50 = ta.sma(volume, 50)
 is_vdu = volume < (vol_ma50 * vdu_thresh)
 
-// ATR Compression: 10-bar ATR is below 50-bar ATR
 atr10 = ta.atr(10)
 atr50 = ta.atr(atr_len)
 atr_coiling = atr10 < (atr50 * 0.75)
 
-// Ready state: Stage 2 + Contracting Swings + ATR Coiling + VDU
 vcp_setup = trend_passed and is_contracting and atr_coiling
 
 // -------------------------------------------------------------------------
@@ -114,21 +148,25 @@ plot(sma50, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
 plot(sma150, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
 plot(sma200, "SMA 200", color = color.new(#3f0202, 0), linewidth = 2)
 
-// Paint background when volatility is coiled and ready for pivot breakout
-bgcolor(vcp_setup ? color.new(color.purple, 88) : na, title = "VCP Coiling Zone")
+// Swing markers
+plotshape(show_dots and not na(ph), "Swing High", shape.triangledown,
+    location = location.abovebar, color = color.red, size = size.tiny, offset = -sw_right)
+plotshape(show_dots and not na(pl), "Swing Low", shape.triangleup,
+    location = location.belowbar, color = color.green, size = size.tiny, offset = -sw_right)
 
-// Mark Volume Dry-Up days on chart
+// VCP Coiling Zone & Volume Dry-Up Markers
+bgcolor(vcp_setup ? color.new(#47ef47, 88) : na, title = "VCP Coiling Zone")
 plotshape(is_vdu and trend_passed, title = "Volume Dry Up", style = shape.circle,
-    location = location.belowbar, color = color.teal, size = size.tiny)
+    location = location.belowbar, color = color.rgb(116, 154, 249), size = size.tiny)
 
-// Dynamic Pivot Resistance Line (Cheats / High-Handle Breakout Level)
+// Dynamic Pivot Resistance Line
 var line pivot_line = na
 if not na(last_ph) and vcp_setup
 line.delete(pivot_line)
-pivot_line:= line.new(bar_index - sw_right, last_ph, bar_index + 5, last_ph,
+pivot_line:= line.new(last_ph_bar, last_ph, bar_index + 5, last_ph,
     color = color.yellow, width = 2, style = line.style_dashed)
 
-// Plot Breakout Signal
+// Breakout Signal
 pivot_level = not na(last_ph) ? last_ph : na
 breakout = ta.crossover(close, pivot_level) and(volume > vol_ma50 * 1.40) and trend_passed
 
