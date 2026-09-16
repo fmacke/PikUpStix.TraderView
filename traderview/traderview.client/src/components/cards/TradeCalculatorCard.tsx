@@ -20,6 +20,22 @@ export const TradeCalculatorCard: React.FC = () => {
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Validate that all required inputs have valid values
+    const isValidRequest = (req: TradeCalculationRequest): boolean => {
+        return !!(
+            req.tradeDate &&
+            req.tradeDate.length > 0 &&
+            req.instrument &&
+            req.instrument.trim().length > 0 &&
+            req.exchangeRate > 0 &&
+            req.buyPrice > 0 &&
+            req.tradingCapital > 0 &&
+            req.riskPerTrade > 0 &&
+            req.maxExposure > 0 &&
+            req.gainLossRatio > 0
+        );
+    };
+
     const calculateTrade = async () => {
         try {
             setLoading(true);
@@ -34,15 +50,34 @@ export const TradeCalculatorCard: React.FC = () => {
     };
 
     useEffect(() => {
-        calculateTrade();
+        if (isValidRequest(request)) {
+            calculateTrade();
+        } else {
+            setResult(null);
+            setError(null);
+        }
     }, [request]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setRequest(prev => ({
-            ...prev,
-            [name]: ['instrument', 'tradeDate'].includes(name) ? value : parseFloat(value) || 0,
-        }));
+        // Support checkboxes (use checked) and numeric/text inputs (use value)
+        const target = e.target as HTMLInputElement;
+        const { name, value, type, checked } = target;
+
+        setRequest(prev => {
+            const newValue: string | number | boolean = type === 'checkbox'
+                ? checked
+                : ['instrument', 'tradeDate'].includes(name)
+                    ? value
+                    : value === ''
+                        ? 0
+                        : parseFloat(value);
+
+            // cast to any to satisfy the index signature for dynamic key assignment
+            return {
+                ...prev,
+                [name]: newValue as any,
+            } as TradeCalculationRequest;
+        });
     };
 
     return (

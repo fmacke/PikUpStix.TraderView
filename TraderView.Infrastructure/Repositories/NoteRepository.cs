@@ -21,7 +21,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var notes = new List<Note>();
-                var query = "SELECT Id, PositionId, TradeExecutionId, Comment, EntryDate, TradeTypeId FROM Notes ORDER BY EntryDate DESC";
+                var query = "SELECT Id, PositionId, TradeExecutionId, ErrorTypeId, Comment, EntryDate, TradeTypeId FROM Notes ORDER BY EntryDate DESC";
 
                 using var command = new SqlCommand(query, connection);
                 using var reader = command.ExecuteReader();
@@ -42,7 +42,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             return ExecuteDatabaseOperation(connection =>
             {
-                var query = "SELECT Id, PositionId, TradeExecutionId, Comment, EntryDate, TradeTypeId FROM Notes WHERE Id = @Id";
+                var query = "SELECT Id, PositionId, TradeExecutionId, ErrorTypeId, Comment, EntryDate, TradeTypeId FROM Notes WHERE Id = @Id";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@Id", id);
@@ -65,7 +65,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var notes = new List<Note>();
-                var query = @"SELECT n.Id, n.PositionId, n.TradeExecutionId, n.Comment, n.EntryDate, n.UpdatedAt, n.TradeTypeId, 
+                var query = @"SELECT n.Id, n.PositionId, n.TradeExecutionId, n.ErrorTypeId, n.Comment, n.EntryDate, n.UpdatedAt, n.TradeTypeId, 
                     l.Category, l.Name 
                     FROM Notes n inner join ListItems l on n.TradeTypeId = l.Id 
                     WHERE PositionId = @PositionId ORDER BY EntryDate DESC";
@@ -91,7 +91,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var notes = new List<Note>();
-                var query = "SELECT Id, PositionId, TradeExecutionId, Comment, EntryDate, TradeTypeId FROM Notes WHERE TradeExecutionId = @TradeExecutionId ORDER BY EntryDate DESC";
+                var query = "SELECT Id, PositionId, TradeExecutionId, ErrorTypeId, Comment, EntryDate, TradeTypeId FROM Notes WHERE TradeExecutionId = @TradeExecutionId ORDER BY EntryDate DESC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@TradeExecutionId", tradeExecutionId);
@@ -114,7 +114,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var notes = new List<Note>();
-                var query = "SELECT Id, PositionId, TradeExecutionId, Comment, EntryDate, TradeTypeId FROM Notes WHERE TradeTypeId = @TradeTypeId ORDER BY EntryDate DESC";
+                var query = "SELECT Id, PositionId, TradeExecutionId, ErrorTypeId, Comment, EntryDate, TradeTypeId FROM Notes WHERE TradeTypeId = @TradeTypeId ORDER BY EntryDate DESC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@TradeTypeId", tradeTypeId);
@@ -132,13 +132,13 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Inserts a new note into the database
         /// </summary>
-        public int Insert(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId)
+        public int Insert(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId, int? errorTypeId)
         {
             return ExecuteDatabaseOperation(connection =>
             {
                 var query = @"
-                    INSERT INTO Notes (PositionId, TradeExecutionId, Comment, EntryDate, UpdatedAt, TradeTypeId) 
-                    VALUES (@PositionId, @TradeExecutionId, @Comment, @EntryDate, @UpdatedAt, @TradeTypeId);
+                    INSERT INTO Notes (PositionId, TradeExecutionId, ErrorTypeId, Comment, EntryDate, UpdatedAt, TradeTypeId) 
+                    VALUES (@PositionId, @TradeExecutionId, @ErrorTypeId, @Comment, @EntryDate, @UpdatedAt, @TradeTypeId);
                     SELECT CAST(SCOPE_IDENTITY() as int);";
 
                 using var command = new SqlCommand(query, connection);
@@ -148,7 +148,7 @@ namespace TraderView.Infrastructure.Repositories
                 command.Parameters.AddWithValue("@EntryDate", entryDate);
                 command.Parameters.AddWithValue("@UpdatedAt", entryDate);
                 command.Parameters.AddWithValue("@TradeTypeId", tradeTypeId);
-
+                command.Parameters.AddWithValue("@ErrorTypeId", errorTypeId.HasValue ? (object)errorTypeId.Value : DBNull.Value);   
                 var newId = command.ExecuteScalar();
                 return Convert.ToInt32(newId);
             });
@@ -157,7 +157,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Updates an existing note
         /// </summary>
-        public bool Update(int id, int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId)
+        public bool Update(int id, int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId, int? errorTypeId)
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -165,6 +165,7 @@ namespace TraderView.Infrastructure.Repositories
                     UPDATE Notes 
                     SET PositionId = @PositionId, 
                         TradeExecutionId = @TradeExecutionId, 
+                        ErrorTypeId = @ErrorTypeId,
                         Comment = @Comment, 
                         EntryDate = @EntryDate, 
                         TradeTypeId = @TradeTypeId 
@@ -174,6 +175,7 @@ namespace TraderView.Infrastructure.Repositories
                 command.Parameters.AddWithValue("@Id", id);
                 command.Parameters.AddWithValue("@PositionId", positionId);
                 command.Parameters.AddWithValue("@TradeExecutionId", tradeExecutionId.HasValue ? (object)tradeExecutionId.Value : DBNull.Value);
+                command.Parameters.AddWithValue("@ErrorTypeId", errorTypeId.HasValue ? (object)errorTypeId.Value : DBNull.Value);
                 command.Parameters.AddWithValue("@Comment", comment);
                 command.Parameters.AddWithValue("@EntryDate", entryDate);
                 command.Parameters.AddWithValue("@TradeTypeId", tradeTypeId);
@@ -208,7 +210,7 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var notes = new List<Note>();
-                var query = "SELECT Id, PositionId, TradeExecutionId, Comment, EntryDate, TradeTypeId FROM Notes WHERE EntryDate >= @StartDate AND EntryDate <= @EndDate ORDER BY EntryDate DESC";
+                var query = "SELECT Id, PositionId, TradeExecutionId, ErrorTypeId, Comment, EntryDate, TradeTypeId, UpdatedAt FROM Notes WHERE EntryDate >= @StartDate AND EntryDate <= @EndDate ORDER BY EntryDate DESC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@StartDate", startDate);
@@ -238,6 +240,7 @@ namespace TraderView.Infrastructure.Repositories
                 EntryDate = reader.GetDateTime(reader.GetOrdinal("EntryDate")),
                 TradeTypeId = reader.GetInt32(reader.GetOrdinal("TradeTypeId")),
                 UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
+                ErrorTypeId = reader.IsDBNull(reader.GetOrdinal("ErrorTypeId")) ? null : reader.GetInt32(reader.GetOrdinal("ErrorTypeId"))
             };
         }
     }

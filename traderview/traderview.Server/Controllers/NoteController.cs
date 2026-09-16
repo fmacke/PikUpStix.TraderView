@@ -44,7 +44,8 @@ namespace traderview.Server.Controllers
                     createNoteDto.TradeExecutionId,
                     createNoteDto.Comment,
                     createNoteDto.EntryDate,
-                    createNoteDto.TradeTypeId
+                    createNoteDto.TradeTypeId,
+                    createNoteDto.ErrorTypeId
                 );
 
                 var createdNote = new NoteDto
@@ -54,7 +55,9 @@ namespace traderview.Server.Controllers
                     TradeExecutionId = createNoteDto.TradeExecutionId,
                     Comment = createNoteDto.Comment,
                     EntryDate = createNoteDto.EntryDate,
-                    TradeTypeId = createNoteDto.TradeTypeId
+                    TradeTypeId = createNoteDto.TradeTypeId,
+                    UpdatedAt = DateTime.UtcNow,
+                    ErrorTypeId = createNoteDto.ErrorTypeId
                 };
 
                 _logger.LogInformation("Note created with ID {NoteId}", noteId);

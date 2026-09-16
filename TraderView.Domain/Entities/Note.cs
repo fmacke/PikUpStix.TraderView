@@ -13,6 +13,7 @@ namespace TraderView.Domain.Entities
         public int PositionId { get; set; }
 
         public int? TradeExecutionId { get; set; }
+        public int? ErrorTypeId { get; set; }
 
         public int? TradeTypeId { get; set; }
 

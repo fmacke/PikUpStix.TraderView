@@ -272,6 +272,7 @@ SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
 GO
+
 CREATE TABLE [dbo].[Notes](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[PositionId] [int] NOT NULL,
@@ -280,6 +281,7 @@ CREATE TABLE [dbo].[Notes](
 	[Comment] [nvarchar](max) NOT NULL,
 	[EntryDate] [datetime2](7) NOT NULL,
 	[UpdatedAt] [datetime2](7) NOT NULL,
+	[ErrorTypeId] [int] NULL,
  CONSTRAINT [PK_Notes] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC

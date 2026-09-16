@@ -125,6 +125,7 @@ export interface CreateNoteRequest {
     comment: string;
     entryDate: string;
     tradeTypeId: number;
+    errorTypeId: number | null;
 }
 
 export interface ListItem {

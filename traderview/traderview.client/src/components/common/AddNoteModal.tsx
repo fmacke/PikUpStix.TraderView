@@ -6,7 +6,7 @@ import type { ListItem } from '../../types/api';
 interface AddNoteModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (comment: string, entryMethodId: number | null) => Promise<void> | Promise<any>;
+    onSubmit: (comment: string, entryMethodId: number | null, errorTypeId: number | null) => Promise<void> | Promise<any>;
     positionId: number;
 }
 
@@ -16,10 +16,14 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
     const [entryMethods, setEntryMethods] = useState<ListItem[]>([]);
     const [selectedEntryMethodId, setSelectedEntryMethodId] = useState<number | null>(null);
     const [isLoadingEntryMethods, setIsLoadingEntryMethods] = useState(false);
+    const [errorTypes, setErrorTypes] = useState<ListItem[]>([]);
+    const [selectedErrorTypeId, setSelectedErrorTypeId] = useState<number | null>(null);
+    const [isLoadingErrorTypes, setIsLoadingErrorTypes] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             fetchEntryMethods();
+            fetchErrorTypes();
         }
     }, [isOpen]);
 
@@ -33,6 +37,19 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
             // Continue without entry methods - the dropdown will just be empty
         } finally {
             setIsLoadingEntryMethods(false);
+        }
+    };
+
+    const fetchErrorTypes = async () => {
+        setIsLoadingErrorTypes(true);
+        try {
+            const types = await apiService.getErrorTypes();
+            setErrorTypes(types);
+        } catch (error) {
+            console.error('Error fetching error types:', error);
+            // Continue without error types - the dropdown will just be empty
+        } finally {
+            setIsLoadingErrorTypes(false);
         }
     };
 
@@ -50,11 +67,12 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
 
         setIsSubmitting(true);
         try {
-            console.log('AddNoteModal: About to call onSubmit with comment:', comment, 'and entryMethodId:', selectedEntryMethodId);
-            const result = await onSubmit(comment, selectedEntryMethodId);
+            console.log('AddNoteModal: About to call onSubmit with comment:', comment, 'entryMethodId:', selectedEntryMethodId, 'and errorTypeId:', selectedErrorTypeId);
+            const result = await onSubmit(comment, selectedEntryMethodId, selectedErrorTypeId);
             console.log('AddNoteModal: onSubmit returned successfully:', result);
             setComment(''); // Clear the form
             setSelectedEntryMethodId(null); // Clear the entry method selection
+            setSelectedErrorTypeId(null); // Clear the error type selection
             onClose(); // Close the modal
         } catch (error) {
             console.error('AddNoteModal: Error submitting note:', error);
@@ -72,6 +90,7 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
         if (!isSubmitting) {
             setComment(''); // Clear the form when closing
             setSelectedEntryMethodId(null); // Clear the entry method selection
+            setSelectedErrorTypeId(null); // Clear the error type selection
             onClose();
         }
     };
@@ -112,6 +131,23 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
                                 {entryMethods.map((method) => (
                                     <option key={method.id} value={method.id}>
                                         {method.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="form-group">
+                            <label htmlFor="errorType">Error Type</label>
+                            <select
+                                id="errorType"
+                                value={selectedErrorTypeId ?? ''}
+                                onChange={(e) => setSelectedErrorTypeId(e.target.value ? parseInt(e.target.value) : null)}
+                                disabled={isSubmitting || isLoadingErrorTypes}
+                            >
+                                <option value="">-- Select Error Type (Optional) --</option>
+                                {errorTypes.map((type) => (
+                                    <option key={type.id} value={type.id}>
+                                        {type.name}
                                     </option>
                                 ))}
                             </select>

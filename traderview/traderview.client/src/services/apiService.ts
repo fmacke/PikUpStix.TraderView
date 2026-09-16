@@ -201,6 +201,19 @@ export const apiService = {
         }
     },
 
+    // Get all ErrorType list items
+    async getErrorTypes(): Promise<ListItem[]> {
+        console.log('Making API call to /lists/entryerror');
+        try {
+            const response = await apiClient.get<ListItem[]>('/lists/entryerror');
+            console.log('Get ErrorType list items API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Get ErrorType list items API call failed:', error);
+            throw error;
+        }
+    },
+
     // Get position review risk matrix calculation from RiskController
     async getCurrentPerformance(): Promise<any> {
         console.log('Making API call to /risk/currentperformance');

@@ -50,7 +50,7 @@ namespace TraderView.Application.Interfaces.Repositories
         /// <param name="entryDate">The entry date</param>
         /// <param name="tradeTypeId">The trade type ID</param>
         /// <returns>The newly created note ID</returns>
-        int Insert(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId);
+        int Insert(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId, int? errorTypeId);
 
         /// <summary>
         /// Updates an existing note
@@ -61,8 +61,9 @@ namespace TraderView.Application.Interfaces.Repositories
         /// <param name="comment">The updated comment</param>
         /// <param name="entryDate">The updated entry date</param>
         /// <param name="tradeTypeId">The updated trade type ID</param>
+        /// <param name="errorTypeId">The updated error type ID (optional)</param>
         /// <returns>True if update was successful, false otherwise</returns>
-        bool Update(int id, int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId);
+        bool Update(int id, int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId, int? errorTypeId);
 
         /// <summary>
         /// Deletes a note by its ID

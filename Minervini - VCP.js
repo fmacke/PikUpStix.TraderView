@@ -1,23 +1,23 @@
 //@version=6
-indicator("CS - SMA & VCP", overlay = true, max_boxes_count = 100, max_lines_count = 100, max_labels_count = 100)
+indicator("Minervini - SMA & VCP", overlay = true, max_boxes_count = 100, max_lines_count = 100, max_labels_count = 100)
 
 // -------------------------------------------------------------------------
 // 1. INPUT PARAMETERS
 // -------------------------------------------------------------------------
 grp_trend = "1. Minervini Trend Template"
 use_tt = input.bool(true, "Require Stage 2 Trend Template", group = grp_trend)
-len_10 = input.int(10, "SMA 10D", minval = 1, group = grp_trend)
-len_21 = input.int(21, "SMA 21D", minval = 1, group = grp_trend)
-len_50 = input.int(50, "SMA Fast", minval = 1, group = grp_trend)
-len_150 = input.int(150, "SMA Intermediate", minval = 1, group = grp_trend)
-len_200 = input.int(200, "SMA Long", minval = 1, group = grp_trend)
+len_10 = 10//input.int(10, "SMA 10D", minval = 1, group = grp_trend)
+len_21 = 21//input.int(21, "SMA 21D", minval = 1, group = grp_trend)
+len_50 = 50//input.int(50, "SMA Fast", minval = 1, group = grp_trend)
+len_150 = 150//input.int(150, "SMA Intermediate", minval = 1, group = grp_trend)
+len_200 = 200//input.int(200, "SMA Long", minval = 1, group = grp_trend)
 
 grp_vcp = "2. Volatility Contraction Pattern"
-sw_left = input.int(5, "Pivot High/Low Left Strength", minval = 2, group = grp_vcp)
-sw_right = input.int(3, "Pivot High/Low Right Strength", minval = 1, group = grp_vcp)
-atr_len = input.int(20, "ATR Length", group = grp_vcp)
-vdu_thresh = input.float(0.60, "VDU Threshold (% of 50 SMA Vol)", minval = 0.1, maxval = 1.0, step = 0.05, group = grp_vcp)
-max_depth = input.float(35.0, "Max Initial Base Depth (%)", group = grp_vcp)
+sw_left = 5//input.int(5, "Pivot High/Low Left Strength", minval = 2, group = grp_vcp)
+sw_right = 3//input.int(3, "Pivot High/Low Right Strength", minval = 1, group = grp_vcp)
+atr_len = 20//input.int(20, "ATR Length", group = grp_vcp)
+vdu_thresh = 0.60//input.float(0.60, "VDU Threshold (% of 50 SMA Vol)", minval = 0.1, maxval = 1.0, step = 0.05, group = grp_vcp)
+max_depth = 35.0//input.float(35.0, "Max Initial Base Depth (%)", group = grp_vcp)
 
 grp_waves = "3. Wave Geometry & Contraction Display (Optional)"
 show_waves = input.bool(true, "Show Wave Diagonal Lines", group = grp_waves)
