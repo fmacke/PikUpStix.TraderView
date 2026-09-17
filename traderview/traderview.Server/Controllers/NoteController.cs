@@ -102,7 +102,9 @@ namespace traderview.Server.Controllers
                     TradeExecutionId = note.TradeExecutionId,
                     Comment = note.Comment,
                     EntryDate = note.EntryDate,
-                    TradeTypeId = note.TradeTypeId
+                    TradeTypeId = note.TradeTypeId,
+                    ErrorTypeId = note.ErrorTypeId,
+                    UpdatedAt = note.UpdatedAt
                 };
 
                 return Ok(noteDto);
@@ -139,7 +141,8 @@ namespace traderview.Server.Controllers
                     Comment = n.Comment,
                     EntryDate = n.EntryDate,
                     UpdatedAt = n.UpdatedAt,
-                    TradeTypeId = n.TradeTypeId
+                    TradeTypeId = n.TradeTypeId,
+                    ErrorTypeId = n.ErrorTypeId
                 }).ToList();
 
                 return Ok(noteDtos);
@@ -150,6 +153,77 @@ namespace traderview.Server.Controllers
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { message = "Error fetching notes", detail = ex.Message }
+                );
+            }
+        }
+
+        /// <summary>
+        /// Update an existing note
+        /// </summary>
+        /// <param name="updateNoteDto">The updated note data</param>
+        /// <returns>The updated note</returns>
+        [HttpPut]
+        [ProducesResponseType(typeof(NoteDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<NoteDto>> UpdateNoteAsync([FromBody] UpdateNoteDto updateNoteDto)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(updateNoteDto.Comment))
+                {
+                    return BadRequest(new { message = "Comment is required" });
+                }
+
+                _logger.LogInformation("Updating note with ID {NoteId}", updateNoteDto.Id);
+
+                var existingNote = await _noteService.GetByIdAsync(updateNoteDto.Id);
+                if (existingNote == null)
+                {
+                    return NotFound(new { message = $"Note with ID {updateNoteDto.Id} not found" });
+                }
+
+                var isUpdated = await _noteService.UpdateAsync(
+                    updateNoteDto.Id,
+                    existingNote.PositionId,
+                    existingNote.TradeExecutionId,
+                    updateNoteDto.Comment,
+                    DateTime.Now,
+                    updateNoteDto.TradeTypeId,
+                    updateNoteDto.ErrorTypeId
+                );
+
+                if (!isUpdated)
+                {
+                    return StatusCode(
+                        StatusCodes.Status500InternalServerError,
+                        new { message = "Failed to update note" }
+                    );
+                }
+
+                var updatedNote = new NoteDto
+                {
+                    Id = updateNoteDto.Id,
+                    PositionId = existingNote.PositionId,
+                    TradeExecutionId = existingNote.TradeExecutionId,
+                    Comment = updateNoteDto.Comment,
+                    EntryDate = updateNoteDto.EntryDate,
+                    TradeTypeId = updateNoteDto.TradeTypeId,
+                    UpdatedAt = DateTime.UtcNow,
+                    ErrorTypeId = updateNoteDto.ErrorTypeId
+                };
+
+                _logger.LogInformation("Note with ID {NoteId} updated successfully", updateNoteDto.Id);
+
+                return Ok(updatedNote);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating note");
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { message = "Error updating note", detail = ex.Message }
                 );
             }
         }

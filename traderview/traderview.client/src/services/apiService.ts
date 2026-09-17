@@ -188,6 +188,26 @@ export const apiService = {
         }
     },
 
+    // Update an existing note
+    async updateNote(noteId: number, comment: string, entryDate: string, tradeTypeId: number | null, errorTypeId: number | null): Promise<Note> {
+        console.log('Making API call to PUT /notes', { noteId, comment, entryDate, tradeTypeId, errorTypeId });
+        try {
+            const updateNoteRequest = {
+                id: noteId,
+                comment: comment,
+                entryDate: entryDate,
+                tradeTypeId: tradeTypeId,
+                errorTypeId: errorTypeId
+            };
+            const response = await apiClient.put<Note>('/notes', updateNoteRequest);
+            console.log('Update note API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('Update note API call failed:', error);
+            throw error;
+        }
+    },
+
     // Get all EntryMethod list items
     async getEntryMethods(): Promise<ListItem[]> {
         console.log('Making API call to /lists/entrymethod');

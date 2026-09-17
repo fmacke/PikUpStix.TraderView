@@ -5,6 +5,8 @@ import './TradeDetail.css';
 import TradingViewChart from '../charts/TradingViewChart';
 import RSMetricsDashboard from '../metrics/RSMetricsDashboard';
 import AddNoteModal from '../../common/AddNoteModal';
+import EditNoteModal from '../../common/EditNoteModal';
+import NotesList from '../../common/NotesList';
 
 interface TradeDetailProps {
     trade: Trade | null;
@@ -15,6 +17,8 @@ function TradeDetail({ trade }: TradeDetailProps) {
     const [rsLoading, setRsLoading] = useState<boolean>(false);
     const [rsError, setRsError] = useState<string | null>(null);
     const [isNoteModalOpen, setIsNoteModalOpen] = useState<boolean>(false);
+    const [isEditNoteModalOpen, setIsEditNoteModalOpen] = useState<boolean>(false);
+    const [selectedNoteForEdit, setSelectedNoteForEdit] = useState<Note | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
     const [notesLoading, setNotesLoading] = useState<boolean>(false);
 
@@ -84,7 +88,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
             tradeExecutionId: null, // Can be extended later to link to specific executions
             comment: comment,
             entryDate: new Date().toISOString(),
-            tradeTypeId: entryMethodId ?? 1, // Use selected entry method or default to 1
+            tradeTypeId: entryMethodId ?? null, // Use selected entry method or null if not selected
             errorTypeId: errorTypeId ?? null // Use selected error type or null
         };
 
@@ -93,6 +97,27 @@ function TradeDetail({ trade }: TradeDetailProps) {
 
         // Refresh notes list after adding a new note
         const notesData = await apiService.getNotesByPositionId(trade.positionId);
+        setNotes(notesData);
+
+        return result;
+    };
+
+    const handleEditNoteClick = (note: Note) => {
+        setSelectedNoteForEdit(note);
+        setIsEditNoteModalOpen(true);
+    };
+
+    const handleCloseEditNoteModal = () => {
+        setIsEditNoteModalOpen(false);
+        setSelectedNoteForEdit(null);
+    };
+
+    const handleSubmitEditNote = async (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null) => {
+        const result = await apiService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId);
+        console.log('Note updated successfully', result);
+
+        // Refresh notes list after updating a note
+        const notesData = await apiService.getNotesByPositionId(positionId);
         setNotes(notesData);
 
         return result;
@@ -175,32 +200,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
                 </div>
                 <div id="notesHolder" className="detail-section compact">
                     <h3>Notes</h3>
-                    {notesLoading ? (
-                        <p>Loading notes...</p>
-                    ) : notes.length === 0 ? (
-                        <p>No notes available for this position.</p>
-                    ) : (
-                        <table className="detail-table">
-                            <thead>
-                                <tr>
-                                    <th>Date</th>
-                                    <th>Comment</th>
-                                    <th>Category</th>
-                                    <th>Type</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {notes.map((note) => (
-                                    <tr key={note.id}>
-                                        <td>{new Date(note.entryDate).toLocaleDateString()}</td>
-                                        <td>{note.comment}</td>
-                                        <td>{note.category}</td>
-                                        <td>{note.name}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    )}
+                    <NotesList notes={notes} loading={notesLoading} variant="detailed" onEditNote={handleEditNoteClick} />
                 </div>
             </div>
 
@@ -232,6 +232,14 @@ function TradeDetail({ trade }: TradeDetailProps) {
                 onClose={handleCloseNoteModal}
                 onSubmit={handleSubmitNote}
                 positionId={trade.positionId}
+            />
+
+            {/* Edit Note Modal */}
+            <EditNoteModal
+                isOpen={isEditNoteModalOpen}
+                onClose={handleCloseEditNoteModal}
+                onSubmit={handleSubmitEditNote}
+                note={selectedNoteForEdit}
             />
         </div>
     );

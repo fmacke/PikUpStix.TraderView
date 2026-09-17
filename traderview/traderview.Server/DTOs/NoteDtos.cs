@@ -9,7 +9,19 @@ namespace traderview.Server.DTOs
         public int? TradeExecutionId { get; set; }
         public string Comment { get; set; } = string.Empty;
         public DateTime EntryDate { get; set; }
-        public int TradeTypeId { get; set; }
+        public int? TradeTypeId { get; set; }
+        public int? ErrorTypeId { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for updating an existing note
+    /// </summary>
+    public class UpdateNoteDto
+    {
+        public int Id { get; set; }
+        public string Comment { get; set; } = string.Empty;
+        public DateTime EntryDate { get; set; }
+        public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
     }
 

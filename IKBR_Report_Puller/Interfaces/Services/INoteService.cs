@@ -48,10 +48,10 @@ namespace TraderView.Application.Interfaces.Services
         /// <param name="tradeExecutionId">The trade execution ID (optional)</param>
         /// <param name="comment">The note comment</param>
         /// <param name="entryDate">The entry date</param>
-        /// <param name="tradeTypeId">The trade type ID</param>
+        /// <param name="tradeTypeId">The trade type ID (optional)</param>
         /// <param name="errorTypeId">The error type ID (optional)</param>
         /// <returns>The newly created note ID</returns>
-        Task<int> CreateAsync(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId, int? errorTypeId);
+        Task<int> CreateAsync(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int? tradeTypeId, int? errorTypeId);
 
         /// <summary>
         /// Updates an existing note asynchronously
@@ -60,11 +60,11 @@ namespace TraderView.Application.Interfaces.Services
         /// <param name="positionId">The updated position ID</param>
         /// <param name="tradeExecutionId">The updated trade execution ID (optional)</param>
         /// <param name="comment">The updated comment</param>
-        /// <param name="entryDate">The updated entry date</param>
-        /// <param name="tradeTypeId">The updated trade type ID</param>
+        /// <param name="updatedAt">The updated entry date</param>
+        /// <param name="tradeTypeId">The updated trade type ID (optional)</param>
         /// <param name="errorTypeId">The updated error type ID (optional)</param>
         /// <returns>True if update was successful, false otherwise</returns>
-        Task<bool> UpdateAsync(int id, int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId, int? errorTypeId );
+        Task<bool> UpdateAsync(int id, int positionId, int? tradeExecutionId, string comment, DateTime updatedAt, int? tradeTypeId, int? errorTypeId );
 
         /// <summary>
         /// Deletes a note by its ID asynchronously

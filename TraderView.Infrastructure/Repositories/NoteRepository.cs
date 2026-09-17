@@ -65,10 +65,9 @@ namespace TraderView.Infrastructure.Repositories
             return ExecuteDatabaseOperation(connection =>
             {
                 var notes = new List<Note>();
-                var query = @"SELECT n.Id, n.PositionId, n.TradeExecutionId, n.ErrorTypeId, n.Comment, n.EntryDate, n.UpdatedAt, n.TradeTypeId, 
-                    l.Category, l.Name 
-                    FROM Notes n inner join ListItems l on n.TradeTypeId = l.Id 
-                    WHERE PositionId = @PositionId ORDER BY EntryDate DESC";
+                var query = @"SELECT n.Id, n.PositionId, n.TradeExecutionId, n.ErrorTypeId, n.Comment, n.EntryDate, n.UpdatedAt, n.TradeTypeId
+                    FROM Notes n
+                    WHERE n.PositionId = @PositionId ORDER BY n.EntryDate DESC";
 
                 using var command = new SqlCommand(query, connection);
                 command.Parameters.AddWithValue("@PositionId", positionId);
@@ -132,7 +131,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Inserts a new note into the database
         /// </summary>
-        public int Insert(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId, int? errorTypeId)
+        public int Insert(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int? tradeTypeId, int? errorTypeId)
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -147,7 +146,7 @@ namespace TraderView.Infrastructure.Repositories
                 command.Parameters.AddWithValue("@Comment", comment);
                 command.Parameters.AddWithValue("@EntryDate", entryDate);
                 command.Parameters.AddWithValue("@UpdatedAt", entryDate);
-                command.Parameters.AddWithValue("@TradeTypeId", tradeTypeId);
+                command.Parameters.AddWithValue("@TradeTypeId", tradeTypeId.HasValue ? (object)tradeTypeId.Value : DBNull.Value);
                 command.Parameters.AddWithValue("@ErrorTypeId", errorTypeId.HasValue ? (object)errorTypeId.Value : DBNull.Value);   
                 var newId = command.ExecuteScalar();
                 return Convert.ToInt32(newId);
@@ -157,7 +156,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Updates an existing note
         /// </summary>
-        public bool Update(int id, int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int tradeTypeId, int? errorTypeId)
+        public bool Update(int id, int positionId, int? tradeExecutionId, string comment, DateTime updatedAt, int? tradeTypeId, int? errorTypeId)
         {
             return ExecuteDatabaseOperation(connection =>
             {
@@ -167,7 +166,7 @@ namespace TraderView.Infrastructure.Repositories
                         TradeExecutionId = @TradeExecutionId, 
                         ErrorTypeId = @ErrorTypeId,
                         Comment = @Comment, 
-                        EntryDate = @EntryDate, 
+                        UpdatedAt = @UpdatedAt, 
                         TradeTypeId = @TradeTypeId 
                     WHERE Id = @Id";
 
@@ -177,8 +176,8 @@ namespace TraderView.Infrastructure.Repositories
                 command.Parameters.AddWithValue("@TradeExecutionId", tradeExecutionId.HasValue ? (object)tradeExecutionId.Value : DBNull.Value);
                 command.Parameters.AddWithValue("@ErrorTypeId", errorTypeId.HasValue ? (object)errorTypeId.Value : DBNull.Value);
                 command.Parameters.AddWithValue("@Comment", comment);
-                command.Parameters.AddWithValue("@EntryDate", entryDate);
-                command.Parameters.AddWithValue("@TradeTypeId", tradeTypeId);
+                command.Parameters.AddWithValue("@UpdatedAt", updatedAt);
+                command.Parameters.AddWithValue("@TradeTypeId", tradeTypeId.HasValue ? (object)tradeTypeId.Value : DBNull.Value);
 
                 int rowsAffected = command.ExecuteNonQuery();
                 return rowsAffected > 0;
@@ -238,8 +237,8 @@ namespace TraderView.Infrastructure.Repositories
                 TradeExecutionId = reader.IsDBNull(reader.GetOrdinal("TradeExecutionId")) ? null : reader.GetInt32(reader.GetOrdinal("TradeExecutionId")),
                 Comment = reader.GetString(reader.GetOrdinal("Comment")),
                 EntryDate = reader.GetDateTime(reader.GetOrdinal("EntryDate")),
-                TradeTypeId = reader.GetInt32(reader.GetOrdinal("TradeTypeId")),
-                UpdatedAt = reader.GetDateTime(reader.GetOrdinal("UpdatedAt")),
+                TradeTypeId = reader.IsDBNull(reader.GetOrdinal("TradeTypeId")) ? null : reader.GetInt32(reader.GetOrdinal("TradeTypeId")),
+                UpdatedAt = DateTime.Now,
                 ErrorTypeId = reader.IsDBNull(reader.GetOrdinal("ErrorTypeId")) ? null : reader.GetInt32(reader.GetOrdinal("ErrorTypeId"))
             };
         }

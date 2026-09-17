@@ -4,6 +4,8 @@ import type { OpenPosition, CreateNoteRequest, Note } from '../../../types/api';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
 import AddNoteModal from '../../common/AddNoteModal';
+import EditNoteModal from '../../common/EditNoteModal';
+import NotesList from '../../common/NotesList';
 import './OpenPositionsView.css';
 
 function OpenPositionsView() {
@@ -11,6 +13,8 @@ function OpenPositionsView() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [isNoteModalOpen, setIsNoteModalOpen] = useState<boolean>(false);
+    const [isEditNoteModalOpen, setIsEditNoteModalOpen] = useState<boolean>(false);
+    const [selectedNoteForEdit, setSelectedNoteForEdit] = useState<Note | null>(null);
     const [selectedPositionId, setSelectedPositionId] = useState<number | null>(null);
     const [selectedPosition, setSelectedPosition] = useState<OpenPosition | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
@@ -81,7 +85,7 @@ function OpenPositionsView() {
             tradeExecutionId: null,
             comment: comment,
             entryDate: new Date().toISOString(),
-            tradeTypeId: entryMethodId ?? 1,
+            tradeTypeId: entryMethodId ?? null,
             errorTypeId: errorTypeId ?? null
         };
 
@@ -89,6 +93,30 @@ function OpenPositionsView() {
 
         if (selectedPosition && selectedPosition.positionId === selectedPositionId) {
             const notesData = await apiService.getNotesByPositionId(selectedPositionId);
+            setNotes(notesData);
+        }
+
+        return result;
+    };
+
+    const handleEditNoteClick = (note: Note) => {
+        setSelectedNoteForEdit(note);
+        setIsEditNoteModalOpen(true);
+    };
+
+    const handleCloseEditNoteModal = () => {
+        setIsEditNoteModalOpen(false);
+        setSelectedNoteForEdit(null);
+    };
+
+    const handleSubmitEditNote = async (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null) => {
+        const result = await apiService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId);
+
+        // Refresh notes for the position that was edited
+        const notesData = await apiService.getNotesByPositionId(positionId);
+
+        // If the edited position is currently selected, update the notes list
+        if (selectedPosition && selectedPosition.positionId === positionId) {
             setNotes(notesData);
         }
 
@@ -277,30 +305,7 @@ function OpenPositionsView() {
             {selectedPosition && (
                 <div className="notes-section">
                     <h2>Notes for {selectedPosition.symbol}</h2>
-                    {notesLoading ? (
-                        <p className="notes-loading">Loading notes...</p>
-                    ) : notes.length === 0 ? (
-                        <p className="notes-empty">No notes available for this position.</p>
-                    ) : (
-                        <div className="notes-table-container">
-                            <table className="notes-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Comment</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {notes.map((note) => (
-                                        <tr key={note.id}>
-                                            <td className="note-date">{new Date(note.entryDate).toLocaleDateString()}</td>
-                                            <td className="note-comment">{note.comment}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                    <NotesList notes={notes} loading={notesLoading} variant="detailed" onEditNote={handleEditNoteClick} />
                 </div>
             )}
 
@@ -309,6 +314,13 @@ function OpenPositionsView() {
                 onClose={handleCloseNoteModal}
                 onSubmit={handleSubmitNote}
                 positionId={selectedPositionId ?? 0}
+            />
+
+            <EditNoteModal
+                isOpen={isEditNoteModalOpen}
+                onClose={handleCloseEditNoteModal}
+                onSubmit={handleSubmitEditNote}
+                note={selectedNoteForEdit}
             />
         </div>
     );
