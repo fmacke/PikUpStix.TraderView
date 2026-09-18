@@ -2,6 +2,7 @@ services:
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: traderview-sqlserver
+    restart: unless-stopped
     environment:
       - ACCEPT_EULA=Y
       - MSSQL_SA_PASSWORD=${SQL_PASSWORD:-YourStrong!Passw0rd}
@@ -25,6 +26,7 @@ services:
       context: .
       dockerfile: traderview/traderview.Server/Dockerfile
     container_name: traderview-server
+    restart: unless-stopped
     ports:
       - "5000:8080"
     environment:
@@ -78,6 +80,7 @@ services:
       context: .
       dockerfile: traderview/traderview.client/Dockerfile
     container_name: traderview-client
+    restart: unless-stopped
     ports:
       - "3000:80"
     depends_on:
