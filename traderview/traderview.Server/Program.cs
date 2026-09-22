@@ -10,6 +10,8 @@ using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
 using TraderView.Infrastructure.Repositories;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
+using TraderView.Infrastructure.DbContexts;
 
 public partial class Program
 {
@@ -20,12 +22,18 @@ public partial class Program
         // Register HttpClient and HttpClientFactory
         builder.Services.AddHttpClient();
 
-        // Register DB connection factory from configuration
+        // Build connection string and register DB connection factory and AppDbContext
+        var connectionString = BuildConnectionString(builder.Configuration);
+
         builder.Services.AddSingleton<IDbConnectionFactory>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
             return new TraderView.Infrastructure.Data.SqlConnectionFactory(connectionString);
+        });
+
+        // Register EF Core DbContext for repositories that use AppDbContext
+        builder.Services.AddDbContext<TraderView.Infrastructure.DbContexts.AppDbContext>(options =>
+        {
+            options.UseSqlServer(connectionString);
         });
 
         // Register repositories 
@@ -73,8 +81,8 @@ public partial class Program
         });
         builder.Services.AddScoped<IListRepository>(provider =>
         {
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            return new ListRepository(factory);
+            var db = provider.GetRequiredService<TraderView.Infrastructure.DbContexts.AppDbContext>();
+            return new ListRepository(db);
         });
 
         builder.Services.AddScoped<IEquitySummaryRepository>(provider =>

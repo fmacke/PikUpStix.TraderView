@@ -10,6 +10,8 @@ namespace TraderView.Domain.Entities
     /// </summary>
     public class EconomicCalendar
     {
+        public int Id { get; set; }
+
         [JsonPropertyName("date")]
         [JsonConverter(typeof(FmpDateTimeConverter))]
         public DateTime Date { get; set; }

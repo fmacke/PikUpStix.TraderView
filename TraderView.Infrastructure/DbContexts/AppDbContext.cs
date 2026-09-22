@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using TraderView.Domain.Entities;
 using TraderView.Domain.Entities.FMP;
 
@@ -30,7 +31,7 @@ namespace TraderView.Infrastructure.DbContexts
 
         public virtual DbSet<Instrument> Instruments { get; set; }
 
-        public virtual DbSet<ListItem> Lists { get; set; }
+        public virtual DbSet<ListItem> ListItems { get; set; }
 
         public virtual DbSet<Note> Notes { get; set; }
 
@@ -47,9 +48,21 @@ namespace TraderView.Infrastructure.DbContexts
         public virtual DbSet<TradeExecution> TradeExecutions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-            => optionsBuilder.UseSqlServer("Data Source=localhost;Initial Catalog=TradingBE;Persist Security Info=True;User ID=sa;Password=gogogo123!;Pooling=False;MultipleActiveResultSets=False;Encrypt= True;TrustServerCertificate=True;Application Name=SQL Server Management Studio;Command Timeout=0");
-
+        {
+            if (!optionsBuilder.IsConfigured)
+            {
+                var relational = optionsBuilder.Options.FindExtension<RelationalOptionsExtension>(); var conn = relational?.ConnectionString;
+                if (!string.IsNullOrEmpty(conn))
+                {
+                    optionsBuilder.UseSqlServer(conn);
+                }
+                else
+                {
+                    // fallback (e.g., environment/config) or leave unconfigured
+                    optionsBuilder.UseSqlServer("Data Source=localhost;Initial Catalog=TradingBE;User ID=sa;Password=...");
+                }
+            }
+        }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<CanSlimCandidate>(entity =>
@@ -171,13 +184,9 @@ namespace TraderView.Infrastructure.DbContexts
             modelBuilder.Entity<EconomicCalendar>(entity =>
             {
                 entity.ToTable("EconomicCalendar");
-
                 entity.HasIndex(e => e.Country, "IX_EconomicCalendar_Country");
-
                 entity.HasIndex(e => e.Date, "IX_EconomicCalendar_Date").IsDescending();
-
                 entity.HasIndex(e => new { e.Date, e.Country, e.Event }, "UQ_EconomicCalendar_DateCountryEvent").IsUnique();
-
                 entity.Property(e => e.Actual).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.Change).HasColumnType("decimal(18, 4)");
                 entity.Property(e => e.ChangePercentage).HasColumnType("decimal(18, 4)");
