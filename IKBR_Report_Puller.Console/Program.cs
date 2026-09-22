@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
 using TraderView.Infrastructure.Repositories;
+using TraderView.Infrastructure.DbContexts;
 
 namespace TraderView.Console
 {
@@ -46,11 +47,11 @@ namespace TraderView.Console
                     {
                         var config = provider.GetRequiredService<IConfiguration>();
                         var connectionString = BuildConnectionString(config);
-                        return new TraderView.Infrastructure.Data.SqlConnectionFactory(connectionString);
+                        return new SqlConnectionFactory(connectionString);
                     });
 
                     // Register EF Core DbContext so InstrumentRepository can use AppDbContext when available
-                    services.AddDbContext<TraderView.Infrastructure.DbContexts.AppDbContext>(options =>
+                    services.AddDbContext<AppDbContext>(options =>
                     {
                         options.UseSqlServer(BuildConnectionString(hostContext.Configuration));
                     });
@@ -59,16 +60,16 @@ namespace TraderView.Console
                     // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
                     services.AddScoped<IInstrumentRepository>(provider =>
                     {
-                        var db = provider.GetRequiredService<TraderView.Infrastructure.DbContexts.AppDbContext>();
+                        AppDbContext db = provider.GetRequiredService<AppDbContext>();
                         var factory = provider.GetRequiredService<IDbConnectionFactory>();
                         return new InstrumentRepository(db, factory);
                     });
 
                     services.AddScoped<IPositionRepository>(provider =>
                     {
+                        AppDbContext db = provider.GetRequiredService<AppDbContext>();
                         var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-                        return new PositionRepository(factory, instrumentRepo);
+                        return new PositionRepository(db);
                     });
 
                     services.AddScoped<ITradeExecutionRepository>(provider =>

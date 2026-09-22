@@ -1,7 +1,5 @@
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using PikUpStix.TraderView.Services;
 using TraderView.Application.Interfaces.Persistence;
-using TraderView.Infrastructure.Data;
 using PikUpStix.TraderView.Services.MarketData;
 using traderview.Server.DTOs.Mappers;
 using traderview.Server.Services;
@@ -9,7 +7,6 @@ using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
 using TraderView.Infrastructure.Repositories;
-using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using TraderView.Infrastructure.DbContexts;
 
@@ -31,7 +28,7 @@ public partial class Program
         });
 
         // Register EF Core DbContext for repositories that use AppDbContext
-        builder.Services.AddDbContext<TraderView.Infrastructure.DbContexts.AppDbContext>(options =>
+        builder.Services.AddDbContext<AppDbContext>(options =>
         {
             options.UseSqlServer(connectionString);
         });
@@ -40,16 +37,15 @@ public partial class Program
         // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
         builder.Services.AddScoped<IInstrumentRepository>(provider =>
         {
-            var db = provider.GetRequiredService<TraderView.Infrastructure.DbContexts.AppDbContext>();
+            AppDbContext db = provider.GetRequiredService<AppDbContext>();
             var factory = provider.GetRequiredService<IDbConnectionFactory>();
             return new InstrumentRepository(db, factory);
         });
 
         builder.Services.AddScoped<IPositionRepository>(provider =>
         {
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-            return new PositionRepository(factory, instrumentRepo);
+            AppDbContext db = provider.GetRequiredService<AppDbContext>();
+            return new PositionRepository(db);
         });
 
         builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
@@ -82,7 +78,7 @@ public partial class Program
         });
         builder.Services.AddScoped<IListRepository>(provider =>
         {
-            var db = provider.GetRequiredService<TraderView.Infrastructure.DbContexts.AppDbContext>();
+            AppDbContext db = provider.GetRequiredService<AppDbContext>();
             return new ListRepository(db);
         });
 
