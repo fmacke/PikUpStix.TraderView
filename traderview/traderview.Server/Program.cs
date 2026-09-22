@@ -40,8 +40,9 @@ public partial class Program
         // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
         builder.Services.AddScoped<IInstrumentRepository>(provider =>
         {
+            var db = provider.GetRequiredService<TraderView.Infrastructure.DbContexts.AppDbContext>();
             var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            return new InstrumentRepository(factory);
+            return new InstrumentRepository(db, factory);
         });
 
         builder.Services.AddScoped<IPositionRepository>(provider =>

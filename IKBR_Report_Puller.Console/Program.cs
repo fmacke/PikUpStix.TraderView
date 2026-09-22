@@ -6,6 +6,7 @@ using TraderView.Application.Interfaces.Persistence;
 using TraderView.Infrastructure.Data;
 using PikUpStix.TraderView.Services.MarketData;
 using TraderView.Application.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
 using TraderView.Infrastructure.Repositories;
@@ -48,21 +49,29 @@ namespace TraderView.Console
                         return new TraderView.Infrastructure.Data.SqlConnectionFactory(connectionString);
                     });
 
-                    // Register repositories (repositories should be scoped or transient, but using singleton for console app simplicity)
-                    services.AddSingleton<IInstrumentRepository>(provider =>
+                    // Register EF Core DbContext so InstrumentRepository can use AppDbContext when available
+                    services.AddDbContext<TraderView.Infrastructure.DbContexts.AppDbContext>(options =>
                     {
-                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        return new InstrumentRepository(factory);
+                        options.UseSqlServer(BuildConnectionString(hostContext.Configuration));
                     });
 
-                    services.AddSingleton<IPositionRepository>(provider =>
+                    // Register repositories 
+                    // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
+                    services.AddScoped<IInstrumentRepository>(provider =>
+                    {
+                        var db = provider.GetRequiredService<TraderView.Infrastructure.DbContexts.AppDbContext>();
+                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
+                        return new InstrumentRepository(db, factory);
+                    });
+
+                    services.AddScoped<IPositionRepository>(provider =>
                     {
                         var factory = provider.GetRequiredService<IDbConnectionFactory>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         return new PositionRepository(factory, instrumentRepo);
                     });
 
-                    services.AddSingleton<ITradeExecutionRepository>(provider =>
+                    services.AddScoped<ITradeExecutionRepository>(provider =>
                     {
                         var factory = provider.GetRequiredService<IDbConnectionFactory>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
@@ -130,7 +139,7 @@ namespace TraderView.Console
                         // Pass the factory as the second argument
                         return new IKBRReportFetchingService(config, httpClientFactory);
                     });
-                    services.AddSingleton<IReportRunnerService, ReportRunnerService>();
+                    services.AddScoped<IReportRunnerService, ReportRunnerService>();
                     services.AddSingleton<IExcelReportService, ExcelReportService>();
                     services.AddScoped<IOpenPositionsService, OpenPositionsService>(provider =>
                     {
@@ -143,12 +152,13 @@ namespace TraderView.Console
                     services.AddSingleton<ICanSlimScreenerService, CanSlimScreenerService>();
                     services.AddSingleton<ICurrentPerformanceService, CurrentPerformanceService>();
                     services.AddSingleton<IEquitySummaryService, EquitySummaryService>();
-                    services.AddSingleton<Application>();
+                    services.AddScoped<Application>();
                 })
                 .Build();
 
-            var app = host.Services.GetRequiredService<Application>();
-                await app.RunAsync();
+            using var scope = host.Services.CreateScope();
+            var app = scope.ServiceProvider.GetRequiredService<Application>();
+            await app.RunAsync();
 
         }
 

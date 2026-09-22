@@ -2,25 +2,46 @@ using Microsoft.Data.SqlClient;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Engineering;
 using TraderView.Application.Features.Instruments.Command.Create;
 using TraderView.Application.Features.Instruments.Query.GetBy;
+using TraderView.Application.Features;
+using Microsoft.EntityFrameworkCore;
 using TraderView.Application.Features.TradeExecutions.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Mappers;
 using TraderView.Domain.Entities;
+using TraderView.Infrastructure.DbContexts;
 
 namespace TraderView.Infrastructure.Repositories
 {
     /// <summary>
     /// Repository for Instrument-related database operations
     /// </summary>
-    public class InstrumentRepository : BaseRepository, IInstrumentRepository
+    public class InstrumentRepository : EfBaseRepository<Instrument>, IInstrumentRepository
     {
-        public InstrumentRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
+        private readonly SqlRepositoryAdapter _sqlAdapter;
+
+        public InstrumentRepository(AppDbContext db, IDbConnectionFactory connectionFactory) : base(db)
         {
+            _sqlAdapter = new SqlRepositoryAdapter(connectionFactory);
+        }
+
+        // Adapter to reuse the SQL helper methods from BaseRepository via composition.
+        private sealed class SqlRepositoryAdapter : BaseRepository
+        {
+            public SqlRepositoryAdapter(IDbConnectionFactory connectionFactory) : base(connectionFactory)
+            {
+            }
+
+            public new void ExecuteDatabaseOperation(Action<SqlConnection> operation) => base.ExecuteDatabaseOperation(operation);
+            public new T ExecuteDatabaseOperation<T>(Func<SqlConnection, T> operation) => base.ExecuteDatabaseOperation(operation);
+            public new void ExecuteCommand(SqlConnection connection, SqlTransaction transaction, IQueryWithParameters queryWithParameters) => base.ExecuteCommand(connection, transaction, queryWithParameters);
+            public new T ExecuteScalar<T>(SqlConnection connection, SqlTransaction transaction, IQueryWithParameters queryWithParams) => base.ExecuteScalar<T>(connection, transaction, queryWithParams);
+            public new T? ExecuteSingle<T>(SqlConnection connection, SqlTransaction? transaction, Func<SqlDataReader, T> mapFunction, IQueryWithParameters queryWithParameters) where T : class => base.ExecuteSingle(connection, transaction, mapFunction, queryWithParameters);
+            public new List<T> ExecuteList<T>(SqlConnection connection, SqlTransaction? transaction, Func<SqlDataReader, T> mapFunction, IQueryWithParameters queryWithParameters) => base.ExecuteList(connection, transaction, mapFunction, queryWithParameters);
         }
         void IInstrumentRepository.UpsertInstruments(List<TradeConfirm> tradeConfirms, string source)
         {
-           UpsertInstruments(ConvertToTradeExecute(tradeConfirms), source);
+           UpsertInstrumentsAsync(ConvertToTradeExecute(tradeConfirms), source).GetAwaiter().GetResult();
         }
         private List<TradeExecution> ConvertToTradeExecute(List<TradeConfirm> tradeConfirms)
         {
@@ -114,6 +135,67 @@ namespace TraderView.Infrastructure.Repositories
             }
         }
 
+        public async Task UpsertInstrumentsAsync(List<TradeConfirm> tradeConfirms, string source)
+        {
+            await UpsertInstrumentsAsync(ConvertToTradeExecute(tradeConfirms), source).ConfigureAwait(false);
+        }
+
+        public async Task UpsertInstrumentsAsync(List<TradeExecution> trades, string source)
+        {
+            if (trades == null || !trades.Any())
+                return;
+
+            var uniqueConids = trades
+                .Where(t => !string.IsNullOrEmpty(t.Conid))
+                .Select(t => t.Conid)
+                .Distinct()
+                .ToList();
+
+            int createdCount = 0;
+            int existingCount = 0;
+
+            foreach (var conid in uniqueConids)
+            {
+                int? instrumentId = await GetInstrumentIdByConIdAsync(conid).ConfigureAwait(false);
+
+                if (!instrumentId.HasValue)
+                {
+                    var trade = trades.First(t => t.Conid == conid);
+
+                    await InsertInstrumentAsync(
+                        conid,
+                        trade.Symbol,
+                        trade.ListingExchange,
+                        trade.Currency,
+                        trade.AssetCategory,
+                        source,
+                        trade.Symbol).ConfigureAwait(false);
+
+                    createdCount++;
+                }
+                else
+                {
+                    existingCount++;
+                }
+            }
+            if (createdCount > 0)
+            {
+                Console.WriteLine($"Created {createdCount} new instrument(s), {existingCount} already existed");
+            }
+
+            foreach (var trade in trades.Where(x => x.Position.InstrumentId == 0))
+            {
+                if (!string.IsNullOrEmpty(trade.Conid))
+                {
+                    int? instrumentId = await GetInstrumentIdByConIdAsync(trade.Conid).ConfigureAwait(false);
+                    if (instrumentId.HasValue)
+                    {
+                        trade.Position.InstrumentId = instrumentId.Value;
+                    }
+                }
+            }
+        }
+
 
 
         #region Private Helper Methods
@@ -121,9 +203,9 @@ namespace TraderView.Infrastructure.Repositories
         {
             try
             {
-                var instrument = ExecuteDatabaseOperation(connection =>
-                {                    
-                    return ExecuteSingle(connection, null, MapFromReader.MapInstrument, new GetInstrumentByIdQuery(instrumentId));
+                var instrument = _sqlAdapter.ExecuteDatabaseOperation(connection =>
+                {
+                    return _sqlAdapter.ExecuteSingle(connection, null, MapFromReader.MapInstrument, new GetInstrumentByIdQuery(instrumentId));
                 });
                 if (instrument == null)
                     throw new InvalidOperationException($"Instrument with Id {instrumentId} was not found.");                
@@ -138,43 +220,44 @@ namespace TraderView.Infrastructure.Repositories
 
         public int? GetInstrumentIdByConId(string conid)
         {
-            int instrumentId = 0;
-            ExecuteDatabaseOperation(connection =>
-            {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    instrumentId = ExecuteScalar<int>(connection, transaction, new GetInstrumentByConIdQuery(conid));
-                    transaction.Commit();
-                }
-            });
-            return instrumentId > 0 ? instrumentId : (int?)null;
+            return GetInstrumentIdByConIdAsync(conid).GetAwaiter().GetResult();
+        }
+
+        public async Task<int?> GetInstrumentIdByConIdAsync(string conid)
+        {
+            if (string.IsNullOrEmpty(conid))
+                return null;
+
+            var id = await _db.Set<Instrument>()
+                .Where(i => i.ConId == conid)
+                .Select(i => i.Id)
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
+
+            return id > 0 ? id : (int?)null;
         }
         public int? GetInstrumentIdFromSymbol(string symbol, string provider)
         {
-            int? instrumentId = null;
-            ExecuteDatabaseOperation(connection =>
-            {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    try
-                    {
-                        instrumentId = GetInstrumentIdBySymbol(connection, transaction, symbol, provider);
+            return GetInstrumentIdFromSymbolAsync(symbol, provider).GetAwaiter().GetResult();
+        }
 
-                        return instrumentId;
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error obtaining instrumentId from symbol: {ex.Message}");
-                        throw;
-                    }
-                }
-            });
-            return instrumentId;
+        public async Task<int?> GetInstrumentIdFromSymbolAsync(string symbol, string provider)
+        {
+            if (string.IsNullOrEmpty(symbol) || string.IsNullOrEmpty(provider))
+                return null;
+
+            var id = await _db.Set<Instrument>()
+                .Where(i => i.InstrumentName == symbol && i.Provider == provider)
+                .Select(i => i.Id)
+                .FirstOrDefaultAsync()
+                .ConfigureAwait(false);
+
+            return id > 0 ? id : (int?)null;
         }
 
         private int? GetInstrumentIdBySymbol(SqlConnection connection, SqlTransaction transaction, string symbol, string provider)
         {
-            int instrumentId = ExecuteScalar<int>(connection, transaction, new GetInstrumentBySymbolAndProviderQuery(symbol, provider));
+            int instrumentId = _sqlAdapter.ExecuteScalar<int>(connection, transaction, new GetInstrumentBySymbolAndProviderQuery(symbol, provider));
             transaction.Commit();
             return instrumentId > 0 ? instrumentId : (int?)null;
         }
@@ -188,16 +271,37 @@ namespace TraderView.Infrastructure.Repositories
             string provider,
             string dataSource)
         {
-            int newInstrumentId = 0;
-            ExecuteDatabaseOperation(connection =>
+            return InsertInstrumentAsync(conid, symbol, listingExchange, currency, assetCategory, provider, dataSource).GetAwaiter().GetResult();
+        }
+
+        public async Task<int> InsertInstrumentAsync(
+            string conid,
+            string symbol,
+            string listingExchange,
+            string currency,
+            string assetCategory,
+            string provider,
+            string dataSource)
+        {
+            var instrument = new Instrument
             {
-                using (var transaction = connection.BeginTransaction())
-                {
-                    newInstrumentId = ExecuteScalar<int>(connection, transaction, new CreateInstrumentCommand(symbol, provider, symbol, dataSource, "TradeExecution", "D", null, assetCategory, null, null, currency, listingExchange, int.Parse(conid)));
-                    transaction.Commit();
-                }
-            });
-            return newInstrumentId;
+                InstrumentName = symbol ?? string.Empty,
+                Provider = provider,
+                DataName = symbol,
+                DataSource = dataSource,
+                Format = "TradeExecution",
+                Frequency = "D",
+                ContractUnit = null,
+                ContractUnitType = assetCategory,
+                PriceQuotation = null,
+                MinimumPriceFluctuation = null,
+                Currency = currency,
+                ListingExchange = listingExchange,
+                ConId = conid
+            };
+
+            var added = await AddAsync(instrument).ConfigureAwait(false);
+            return added.Id;
         }
 
         /// <summary>
@@ -205,42 +309,13 @@ namespace TraderView.Infrastructure.Repositories
         /// </summary>
         public async Task<Instrument?> GetByIdAsync(int instrumentId)
         {
-            return await Task.Run(() =>
-            {
-                Instrument? instrument = null;
-                ExecuteDatabaseOperation(connection =>
-                {
-                    const string query = @"
-                        SELECT Id, InstrumentName, Provider, DataName, Currency, ListingExchange, DataSource
-                        FROM dbo.Instruments
-                        WHERE Id = @InstrumentId";
+            return await base.GetByIdAsync(instrumentId).ConfigureAwait(false);
+        }
 
-                    using var command = new SqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@InstrumentId", instrumentId);
-
-                    using var reader = command.ExecuteReader();
-                    if (reader.Read())
-                    {
-                        instrument = new Instrument
-                        {
-                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
-                            InstrumentName = reader.IsDBNull(reader.GetOrdinal("InstrumentName"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("InstrumentName")),
-                            Provider = reader.IsDBNull(reader.GetOrdinal("Provider"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("Provider")),
-                            DataName = reader.IsDBNull(reader.GetOrdinal("DataName"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("DataName")),
-                            Currency = reader.IsDBNull(reader.GetOrdinal("Currency"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("Currency")),
-                            ListingExchange = reader.IsDBNull(reader.GetOrdinal("ListingExchange"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("ListingExchange")),
-                            DataSource = reader.IsDBNull(reader.GetOrdinal("DataSource"))
-                                ? string.Empty : reader.GetString(reader.GetOrdinal("DataSource")),
-                        };
-                    }
-                });
-                return instrument;
-            });
+        // Async wrapper matching IInstrumentRepository
+        public Task<Instrument?> GetAsync(int instrumentId)
+        {
+            return GetByIdAsync(instrumentId);
         }
 
         

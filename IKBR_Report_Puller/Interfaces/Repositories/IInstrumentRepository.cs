@@ -14,12 +14,18 @@ namespace TraderView.Application.Interfaces.Repositories
         /// <returns>The instrument ID, or null if not found</returns>
         int? GetInstrumentIdByConId(string conid);
 
+        // Async variant
+        Task<int?> GetInstrumentIdByConIdAsync(string conid);
+
         /// <summary>
         /// Gets an instrument by its ID
         /// </summary>
         /// <param name="instrumentId">The instrument ID</param>
         /// <returns>The instrument, or null if not found</returns>
         Instrument Get(int instrumentId);
+
+        // Async variant
+        Task<Instrument?> GetAsync(int instrumentId);
 
         /// <summary>
         /// Inserts a new instrument into the database
@@ -34,6 +40,9 @@ namespace TraderView.Application.Interfaces.Repositories
         /// <returns>The newly created instrument ID, or null if insertion failed</returns>
         int InsertInstrument(string conid, string symbol, string listingExchange, string currency, string assetCategory, string provider, string dataSource);
 
+        // Async variant
+        Task<int> InsertInstrumentAsync(string conid, string symbol, string listingExchange, string currency, string assetCategory, string provider, string dataSource);
+
         /// <summary>
         /// Ensures instruments exist for the given trades.
         /// Creates missing instruments automatically and updates trade.InstrumentId
@@ -41,6 +50,9 @@ namespace TraderView.Application.Interfaces.Repositories
         /// <param name="trades">List of trades to process</param>
         /// <param name="source">Source of the trades</param>
         void UpsertInstruments(List<TradeExecution> trades, string source);
+
+        // Async variant
+        Task UpsertInstrumentsAsync(List<TradeExecution> trades, string source);
         /// <summary>
         /// Ensures instruments exist for the given trade confirmations.
         /// Creates missing instruments automatically and updates trade.InstrumentId
@@ -48,6 +60,9 @@ namespace TraderView.Application.Interfaces.Repositories
         /// <param name="trades">List of trade confirmations to process</param>
         /// <param name="source">Source of the trade confirmations</param>
         void UpsertInstruments(List<TradeConfirm> trades, string source);
+
+        // Async variant
+        Task UpsertInstrumentsAsync(List<TradeConfirm> trades, string source);
 
         /// <summary>
         /// Gets an instrument by its ID asynchronously
