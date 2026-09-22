@@ -8,7 +8,7 @@ namespace TraderView.Infrastructure.Repositories;
 /// Generic repository implementation supporting specifications
 /// </summary>
 /// <typeparam name="T">The entity type</typeparam>
-public class GenericRepository<T> : BaseRepository, IRepository<T> where T : class
+public partial class GenericRepository<T> : BaseRepository, IRepository<T> where T : class
 {
     public GenericRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
     {
@@ -297,7 +297,13 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
     /// </summary>
     protected virtual string BuildWhereClause(Expression<Func<T, bool>> criteria)
     {
-        return " WHERE 1=1";
+        if (criteria == null)
+            return string.Empty;
+
+        var translator = new ExpressionToSqlTranslator();
+        var (sql, parameters) = translator.Translate(criteria.Body);
+
+        return string.IsNullOrWhiteSpace(sql) ? string.Empty : " WHERE " + sql;
     }
 
     /// <summary>
@@ -317,6 +323,17 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
     /// </summary>
     protected virtual void AddParameters(SqlCommand cmd, ISpecification<T> specification)
     {
+        if (specification?.Criteria == null)
+            return;
+
+        var translator = new ExpressionToSqlTranslator();
+        var (_, parameters) = translator.Translate(specification.Criteria.Body);
+
+        for (int i = 0; i < parameters.Count; i++)
+        {
+            var p = parameters[i];
+            cmd.Parameters.AddWithValue(p.Key, p.Value ?? DBNull.Value);
+        }
     }
 
     /// <summary>
