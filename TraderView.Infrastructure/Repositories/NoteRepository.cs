@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Specifications.Notes;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Infrastructure.Repositories

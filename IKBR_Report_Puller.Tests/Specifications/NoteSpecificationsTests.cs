@@ -2,6 +2,7 @@ using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using TraderView.Infrastructure.Repositories;
 using TraderView.Domain.Entities;
+using TraderView.Application.Specifications.Notes;
 
 namespace IKBR_Report_Puller.Tests.Specifications
 {

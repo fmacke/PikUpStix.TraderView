@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using TraderView.Application.Interfaces.Persistence;
 using TraderView.Domain.Entities;
+using TraderView.Application.Interfaces.Persistence;
 
-namespace TraderView.Infrastructure.Repositories
+
+namespace TraderView.Application.Specifications.Notes
 {
     /// <summary>
-    /// Specification to select Notes by TradeTypeId (infrastructure-level)
+    /// Specification to select Notes within a date range (infrastructure-level)
     /// </summary>
-    public class NoteByTradeTypeSpecification : ISpecification<Note>
+    public class NoteByDateRangeSpecification : ISpecification<Note>
     {
         public Expression<Func<Note, bool>>? Criteria { get; }
         public List<Expression<Func<Note, object>>> Includes { get; } = new();
@@ -20,11 +21,11 @@ namespace TraderView.Infrastructure.Repositories
         public bool IsPagingEnabled { get; } = false;
 
         /// <summary>
-        /// Create a new specification that matches the provided trade type id
+        /// Create a new specification that matches notes in the given date range (inclusive)
         /// </summary>
-        public NoteByTradeTypeSpecification(int tradeTypeId)
+        public NoteByDateRangeSpecification(DateTime startDate, DateTime endDate)
         {
-            Criteria = n => n.TradeTypeId == tradeTypeId;
+            Criteria = n => n.EntryDate >= startDate && n.EntryDate <= endDate;
             OrderBys.Add((n => n.EntryDate, true));
         }
     }

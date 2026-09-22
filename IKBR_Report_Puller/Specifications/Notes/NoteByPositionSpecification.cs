@@ -4,12 +4,12 @@ using System.Linq.Expressions;
 using TraderView.Application.Interfaces.Persistence;
 using TraderView.Domain.Entities;
 
-namespace TraderView.Infrastructure.Repositories
+namespace TraderView.Application.Specifications.Notes
 {
     /// <summary>
-    /// Specification to select Notes by TradeExecutionId (infrastructure-level)
+    /// Specification to select Notes by PositionId (infrastructure-level)
     /// </summary>
-    public class NoteByTradeExecutionSpecification : ISpecification<Note>
+    public class NoteByPositionSpecification : ISpecification<Note>
     {
         public Expression<Func<Note, bool>>? Criteria { get; }
         public List<Expression<Func<Note, object>>> Includes { get; } = new();
@@ -20,11 +20,11 @@ namespace TraderView.Infrastructure.Repositories
         public bool IsPagingEnabled { get; } = false;
 
         /// <summary>
-        /// Create a new specification that matches the provided trade execution id
+        /// Create a new specification that matches the provided position id
         /// </summary>
-        public NoteByTradeExecutionSpecification(int tradeExecutionId)
+        public NoteByPositionSpecification(int positionId)
         {
-            Criteria = n => n.TradeExecutionId == tradeExecutionId;
+            Criteria = n => n.PositionId == positionId;
             OrderBys.Add((n => n.EntryDate, true));
         }
     }

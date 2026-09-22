@@ -4,12 +4,12 @@ using System.Linq.Expressions;
 using TraderView.Application.Interfaces.Persistence;
 using TraderView.Domain.Entities;
 
-namespace TraderView.Infrastructure.Repositories
+namespace TraderView.Application.Specifications.Notes
 {
     /// <summary>
-    /// Specification to select Notes within a date range (infrastructure-level)
+    /// Specification to select a Note by its Id (infrastructure-level convenience implementation)
     /// </summary>
-    public class NoteByDateRangeSpecification : ISpecification<Note>
+    public class NoteByIdSpecification : ISpecification<Note>
     {
         public Expression<Func<Note, bool>>? Criteria { get; }
         public List<Expression<Func<Note, object>>> Includes { get; } = new();
@@ -20,11 +20,11 @@ namespace TraderView.Infrastructure.Repositories
         public bool IsPagingEnabled { get; } = false;
 
         /// <summary>
-        /// Create a new specification that matches notes in the given date range (inclusive)
+        /// Create a new specification that matches the provided note id
         /// </summary>
-        public NoteByDateRangeSpecification(DateTime startDate, DateTime endDate)
+        public NoteByIdSpecification(int id)
         {
-            Criteria = n => n.EntryDate >= startDate && n.EntryDate <= endDate;
+            Criteria = n => n.Id == id;
             OrderBys.Add((n => n.EntryDate, true));
         }
     }

@@ -4,7 +4,6 @@ using TraderView.Application.Interfaces.Services;
 
 namespace PikUpStix.TraderView.Services
 {
-
     /// <summary>
     /// Service for List operations
     /// </summary>
@@ -17,60 +16,40 @@ namespace PikUpStix.TraderView.Services
             _listRepository = listRepository;
         }
 
-        /// <summary>
-        /// Gets all list items asynchronously
-        /// </summary>
-        public async Task<List<ListItem>> GetAllAsync()
+        public async Task<IReadOnlyList<ListItem>> GetAllAsync()
         {
-            return await Task.Run(() => _listRepository.GetAll());
+            return await _listRepository.GetAllAsync();
         }
 
-        /// <summary>
-        /// Gets a list item by its ID asynchronously
-        /// </summary>
         public async Task<ListItem?> GetByIdAsync(int id)
         {
-            return await Task.Run(() => _listRepository.GetById(id));
+            return await _listRepository.GetByIdAsync(id);
         }
 
-        /// <summary>
-        /// Gets all items for a specific list name asynchronously
-        /// </summary>
-        public async Task<List<ListItem>> GetByListNameAsync(string listName)
+        public async Task<IReadOnlyList<ListItem>> GetByListNameAsync(string listName)
         {
-            return await Task.Run(() => _listRepository.GetByListName(listName));
+            return await _listRepository.GetByCategoryAsync(listName);
         }
 
-        /// <summary>
-        /// Creates a new list item asynchronously
-        /// </summary>
         public async Task<int> CreateAsync(string listName, string item)
         {
-            return await Task.Run(() => _listRepository.Insert(listName, item));
+            return await _listRepository.InsertAsync(listName, item);
         }
 
-        /// <summary>
-        /// Updates an existing list item asynchronously
-        /// </summary>
         public async Task<bool> UpdateAsync(int id, string listName, string item)
         {
-            return await Task.Run(() => _listRepository.Update(id, listName, item));
+            // Preserve existing description/isActive by fetching current entity if needed; simple update uses provided values
+            return await _listRepository.UpdateAsync(id, listName, item, null, true, DateTime.UtcNow);
         }
 
-        /// <summary>
-        /// Deletes a list item by its ID asynchronously
-        /// </summary>
         public async Task<bool> DeleteAsync(int id)
         {
-            return await Task.Run(() => _listRepository.Delete(id));
+            return await _listRepository.DeleteAsync(id);
         }
 
-        /// <summary>
-        /// Gets distinct list names asynchronously
-        /// </summary>
-        public async Task<List<string>> GetDistinctListNamesAsync()
+        public async Task<IReadOnlyList<string>> GetDistinctListNamesAsync()
         {
-            return await Task.Run(() => _listRepository.GetDistinctListNames());
+            return await _listRepository.GetDistinctCategoriesAsync();
         }
     }
 }
