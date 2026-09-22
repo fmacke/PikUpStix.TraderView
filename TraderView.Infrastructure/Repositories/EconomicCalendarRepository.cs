@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using System.Data;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Domain.Entities;
 namespace TraderView.Infrastructure.Repositories
 {
@@ -9,7 +10,7 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public class EconomicCalendarRepository : BaseRepository, IEconomicCalendarRepository
     {
-        public EconomicCalendarRepository(string connectionString) : base(connectionString)
+        public EconomicCalendarRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
         {
         }
 

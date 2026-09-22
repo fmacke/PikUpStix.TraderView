@@ -1,5 +1,6 @@
 using Microsoft.Data.SqlClient;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Infrastructure.Repositories
@@ -8,7 +9,7 @@ namespace TraderView.Infrastructure.Repositories
     {
         private readonly IInstrumentRepository _instrumentRepository;
 
-        public PositionRepository(string connectionString, IInstrumentRepository instrumentRepository) : base(connectionString)
+        public PositionRepository(IDbConnectionFactory connectionFactory, IInstrumentRepository instrumentRepository) : base(connectionFactory)
         {
             _instrumentRepository = instrumentRepository;
         }

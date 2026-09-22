@@ -1,12 +1,13 @@
 using Microsoft.Data.SqlClient;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Infrastructure.Repositories
 {
     public class EquitySummaryRepository : BaseRepository, IEquitySummaryRepository
     {
-        public EquitySummaryRepository(string connectionString) : base(connectionString)
+        public EquitySummaryRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
         {
         }
 

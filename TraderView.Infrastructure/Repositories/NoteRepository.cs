@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using TraderView.Domain.Entities;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Persistence;
 
 namespace TraderView.Infrastructure.Repositories
 {
@@ -9,7 +10,7 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public class NoteRepository : BaseRepository, INoteRepository
     {
-        public NoteRepository(string connectionString) : base(connectionString)
+        public NoteRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
         {
         }
 

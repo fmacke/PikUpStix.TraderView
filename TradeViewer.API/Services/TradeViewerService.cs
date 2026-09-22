@@ -7,19 +7,18 @@ namespace TradeViewer.API.Services
 {
     public class TradeViewerService : ITradeViewerService
     {
-        private readonly string _connectionString;
+        private readonly IDbConnectionFactory _connectionFactory;
         private readonly ILogger<TradeViewerService> _logger;
         private readonly IDataService _dataService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
         public TradeViewerService(
-            IConfiguration configuration, 
+            IDbConnectionFactory connectionFactory,
             ILogger<TradeViewerService> logger,
             IDataService dataService,
             ITradeHistoryReportService tradeHistoryReportService)
         {
-            _connectionString = configuration.GetConnectionString("TradingDatabase") 
-                ?? throw new InvalidOperationException("Connection string 'TradingDatabase' not found.");
+            _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
             _logger = logger;
             _dataService = dataService;
             _tradeHistoryReportService = tradeHistoryReportService;
@@ -60,7 +59,7 @@ namespace TradeViewer.API.Services
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = (SqlConnection)_connectionFactory.CreateConnection();
                 await connection.OpenAsync();
 
                 // Get trade summary
@@ -92,7 +91,7 @@ namespace TradeViewer.API.Services
         {
             try
             {
-                using var connection = new SqlConnection(_connectionString);
+                using var connection = (SqlConnection)_connectionFactory.CreateConnection();
                 await connection.OpenAsync();
 
                 // Get trade summary

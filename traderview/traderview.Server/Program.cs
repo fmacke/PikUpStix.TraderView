@@ -1,5 +1,7 @@
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using PikUpStix.TraderView.Services;
+using TraderView.Application.Interfaces.Persistence;
+using TraderView.Infrastructure.Data;
 using PikUpStix.TraderView.Services.MarketData;
 using traderview.Server.DTOs.Mappers;
 using traderview.Server.Services;
@@ -18,68 +20,67 @@ public partial class Program
         // Register HttpClient and HttpClientFactory
         builder.Services.AddHttpClient();
 
+        // Register DB connection factory from configuration
+        builder.Services.AddSingleton<IDbConnectionFactory>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var connectionString = BuildConnectionString(config);
+            return new TraderView.Infrastructure.Data.SqlConnectionFactory(connectionString);
+        });
+
         // Register repositories 
         // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
         builder.Services.AddScoped<IInstrumentRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
-            return new InstrumentRepository(connectionString);
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
+            return new InstrumentRepository(factory);
         });
 
         builder.Services.AddScoped<IPositionRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-            var connectionString = BuildConnectionString(config);
-            return new PositionRepository(connectionString, instrumentRepo);
+            return new PositionRepository(factory, instrumentRepo);
         });
 
         builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-            var connectionString = BuildConnectionString(config);
-            return new TradeExecutionRepository(connectionString, instrumentRepo);
+            return new TradeExecutionRepository(factory, instrumentRepo);
         });
 
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
-            return new HistoricalDataRepository(connectionString);
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
+            return new HistoricalDataRepository(factory);
         });
 
         builder.Services.AddScoped<IEconomicCalendarRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
-            return new EconomicCalendarRepository(connectionString);
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
+            return new EconomicCalendarRepository(factory);
         });
         builder.Services.AddSingleton<ICanSlimCandidateRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
-            return new CanSlimCandidateRepository(connectionString);
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
+            return new CanSlimCandidateRepository(factory);
         });
         builder.Services.AddScoped<INoteRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
-            return new NoteRepository(connectionString);
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
+            return new NoteRepository(factory);
         });
         builder.Services.AddScoped<IListRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
-            return new ListRepository(connectionString);
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
+            return new ListRepository(factory);
         });
 
         builder.Services.AddScoped<IEquitySummaryRepository>(provider =>
         {
-            var config = provider.GetRequiredService<IConfiguration>();
-            var connectionString = BuildConnectionString(config);
-            return new EquitySummaryRepository(connectionString);
+            var factory = provider.GetRequiredService<IDbConnectionFactory>();
+            return new EquitySummaryRepository(factory);
         });
 
         // Register custom services        

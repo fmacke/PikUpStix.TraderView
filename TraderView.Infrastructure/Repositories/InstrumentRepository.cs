@@ -4,6 +4,7 @@ using TraderView.Application.Features.Instruments.Command.Create;
 using TraderView.Application.Features.Instruments.Query.GetBy;
 using TraderView.Application.Features.TradeExecutions.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Mappers;
 using TraderView.Domain.Entities;
 
@@ -14,7 +15,7 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public class InstrumentRepository : BaseRepository, IInstrumentRepository
     {
-        public InstrumentRepository(string connectionString) : base(connectionString)
+        public InstrumentRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
         {
         }
         void IInstrumentRepository.UpsertInstruments(List<TradeConfirm> tradeConfirms, string source)

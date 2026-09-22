@@ -3,13 +3,14 @@ using TraderView.Application.Features.CanSlimScreener.Command;
 using TraderView.Application.Features.CanSlimScreener.Query.GetBy;
 using TraderView.Application.Features.Instruments.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Mappers;
 using TraderView.Domain.Entities.FMP;
 namespace TraderView.Infrastructure.Repositories
 {
     public class CanSlimCandidateRepository : BaseRepository, ICanSlimCandidateRepository
     {
-        public CanSlimCandidateRepository(string connectionString) : base(connectionString)
+        public CanSlimCandidateRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
         {
         }
         List<CanSlimCandidate> ICanSlimCandidateRepository.GetAllBySnapshotId(int snapshotId)

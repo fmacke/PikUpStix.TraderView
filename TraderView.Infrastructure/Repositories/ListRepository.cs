@@ -1,6 +1,7 @@
 using Microsoft.Data.SqlClient;
 using TraderView.Domain.Entities;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Persistence;
 
 namespace TraderView.Infrastructure.Repositories
 {
@@ -9,7 +10,7 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public class ListRepository : BaseRepository, IListRepository
     {
-        public ListRepository(string connectionString) : base(connectionString)
+        public ListRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
         {
         }
 

@@ -1,5 +1,7 @@
 using Microsoft.Data.SqlClient;
 using TraderView.Application.Features;
+using System.Data;
+using TraderView.Application.Interfaces.Persistence;
 
 namespace TraderView.Infrastructure.Repositories
 {
@@ -8,11 +10,11 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public abstract class BaseRepository
     {
-        protected readonly string ConnectionString;
+        protected readonly IDbConnectionFactory ConnectionFactory;
 
-        protected BaseRepository(string connectionString)
+        protected BaseRepository(IDbConnectionFactory connectionFactory)
         {
-            ConnectionString = connectionString;
+            ConnectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
         }
 
         /// <summary>
@@ -22,7 +24,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
                 operation(connection);
             }
@@ -45,7 +47,7 @@ namespace TraderView.Infrastructure.Repositories
         {
             try
             {
-                using SqlConnection connection = new SqlConnection(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
                 return operation(connection);
             }

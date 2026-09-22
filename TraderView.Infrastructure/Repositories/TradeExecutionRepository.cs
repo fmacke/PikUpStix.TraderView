@@ -12,6 +12,7 @@ using TraderView.Application.Features.TradeExecutions.Command.Update;
 using TraderView.Application.Features.TradeExecutions.Query.Get;
 using TraderView.Application.Features.TradeExecutions.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Mappers;
 using TraderView.Application.Utils;
 using TraderView.Domain.Entities;
@@ -25,7 +26,7 @@ namespace TraderView.Infrastructure.Repositories
     {
         private readonly IInstrumentRepository _instrumentRepository;
 
-        public TradeExecutionRepository(string connectionString, IInstrumentRepository instrumentRepository) : base(connectionString)
+        public TradeExecutionRepository(IDbConnectionFactory connectionFactory, IInstrumentRepository instrumentRepository) : base(connectionFactory)
         {
             _instrumentRepository = instrumentRepository;
         }

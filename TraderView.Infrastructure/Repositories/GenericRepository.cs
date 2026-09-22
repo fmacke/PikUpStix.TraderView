@@ -10,11 +10,8 @@ namespace TraderView.Infrastructure.Repositories;
 /// <typeparam name="T">The entity type</typeparam>
 public class GenericRepository<T> : BaseRepository, IRepository<T> where T : class
 {
-    protected readonly string ConnectionString;
-
-    public GenericRepository(string connectionString) : base(connectionString)
+    public GenericRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
     {
-        ConnectionString = connectionString;
     }
 
     public async Task<IReadOnlyList<T>> GetAllAsync()
@@ -29,7 +26,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 string sql = $"SELECT * FROM [{typeof(T).Name}s] WHERE Id = @id";
@@ -57,7 +54,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 var sql = BuildSqlQuery(specification);
@@ -87,7 +84,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 var sql = BuildSqlQuery(specification);
@@ -115,7 +112,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 string sql = $"SELECT COUNT(*) FROM [{typeof(T).Name}s]";
@@ -138,7 +135,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 var sql = BuildCountSqlQuery(specification);
@@ -160,7 +157,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
     {
         try
         {
-            using SqlConnection connection = new(ConnectionString);
+            using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
             connection.Open();
 
             throw new NotImplementedException("AddAsync requires entity-specific implementation");
@@ -178,7 +175,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 throw new NotImplementedException("AddRangeAsync requires entity-specific implementation");
@@ -197,7 +194,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 throw new NotImplementedException("UpdateAsync requires entity-specific implementation");
@@ -216,7 +213,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 throw new NotImplementedException("DeleteAsync requires entity-specific implementation");
@@ -235,7 +232,7 @@ public class GenericRepository<T> : BaseRepository, IRepository<T> where T : cla
         {
             try
             {
-                using SqlConnection connection = new(ConnectionString);
+                using SqlConnection connection = (SqlConnection)ConnectionFactory.CreateConnection();
                 connection.Open();
 
                 throw new NotImplementedException("DeleteRangeAsync requires entity-specific implementation");

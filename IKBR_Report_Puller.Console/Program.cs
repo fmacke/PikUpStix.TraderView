@@ -2,6 +2,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PikUpStix.TraderView.Services;
+using TraderView.Application.Interfaces.Persistence;
+using TraderView.Infrastructure.Data;
 using PikUpStix.TraderView.Services.MarketData;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
@@ -38,56 +40,57 @@ namespace TraderView.Console
                         PooledConnectionIdleTimeout = TimeSpan.FromMinutes(1)
                     });
 
-                    // Register repositories (repositories should be scoped or transient, but using singleton for console app simplicity)
-                    services.AddSingleton<IInstrumentRepository>(provider =>
+                    // Register DB connection factory from configuration
+                    services.AddSingleton<IDbConnectionFactory>(provider =>
                     {
                         var config = provider.GetRequiredService<IConfiguration>();
                         var connectionString = BuildConnectionString(config);
-                        return new InstrumentRepository(connectionString);
+                        return new TraderView.Infrastructure.Data.SqlConnectionFactory(connectionString);
+                    });
+
+                    // Register repositories (repositories should be scoped or transient, but using singleton for console app simplicity)
+                    services.AddSingleton<IInstrumentRepository>(provider =>
+                    {
+                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
+                        return new InstrumentRepository(factory);
                     });
 
                     services.AddSingleton<IPositionRepository>(provider =>
                     {
-                        var config = provider.GetRequiredService<IConfiguration>();
+                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-                        var connectionString = BuildConnectionString(config);
-                        return new PositionRepository(connectionString, instrumentRepo);
+                        return new PositionRepository(factory, instrumentRepo);
                     });
 
                     services.AddSingleton<ITradeExecutionRepository>(provider =>
                     {
-                        var config = provider.GetRequiredService<IConfiguration>();
+                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-                        var connectionString = BuildConnectionString(config);
-                        return new TradeExecutionRepository(connectionString, instrumentRepo);
+                        return new TradeExecutionRepository(factory, instrumentRepo);
                     });
 
                     services.AddSingleton<IHistoricalDataRepository>(provider =>
                     {
-                        var config = provider.GetRequiredService<IConfiguration>();
-                        var connectionString = BuildConnectionString(config);
-                        return new HistoricalDataRepository(connectionString);
+                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
+                        return new HistoricalDataRepository(factory);
                     });
 
                     services.AddSingleton<IEconomicCalendarRepository>(provider =>
                     {
-                        var config = provider.GetRequiredService<IConfiguration>();
-                        var connectionString = BuildConnectionString(config);
-                        return new EconomicCalendarRepository(connectionString);
+                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
+                        return new EconomicCalendarRepository(factory);
                     });
 
                     services.AddSingleton<ICanSlimCandidateRepository>(provider =>
                     {
-                        var config = provider.GetRequiredService<IConfiguration>();
-                        var connectionString = BuildConnectionString(config);
-                        return new CanSlimCandidateRepository(connectionString);
+                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
+                        return new CanSlimCandidateRepository(factory);
                     });
 
                     services.AddSingleton<IEquitySummaryRepository>(provider =>
                     {
-                        var config = provider.GetRequiredService<IConfiguration>();
-                        var connectionString = BuildConnectionString(config);
-                        return new EquitySummaryRepository(connectionString);
+                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
+                        return new EquitySummaryRepository(factory);
                     });
 
                     // Register both market data services
