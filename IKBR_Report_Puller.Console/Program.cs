@@ -103,7 +103,7 @@ namespace TraderView.Console
                     });
 
                     // Register both market data services
-                    services.AddSingleton<FinancialModellingPrepService>(provider =>
+                    services.AddScoped<FinancialModellingPrepService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
                         var repository = provider.GetRequiredService<IEconomicCalendarRepository>();
@@ -119,7 +119,7 @@ namespace TraderView.Console
                     });
 
                     // Register the default IMarketDataService (use Yahoo Finance by default, or configure via settings)
-                    services.AddSingleton<IMarketDataService>(provider =>
+                    services.AddScoped<IMarketDataService>(provider =>
                     {
                         var config = provider.GetRequiredService<IConfiguration>();
                         var preferredService = config["MarketData:PreferredService"];
@@ -140,7 +140,7 @@ namespace TraderView.Console
                         return new IKBRReportFetchingService(config, httpClientFactory);
                     });
                     services.AddScoped<IReportRunnerService, ReportRunnerService>();
-                    services.AddSingleton<IExcelReportService, ExcelReportService>();
+                    services.AddScoped<IExcelReportService, ExcelReportService>();
                     services.AddScoped<IOpenPositionsService, OpenPositionsService>(provider =>
                     {
                         var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
