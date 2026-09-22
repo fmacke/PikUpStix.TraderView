@@ -11,7 +11,7 @@ namespace TraderView.Application.Interfaces.Services
         /// Gets all notes asynchronously
         /// </summary>
         /// <returns>List of all notes</returns>
-        Task<List<Note>> GetAllAsync();
+        Task<IReadOnlyList<Note>> GetAllAsync();
 
         /// <summary>
         /// Gets a note by its ID asynchronously
@@ -25,21 +25,21 @@ namespace TraderView.Application.Interfaces.Services
         /// </summary>
         /// <param name="positionId">The position ID</param>
         /// <returns>List of notes for the specified position</returns>
-        Task<List<Note>> GetByPositionIdAsync(int positionId);
+        Task<IReadOnlyList<Note>> GetByPositionIdAsync(int positionId);
 
         /// <summary>
         /// Gets all notes for a specific trade execution asynchronously
         /// </summary>
         /// <param name="tradeExecutionId">The trade execution ID</param>
         /// <returns>List of notes for the specified trade execution</returns>
-        Task<List<Note>> GetByTradeExecutionIdAsync(int tradeExecutionId);
+        Task<IReadOnlyList<Note>> GetByTradeExecutionIdAsync(int tradeExecutionId);
 
         /// <summary>
         /// Gets all notes for a specific trade type asynchronously
         /// </summary>
         /// <param name="tradeTypeId">The trade type ID</param>
         /// <returns>List of notes for the specified trade type</returns>
-        Task<List<Note>> GetByTradeTypeIdAsync(int tradeTypeId);
+        Task<IReadOnlyList<Note>> GetByTradeTypeIdAsync(int tradeTypeId);
 
         /// <summary>
         /// Creates a new note asynchronously
@@ -79,6 +79,6 @@ namespace TraderView.Application.Interfaces.Services
         /// <param name="startDate">The start date</param>
         /// <param name="endDate">The end date</param>
         /// <returns>List of notes within the specified date range</returns>
-        Task<List<Note>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<IReadOnlyList<Note>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
     }
 }
