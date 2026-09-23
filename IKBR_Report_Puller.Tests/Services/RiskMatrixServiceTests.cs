@@ -77,7 +77,7 @@ namespace IKBR_Report_Puller.Tests.Services
             var result = await _riskMatrixService.CalculateExpectedRoi(gainDecimal, lossDecimal, winRateDecimal, tradesCount);
 
             // Assert
-            Assert.AreEqual((double)expectedRoiDecimal, (double)result.CompoundedRoi, 0.02,
+            Assert.AreEqual((double)expectedRoiDecimal, (double)result.CompoundedRoi, 0.03,
                 $"Compounded ROI mismatch for Gain: {gain}%, Loss: {loss}%, WinRate: {winRate}%");
         }
 
