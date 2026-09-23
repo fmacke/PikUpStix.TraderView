@@ -1,0 +1,88 @@
+.trade-roller {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background-color: #f9fafb;
+    border-left: 1px solid #e5e7eb;
+}
+
+.trade-roller-window {
+    overflow: hidden;
+    flex: 1;
+}
+
+.scroll-snap-container {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: y mandatory;
+    /* show up to 5 items (item min-height 72px) */
+    max-height: calc(72px * 5);
+}
+
+.trade-roller-track {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+}
+
+.trade-roller-item {
+    min-height: 72px;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+    display: block;
+    box-shadow: 0 0 0 rgba(0,0,0,0);
+    scroll-snap-align: start;
+}
+
+.trade-roller-item.selected {
+    background-color: #dbeafe;
+    border-left: 3px solid #3b82f6;
+}
+
+.trade-roller-item .trade-symbol {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.trade-roller-item .trade-date {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.trade-roller-item .trade-pnl {
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.trade-pnl.positive { color: #16a34a; }
+.trade-pnl.negative { color: #dc2626; }
+
+.trade-roller-window:hover .trade-roller-track {
+    /* No auto animation by default; hover interactions handled by user */
+}
+
+.trade-roller-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 0.5rem;
+}
+
+.roller-controls button {
+    margin-left: 6px;
+    padding: 6px 10px;
+    border-radius: 4px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+}
+
+.roller-controls button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

@@ -3,6 +3,7 @@ import './App.css';
 import { apiService } from './services/apiService';
 import type { Trade } from './types/api';
 import TradeList from './components/features/trade/TradeList';
+import TradeRollerList from './components/features/trade/TradeRollerList';
 import TradeDetail from './components/features/trade/TradeDetail';
 import OpenPositionsView from './components/features/positions/OpenPositionsView';
 import RiskCalculatorView from './components/features/views/RiskCalculatorView';
@@ -17,6 +18,7 @@ function App() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>('trades');
+    const [useCarousel, setUseCarousel] = useState<boolean>(false);
 
     useEffect(() => {
         populateTradeData();
@@ -32,6 +34,7 @@ function App() {
                 <div className="loading-container">
                     <p><em>Loading trades... Please ensure the ASP.NET backend has started.</em></p>
                 </div>
+                
             </div>
         );
     }
@@ -86,6 +89,15 @@ function App() {
                     >
                         Screener
                     </button>
+          
+                        <button
+                            onClick={() => setUseCarousel(c => !c)}
+                            className={`nav-button ${useCarousel ? 'active' : ''}`}
+                            title="Toggle carousel trade view"
+                        >
+                            Carousel
+                        </button>
+                  
                 </div>
 
                 <div className="nav-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -115,11 +127,19 @@ function App() {
                         <TradeDetail trade={selectedTrade} />
                     </div>
                     <div className="list-pane">
-                        <TradeList
-                            trades={trades}
-                            selectedPositionId={selectedTrade?.positionId ?? null}
-                            onTradeSelect={handleTradeSelect}
-                        />
+                        {useCarousel ? (
+                            <TradeRollerList
+                                trades={trades}
+                                selectedPositionId={selectedTrade?.positionId ?? null}
+                                onTradeSelect={handleTradeSelect}
+                            />
+                        ) : (
+                            <TradeList
+                                trades={trades}
+                                selectedPositionId={selectedTrade?.positionId ?? null}
+                                onTradeSelect={handleTradeSelect}
+                            />
+                        )}
                     </div>
                 </div>
             )}
