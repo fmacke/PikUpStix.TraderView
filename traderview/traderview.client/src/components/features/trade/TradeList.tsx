@@ -17,15 +17,27 @@ function TradeList({ trades, selectedPositionId, onTradeSelect }: TradeListProps
         return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
     });
 
-    // Focus the list container on mount and when selection changes
+    // Focus the list container on mount without causing the browser to scroll
     useEffect(() => {
         if (listRef.current) {
-            listRef.current.focus();
+            // use preventScroll when available to avoid moving the page
+            try {
+                (listRef.current as HTMLElement).focus({ preventScroll: true } as FocusOptions);
+            } catch {
+                // fallback for environments that don't support the options arg
+                (listRef.current as HTMLElement).focus();
+            }
         }
     }, []);
 
-    // Scroll selected item into view
+    // Scroll selected item into view when selection changes, but skip the initial mount
+    const didInitialScroll = useRef<boolean>(false);
     useEffect(() => {
+        if (!didInitialScroll.current) {
+            didInitialScroll.current = true;
+            return;
+        }
+
         if (selectedItemRef.current) {
             selectedItemRef.current.scrollIntoView({
                 behavior: 'smooth',
@@ -62,7 +74,7 @@ function TradeList({ trades, selectedPositionId, onTradeSelect }: TradeListProps
                 {sortedTrades.map((trade) => (
                     <div
                         key={trade.id}
-                        ref={selectedPositionId === trade.id ? selectedItemRef : null}
+                        ref={selectedPositionId === trade.positionId ? selectedItemRef : null}
                         className={`trade-item ${selectedPositionId === trade.positionId ? 'selected' : ''}`}
                         onClick={() => onTradeSelect(trade)}
                     >

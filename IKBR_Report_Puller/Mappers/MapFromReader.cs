@@ -232,7 +232,8 @@ namespace TraderView.Application.Mappers
                 AnnualOperatingMarginPercent = reader.GetDecimal(reader.GetOrdinal("Annual_OperatingMarginPercent")),
                 AnnualReturnOnAssetsPercent = reader.GetDecimal(reader.GetOrdinal("Annual_ReturnOnAssetsPercent")),
                 AnnualPassesCriteria = reader.GetBoolean(reader.GetOrdinal("Annual_PassesCriteria")),
-                AnnualFundamentalGrade = reader.GetString(reader.GetOrdinal("Annual_FundamentalGrade"))
+                AnnualFundamentalGrade = reader.GetString(reader.GetOrdinal("Annual_FundamentalGrade")),
+                PassesBoth = reader.GetBoolean(reader.GetOrdinal("PassesBoth")),
                 // Annual History is not included in this query; it would require a separate query to fetch the annual history for each candidate.
             };
         }

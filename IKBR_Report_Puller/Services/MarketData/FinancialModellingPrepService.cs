@@ -447,13 +447,7 @@ namespace PikUpStix.TraderView.Services.MarketData
         async Task<IReadOnlyList<CanSlimCandidate>> IMarketDataService.RunScreenerAsync(CanSlimScreenerCriteria criteria)
         {
             var latestScreener = await _canSlimScreenerService.GetLatestScreenerSnapShot();
-            if (latestScreener == null)
-            {
-                var newScreenerData = await GetNewScreenerData(criteria);
-                await _canSlimScreenerService.CreateCanSlimScreenerSnapshot(newScreenerData.ToList());
-                return newScreenerData;
-            }
-            else if (latestScreener.CreatedAt < DateTime.Today)
+            if (latestScreener == null || latestScreener.CreatedAt < DateTime.Today)
             {
                 var newScreenerData = await GetNewScreenerData(criteria);
                 await _canSlimScreenerService.CreateCanSlimScreenerSnapshot(newScreenerData.ToList());
@@ -518,8 +512,22 @@ namespace PikUpStix.TraderView.Services.MarketData
                             CurrentQuarterRevenueGrowthYoYpercent = caResult.CurrentQuarter?.RevenueGrowthYoYPercent ?? 0m,
                             CurrentQuarterIsAccelerating = caResult.CurrentQuarter?.IsAccelerating ?? false,
                             CurrentQuarterPassesCriteria = caResult.CurrentQuarter?.PassesCriteria ?? false,
-                            // TODO - THIS IS ALL MESSED UP SINCE NEW DBCONTEXT ADDED .  NEED TO FIX THIS.
+                            AnnualEpsCagr3YearPercent = caResult.Annual?.EpsCagr3YearPercent ?? 0m,
+                            AnnualEpsCagr5YearPercent = caResult.Annual?.EpsCagr5YearPercent,
+                            AnnualReturnOnEquityPercent = caResult.Annual?.ReturnOnEquityPercent ?? 0m,
+                            AnnualHasConsecutiveAnnualGrowth = caResult.Annual?.HasConsecutiveAnnualGrowth ?? false,
+                            AnnualLatestFiscalYear = caResult.Annual?.LatestFiscalYear,
+                            AnnualLatestFiscalYearEps = caResult.Annual?.LatestFiscalYearEps ?? 0m,
+                            AnnualPriorYear1Eps = caResult.Annual?.PriorYear1Eps ?? 0m,
+                            AnnualPriorYear2Eps = caResult.Annual?.PriorYear2Eps ?? 0m,
+                            AnnualPriorYear3Eps = caResult.Annual?.PriorYear3Eps ?? 0m,
+                            AnnualOperatingMarginPercent = caResult.Annual?.OperatingMarginPercent ?? 0m,
+                            AnnualReturnOnAssetsPercent = caResult.Annual?.ReturnOnAssetsPercent ?? 0m,
+                            AnnualFundamentalGrade = caResult.Annual?.FundamentalGrade,
                             AnnualPassesCriteria = caResult.Annual?.PassesCriteria ?? false,
+                            EvaluationDateUtc = DateTime.UtcNow,
+                            CreatedAtUtc = DateTime.UtcNow,
+                            PassesBoth = Convert.ToBoolean(caResult.CurrentQuarter?.PassesCriteria) && Convert.ToBoolean(caResult.Annual?.PassesCriteria) ? true : false
                         });
                     }
                 }
