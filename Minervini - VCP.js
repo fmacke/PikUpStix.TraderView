@@ -25,26 +25,32 @@ show_labels = input.bool(true, "Show Contraction % Labels", group = grp_waves)
 show_dots = input.bool(true, "Show Swing Tops / Bottoms", group = grp_waves)
 max_history = input.int(14, "Retained Wave Lines/Labels", minval = 4, maxval = 40, group = grp_waves)
 
+group_sma = "4. Moving Average Lines & Timeframe"
+bool   showSmas = input.bool(false, "Show SMA Lines", group = group_sma)
+bool   show10Sma = input.bool(true, "Show 10 SMA", group = group_sma)
+bool   show21Sma = input.bool(true, "Show 21 SMA", group = group_sma)
+bool   show50Sma = input.bool(true, "Show 50 SMA", group = group_sma)
+bool   show150Sma = input.bool(true, "Show 150 SMA", group = group_sma)
+bool   show200Sma = input.bool(true, "Show 200 SMA", group = group_sma)
+bool   useChartTf = input.bool(false, "Use Chart Timeframe Instead of Daily", group = group_sma,
+    tooltip = "If false, SMAs and 50D liquidity metrics are calculated strictly on daily bars regardless of chart timeframe.")
+
 // -------------------------------------------------------------------------
 // 2. TREND TEMPLATE VALIDATION (STAGE 2)
 // -------------------------------------------------------------------------
-sma10 = ta.sma(close, len_10)
-sma21 = ta.sma(close, len_21)
-sma50 = ta.sma(close, len_50)
-sma150 = ta.sma(close, len_150)
-sma200 = ta.sma(close, len_200)
+string targetTf = useChartTf ? timeframe.period : "D"
+float sma10 = request.security(syminfo.tickerid, targetTf, ta.sma(close, len_10), barmerge.gaps_off, barmerge.lookahead_off)
+float sma21 = request.security(syminfo.tickerid, targetTf, ta.sma(close, len_21), barmerge.gaps_off, barmerge.lookahead_off)
+float sma50 = request.security(syminfo.tickerid, targetTf, ta.sma(close, len_50), barmerge.gaps_off, barmerge.lookahead_off)
+float sma150 = request.security(syminfo.tickerid, targetTf, ta.sma(close, len_150), barmerge.gaps_off, barmerge.lookahead_off)
+float sma200 = request.security(syminfo.tickerid, targetTf, ta.sma(close, len_200), barmerge.gaps_off, barmerge.lookahead_off)
+
 
 high52 = ta.highest(high, 252)
 low52 = ta.lowest(low, 252)
 sma200_rising = sma200 >= sma200[20]
 
-tt_condition = (close > sma150 and close > sma200) and
-    (sma150 > sma200) and
-               sma200_rising and
-    (sma50 > sma150 and sma50 > sma200) and
-        (close > sma50) and
-            (close >= low52 * 1.25) and
-                (close >= high52 * 0.75)
+tt_condition = (close > sma150 and close > sma200) and (sma150 > sma200) and sma200_rising and (sma50 > sma150 and sma50 > sma200) and (close > sma50) and (close >= low52 * 1.25) and (close >= high52 * 0.75)
 
 trend_passed = use_tt ? tt_condition : true
 
@@ -73,61 +79,58 @@ var float c3_depth = na
 
 // Garbage collection to stay within max element limits
 f_prune_objects() =>
-if array.size(wave_lines) > max_history
+    if array.size(wave_lines) > max_history
         line.delete(array.shift(wave_lines))
-if array.size(wave_labels) > max_history
+    if array.size(wave_labels) > max_history
         label.delete(array.shift(wave_labels))
 
 // Pivot High Confirmed
 if not na(ph)
-ph_bar = bar_index - sw_right
-last_ph:= ph
-last_ph_bar:= ph_bar
-array.push(pivot_history, PivotPoint.new(ph_bar, ph, true))
+    ph_bar = bar_index - sw_right
+    last_ph:= ph
+    last_ph_bar:= ph_bar
+    array.push(pivot_history, PivotPoint.new(ph_bar, ph, true))
 
-// Draw upward diagonal connecting prior low to current high
-if array.size(pivot_history) >= 2
+    // Draw upward diagonal connecting prior low to current high
+    if array.size(pivot_history) >= 2
         prev = array.get(pivot_history, array.size(pivot_history) - 2)
-if not prev.is_high and show_waves
-ln = line.new(prev.bar, prev.price, ph_bar, ph,
-    color = color.new(color.gray, 50), width = 1, style = line.style_dotted)
-array.push(wave_lines, ln)
-f_prune_objects()
+        if not prev.is_high and show_waves
+            ln = line.new(prev.bar, prev.price, ph_bar, ph,
+            color = color.new(color.gray, 50), width = 1, style = line.style_dotted)
+            array.push(wave_lines, ln)
+    f_prune_objects()
 
 // Pivot Low Confirmed
 if not na(pl)
-pl_bar = bar_index - sw_right
-last_pl:= pl
-array.push(pivot_history, PivotPoint.new(pl_bar, pl, false))
+    pl_bar = bar_index - sw_right
+    last_pl:= pl
+    array.push(pivot_history, PivotPoint.new(pl_bar, pl, false))
 
-if not na(last_ph)
-depth = ((last_ph - pl) / last_ph) * 100.0
-c3_depth:= c2_depth
-c2_depth:= c1_depth
-c1_depth:= depth
+    if not na(last_ph)
+        depth = ((last_ph - pl) / last_ph) * 100.0
+        c3_depth:= c2_depth
+        c2_depth:= c1_depth
+        c1_depth:= depth
 
-// Draw downward contraction leg from top to bottom
-if show_waves
+        // Draw downward contraction leg from top to bottom
+        if show_waves
             ln = line.new(last_ph_bar, last_ph, pl_bar, pl,
-    color = color.new(#9c27b0, 20), width = 2)
-array.push(wave_lines, ln)
-f_prune_objects()
+            color = color.new(#9c27b0, 20), width = 2)
+            array.push(wave_lines, ln)
+            f_prune_objects()
 
-// Plot contraction percentage beneath trough
-if show_labels
+        // Plot contraction percentage beneath trough
+        if show_labels
             lbl = label.new(pl_bar, pl, text = "-" + str.tostring(depth, "#.#") + "%",
-    color = color.new(#1a237e, 10), textcolor = color.white,
-    style = label.style_label_up, size = size.small)
-array.push(wave_labels, lbl)
-f_prune_objects()
+            color = color.new(#1a237e, 10), textcolor = color.white,
+            style = label.style_label_up, size = size.small)
+            array.push(wave_labels, lbl)
+            f_prune_objects()
 
 // -------------------------------------------------------------------------
 // 4. CONTRACTION RATIOS, ATR COILING & VDU
 // -------------------------------------------------------------------------
-is_contracting = not na(c1_depth) and not na(c2_depth) and
-    (c1_depth < c2_depth) and
-        (c2_depth <= max_depth) and
-            (c1_depth < 15.0)
+is_contracting = not na(c1_depth) and not na(c2_depth) and (c1_depth < c2_depth) and (c2_depth <= max_depth) and (c1_depth < 15.0)
 
 vol_ma50 = ta.sma(volume, 50)
 is_vdu = volume < (vol_ma50 * vdu_thresh)
@@ -142,11 +145,11 @@ vcp_setup = trend_passed and is_contracting and atr_coiling
 // 5. VISUALIZATION & HIGHLIGHTING
 // -------------------------------------------------------------------------
 // Moving average ribbons
-plot(sma10, "SMA 10", color = color.new(#248de2, 0), linewidth = 1)
-plot(sma21, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
-plot(sma50, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
-plot(sma150, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
-plot(sma200, "SMA 200", color = color.new(#3f0202, 0), linewidth = 3)
+plot(showSmas and show10Sma ? sma10 : na, "SMA 10", color = color.new(#248de2, 0), linewidth = 1)
+plot(showSmas and show21Sma ? sma21 : na, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
+plot(showSmas and show50Sma ? sma50 : na, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
+plot(showSmas and show150Sma ? sma150 : na, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
+plot(showSmas and show200Sma ? sma200 : na, "SMA 200", color = color.new(#3f0202, 0), linewidth = 3)
 
 // Swing markers
 plotshape(show_dots and not na(ph), "Swing High", shape.triangledown,
@@ -162,9 +165,8 @@ plotshape(is_vdu and trend_passed, title = "Volume Dry Up", style = shape.circle
 // Dynamic Pivot Resistance Line
 var line pivot_line = na
 if not na(last_ph) and vcp_setup
-line.delete(pivot_line)
-pivot_line:= line.new(last_ph_bar, last_ph, bar_index + 5, last_ph,
-    color = color.yellow, width = 2, style = line.style_dashed)
+    line.delete(pivot_line)
+    pivot_line:= line.new(last_ph_bar, last_ph, bar_index + 5, last_ph, color = color.yellow, width = 2, style = line.style_dashed)
 
 // Breakout Signal
 pivot_level = not na(last_ph) ? last_ph : na
