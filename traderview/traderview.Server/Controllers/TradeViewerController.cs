@@ -35,6 +35,11 @@ namespace traderview.Server.Controllers
             try
             {
                 var trades = await _tradeViewerService.GetAllTradesAsync();
+                foreach (var trade in trades)
+                {
+                    _logger.LogInformation("Trade ID: {TradeId}, Symbol: {Symbol}, Entry Date: {EntryDate}, Exit Date: {ExitDate}",
+                        trade.PositionId, trade.Symbol, trade.EntryDate, trade.ExitDate);
+                }
                 return Ok(trades);
             }
             catch (Exception ex)

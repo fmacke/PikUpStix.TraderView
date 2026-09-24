@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 
 interface TradeRollerListProps {
     trades: Trade[];
-    selectedPositionId: number | null;
+    // composite key: `${positionId}-${entryDate}` to uniquely identify trades
+    selectedPositionId: string | null;
     onTradeSelect: (trade: Trade) => void;
 }
 
@@ -84,6 +85,35 @@ export default function TradeRollerList({ trades, selectedPositionId, onTradeSel
         velocityRef.current *= 0.2;
     }
 
+    // Handle keyboard navigation (arrow up/down) to change selection in the roller
+    function handleKeyDown(event: React.KeyboardEvent) {
+        if (sortedTrades.length === 0) return;
+
+        const container = containerRef.current;
+        const item = itemRef.current;
+        if (!container || !item) return;
+
+        const itemHeight = item.getBoundingClientRect().height + parseFloat(getComputedStyle(item).marginBottom || '0');
+        const totalScrollHeight = container.scrollHeight / 2; // original list height
+        // normalize scrollTop into the first-half range
+        const normalizedTop = ((container.scrollTop % totalScrollHeight) + totalScrollHeight) % totalScrollHeight;
+        const currentIndex = Math.round(normalizedTop / itemHeight) % sortedTrades.length;
+
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            const nextIndex = currentIndex < sortedTrades.length - 1 ? currentIndex + 1 : 0;
+            const target = nextIndex * itemHeight;
+            container.scrollTo({ top: target, behavior: 'smooth' });
+            onTradeSelect(sortedTrades[nextIndex]);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            const prevIndex = currentIndex > 0 ? currentIndex - 1 : sortedTrades.length - 1;
+            const target = prevIndex * itemHeight;
+            container.scrollTo({ top: target, behavior: 'smooth' });
+            onTradeSelect(sortedTrades[prevIndex]);
+        }
+    }
+
     // When selectedPositionId changes externally, ensure the carousel centers that trade
     useEffect(() => {
         const container = containerRef.current;
@@ -91,7 +121,8 @@ export default function TradeRollerList({ trades, selectedPositionId, onTradeSel
         if (!container || !item || selectedPositionId == null) return;
 
         const itemHeight = item.getBoundingClientRect().height + parseFloat(getComputedStyle(item).marginBottom || '0');
-        const index = sortedTrades.findIndex(t => t.positionId === selectedPositionId);
+        // find by composite key (positionId + entryDate) to disambiguate positions with same id but different open dates
+        const index = sortedTrades.findIndex(t => `${t.positionId}-${t.entryDate}` === selectedPositionId);
         if (index >= 0) {
             const target = index * itemHeight;
             container.scrollTo({ top: target, behavior: 'smooth' });
@@ -111,13 +142,18 @@ export default function TradeRollerList({ trades, selectedPositionId, onTradeSel
             <div
                 className="trade-roller-window scroll-snap-container"
                 ref={containerRef}
+                tabIndex={0}
+                onKeyDown={handleKeyDown}
             >
                 <div className="trade-roller-track">
                     {loopItems.map((trade, idx) => (
                         <div
-                            key={`${trade.id}-${idx}`}
+                            id={`trade-${trade.positionId}-${trade.entryDate}-${idx}`}
+                            data-position-id={trade.positionId}
+                            data-unique-id={`${trade.positionId}-${trade.entryDate}`}
+                            key={`${trade.positionId}-${trade.entryDate}-${idx}`}
                             ref={idx === 0 ? itemRef : null}
-                            className={`trade-roller-item ${selectedPositionId === trade.positionId ? 'selected' : ''}`}
+                            className={`trade-roller-item ${selectedPositionId === `${trade.positionId}-${trade.entryDate}` ? 'selected' : ''}`}
                             onClick={() => onTradeSelect(trade)}
                         >
                             <div className="trade-symbol">{trade.symbol}</div>

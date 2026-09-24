@@ -18,7 +18,7 @@ function App() {
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>('trades');
-    const [useCarousel, setUseCarousel] = useState<boolean>(false);
+    const [useCarousel, setUseCarousel] = useState<boolean>(true);
 
     useEffect(() => {
         populateTradeData();
@@ -89,15 +89,6 @@ function App() {
                     >
                         Screener
                     </button>
-          
-                        <button
-                            onClick={() => setUseCarousel(c => !c)}
-                            className={`nav-button ${useCarousel ? 'active' : ''}`}
-                            title="Toggle carousel trade view"
-                        >
-                            Carousel
-                        </button>
-                  
                 </div>
 
                 <div className="nav-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -127,16 +118,25 @@ function App() {
                         <TradeDetail trade={selectedTrade} />
                     </div>
                     <div className="list-pane">
+
+                    <button
+                            onClick={() => setUseCarousel(c => !c)}
+                            className={`nav-button ${useCarousel ? 'active' : ''}`}
+                            title="Toggle carousel trade view"
+                        >
+                            Full List
+                        </button>
                         {useCarousel ? (
                             <TradeRollerList
                                 trades={trades}
-                                selectedPositionId={selectedTrade?.positionId ?? null}
+                                // use a composite key of positionId and entryDate so items are uniquely identified
+                                selectedPositionId={selectedTrade ? `${selectedTrade.positionId}-${selectedTrade.entryDate}` : null}
                                 onTradeSelect={handleTradeSelect}
                             />
                         ) : (
                             <TradeList
                                 trades={trades}
-                                selectedPositionId={selectedTrade?.positionId ?? null}
+                                selectedPositionId={selectedTrade ? `${selectedTrade.positionId}-${selectedTrade.entryDate}` : null}
                                 onTradeSelect={handleTradeSelect}
                             />
                         )}

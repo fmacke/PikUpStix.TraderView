@@ -640,13 +640,89 @@ namespace PikUpStix.TraderView.Services.MarketData
                 PassesBoth = passesBoth
             };
         }
-        private static string CalculateFundamentalGrade(
-    decimal qEpsGrowth,
-    decimal qRevGrowth,
-    decimal annualCagr,
-    decimal roe,
-    bool isAccelerating,
-    bool hasConsecutiveGrowth)
+        Task<decimal> IMarketDataService.GetExchangeRate(string baseCurrency, string quoteCurrency)
+        {
+            if (string.IsNullOrWhiteSpace(baseCurrency)) throw new ArgumentNullException(nameof(baseCurrency));
+            if (string.IsNullOrWhiteSpace(quoteCurrency)) throw new ArgumentNullException(nameof(quoteCurrency));
+
+            return GetExchangeRateInternalAsync(baseCurrency, quoteCurrency);
+        }
+
+        private async Task<decimal> GetExchangeRateInternalAsync(string baseCurrency, string quoteCurrency)
+        {
+            try
+            {
+                var from = baseCurrency.Trim().ToUpper();
+                var to = quoteCurrency.Trim().ToUpper();
+
+                // FinancialModelingPrep convert endpoint (amount=1 returns the rate for 1 unit)
+                var url = $"{_baseUrl}/forex/convert?from={from}&to={to}&amount=1&apikey={_apiKey}";
+                Console.WriteLine($"Fetching exchange rate {from}->{to} from FinancialModellingPrep...");
+
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                // Try parsing common response shapes
+                try
+                {
+                    using var doc = JsonDocument.Parse(content);
+                    var root = doc.RootElement;
+
+                    // Shape: { "price": 0.92 } or { "rate": 0.92 }
+                    if (root.ValueKind == JsonValueKind.Object)
+                    {
+                        if (root.TryGetProperty("price", out var priceProp) && priceProp.ValueKind == JsonValueKind.Number)
+                            return Convert.ToDecimal(priceProp.GetDouble());
+
+                        if (root.TryGetProperty("rate", out var rateProp) && rateProp.ValueKind == JsonValueKind.Number)
+                            return Convert.ToDecimal(rateProp.GetDouble());
+
+                        // Some endpoints return { "from":"USD","to":"EUR","price":0.92 }
+                        if (root.TryGetProperty("price", out var p) && p.ValueKind == JsonValueKind.Number)
+                            return Convert.ToDecimal(p.GetDouble());
+                    }
+
+                    // Shape: [ { "price": 0.92 } ]
+                    if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
+                    {
+                        var first = root[0];
+                        if (first.TryGetProperty("price", out var arrPrice) && arrPrice.ValueKind == JsonValueKind.Number)
+                            return Convert.ToDecimal(arrPrice.GetDouble());
+
+                        if (first.TryGetProperty("rate", out var arrRate) && arrRate.ValueKind == JsonValueKind.Number)
+                            return Convert.ToDecimal(arrRate.GetDouble());
+                    }
+                }
+                catch (JsonException)
+                {
+                    // Fallthrough to try direct parse
+                }
+
+                // Fallback: try parse raw content as decimal
+                if (decimal.TryParse(content, out var direct))
+                    return direct;
+
+                throw new JsonException("Unexpected JSON structure for exchange rate response.");
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching exchange rate {baseCurrency}->{quoteCurrency}: {ex.Message}");
+                throw;
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"JSON error parsing exchange rate {baseCurrency}->{quoteCurrency}: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching exchange rate {baseCurrency}->{quoteCurrency}: {ex.Message}");
+                throw;
+            }
+        }
+        private static string CalculateFundamentalGrade(decimal qEpsGrowth, decimal qRevGrowth, decimal annualCagr, decimal roe, bool isAccelerating, bool hasConsecutiveGrowth)
         {
             int score = 0;
 

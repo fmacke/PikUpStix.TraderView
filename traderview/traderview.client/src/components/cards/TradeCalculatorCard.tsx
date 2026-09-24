@@ -5,7 +5,7 @@ import type { TradeCalculationRequest, TradeCalculationResponse } from '../../ty
 export const TradeCalculatorCard: React.FC = () => {
     const [request, setRequest] = useState<TradeCalculationRequest>({
         tradeDate: new Date().toISOString().split('T')[0],
-        instrument: 'mrx',
+        instrument: 'TICKER-CODE',
         exchangeRate: 1.36,
         buyPrice: 520,
         tradingCapital: 100000,

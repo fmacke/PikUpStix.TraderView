@@ -4,7 +4,8 @@ import './TradeList.css';
 
 interface TradeListProps {
     trades: Trade[];
-    selectedPositionId: number | null;
+    // composite key: `${positionId}-${entryDate}` to uniquely identify trades
+    selectedPositionId: string | null;
     onTradeSelect: (trade: Trade) => void;
 }
 
@@ -37,7 +38,6 @@ function TradeList({ trades, selectedPositionId, onTradeSelect }: TradeListProps
             didInitialScroll.current = true;
             return;
         }
-
         if (selectedItemRef.current) {
             selectedItemRef.current.scrollIntoView({
                 behavior: 'smooth',
@@ -49,7 +49,8 @@ function TradeList({ trades, selectedPositionId, onTradeSelect }: TradeListProps
     const handleKeyDown = (event: React.KeyboardEvent) => {
         if (sortedTrades.length === 0) return;
 
-        const currentIndex = sortedTrades.findIndex(trade => trade.positionId === selectedPositionId);
+        // find the currently selected trade by composite key (positionId + entryDate)
+        const currentIndex = sortedTrades.findIndex(trade => `${trade.positionId}-${trade.entryDate}` === selectedPositionId);
 
         if (event.key === 'ArrowDown') {
             event.preventDefault();
@@ -72,10 +73,13 @@ function TradeList({ trades, selectedPositionId, onTradeSelect }: TradeListProps
                 onKeyDown={handleKeyDown}
             >
                 {sortedTrades.map((trade) => (
-                    <div
-                        key={trade.id}
-                        ref={selectedPositionId === trade.positionId ? selectedItemRef : null}
-                        className={`trade-item ${selectedPositionId === trade.positionId ? 'selected' : ''}`}
+                <div
+                        id={`trade-${trade.positionId}-${trade.entryDate}`}
+                        data-position-id={trade.positionId}
+                        data-unique-id={`${trade.positionId}-${trade.entryDate}`}
+                        key={`${trade.positionId}-${trade.entryDate}`}
+                        ref={selectedPositionId === `${trade.positionId}-${trade.entryDate}` ? selectedItemRef : null}
+                        className={`trade-item ${selectedPositionId === `${trade.positionId}-${trade.entryDate}` ? 'selected' : ''}`}
                         onClick={() => onTradeSelect(trade)}
                     >
                         <div className="trade-symbol">{trade.symbol}</div>
