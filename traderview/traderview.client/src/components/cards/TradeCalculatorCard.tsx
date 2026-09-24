@@ -16,6 +16,8 @@ export const TradeCalculatorCard: React.FC = () => {
         stopLossAtInput: 0,
     });
 
+    const [currencyPair, setCurrencyPair] = useState<string>('GBP/USD');
+
     const [result, setResult] = useState<TradeCalculationResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,8 @@ export const TradeCalculatorCard: React.FC = () => {
             setError(null);
             const data = await apiService.calculateTradePosition(request);
             setResult(data);
-        } catch (err) {
+        } catch (error) {
+            console.error(error);
             setError('Failed to calculate trade position. Please check your inputs or backend connection.');
         } finally {
             setLoading(false);
@@ -51,12 +54,64 @@ export const TradeCalculatorCard: React.FC = () => {
 
     useEffect(() => {
         if (isValidRequest(request)) {
-            calculateTrade();
+            // calling async setter that will update state; suppress linter about setState-in-effect for this intentional pattern
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            void calculateTrade();
         } else {
             setResult(null);
             setError(null);
         }
     }, [request]);
+
+    // Update exchange rate when currency pair changes
+    useEffect(() => {
+        const updateRate = async () => {
+            try {
+                const parts = currencyPair.split('/').map(p => p.trim().toUpperCase());
+                if (parts.length !== 2) return;
+
+                const base = parts[0];
+                const quote = parts[1];
+
+                if (base === quote) {
+                    setRequest(prev => ({ ...prev, exchangeRate: 1 }));
+                    return;
+                }
+
+                const rate = await apiService.getExchangeRate(base, quote);
+                setRequest(prev => ({ ...prev, exchangeRate: rate }));
+            } catch (error) {
+                console.error('Failed to update exchange rate for', currencyPair, error);
+            }
+        };
+
+        updateRate();
+    }, [currencyPair]);
+
+    // Ensure exchange rate fetched on initial mount as well
+    useEffect(() => {
+        const init = async () => {
+            try {
+                const parts = currencyPair.split('/').map(p => p.trim().toUpperCase());
+                if (parts.length !== 2) return;
+
+                const base = parts[0];
+                const quote = parts[1];
+
+                if (base === quote) {
+                    setRequest(prev => ({ ...prev, exchangeRate: 1 }));
+                    return;
+                }
+
+                const rate = await apiService.getExchangeRate(base, quote);
+                setRequest(prev => ({ ...prev, exchangeRate: rate }));
+            } catch (error) {
+                console.error('Failed to initialize exchange rate for', currencyPair, error);
+            }
+        };
+
+        void init();
+    }, []);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         // Support checkboxes (use checked) and numeric/text inputs (use value)
@@ -72,12 +127,38 @@ export const TradeCalculatorCard: React.FC = () => {
                         ? 0
                         : parseFloat(value);
 
-            // cast to any to satisfy the index signature for dynamic key assignment
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             return {
                 ...prev,
                 [name]: newValue as any,
             } as TradeCalculationRequest;
         });
+    };
+
+    const handlePairChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const val = e.target.value;
+        setCurrencyPair(val);
+
+        // Immediately fetch rate for the selected pair (avoid waiting for effect)
+        (async () => {
+            try {
+                const parts = val.split('/').map(p => p.trim().toUpperCase());
+                if (parts.length !== 2) return;
+
+                const base = parts[0];
+                const quote = parts[1];
+
+                if (base === quote) {
+                    setRequest(prev => ({ ...prev, exchangeRate: 1 }));
+                    return;
+                }
+
+                const rate = await apiService.getExchangeRate(base, quote);
+                setRequest(prev => ({ ...prev, exchangeRate: rate }));
+            } catch (error) {
+                console.error('Failed to update exchange rate on pair change for', val, error);
+            }
+        })();
     };
 
     return (
@@ -116,10 +197,22 @@ export const TradeCalculatorCard: React.FC = () => {
                     />
                 </div>
                 <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Exchange Rate</label>
+                    <label className="w-48 flex-shrink-0">Currency Pair</label>
+                    <select
+                        name="currencyPair"
+                        value={currencyPair}
+                        onChange={handlePairChange}
+                        className="w-40 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                    >
+                        <option>GBP/USD</option>
+                        <option>GBP/GBP</option>
+                        <option>GBP/EUR</option>
+                    </select>
+
+                    <label className="w-28 text-right">Exchange Rate</label>
                     <input
                         type="number"
-                        step="0.01"
+                        step="0.0001"
                         name="exchangeRate"
                         value={request.exchangeRate}
                         onChange={handleChange}

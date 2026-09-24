@@ -149,6 +149,19 @@ export const apiService = {
             throw error;
         }
     },
+    // Get exchange rate from server (which proxies to market data service)
+    async getExchangeRate(baseCurrency: string, quoteCurrency: string): Promise<number> {
+        console.log(`Making API call to /marketdata/exchange-rate?base=${baseCurrency}&quote=${quoteCurrency}`);
+        try {
+            // match server query parameter names: baseCurrency and quote
+            const response = await apiClient.get<number>('/marketdata/exchange-rate', { params: { baseCurrency: baseCurrency, quote: quoteCurrency } });
+            console.log('GetExchangeRate API response received:', response.data);
+            return response.data;
+        } catch (error) {
+            console.error('GetExchangeRate API call failed:', error);
+            throw error;
+        }
+    },
     // Get all open positions
     async getOpenPositions(): Promise<OpenPosition[]> {
         console.log('Making API call to /openpositions');

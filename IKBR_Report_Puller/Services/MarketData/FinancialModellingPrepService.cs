@@ -656,7 +656,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                 var to = quoteCurrency.Trim().ToUpper();
 
                 // FinancialModelingPrep convert endpoint (amount=1 returns the rate for 1 unit)
-                var url = $"{_baseUrl}/forex/convert?from={from}&to={to}&amount=1&apikey={_apiKey}";
+                var url = $"{_baseUrl}/quote?symbol={from}{to}&apikey={_apiKey}";
                 Console.WriteLine($"Fetching exchange rate {from}->{to} from FinancialModellingPrep...");
 
                 var response = await _httpClient.GetAsync(url);
