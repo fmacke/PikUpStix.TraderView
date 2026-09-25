@@ -1,23 +1,23 @@
-using Microsoft.Data.SqlClient;
-using System.Data;
 using TraderView.Application.Interfaces.Repositories;
-using TraderView.Application.Interfaces.Persistence;
+using TraderView.Application.Specifications;
 using TraderView.Domain.Entities;
+using TraderView.Infrastructure.DbContexts;
+
 namespace TraderView.Infrastructure.Repositories
 {
     /// <summary>
-    /// Repository for economic calendar database operations
+    /// Repository for economic calendar database operations using Entity Framework Core
     /// </summary>
-    public class EconomicCalendarRepository : BaseRepository, IEconomicCalendarRepository
+    public class EconomicCalendarRepository : EfBaseRepository<EconomicCalendar>, IEconomicCalendarRepository
     {
-        public EconomicCalendarRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
+        public EconomicCalendarRepository(AppDbContext db) : base(db)
         {
         }
 
         /// <summary>
-        /// Inserts or updates economic calendar events using MERGE statement
+        /// Inserts or updates economic calendar events in the database
         /// </summary>
-        public void UpsertEconomicCalendarEvents(List<EconomicCalendar> events)
+        public async Task UpsertEconomicCalendarEventsAsync(List<EconomicCalendar> events)
         {
             if (events == null || events.Count == 0)
             {
@@ -25,105 +25,62 @@ namespace TraderView.Infrastructure.Repositories
                 return;
             }
 
-            ExecuteDatabaseOperation(connection =>
+            try
             {
-                using (var transaction = connection.BeginTransaction())
+                // Get existing events to determine which ones to update and which to insert
+                var existingEvents = await GetAllAsync();
+                var now = DateTime.UtcNow;
+
+                foreach (var evt in events)
                 {
-                    try
+                    // Find matching event by Date, Country, and Event name
+                    var existingEvent = existingEvents.FirstOrDefault(e =>
+                        e.Date == evt.Date &&
+                        e.Country == evt.Country &&
+                        e.Event == evt.Event);
+
+                    if (existingEvent != null)
                     {
-                        foreach (var evt in events)
-                        {
-                            using (var cmd = new SqlCommand(@"
-                                MERGE dbo.EconomicCalendar AS target
-                                USING (SELECT @Date, @Country, @Event, @Currency, @Previous, @Estimate, @Actual, @Change, @Impact, @ChangePercentage, @Unit) 
-                                    AS source (Date, Country, Event, Currency, Previous, Estimate, Actual, Change, Impact, ChangePercentage, Unit)
-                                ON target.Date = source.Date 
-                                    AND target.Country = source.Country 
-                                    AND target.Event = source.Event
-                                WHEN MATCHED THEN
-                                    UPDATE SET 
-                                        Currency = source.Currency,
-                                        Previous = source.Previous,
-                                        Estimate = source.Estimate,
-                                        Actual = source.Actual,
-                                        Change = source.Change,
-                                        Impact = source.Impact,
-                                        ChangePercentage = source.ChangePercentage,
-                                        Unit = source.Unit,
-                                        UpdatedAt = GETUTCDATE()
-                                WHEN NOT MATCHED THEN
-                                    INSERT (Date, Country, Event, Currency, Previous, Estimate, Actual, Change, Impact, ChangePercentage, Unit, CreatedAt, UpdatedAt)
-                                    VALUES (source.Date, source.Country, source.Event, source.Currency, source.Previous, source.Estimate, source.Actual, source.Change, source.Impact, source.ChangePercentage, source.Unit, GETUTCDATE(), GETUTCDATE());",
-                                connection, transaction))
-                            {
-                                cmd.Parameters.Add("@Date", SqlDbType.DateTime2).Value = evt.Date;
-                                cmd.Parameters.Add("@Country", SqlDbType.NVarChar, 50).Value = evt.Country ?? (object)DBNull.Value;
-                                cmd.Parameters.Add("@Event", SqlDbType.NVarChar, 500).Value = evt.Event ?? (object)DBNull.Value;
-                                cmd.Parameters.Add("@Currency", SqlDbType.NVarChar, 10).Value = evt.Currency ?? (object)DBNull.Value;
-                                cmd.Parameters.Add("@Previous", SqlDbType.Decimal).Value = evt.Previous.HasValue ? (object)evt.Previous.Value : DBNull.Value;
-                                cmd.Parameters.Add("@Estimate", SqlDbType.Decimal).Value = evt.Estimate.HasValue ? (object)evt.Estimate.Value : DBNull.Value;
-                                cmd.Parameters.Add("@Actual", SqlDbType.Decimal).Value = evt.Actual.HasValue ? (object)evt.Actual.Value : DBNull.Value;
-                                cmd.Parameters.Add("@Change", SqlDbType.Decimal).Value = evt.Change.HasValue ? (object)evt.Change.Value : DBNull.Value;
-                                cmd.Parameters.Add("@Impact", SqlDbType.NVarChar, 50).Value = evt.Impact ?? (object)DBNull.Value;
-                                cmd.Parameters.Add("@ChangePercentage", SqlDbType.Decimal).Value = evt.ChangePercentage.HasValue ? (object)evt.ChangePercentage.Value : DBNull.Value;
-                                cmd.Parameters.Add("@Unit", SqlDbType.NVarChar, 50).Value = evt.Unit ?? (object)DBNull.Value;
+                        // Update existing event
+                        existingEvent.Currency = evt.Currency;
+                        existingEvent.Previous = evt.Previous;
+                        existingEvent.Estimate = evt.Estimate;
+                        existingEvent.Actual = evt.Actual;
+                        existingEvent.Change = evt.Change;
+                        existingEvent.Impact = evt.Impact;
+                        existingEvent.ChangePercentage = evt.ChangePercentage;
+                        existingEvent.Unit = evt.Unit;
+                        existingEvent.UpdatedAt = now;
 
-                                cmd.ExecuteNonQuery();
-                            }
-                        }
-
-                        transaction.Commit();
-                        Console.WriteLine($"Successfully upserted {events.Count} economic calendar events.");
+                        await UpdateAsync(existingEvent);
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        transaction.Rollback();
-                        Console.WriteLine($"Error upserting economic calendar events: {ex.Message}");
-                        throw;
+                        // Insert new event
+                        evt.CreatedAt = now;
+                        evt.UpdatedAt = now;
+                        await AddAsync(evt);
                     }
                 }
-            });
+
+                Console.WriteLine($"Successfully upserted {events.Count} economic calendar events.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error upserting economic calendar events: {ex.Message}");
+                throw;
+            }
         }
 
         /// <summary>
-        /// Retrieves all economic calendar events from the database
+        /// Retrieves all economic calendar events from the database, ordered by date descending
         /// </summary>
-        public List<EconomicCalendar> GetAllEvents()
+        public async Task<List<EconomicCalendar>> GetAllEventsAsync()
         {
-            return ExecuteDatabaseOperation(connection =>
-            {
-                var events = new List<EconomicCalendar>();
-
-                using (var cmd = new SqlCommand(@"
-                    SELECT Date, Country, Event, Currency, Previous, Estimate, Actual, Change, Impact, ChangePercentage, Unit
-                    FROM dbo.EconomicCalendar
-                    ORDER BY Date DESC", connection))
-                {
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            events.Add(new EconomicCalendar
-                            {
-                                Date = reader.GetDateTime(0),
-                                Country = reader.IsDBNull(1) ? null : reader.GetString(1),
-                                Event = reader.IsDBNull(2) ? null : reader.GetString(2),
-                                Currency = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                Previous = reader.IsDBNull(4) ? null : reader.GetDecimal(4),
-                                Estimate = reader.IsDBNull(5) ? null : reader.GetDecimal(5),
-                                Actual = reader.IsDBNull(6) ? null : reader.GetDecimal(6),
-                                Change = reader.IsDBNull(7) ? null : reader.GetDecimal(7),
-                                Impact = reader.IsDBNull(8) ? null : reader.GetString(8),
-                                ChangePercentage = reader.IsDBNull(9) ? null : reader.GetDecimal(9),
-                                Unit = reader.IsDBNull(10) ? null : reader.GetString(10)
-                            });
-                        }
-                    }
-                }
-
-                Console.WriteLine($"Retrieved {events.Count} economic calendar events.");
-                return events;
-            });
+            var specification = new GetAllEconomicCalendarsSpecification();
+            var events = await GetAsync(specification);
+            Console.WriteLine($"Retrieved {events.Count} economic calendar events.");
+            return events.ToList();
         }
     }
 }

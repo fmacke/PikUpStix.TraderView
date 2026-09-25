@@ -13,21 +13,21 @@ namespace PikUpStix.TraderView.Services
         }
         async Task<List<CanSlimCandidate>> ICanSlimScreenerService.GetAllBySnapshotIdAsync(int snapshotId)
         {
-            return await Task.Run(() => _canSlimCandidateRepository.GetAllBySnapshotId(snapshotId));
+            return await _canSlimCandidateRepository.GetAllBySnapshotIdAsync(snapshotId);
         }
         async Task<int> ICanSlimScreenerService.CreateCanSlimScreenerSnapshot(List<CanSlimCandidate> candidates)
         {
-            var snapshotId = await Task.Run(() => _canSlimCandidateRepository.InsertScreenerSnapShot());
+            var snapshotId = await _canSlimCandidateRepository.InsertScreenerSnapshotAsync();
             foreach (var candidate in candidates)
             {
                 candidate.CanSlimScreenerSnapshotId = snapshotId;
-                await Task.Run(() => _canSlimCandidateRepository.Insert(candidate));
+                await _canSlimCandidateRepository.InsertAsync(candidate);
             }
             return snapshotId;
         }
         async Task<CanSlimScreenerSnapshot> ICanSlimScreenerService.GetLatestScreenerSnapShot()
         {
-            return await Task.Run(() => _canSlimCandidateRepository.GetLatestScreenerSnapShot());
+            return await _canSlimCandidateRepository.GetLatestScreenerSnapshotAsync();
         }
 
         public Task<List<CanSlimCandidate>> GetAllBySnapshotIdAsync(int snapshotId)

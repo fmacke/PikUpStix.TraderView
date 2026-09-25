@@ -60,13 +60,13 @@ public partial class Program
         });
         builder.Services.AddScoped<IEconomicCalendarRepository>(provider =>
         {
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            return new EconomicCalendarRepository(factory);
+            var db = provider.GetRequiredService<AppDbContext>();
+            return new EconomicCalendarRepository(db);
         });
         builder.Services.AddSingleton<ICanSlimCandidateRepository>(provider =>
         {
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            return new CanSlimCandidateRepository(factory);
+            var db = provider.GetRequiredService<AppDbContext>();
+            return new CanSlimCandidateRepository(db);
         });
         builder.Services.AddScoped<INoteRepository>(provider =>
         {

@@ -88,14 +88,14 @@ namespace TraderView.Console
 
                     services.AddSingleton<IEconomicCalendarRepository>(provider =>
                     {
-                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        return new EconomicCalendarRepository(factory);
+                        var db = provider.GetRequiredService<AppDbContext>();
+                        return new EconomicCalendarRepository(db);
                     });
 
                     services.AddSingleton<ICanSlimCandidateRepository>(provider =>
                     {
-                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        return new CanSlimCandidateRepository(factory);
+                        var db = provider.GetRequiredService<AppDbContext>();
+                        return new CanSlimCandidateRepository(db);
                     });
 
                     services.AddSingleton<IEquitySummaryRepository>(provider =>

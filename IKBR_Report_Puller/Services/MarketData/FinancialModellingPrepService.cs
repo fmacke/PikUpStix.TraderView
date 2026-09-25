@@ -68,18 +68,18 @@ namespace PikUpStix.TraderView.Services.MarketData
                 if (events == null || events.Count == 0)
                 {
                     Console.WriteLine("No economic calendar barData found for the specified date range.");
-                    return new List<EconomicCalendar>();
-                }
+                        return new List<EconomicCalendar>();
+                    }
 
-                Console.WriteLine($"Retrieved {events.Count} economic calendar barData.");
+                    Console.WriteLine($"Retrieved {events.Count} economic calendar barData.");
 
-                // Save to file
-                await SaveToFileAsync(events, fromDateStr, toDateStr);
+                    // Save to file
+                    await SaveToFileAsync(events, fromDateStr, toDateStr);
 
-                // Save to database
-                _repository.UpsertEconomicCalendarEvents(events);
+                    // Save to database
+                    await _repository.UpsertEconomicCalendarEventsAsync(events);
 
-                return events;
+                    return events;
             }
             catch (HttpRequestException ex)
             {
