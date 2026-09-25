@@ -139,12 +139,12 @@ namespace PikUpStix.TraderView.Services.MarketData
                     {
                         toDate = DateTime.UtcNow;
                     }
-                    var instrumentId = _instrumentRepository.GetInstrumentIdByConId(symbol);
+                    var instrumentId = await _instrumentRepository.GetInstrumentIdByConIdAsync(symbol);
                     if (instrumentId == null)
                     {
                         throw new Exception($"No instrument in database for symbol {symbol}.  Skipping for now.");
                     }
-                    var instrument = _instrumentRepository.Get(instrumentId.Value);
+                    var instrument = await _instrumentRepository.GetByIdAsync(instrumentId.Value);
                     var barData = await FetchChartDataFromApiAsync(instrument.DataName, fromDate, toDate);
 
                     if (barData == null || barData.Count == 0)

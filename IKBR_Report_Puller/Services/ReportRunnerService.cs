@@ -94,7 +94,6 @@ namespace PikUpStix.TraderView.Services
         {
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
-
             // Insert instruments first, then trade confirmations
             await _instrumentService.UpsertInstrumentsAsync(todayReport.TradeConfirms, _marketDataService.SourceName).ConfigureAwait(false);
             _tradeExecutionRepository.InsertTradeConfirmations(todayReport.TradeConfirms);
