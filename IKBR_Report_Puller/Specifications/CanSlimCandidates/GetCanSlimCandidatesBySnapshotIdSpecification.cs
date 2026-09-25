@@ -1,6 +1,6 @@
 using TraderView.Domain.Entities.FMP;
 
-namespace TraderView.Application.Specifications
+namespace TraderView.Application.Specifications.CanSlimCandidates
 {
     /// <summary>
     /// Specification for retrieving CanSlimCandidates by ScreenerSnapshot ID
