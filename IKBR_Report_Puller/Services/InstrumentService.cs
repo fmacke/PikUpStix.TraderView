@@ -22,5 +22,15 @@ namespace TraderView.Application.Services
         {
             await _repository.UpsertInstrumentsAsync(trades, sourceId).ConfigureAwait(false);
         }
+
+        public async Task<int?> GetInstrumentIdByConIdAsync(string conId)
+        {
+            return await _repository.GetInstrumentIdByConIdAsync(conId).ConfigureAwait(false);
+        }
+
+        public async Task<Instrument?> GetInstrumentByIdAsync(int instrumentId)
+        {
+            return await _repository.GetByIdAsync(instrumentId).ConfigureAwait(false);
+        }
     }
 }

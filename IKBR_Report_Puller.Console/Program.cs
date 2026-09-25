@@ -75,8 +75,8 @@ namespace TraderView.Console
                     services.AddScoped<ITradeExecutionRepository>(provider =>
                     {
                         var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-                        return new TradeExecutionRepository(factory, instrumentRepo);
+                        var instrumentService = provider.GetRequiredService<IInstrumentService>();
+                        return new TradeExecutionRepository(factory, instrumentService);
                     });
 
                     services.AddSingleton<IHistoricalDataRepository>(provider =>

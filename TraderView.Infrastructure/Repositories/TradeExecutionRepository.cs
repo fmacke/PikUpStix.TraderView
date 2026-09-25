@@ -12,6 +12,7 @@ using TraderView.Application.Features.TradeExecutions.Command.Update;
 using TraderView.Application.Features.TradeExecutions.Query.Get;
 using TraderView.Application.Features.TradeExecutions.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Mappers;
 using TraderView.Application.Utils;
@@ -24,11 +25,11 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public class TradeExecutionRepository : BaseRepository, ITradeExecutionRepository
     {
-        private readonly IInstrumentRepository _instrumentRepository;
+        private readonly IInstrumentService _instrumentService;
 
-        public TradeExecutionRepository(IDbConnectionFactory connectionFactory, IInstrumentRepository instrumentRepository) : base(connectionFactory)
+        public TradeExecutionRepository(IDbConnectionFactory connectionFactory, IInstrumentService instrumentService) : base(connectionFactory)
         {
-            _instrumentRepository = instrumentRepository;
+            _instrumentService = instrumentService;
         }
 
         /// <summary>
@@ -56,7 +57,7 @@ namespace TraderView.Infrastructure.Repositories
                 {
                     try
                     {
-                        trade.Position.InstrumentId = Convert.ToInt32(_instrumentRepository.GetInstrumentIdByConId(trade.Conid).Value);
+                        trade.Position.InstrumentId = Convert.ToInt32(_instrumentService.GetInstrumentIdByConIdAsync(trade.Conid).Result);
                         trade.PositionId = Convert.ToInt32(GetOpenPosition(trade.Position.InstrumentId)?.Id ?? CreatePosition(trade.Position.InstrumentId, trade.Symbol, trade.TradeDate, Convert.ToDecimal(trade.TradePrice), "O"));
                         trade.Id = CreateTradeExecution(trade);
                         var totalQuantity = GetTotalQuantityForPosition(Convert.ToInt32(trade.PositionId));
@@ -268,14 +269,14 @@ namespace TraderView.Infrastructure.Repositories
 
                 if (!TradeExists(tradeConfirm.IbExecID))
                 {
-                    var instrumentId = _instrumentRepository.GetInstrumentIdByConId(tradeConfirm.Conid);
-                    
+                    var instrumentId = _instrumentService.GetInstrumentIdByConIdAsync(tradeConfirm.Conid).Result;
+
                     if (instrumentId.HasValue)
                     {
                         Position? existingPosition = null;
- 
+
                         // Check for open position for the trade's symbol and instrument (within the same transaction)
-                        existingPosition = GetOpenPosition(instrumentId.Value);                        
+                        existingPosition = GetOpenPosition(instrumentId.Value);
 
                         if (existingPosition != null)
                         {
@@ -310,7 +311,7 @@ namespace TraderView.Infrastructure.Repositories
         }
         private int CreatePosition(int instrumentId, string symbol, DateTime openDate, decimal openPrice, string openCloseIndicator)
         {
-            var instrument = _instrumentRepository.Get(instrumentId);
+            var instrument = _instrumentService.GetInstrumentByIdAsync(instrumentId).Result;
             return ExecuteDatabaseOperation(connection =>
             {
                 using (var transaction = connection.BeginTransaction())

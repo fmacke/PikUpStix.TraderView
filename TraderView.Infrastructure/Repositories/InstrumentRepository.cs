@@ -8,6 +8,7 @@ using TraderView.Application.Features.TradeExecutions.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Mappers;
+using TraderView.Application.Specifications.Instruments;
 using TraderView.Domain.Entities;
 using TraderView.Infrastructure.DbContexts;
 
@@ -41,7 +42,7 @@ namespace TraderView.Infrastructure.Repositories
 
             foreach (var conid in uniqueConids)
             {
-                int? instrumentId = await GetInstrumentIdByConIdAsync(conid);
+                int? instrumentId = await ((IInstrumentRepository)this).GetInstrumentIdByConIdAsync(conid);
 
                 if (!instrumentId.HasValue)
                 {
@@ -72,7 +73,7 @@ namespace TraderView.Infrastructure.Repositories
             {
                 if (!string.IsNullOrEmpty(trade.Conid))
                 {
-                    int? instrumentId = await this.InsertInstrumentAsync  GetInstrumentIdByConIdAsync(trade.Conid).ConfigureAwait(false);
+                    int? instrumentId = await ((IInstrumentRepository)this).GetInstrumentIdByConIdAsync(trade.Conid);
                     if (instrumentId.HasValue)
                     {
                         trade.Position.InstrumentId = instrumentId.Value;
@@ -130,10 +131,11 @@ namespace TraderView.Infrastructure.Repositories
             return added.Id;
         }
 
-        Task<int?> IInstrumentRepository.GetInstrumentIdByConIdAsync(string conid)
+        async Task<int?> IInstrumentRepository.GetInstrumentIdByConIdAsync(string conid)
         {
-            //SORT THIS PLACEHOLDER METHOD OUT LATER, FOR NOW JUST RETURN 1
-            return Task.FromResult<int?>(1);
+            var specification = new GetInstrumentByConIdSpecification(conid);
+            var instrument = await GetSingleAsync(specification).ConfigureAwait(false);
+            return instrument?.Id;
         }
     }
 }
