@@ -163,6 +163,7 @@ namespace TraderView.Console
                     services.AddSingleton<ICanSlimScreenerService, CanSlimScreenerService>();
                     services.AddSingleton<ICurrentPerformanceService, CurrentPerformanceService>();
                     services.AddSingleton<IEquitySummaryService, EquitySummaryService>();
+                    services.AddScoped<IInstrumentService, InstrumentService>();
                     services.AddScoped<Application>();
                 })
                 .Build();

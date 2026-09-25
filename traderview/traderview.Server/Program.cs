@@ -41,26 +41,22 @@ public partial class Program
             var factory = provider.GetRequiredService<IDbConnectionFactory>();
             return new InstrumentRepository(db, factory);
         });
-
         builder.Services.AddScoped<IPositionRepository>(provider =>
         {
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
             return new PositionRepository(db);
         });
-
         builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
         {
             var factory = provider.GetRequiredService<IDbConnectionFactory>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
             return new TradeExecutionRepository(factory, instrumentRepo);
         });
-
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
         {
             var factory = provider.GetRequiredService<IDbConnectionFactory>();
             return new HistoricalDataRepository(factory);
         });
-
         builder.Services.AddScoped<IEconomicCalendarRepository>(provider =>
         {
             var factory = provider.GetRequiredService<IDbConnectionFactory>();
@@ -94,6 +90,7 @@ public partial class Program
         builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
         builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>();
+        builder.Services.AddScoped<IInstrumentService, InstrumentService>();
         builder.Services.AddScoped<IOpenPositionsService, OpenPositionsService>(provider =>
         {
             var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();

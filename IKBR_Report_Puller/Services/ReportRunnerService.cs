@@ -16,7 +16,7 @@ namespace PikUpStix.TraderView.Services
         private readonly IReportFetchingService _reportFetchingService;
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
         private readonly IEquitySummaryService _equitySummaryService;
-        private readonly IInstrumentRepository _instrumentRepository;
+        private readonly IInstrumentService _instrumentService;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
@@ -27,7 +27,7 @@ namespace PikUpStix.TraderView.Services
         public ReportRunnerService(
             IReportFetchingService reportFetchingService,
             ITradeExecutionRepository tradeExecutionRepository,
-            IInstrumentRepository instrumentRepository,
+            IInstrumentService instrumentService,
             IExcelReportService excelReportService,
             ITradeHistoryReportService tradeHistoryReportService,
             IMarketDataService marketDataService,
@@ -37,7 +37,7 @@ namespace PikUpStix.TraderView.Services
             _reportFetchingService = reportFetchingService;
             _tradeExecutionRepository = tradeExecutionRepository;
             _equitySummaryService = equitySummaryService;
-            _instrumentRepository = instrumentRepository;
+            _instrumentService = instrumentService;
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
             _marketDataService = marketDataService;
@@ -48,9 +48,10 @@ namespace PikUpStix.TraderView.Services
         {
             try
             {
-                (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
-                _instrumentRepository.UpsertInstruments(mainReport.Trades, _marketDataService.SourceName);
+                IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
+                await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
                 _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
+            
                 await UpdateOpenPositionPrices();
                 var executions = _tradeExecutionRepository.GetTradeExecutions();
 
@@ -89,13 +90,13 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private void SaveTradeConfirms(XDocument todayReportXml)
+        private async Task SaveTradeConfirms(XDocument todayReportXml)
         {
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
 
             // Insert instruments first, then trade confirmations
-            _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, _marketDataService.SourceName);
+            await _instrumentService.UpsertInstrumentsAsync(todayReport.TradeConfirms, _marketDataService.SourceName).ConfigureAwait(false);
             _tradeExecutionRepository.InsertTradeConfirmations(todayReport.TradeConfirms);
         }
 
@@ -188,29 +189,33 @@ namespace PikUpStix.TraderView.Services
             return fileName;
         }
 
-        private async Task<(IKBRReport mainReport, string fileName)> GetReportDataFromInteractiveBrokers()
+        private async Task<IKBRReport> GetReportDataFromInteractiveBrokers(bool writeOutputToDrive)
         {
             // Fetch and process main report
             //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260922_194251_TraderSyncAccess.xml");
             XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
-            var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
-            StringBuilder mainReportFilePath = new StringBuilder(outputFilePath).Append("\\" + fileName);
 
-            // Ensure directory exists
-            string directory = System.IO.Path.GetDirectoryName(mainReportFilePath.ToString());
-            if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+            if (writeOutputToDrive)
             {
-                Directory.CreateDirectory(directory);
-                System.Console.WriteLine($"Created directory: {directory}");
+                var fileName = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss") + "_TraderSyncAccess.xml";
+                StringBuilder mainReportFilePath = new StringBuilder(outputFilePath).Append("\\" + fileName);
+
+                // Ensure directory exists
+                string directory = System.IO.Path.GetDirectoryName(mainReportFilePath.ToString());
+                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                    System.Console.WriteLine($"Created directory: {directory}");
+                }
+
+                mainReportXml.Save(mainReportFilePath.ToString());
+                System.Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
+
             }
-
-            mainReportXml.Save(mainReportFilePath.ToString());
-            System.Console.WriteLine($"Successfully saved main report to {mainReportFilePath}");
-
             // Convert XDocument to IKBRReport
             var mainReport = IKBRReportParser.ParseMainReport(mainReportXml);
 
-            return (mainReport, fileName);
+            return (mainReport);
         }
         public static XDocument LoadXmlDocument(string directory)
         {

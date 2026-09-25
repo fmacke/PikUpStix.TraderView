@@ -39,10 +39,6 @@ namespace TraderView.Infrastructure.Repositories
             public new T? ExecuteSingle<T>(SqlConnection connection, SqlTransaction? transaction, Func<SqlDataReader, T> mapFunction, IQueryWithParameters queryWithParameters) where T : class => base.ExecuteSingle(connection, transaction, mapFunction, queryWithParameters);
             public new List<T> ExecuteList<T>(SqlConnection connection, SqlTransaction? transaction, Func<SqlDataReader, T> mapFunction, IQueryWithParameters queryWithParameters) => base.ExecuteList(connection, transaction, mapFunction, queryWithParameters);
         }
-        void IInstrumentRepository.UpsertInstruments(List<TradeConfirm> tradeConfirms, string source)
-        {
-           UpsertInstrumentsAsync(ConvertToTradeExecute(tradeConfirms), source).GetAwaiter().GetResult();
-        }
         private List<TradeExecution> ConvertToTradeExecute(List<TradeConfirm> tradeConfirms)
         {
             // Convert TradeConfirm objects to TradeExecution objects for instrument upsertion
@@ -69,77 +65,10 @@ namespace TraderView.Infrastructure.Repositories
             }
             return tradeExecutions;
         }
-        /// <summary>
-        /// Ensures instruments exist for the given trades
-        /// Creates missing instruments automatically
-        /// </summary>
-        public void UpsertInstruments(List<TradeExecution> trades, string source)
-        {
-            if (trades == null || !trades.Any())
-                return;
-            try
-            {
-                var uniqueConids = trades
-                    .Where(t => !string.IsNullOrEmpty(t.Conid))
-                    .Select(t => t.Conid)
-                    .Distinct()
-                    .ToList();
-
-                int createdCount = 0;
-                int existingCount = 0;
-
-                foreach (var conid in uniqueConids)
-                {
-                    int? instrumentId = GetInstrumentIdByConId(conid);
-
-                    if (!instrumentId.HasValue)
-                    {
-                        var trade = trades.First(t => t.Conid == conid);
-
-                        ((IInstrumentRepository)this).InsertInstrument(
-                            conid,
-                            trade.Symbol,
-                            trade.ListingExchange,
-                            trade.Currency,
-                            trade.AssetCategory,
-                            source,
-                            trade.Symbol);
-
-                        createdCount++;
-                    }
-                    else
-                    {
-                        existingCount++;
-                    }
-                }
-                if (createdCount > 0)
-                {
-                    Console.WriteLine($"Created {createdCount} new instrument(s), {existingCount} already existed");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error upserting instruments: {ex.Message}");
-                throw;
-            }
-            foreach (var trade in trades.Where(x => x.Position.InstrumentId == 0))
-            {
-                if (!string.IsNullOrEmpty(trade.Conid))
-                {
-                    int? instrumentId = GetInstrumentIdByConId(trade.Conid);
-                    if (instrumentId.HasValue)
-                    {
-                        trade.Position.InstrumentId = instrumentId.Value;
-                    }
-                }
-            }
-        }
-
         public async Task UpsertInstrumentsAsync(List<TradeConfirm> tradeConfirms, string source)
         {
             await UpsertInstrumentsAsync(ConvertToTradeExecute(tradeConfirms), source).ConfigureAwait(false);
         }
-
         public async Task UpsertInstrumentsAsync(List<TradeExecution> trades, string source)
         {
             if (trades == null || !trades.Any())
