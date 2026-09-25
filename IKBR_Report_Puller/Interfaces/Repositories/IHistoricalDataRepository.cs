@@ -1,3 +1,4 @@
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Interfaces.Repositories
@@ -5,7 +6,7 @@ namespace TraderView.Application.Interfaces.Repositories
     /// <summary>
     /// Repository interface for Historical Data (chart data) operations
     /// </summary>
-    public interface IHistoricalDataRepository
+    public interface IHistoricalDataRepository : IRepository<HistoricalDatum>
     {
         /// <summary>
         /// Inserts chart data bars for a given instrument, skipping duplicates

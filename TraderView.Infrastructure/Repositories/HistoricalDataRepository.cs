@@ -1,23 +1,24 @@
-using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using TraderView.Application.Interfaces.Repositories;
-using TraderView.Application.Interfaces.Persistence;
+using TraderView.Application.Specifications.HistoricalData;
 using TraderView.Domain.Entities;
+using TraderView.Infrastructure.DbContexts;
 
 namespace TraderView.Infrastructure.Repositories
 {
     /// <summary>
-    /// Repository for HistoricalData (chart data) operations
+    /// Repository for HistoricalData (chart data) operations using EF Core
     /// </summary>
-    public class HistoricalDataRepository : BaseRepository, IHistoricalDataRepository
+    public class HistoricalDataRepository : EfBaseRepository<HistoricalDatum>, IHistoricalDataRepository
     {
-        public HistoricalDataRepository(IDbConnectionFactory connectionFactory) : base(connectionFactory)
+        public HistoricalDataRepository(AppDbContext db) : base(db)
         {
         }
 
         /// <summary>
         /// Inserts chart data bars for a given instrument, skipping duplicates
         /// </summary>
-        public void UpdateHistoricalData(string instrumentId, List<Bar> bars)
+        public async Task UpdateHistoricalDataAsync(string instrumentId, List<Bar> bars)
         {
             if (bars == null || !bars.Any())
             {
@@ -31,209 +32,141 @@ namespace TraderView.Infrastructure.Repositories
                 return;
             }
 
-            ExecuteDatabaseOperation(connection =>
+            // Get existing dates for this instrument
+            var existingDates = await _db.Set<HistoricalDatum>()
+                .Where(hd => hd.InstrumentId == instrumentIdInt)
+                .Select(hd => hd.Date)
+                .ToListAsync();
+
+            var existingDateSet = new HashSet<DateTime>(existingDates);
+            var newBars = bars.Where(bar => !existingDateSet.Contains(bar.Date)).ToList();
+
+            if (!newBars.Any())
             {
-                var existingDates = GetExistingDates(connection, instrumentIdInt);
-                var newBars = bars.Where(bar => !existingDates.Contains(bar.Date)).ToList();
+                Console.WriteLine($"All chart data already exists for instrument {instrumentId}.");
+                return;
+            }
 
-                if (!newBars.Any())
-                {
-                    Console.WriteLine($"All chart data already exists for instrument {instrumentId}.");
-                    return;
-                }
+            // Convert Bar DTOs to HistoricalDatum entities
+            var historicalData = newBars.Select(bar => new HistoricalDatum
+            {
+                Date = bar.Date,
+                OpenPrice = bar.OpenPrice,
+                ClosePrice = bar.ClosePrice,
+                LowPrice = bar.LowPrice,
+                HighPrice = bar.HighPrice,
+                Volume = bar.Volume,
+                Settle = bar.Settle,
+                OpenInterest = bar.OpenInterest,
+                InstrumentId = instrumentIdInt
+            }).ToList();
 
-                using (var transaction = connection.BeginTransaction())
-                {
-                    // Use bulk insert for better performance
-                    InsertHistoricalData(connection, transaction, instrumentIdInt, newBars);
-                    transaction.Commit();
-                    Console.WriteLine($"Successfully inserted {newBars.Count} new chart data records for instrument {instrumentId}.");
-                }
-            });
+            await AddRangeAsync(historicalData);
+            Console.WriteLine($"Successfully inserted {newBars.Count} new chart data records for instrument {instrumentId}.");
+        }
+
+        /// <summary>
+        /// Inserts chart data bars for a given instrument, skipping duplicates (legacy synchronous method)
+        /// </summary>
+        public void UpdateHistoricalData(string instrumentId, List<Bar> bars)
+        {
+            UpdateHistoricalDataAsync(instrumentId, bars).GetAwaiter().GetResult();
         }
 
         /// <summary>
         /// Gets missing date ranges for historical data for a given instrument and date range
         /// </summary>
-        public List<(DateTime startDate, DateTime endDate)> GetMissingDateRanges(int instrumentId, DateTime startDate, DateTime endDate)
+        public async Task<List<(DateTime startDate, DateTime endDate)>> GetMissingDateRangesAsync(int instrumentId, DateTime startDate, DateTime endDate)
         {
-            return ExecuteDatabaseOperation(connection =>
+            var existingDates = await _db.Set<HistoricalDatum>()
+                .Where(hd => hd.InstrumentId == instrumentId)
+                .Select(hd => hd.Date)
+                .ToListAsync();
+
+            var missingRanges = new List<(DateTime startDate, DateTime endDate)>();
+
+            if (!existingDates.Any())
             {
-                var existingDates = GetExistingDates(connection, instrumentId);
-                var missingRanges = new List<(DateTime startDate, DateTime endDate)>();
+                // No data exists, return the entire range
+                var adjustedEndDate = startDate == endDate ? endDate.AddDays(1) : endDate;
+                return new List<(DateTime, DateTime)> { (startDate, adjustedEndDate) };
+            }
 
-                if (!existingDates.Any())
+            var existingDateSet = new HashSet<DateTime>(existingDates.Select(d => d.Date));
+
+            // Generate all expected dates (trading days approximation - all weekdays)
+            var expectedDates = new List<DateTime>();
+            for (var date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                // Skip weekends (rough approximation - doesn't account for holidays)
+                if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
                 {
-                    // No data exists, return the entire range
-                    // Ensure endDate is after startDate for single-day ranges
-                    var adjustedEndDate = startDate == endDate ? endDate.AddDays(1) : endDate;
-                    return new List<(DateTime, DateTime)> { (startDate, adjustedEndDate) };
+                    expectedDates.Add(date.Date);
                 }
+            }
 
-                // Generate all expected dates (trading days approximation - all weekdays)
-                var expectedDates = new List<DateTime>();
-                for (var date = startDate; date <= endDate; date = date.AddDays(1))
+            // Find missing dates
+            var missingDates = expectedDates.Where(d => !existingDateSet.Contains(d.Date)).OrderBy(d => d).ToList();
+
+            if (!missingDates.Any())
+            {
+                // No missing dates found
+                return missingRanges;
+            }
+
+            // Group consecutive missing dates into ranges
+            DateTime? rangeStart = null;
+            DateTime? rangeEnd = null;
+
+            foreach (var date in missingDates)
+            {
+                if (rangeStart == null)
                 {
-                    // Skip weekends (rough approximation - doesn't account for holidays)
-                    if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
+                    // Start a new range
+                    rangeStart = date;
+                    rangeEnd = date;
+                }
+                else
+                {
+                    // Check if this date is consecutive to the current range
+                    var daysDiff = (date - rangeEnd.Value).Days;
+                    bool isConsecutive = daysDiff == 1;
+
+                    // Also consider weekends: Monday following Friday is consecutive
+                    bool isWeekendGap = date.DayOfWeek == DayOfWeek.Monday && 
+                                      rangeEnd.Value.DayOfWeek == DayOfWeek.Friday && 
+                                      daysDiff <= 3;
+
+                    if (isConsecutive || isWeekendGap)
                     {
-                        expectedDates.Add(date.Date);
-                    }
-                }
-
-                // Find missing dates
-                var missingDates = expectedDates.Where(d => !existingDates.Contains(d.Date)).OrderBy(d => d).ToList();
-
-                if (!missingDates.Any())
-                {
-                    // No missing dates found
-                    return missingRanges;
-                }
-
-                // Group consecutive missing dates into ranges
-                DateTime? rangeStart = null;
-                DateTime? rangeEnd = null;
-
-                foreach (var date in missingDates)
-                {
-                    if (rangeStart == null)
-                    {
-                        // Start a new range
-                        rangeStart = date;
+                        // Extend the current range
                         rangeEnd = date;
                     }
                     else
                     {
-                        // Check if this date is consecutive to the current range
-                        var daysDiff = (date - rangeEnd.Value).Days;
-                        bool isConsecutive = daysDiff == 1;
-
-                        // Also consider weekends: Monday following Friday is consecutive
-                        bool isWeekendGap = date.DayOfWeek == DayOfWeek.Monday && 
-                                          rangeEnd.Value.DayOfWeek == DayOfWeek.Friday && 
-                                          daysDiff <= 3;
-
-                        if (isConsecutive || isWeekendGap)
-                        {
-                            // Extend the current range
-                            rangeEnd = date;
-                        }
-                        else
-                        {
-                            // Gap detected, save current range and start new one
-                            missingRanges.Add((rangeStart.Value, rangeEnd.Value));
-                            rangeStart = date;
-                            rangeEnd = date;
-                        }
-                    }
-                }
-
-                // Add the final range
-                if (rangeStart.HasValue && rangeEnd.HasValue)
-                {
-                    missingRanges.Add((rangeStart.Value, rangeEnd.Value));
-                }
-
-                return missingRanges;
-            });
-        }
-
-        #region Private Helper Methods
-
-        private HashSet<DateTime> GetExistingDates(SqlConnection connection, int instrumentId)
-        {
-            var existingDates = new HashSet<DateTime>();
-            using (var cmd = new SqlCommand("SELECT [Date] FROM dbo.HistoricalData WHERE InstrumentId = @instrumentId", connection))
-            {
-                cmd.Parameters.AddWithValue("@instrumentId", instrumentId);
-                using (var reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        existingDates.Add(reader.GetDateTime(0));
+                        // Gap detected, save current range and start new one
+                        missingRanges.Add((rangeStart.Value, rangeEnd.Value));
+                        rangeStart = date;
+                        rangeEnd = date;
                     }
                 }
             }
-            return existingDates;
+
+            // Add the final range
+            if (rangeStart.HasValue && rangeEnd.HasValue)
+            {
+                missingRanges.Add((rangeStart.Value, rangeEnd.Value));
+            }
+
+            return missingRanges;
         }
 
-        private void InsertHistoricalData(SqlConnection connection, SqlTransaction transaction, int instrumentId, List<Bar> bars)
+        /// <summary>
+        /// Gets missing date ranges for historical data for a given instrument and date range (legacy synchronous method)
+        /// </summary>
+        public List<(DateTime startDate, DateTime endDate)> GetMissingDateRanges(int instrumentId, DateTime startDate, DateTime endDate)
         {
-            if (bars == null || !bars.Any())
-            {
-                return;
-            }
-
-            // Use parameterized batch insert for better performance
-            const string insertQuery = @"
-                INSERT INTO [dbo].[HistoricalData]
-                ([Date], [OpenPrice], [ClosePrice], [LowPrice], [HighPrice], [Volume], [Settle], [OpenInterest], [InstrumentId])
-                VALUES (@date, @openPrice, @closePrice, @lowPrice, @highPrice, @volume, @settle, @openInterest, @instrumentId)";
-
-            using (var cmd = new SqlCommand(insertQuery, connection, transaction))
-            {
-                // Add parameters once with explicit precision and scale for Decimal types
-                cmd.Parameters.Add("@date", System.Data.SqlDbType.DateTime);
-
-                // Decimal parameters require explicit Precision and Scale for Prepare()
-                // Using 18,6 which allows for large numbers with reasonable precision
-                var openPriceParam = cmd.Parameters.Add("@openPrice", System.Data.SqlDbType.Decimal);
-                openPriceParam.Precision = 18;
-                openPriceParam.Scale = 6;
-
-                var closePriceParam = cmd.Parameters.Add("@closePrice", System.Data.SqlDbType.Decimal);
-                closePriceParam.Precision = 18;
-                closePriceParam.Scale = 6;
-
-                var lowPriceParam = cmd.Parameters.Add("@lowPrice", System.Data.SqlDbType.Decimal);
-                lowPriceParam.Precision = 18;
-                lowPriceParam.Scale = 6;
-
-                var highPriceParam = cmd.Parameters.Add("@highPrice", System.Data.SqlDbType.Decimal);
-                highPriceParam.Precision = 18;
-                highPriceParam.Scale = 6;
-
-                var volumeParam = cmd.Parameters.Add("@volume", System.Data.SqlDbType.Decimal);
-                volumeParam.Precision = 18;
-                volumeParam.Scale = 6;
-
-                var settleParam = cmd.Parameters.Add("@settle", System.Data.SqlDbType.Decimal);
-                settleParam.Precision = 18;
-                settleParam.Scale = 6;
-
-                var openInterestParam = cmd.Parameters.Add("@openInterest", System.Data.SqlDbType.Decimal);
-                openInterestParam.Precision = 18;
-                openInterestParam.Scale = 6;
-
-                cmd.Parameters.Add("@instrumentId", System.Data.SqlDbType.Int);
-
-                // Prepare the command once
-                try
-                {
-                    cmd.Prepare();
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Error preparing SQL command: {ex.Message}");
-                    throw;
-                }
-
-                // Execute for each bar
-                foreach (var bar in bars)
-                {
-                    cmd.Parameters["@date"].Value = bar.Date;
-                    cmd.Parameters["@openPrice"].Value = bar.OpenPrice;
-                    cmd.Parameters["@closePrice"].Value = bar.ClosePrice;
-                    cmd.Parameters["@lowPrice"].Value = bar.LowPrice;
-                    cmd.Parameters["@highPrice"].Value = bar.HighPrice;
-                    cmd.Parameters["@volume"].Value = bar.Volume;
-                    cmd.Parameters["@settle"].Value = bar.Settle;
-                    cmd.Parameters["@openInterest"].Value = bar.OpenInterest;
-                    cmd.Parameters["@instrumentId"].Value = instrumentId;
-
-                    cmd.ExecuteNonQuery();
-                }
-            }
+            return GetMissingDateRangesAsync(instrumentId, startDate, endDate).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -241,40 +174,21 @@ namespace TraderView.Infrastructure.Repositories
         /// </summary>
         public async Task<List<Bar>> GetCandlesticksAsync(int instrumentId, DateTime startDate, DateTime endDate)
         {
-            return await Task.Run(() =>
+            var specification = new CandleSticksByInstrumentAndDateRangeSpecification(instrumentId, startDate, endDate);
+            var candleSticks = await GetAsync(specification);
+
+            return candleSticks.Select(hd => new Bar
             {
-                var candlesticks = new List<Bar>();
-                ExecuteDatabaseOperation(connection =>
-                {
-                    const string query = @"
-                        SELECT Date, OpenPrice, HighPrice, LowPrice, ClosePrice, Volume
-                        FROM HistoricalData
-                        WHERE InstrumentId = @InstrumentId
-                            AND Date >= @StartDate
-                            AND Date <= @EndDate
-                        ORDER BY Date ASC";
-
-                    using var command = new SqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@InstrumentId", instrumentId);
-                    command.Parameters.AddWithValue("@StartDate", startDate);
-                    command.Parameters.AddWithValue("@EndDate", endDate);
-
-                    using var reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        candlesticks.Add(new Bar
-                        {
-                            Date = reader.GetDateTime(reader.GetOrdinal("Date")),
-                            OpenPrice = reader.GetDouble(reader.GetOrdinal("OpenPrice")),
-                            HighPrice = reader.GetDouble(reader.GetOrdinal("HighPrice")),
-                            LowPrice = reader.GetDouble(reader.GetOrdinal("LowPrice")),
-                            ClosePrice = reader.GetDouble(reader.GetOrdinal("ClosePrice")),
-                            Volume = reader.GetDouble(reader.GetOrdinal("Volume"))
-                        });
-                    }
-                });
-                return candlesticks;
-            });
+                Date = hd.Date,
+                OpenPrice = hd.OpenPrice,
+                HighPrice = hd.HighPrice,
+                LowPrice = hd.LowPrice,
+                ClosePrice = hd.ClosePrice,
+                Volume = hd.Volume,
+                Settle = hd.Settle ?? 0,
+                OpenInterest = hd.OpenInterest ?? 0,
+                InstrumentId = hd.InstrumentId
+            }).ToList();
         }
 
         /// <summary>
@@ -282,29 +196,9 @@ namespace TraderView.Infrastructure.Repositories
         /// </summary>
         public async Task<int?> GetInstrumentIdBySymbolAsync(string symbol)
         {
-            return await Task.Run(() =>
-            {
-                int? instrumentId = null;
-                ExecuteDatabaseOperation(connection =>
-                {
-                    const string query = @"
-                        SELECT Id 
-                        FROM Instruments 
-                        WHERE InstrumentName = @Symbol";
-
-                    using var command = new SqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@Symbol", symbol);
-
-                    var result = command.ExecuteScalar();
-                    if (result != null)
-                    {
-                        instrumentId = Convert.ToInt32(result);
-                    }
-                });
-                return instrumentId;
-            });
+            var instrument = await _db.Set<Instrument>()
+                .FirstOrDefaultAsync(i => i.InstrumentName == symbol);
+            return instrument?.Id;
         }
-
-        #endregion
     }
 }
