@@ -9,12 +9,12 @@ namespace traderview.Server.Controllers
     public class OpenPositionController : ControllerBase
     {
         private readonly ILogger<OpenPositionController> _logger;
-        private readonly IOpenPositionsService _openPositionService;
+        private readonly IPositionService _openPositionService;
         private readonly IExcelReportService _excelReportService;
 
         public OpenPositionController(
             ILogger<OpenPositionController> logger,
-            IOpenPositionsService openPositionsService,
+            IPositionService openPositionsService,
             IExcelReportService excelReportService)
         {
             _logger = logger;

@@ -20,6 +20,6 @@ namespace TraderView.Application.Interfaces.Services
         /// </summary>
         /// <param name="openPositions">List of open positions to process</param>
         /// <returns>List of calculated open position report data</returns>
-        List<OpenPositionReportData> PrepareOpenPositionReportData(List<Position> openPositions);
+        List<OpenPositionReportData> PrepareOpenPositionReportData(IReadOnlyList<Position> openPositions);
     }
 }

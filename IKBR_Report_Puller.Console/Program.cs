@@ -74,9 +74,10 @@ namespace TraderView.Console
 
                     services.AddScoped<ITradeExecutionRepository>(provider =>
                     {
-                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
+                        var db = provider.GetRequiredService<AppDbContext>();
                         var instrumentService = provider.GetRequiredService<IInstrumentService>();
-                        return new TradeExecutionRepository(factory, instrumentService);
+                        var positionService = provider.GetRequiredService<IPositionService>();
+                        return new TradeExecutionRepository(db, instrumentService, positionService);
                     });
 
                     services.AddSingleton<IHistoricalDataRepository>(provider =>
@@ -152,11 +153,11 @@ namespace TraderView.Console
                     });
                     services.AddScoped<IReportRunnerService, ReportRunnerService>();
                     services.AddScoped<IExcelReportService, ExcelReportService>();
-                    services.AddScoped<IOpenPositionsService, OpenPositionsService>(provider =>
+                    services.AddScoped<IPositionService, PositionService>(provider =>
                     {
                         var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
                         var positionRepo = provider.GetRequiredService<IPositionRepository>();
-                        return new OpenPositionsService(tradeExecutionRepo, positionRepo);
+                        return new PositionService(positionRepo);
                     });
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();

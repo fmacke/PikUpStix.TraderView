@@ -48,9 +48,10 @@ public partial class Program
         });
         builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
         {
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
+            var db = provider.GetRequiredService<AppDbContext>();
             var instrumentService = provider.GetRequiredService<IInstrumentService>();
-            return new TradeExecutionRepository(factory, instrumentService);
+            var positionService = provider.GetRequiredService<IPositionService>();
+            return new TradeExecutionRepository(db, instrumentService, positionService);
         });
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
         {
@@ -91,11 +92,10 @@ public partial class Program
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
         builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>();
         builder.Services.AddScoped<IInstrumentService, InstrumentService>();
-        builder.Services.AddScoped<IOpenPositionsService, OpenPositionsService>(provider =>
+        builder.Services.AddScoped<IPositionService, PositionService>(provider =>
         {
-            var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
             var positionRepo = provider.GetRequiredService<IPositionRepository>();
-            return new OpenPositionsService(tradeExecutionRepo, positionRepo);
+            return new PositionService(positionRepo);
         });
         builder.Services.AddScoped<FinancialModellingPrepService>(provider =>
         {

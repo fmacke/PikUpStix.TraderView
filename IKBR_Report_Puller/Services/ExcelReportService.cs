@@ -77,7 +77,7 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         /// <param name="openPositions">List of open positions to process</param>
         /// <returns>List of calculated open position report data</returns>
-        public List<OpenPositionReportData> PrepareOpenPositionReportData(List<Position> openPositions)
+        public List<OpenPositionReportData> PrepareOpenPositionReportData(IReadOnlyList<Position> openPositions)
         {
             var reportDataList = new List<OpenPositionReportData>();
 
