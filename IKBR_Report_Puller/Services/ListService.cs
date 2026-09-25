@@ -33,7 +33,7 @@ namespace PikUpStix.TraderView.Services
 
         public async Task<int> CreateAsync(string listName, string item)
         {
-            return await _listRepository.InsertAsync(listName, item);
+            return await _listRepository.AddAsync(listName, item);
         }
 
         public async Task<bool> UpdateAsync(int id, string listName, string item)

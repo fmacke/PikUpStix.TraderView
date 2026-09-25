@@ -21,7 +21,7 @@ namespace TraderView.Infrastructure.Repositories
             return await GetAsync(spec);
         }
 
-        public async Task<int> InsertAsync(string category, string name)
+        public async Task<int> AddAsync(string category, string name)
         {
             var entity = new ListItem
             {
@@ -31,7 +31,6 @@ namespace TraderView.Infrastructure.Repositories
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-
             var added = await AddAsync(entity);
             return added.Id;
         }
