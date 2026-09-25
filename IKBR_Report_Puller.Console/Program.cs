@@ -103,7 +103,7 @@ namespace TraderView.Console
                         return new EquitySummaryRepository(db);
                     });
 
-                    // Register both market data services
+                    // Register market data service (FinancialModellingPrepService)
                     services.AddScoped<FinancialModellingPrepService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
@@ -111,25 +111,35 @@ namespace TraderView.Console
                         var historicalDataRepository = provider.GetRequiredService<IHistoricalDataRepository>();
                         var instrumentRepository = provider.GetRequiredService<IInstrumentRepository>();
                         var config = provider.GetRequiredService<IConfiguration>();
-                        var canSlimCandidateService = provider.GetRequiredService<ICanSlimScreenerService>();
                         var apiKey = config["FinancialModelingPrep:ApiKey"];
                         var baseUrl = config["FinancialModelingPrep:BaseUrl"];
                         var outputPath = config["FinancialModelingPrep:OutputFilePath"];
 
-                        return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, instrumentRepository, canSlimCandidateService, apiKey, baseUrl, outputPath);
+                        return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, instrumentRepository, apiKey, baseUrl, outputPath);
                     });
 
-                    // Register the default IMarketDataService (use Yahoo Finance by default, or configure via settings)
+                    // Register company screening service (FinancialModellingPrepCompanyScreeningService)
+                    services.AddScoped<FinancialModellingPrepCompanyScreeningService>(provider =>
+                    {
+                        var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
+                        var canSlimCandidateService = provider.GetRequiredService<ICanSlimScreenerService>();
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        var apiKey = config["FinancialModelingPrep:ApiKey"];
+                        var baseUrl = config["FinancialModelingPrep:BaseUrl"];
+
+                        return new FinancialModellingPrepCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
+                    });
+
+                    // Register the default IMarketDataService
                     services.AddScoped<IMarketDataService>(provider =>
                     {
-                        var config = provider.GetRequiredService<IConfiguration>();
-                        var preferredService = config["MarketData:PreferredService"];
+                        return provider.GetRequiredService<FinancialModellingPrepService>();
+                    });
 
-                        return preferredService?.ToLower() switch
-                        {
-                            "fmp" => provider.GetRequiredService<FinancialModellingPrepService>(),
-                            _ => provider.GetRequiredService<FinancialModellingPrepService>() // Default to FMP for backwards compatibility
-                        };
+                    // Register the default ICompanyScreeningService
+                    services.AddScoped<ICompanyScreeningService>(provider =>
+                    {
+                        return provider.GetRequiredService<FinancialModellingPrepCompanyScreeningService>();
                     });
                     services.AddSingleton<IReportFetchingService>(provider =>
                     {

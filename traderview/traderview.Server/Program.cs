@@ -108,25 +108,28 @@ public partial class Program
             var economicRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
             var historicalRepo = provider.GetRequiredService<IHistoricalDataRepository>();
             var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-            var canSlimCandidateService  = provider.GetRequiredService<ICanSlimScreenerService>();
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
             var outputFilePath = config["FinancialModelingPrep:OutputFilePath"];
-            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, canSlimCandidateService, apiKey, baseUrl, outputFilePath);
+            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
         });
-        builder.Services.AddScoped<IMarketDataService>(provider =>
+        builder.Services.AddScoped<FinancialModellingPrepCompanyScreeningService>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
             var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
             var httpClient = httpClientFactory.CreateClient();
-            var economicRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
-            var historicalRepo = provider.GetRequiredService<IHistoricalDataRepository>();
-            var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
-            var canSlimCandidateService  = provider.GetRequiredService<ICanSlimScreenerService>();
+            var canSlimCandidateService = provider.GetRequiredService<ICanSlimScreenerService>();
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
-            var outputFilePath = config["FinancialModelingPrep:OutputFilePath"];
-            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, canSlimCandidateService, apiKey, baseUrl, outputFilePath);
+            return new FinancialModellingPrepCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
+        });
+        builder.Services.AddScoped<IMarketDataService>(provider =>
+        {
+            return provider.GetRequiredService<FinancialModellingPrepService>();
+        });
+        builder.Services.AddScoped<ICompanyScreeningService>(provider =>
+        {
+            return provider.GetRequiredService<FinancialModellingPrepCompanyScreeningService>();
         });
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();

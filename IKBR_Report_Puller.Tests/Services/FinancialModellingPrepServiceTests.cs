@@ -18,9 +18,6 @@ namespace IKBR_Report_Puller.Tests.Services
         public async Task RunScreenerAsync_ReturnsCandidatesFromCanSlimService_WhenLatestSnapshotIsToday()
         {
             // Arrange
-            var mockEconomicRepo = new Mock<IEconomicCalendarRepository>();
-            var mockHistoricalRepo = new Mock<IHistoricalDataRepository>();
-            var mockInstrumentRepo = new Mock<IInstrumentRepository>();
             var mockCanSlimService = new Mock<ICanSlimScreenerService>();
 
             var snapshot = new CanSlimScreenerSnapshot { Id = 42, CreatedAt = DateTime.Today };
@@ -35,19 +32,15 @@ namespace IKBR_Report_Puller.Tests.Services
 
             var httpClient = new HttpClient(); // not used in this test path
 
-            var service = new FinancialModellingPrepService(
+            var service = new FinancialModellingPrepCompanyScreeningService(
                 httpClient,
-                mockEconomicRepo.Object,
-                mockHistoricalRepo.Object,
-                mockInstrumentRepo.Object,
                 mockCanSlimService.Object,
                 apiKey: "testkey",
-                baseUrl: "https://fmp.test",
-                outputFilePath: "./out"
+                baseUrl: "https://fmp.test"
             );
 
             // Act
-            var result = await ((IMarketDataService)service).RunScreenerAsync(new CanSlimScreenerCriteria());
+            var result = await ((ICompanyScreeningService)service).RunScreenerAsync(new CanSlimScreenerCriteria());
 
             // Assert
             Assert.IsNotNull(result);

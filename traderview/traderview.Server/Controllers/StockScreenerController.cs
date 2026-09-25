@@ -9,14 +9,14 @@ namespace traderview.Server.Controllers
     public class StockScreenerController : ControllerBase
     {
         private readonly ILogger<StockScreenerController> _logger;
-        private readonly IMarketDataService _marketDataService;
+        private readonly ICompanyScreeningService _companyScreeningService;
 
         public StockScreenerController(
             ILogger<StockScreenerController> logger,
-            IMarketDataService marketDataService)
+            ICompanyScreeningService companyScreeningService)
         {
             _logger = logger;
-            _marketDataService = marketDataService;
+            _companyScreeningService = companyScreeningService;
         }
         /// <summary>
         /// Run the stock screener to get a list of qualifying CAN SLIM candidates
@@ -31,7 +31,7 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("Fetching all qualifying CAN SLIM candidates");
-                var stocksShortList = await _marketDataService.RunScreenerAsync(new CanSlimScreenerCriteria() { Stage1UniverseLimit = 1000 });
+                var stocksShortList = await _companyScreeningService.RunScreenerAsync(new CanSlimScreenerCriteria() { Stage1UniverseLimit = 1000 });
                 _logger.LogInformation("IBKR data sync completed successfully");
                 return Ok(new { message = "IBKR data sync completed successfully", timestamp = DateTime.UtcNow });
             }
@@ -56,7 +56,7 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("Fetching all qualifying CAN SLIM candidates");
-                var stocksShortList = await _marketDataService.GetLatestScreenerResults();
+                var stocksShortList = await _companyScreeningService.GetLatestScreenerResults();
                 return Ok(stocksShortList);
             }
             catch (Exception ex)

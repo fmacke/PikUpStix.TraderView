@@ -21,7 +21,6 @@ namespace PikUpStix.TraderView.Services
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly IMarketDataService _marketDataService;
-        private readonly FinancialModellingPrepService _fmpService;
         const int maxRetries = 3;
         const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
@@ -31,8 +30,7 @@ namespace PikUpStix.TraderView.Services
             IInstrumentRepository instrumentRepository,
             IExcelReportService excelReportService,
             ITradeHistoryReportService tradeHistoryReportService,
-            IMarketDataService economicCalendarService,
-            FinancialModellingPrepService fmpService,
+            IMarketDataService marketDataService,
             IEquitySummaryService equitySummaryService,
             IConfiguration config)
         {
@@ -42,8 +40,7 @@ namespace PikUpStix.TraderView.Services
             _instrumentRepository = instrumentRepository;
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
-            _marketDataService = economicCalendarService;
-            _fmpService = fmpService;
+            _marketDataService = marketDataService;
             _config = config;
             outputFilePath = _config["FinancialModelingPrep:OutputFilePath"];
         }
@@ -71,7 +68,7 @@ namespace PikUpStix.TraderView.Services
                 if (updateMarketData)
                 {
                     _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                    await ((IMarketDataService)_fmpService).FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
                     await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
                     await _marketDataService.FetchAndSaveChartData(new List<string>()
                     {
