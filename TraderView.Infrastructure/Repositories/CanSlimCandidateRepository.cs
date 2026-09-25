@@ -1,5 +1,6 @@
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Specifications;
+using TraderView.Application.Specifications.CanSlimCandidates;
 using TraderView.Domain.Entities.FMP;
 using TraderView.Infrastructure.DbContexts;
 

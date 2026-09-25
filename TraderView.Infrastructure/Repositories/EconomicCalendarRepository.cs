@@ -1,5 +1,6 @@
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Specifications;
+using TraderView.Application.Specifications.EconomicCalendars;
 using TraderView.Domain.Entities;
 using TraderView.Infrastructure.DbContexts;
 
