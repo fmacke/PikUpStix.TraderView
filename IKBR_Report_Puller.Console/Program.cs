@@ -99,8 +99,8 @@ namespace TraderView.Console
 
                     services.AddSingleton<IEquitySummaryRepository>(provider =>
                     {
-                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        return new EquitySummaryRepository(factory);
+                        var db = provider.GetRequiredService<AppDbContext>();
+                        return new EquitySummaryRepository(db);
                     });
 
                     // Register both market data services

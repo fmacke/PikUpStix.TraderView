@@ -84,8 +84,8 @@ public partial class Program
 
         builder.Services.AddScoped<IEquitySummaryRepository>(provider =>
         {
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            return new EquitySummaryRepository(factory);
+            AppDbContext db = provider.GetRequiredService<AppDbContext>();
+            return new EquitySummaryRepository(db);
         });
 
         // Register custom services        

@@ -21,7 +21,8 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task<List<EquitySummary>> GetAllAsync()
         {
-            return await Task.Run(() => _equitySummaryRepository.GetAll());
+            var result = await _equitySummaryRepository.GetAllAsync();
+            return result.ToList();
         }
 
         /// <summary>
@@ -29,7 +30,7 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task<EquitySummary?> GetByIdAsync(int id)
         {
-            return await Task.Run(() => _equitySummaryRepository.GetById(id));
+            return await _equitySummaryRepository.GetByIdAsync(id);
         }
 
         /// <summary>
@@ -37,7 +38,7 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task<EquitySummary?> GetByAccountAndDateAsync(string accountId, DateTime reportDate)
         {
-            return await Task.Run(() => _equitySummaryRepository.GetByAccountAndDate(accountId, reportDate));
+            return await _equitySummaryRepository.GetByAccountAndDateAsync(accountId, reportDate);
         }
 
         /// <summary>
@@ -45,7 +46,8 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task<List<EquitySummary>> GetByAccountIdAsync(string accountId)
         {
-            return await Task.Run(() => _equitySummaryRepository.GetByAccountId(accountId));
+            var result = await _equitySummaryRepository.GetByAccountIdAsync(accountId);
+            return result.ToList();
         }
 
         /// <summary>
@@ -53,7 +55,8 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task<List<EquitySummary>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
-            return await Task.Run(() => _equitySummaryRepository.GetByDateRange(startDate, endDate));
+            var result = await _equitySummaryRepository.GetByDateRangeAsync(startDate, endDate);
+            return result.ToList();
         }
 
         /// <summary>
@@ -61,7 +64,8 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task<int> CreateAsync(EquitySummary equitySummary)
         {
-            return await Task.Run(() => _equitySummaryRepository.Create(equitySummary));
+            var entity = await _equitySummaryRepository.AddAsync(equitySummary);
+            return entity.Id;
         }
 
         /// <summary>
@@ -69,7 +73,7 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task UpdateAsync(EquitySummary equitySummary)
         {
-            await Task.Run(() => _equitySummaryRepository.Update(equitySummary));
+            await _equitySummaryRepository.UpdateAsync(equitySummary);
         }
 
         /// <summary>
@@ -77,7 +81,12 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task<bool> DeleteAsync(int id)
         {
-            return await Task.Run(() => _equitySummaryRepository.Delete(id));
+            var entity = await _equitySummaryRepository.GetByIdAsync(id);
+            if (entity == null)
+                return false;
+
+            await _equitySummaryRepository.DeleteAsync(entity);
+            return true;
         }
     }
 }
