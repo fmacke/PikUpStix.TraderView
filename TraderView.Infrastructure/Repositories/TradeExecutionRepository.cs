@@ -1,10 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using TraderView.Application.Features.Positions.Specifications;
 using TraderView.Application.Features.TradeExecutions.Specifications;
-using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
-using TraderView.Application.Utils;
 using TraderView.Domain.Entities;
 using TraderView.Infrastructure.DbContexts;
 

@@ -1,10 +1,11 @@
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Domain.Entities;
 namespace TraderView.Application.Interfaces.Repositories
 {
     /// <summary>
     /// Repository interface for TradeExecution Execution-related database operations
     /// </summary>
-    public interface ITradeExecutionRepository
+    public interface ITradeExecutionRepository : IRepository<TradeExecution>
     {
         Task<List<TradeExecution>> GetTradeExecutionsByPositionIdAsync(int positionId);
         Task<TradeSummary?> GetTradeSummaryByPositionIdAsync(int positionId);
