@@ -55,8 +55,8 @@ public partial class Program
         });
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
         {
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            return new HistoricalDataRepository(factory);
+            var db = provider.GetRequiredService<AppDbContext>();
+            return new HistoricalDataRepository(db);
         });
         builder.Services.AddScoped<IEconomicCalendarRepository>(provider =>
         {
@@ -69,9 +69,9 @@ public partial class Program
             return new CanSlimCandidateRepository(db);
         });
         builder.Services.AddScoped<INoteRepository>(provider =>
-        {
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            return new NoteRepository(factory);
+        {       
+            var db = provider.GetRequiredService<AppDbContext>();
+            return new NoteRepository(db);
         });
         builder.Services.AddScoped<IListRepository>(provider =>
         {

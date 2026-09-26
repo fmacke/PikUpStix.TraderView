@@ -82,8 +82,8 @@ namespace TraderView.Console
 
                     services.AddSingleton<IHistoricalDataRepository>(provider =>
                     {
-                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        return new HistoricalDataRepository(factory);
+                        var db = provider.GetRequiredService<AppDbContext>();
+                        return new HistoricalDataRepository(db);
                     });
 
                     services.AddSingleton<IEconomicCalendarRepository>(provider =>

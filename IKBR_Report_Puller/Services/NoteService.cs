@@ -77,7 +77,12 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         public async Task<bool> DeleteAsync(int id)
         {
-            return await Task.Run(() => _noteRepository.DeleteAsync(id));
+            var note = await _noteRepository.GetByIdAsync(id);
+            if (note == null)
+                return false;
+
+            await _noteRepository.DeleteAsync(note);
+            return true;
         }
 
         /// <summary>
