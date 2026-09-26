@@ -36,7 +36,7 @@ namespace traderview.Server.Services
             try
             {
                 // Use repository to get trade executions and create history
-                var tradeExecutions = _tradeExecutionRepository.GetTradeExecutions();
+                var tradeExecutions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
                 _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
                 var trades = _tradeHistoryReportService.TradeHistoryAggregated;
 
@@ -67,7 +67,7 @@ namespace traderview.Server.Services
             try
             {
                 // Get trade summary using repository (positionId is the close order ID)
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByPositionId(positionId));
+                var tradeSummary = await _tradeExecutionRepository.GetTradeSummaryByPositionIdAsync(positionId);
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -87,7 +87,7 @@ namespace traderview.Server.Services
                 };
 
 
-                var executions = _tradeExecutionRepository.GetTradeExecutionsByPositionId(positionId).Select(e => new TradeExecutionDto
+                var executions = (await _tradeExecutionRepository.GetTradeExecutionsByPositionIdAsync(positionId)).Select(e => new TradeExecutionDto
                 {
                     Id = e.Id,
                     PositionId = positionId,
@@ -122,7 +122,7 @@ namespace traderview.Server.Services
             try
             {
                 // Get trade summary using repository (positionId is the close order ID)
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByPositionId(positionId));
+                var tradeSummary = await _tradeExecutionRepository.GetTradeSummaryByPositionIdAsync(positionId);
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);
@@ -286,7 +286,7 @@ namespace traderview.Server.Services
             try
             {
                 // Get trade summary (positionId )
-                var tradeSummary = await Task.Run(() => _tradeExecutionRepository.GetTradeSummaryByPositionId(positionId));
+                var tradeSummary = await _tradeExecutionRepository.GetTradeSummaryByPositionIdAsync(positionId);
                 if (tradeSummary == null) return null;
 
                 var trade = MapToTradeDto(tradeSummary);

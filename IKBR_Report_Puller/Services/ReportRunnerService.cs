@@ -15,6 +15,7 @@ namespace PikUpStix.TraderView.Services
     {
         private readonly IReportFetchingService _reportFetchingService;
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
+        private readonly IPositionRepository _positionRepository;
         private readonly IEquitySummaryService _equitySummaryService;
         private readonly IInstrumentService _instrumentService;
         private readonly IExcelReportService _excelReportService;
@@ -27,6 +28,7 @@ namespace PikUpStix.TraderView.Services
         public ReportRunnerService(
             IReportFetchingService reportFetchingService,
             ITradeExecutionRepository tradeExecutionRepository,
+            IPositionRepository positionRepository,
             IInstrumentService instrumentService,
             IExcelReportService excelReportService,
             ITradeHistoryReportService tradeHistoryReportService,
@@ -36,6 +38,7 @@ namespace PikUpStix.TraderView.Services
         {
             _reportFetchingService = reportFetchingService;
             _tradeExecutionRepository = tradeExecutionRepository;
+            _positionRepository = positionRepository;
             _equitySummaryService = equitySummaryService;
             _instrumentService = instrumentService;
             _excelReportService = excelReportService;
@@ -50,20 +53,20 @@ namespace PikUpStix.TraderView.Services
             {
                 IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
                 await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
-                _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
-            
+                await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
+
                 await UpdateOpenPositionPrices();
-                var executions = _tradeExecutionRepository.GetTradeExecutions();
+                var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
 
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
                 //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                SaveTradeConfirms(todayReportXml);
+                await SaveTradeConfirms(todayReportXml);
                 await SaveEquitySummaries(todayReportXml);
 
                 if (writeOutputtoExcel)
                 {
-                    var openPositions = _tradeExecutionRepository.GetOpenPositions();
-                    _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
+                    var openPositions = await _positionRepository.GetOpenPositionsAsync();
+                    await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
                     await WriteTodayReportToExcel(todayReportXml);
                 }
                 if (updateMarketData)
@@ -96,7 +99,7 @@ namespace PikUpStix.TraderView.Services
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
             // Insert instruments first, then trade confirmations
             await _instrumentService.UpsertInstrumentsAsync(todayReport.TradeConfirms, _marketDataService.SourceName).ConfigureAwait(false);
-            _tradeExecutionRepository.InsertTradeConfirmations(todayReport.TradeConfirms);
+            await _tradeExecutionRepository.InsertTradeConfirmationsAsync(todayReport.TradeConfirms);
         }
 
         private async Task SaveEquitySummaries(XDocument todayReportXml)
@@ -164,9 +167,9 @@ namespace PikUpStix.TraderView.Services
 
         private async Task UpdateOpenPositionPrices()
         {
-            var openPositions = _tradeExecutionRepository.GetOpenPositions();
+            var openPositions = await _positionRepository.GetOpenPositionsAsync();
             await _marketDataService.FetchLatestPrices(openPositions);
-            _tradeExecutionRepository.UpsertPositions(openPositions);
+            await _positionRepository.UpsertPositionsAsync(openPositions);
         }
 
         private async Task<string> WriteTodayReportToExcel(XDocument todayReportXml) 

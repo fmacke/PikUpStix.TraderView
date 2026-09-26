@@ -38,7 +38,7 @@ namespace traderview.Server.Controllers
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
 
                 // Use the shared report data preparation method
-                var reportData = _excelReportService.PrepareOpenPositionReportData(openPositions);
+                var reportData = await _excelReportService.PrepareOpenPositionReportData(openPositions);
 
                 // Convert to DTOs
                 var openPositionDtos = reportData.Select(data => new OpenPositionDto

@@ -30,7 +30,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Inserts or updates trade executions from a report
         /// </summary>
-        async void ITradeExecutionRepository.UpsertTradeExecutions(List<TradeExecution> trades)
+        async Task ITradeExecutionRepository.UpsertTradeExecutionsAsync(List<TradeExecution> trades)
         {
             if (trades == null || !trades.Any())
             {
@@ -101,115 +101,6 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Gets all positions from the database
         /// </summary>
-        List<Position> ITradeExecutionRepository.GetAllPositions()
-        {
-            return GetAllPositionsAsync().Result;
-        }
-
-        /// <summary>
-        /// Gets all open positions from the database
-        /// </summary>
-        List<Position> ITradeExecutionRepository.GetOpenPositions()
-        {
-            return GetOpenPositionsAsync().Result;
-        }
-
-        private async Task<List<Position>> GetAllPositionsAsync()
-        {
-            var positions = await _context.Set<Position>()
-                .AsNoTracking()
-                .Include(x => x.Instrument)
-                .ToListAsync();
-
-            if (!positions.Any())
-                return positions;
-
-            // Fetch TradeExecutions for all retrieved Positions
-            var positionIds = positions.Select(p => p.Id).ToList();
-            var tradeExecutions = await _context.Set<TradeExecution>()
-                .AsNoTracking()
-                .Where(te => te.PositionId.HasValue && positionIds.Contains(te.PositionId.Value))
-                .ToListAsync();
-
-            // Group and assign TradeExecutions to their parent Position
-            var executionLookup = tradeExecutions.ToLookup(te => te.PositionId ?? 0);
-            foreach (var position in positions)
-            {
-                if (executionLookup.Contains(position.Id))
-                {
-                    foreach (var execution in executionLookup[position.Id])
-                    {
-                        position.TradeExecutions.Add(execution);
-                    }
-                }
-            }
-
-            return positions;
-        }
-
-        private async Task<List<Position>> GetOpenPositionsAsync()
-        {
-            var positions = await _context.Set<Position>()
-                .AsNoTracking()
-                .Where(x => x.Status == "Open" && x.Instrument != null && x.Instrument.ContractUnitType != "CASH")
-                .Include(x => x.Instrument)
-                .OrderByDescending(x => x.OpenDate)
-                .ToListAsync();
-
-            if (!positions.Any())
-                return positions;
-
-            // Fetch TradeExecutions for all retrieved Positions
-            var positionIds = positions.Select(p => p.Id).ToList();
-            var tradeExecutions = await _context.Set<TradeExecution>()
-                .AsNoTracking()
-                .Where(te => te.PositionId.HasValue && positionIds.Contains(te.PositionId.Value))
-                .ToListAsync();
-
-            // Group and assign TradeExecutions to their parent Position
-            var executionLookup = tradeExecutions.ToLookup(te => te.PositionId ?? 0);
-            foreach (var position in positions)
-            {
-                if (executionLookup.Contains(position.Id))
-                {
-                    foreach (var execution in executionLookup[position.Id])
-                    {
-                        position.TradeExecutions.Add(execution);
-                    }
-                }
-            }
-
-            return positions;
-        }
-
-        public async Task UpdateTradeExecutionAsync(TradeExecution execution)
-        {
-            await UpdateAsync(execution);
-        }
-
-        /// <summary>
-        /// Closes a position by setting its status to 'Closed' and close date
-        /// </summary>
-        private async Task ClosePositionAsync(int positionId, DateTime closeDate)
-        {
-            try
-            {
-                var position = await _context.Set<Position>().FindAsync(positionId);
-                if (position != null)
-                {
-                    position.CloseDate = closeDate;
-                    position.Status = "Closed";
-                    _context.Set<Position>().Update(position);
-                    await _context.SaveChangesAsync();
-                    Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error closing position with Id: {positionId}. {ex.Message}");
-            }
-        }
-
         private async Task<Position?> GetOpenPositionAsync(int instrumentId)
         {
             try
@@ -245,15 +136,15 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Gets all trade executions ordered by order ID and date
         /// </summary>        
-        List<TradeExecution> ITradeExecutionRepository.GetTradeExecutions()
+        async Task<List<TradeExecution>> ITradeExecutionRepository.GetTradeExecutionsAsync()
         {
-            return GetAsync(new AllTradeExecutionsSpecification()).Result.ToList();
+            return (await GetAsync(new AllTradeExecutionsSpecification())).ToList();
         }
 
         /// <summary>
         /// Inserts or updates today's trade confirmations
         /// </summary>
-        async void ITradeExecutionRepository.InsertTradeConfirmations(List<TradeConfirm> tradeConfirms)
+        async Task ITradeExecutionRepository.InsertTradeConfirmationsAsync(List<TradeConfirm> tradeConfirms)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
             {
@@ -344,6 +235,31 @@ namespace TraderView.Infrastructure.Repositories
             }
         }
 
+        private async Task ClosePositionAsync(int positionId, DateTime closeDate)
+        {
+            try
+            {
+                var position = await _context.Set<Position>().FindAsync(positionId);
+                if (position != null)
+                {
+                    position.CloseDate = closeDate;
+                    position.Status = "Closed";
+                    _context.Set<Position>().Update(position);
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error closing position with Id: {positionId}. {ex.Message}");
+            }
+        }
+
+        public async Task UpdateTradeExecutionAsync(TradeExecution execution)
+        {
+            await UpdateAsync(execution);
+        }
+
         private async Task<int> CreateTradeExecutionAsync(TradeExecution trade)
         {
             try
@@ -392,9 +308,9 @@ namespace TraderView.Infrastructure.Repositories
 		/// Gets aggregated trade summary by position ID
 		/// Tracks the position from opening through closing executions
 		/// </summary>
-		TradeSummary? ITradeExecutionRepository.GetTradeSummaryByPositionId(int positionId)
+		async Task<TradeSummary?> ITradeExecutionRepository.GetTradeSummaryByPositionIdAsync(int positionId)
 		{
-			return GetTradeSummaryByPositionIdAsync(positionId).Result;
+			return await GetTradeSummaryByPositionIdAsync(positionId);
 		}
 
 		private async Task<TradeSummary?> GetTradeSummaryByPositionIdAsync(int positionId)
@@ -474,9 +390,9 @@ namespace TraderView.Infrastructure.Repositories
 		/// <summary>
 		/// Gets trade executions for a specific ConId and AccountId, ordered by trade date and time
 		/// </summary>
-		List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)> ITradeExecutionRepository.GetTradeExecutionsByConIdAndAccount(long? conid, string accountId)
+		async Task<List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>> ITradeExecutionRepository.GetTradeExecutionsByConIdAndAccountAsync(long? conid, string accountId)
 		{
-			return GetTradeExecutionsByConIdAndAccountAsync(conid, accountId).Result;
+			return await GetTradeExecutionsByConIdAndAccountAsync(conid, accountId);
 		}
 
 		private async Task<List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>> GetTradeExecutionsByConIdAndAccountAsync(long? conid, string accountId)
@@ -507,48 +423,13 @@ namespace TraderView.Infrastructure.Repositories
 			}
 		}
 
+
         /// <summary>
         /// Gets trade executions for a specific position ID
         /// </summary>
-        List<TradeExecution> ITradeExecutionRepository.GetTradeExecutionsByPositionId(int positionId)
+        async Task<List<TradeExecution>> ITradeExecutionRepository.GetTradeExecutionsByPositionIdAsync(int positionId)
         {
-            return GetAsync(new TradeExecutionByPositionIdSpecification(positionId)).Result.ToList();
-        }
-
-        /// <summary>
-        /// Inserts or updates positions in the database
-        /// </summary>
-        void ITradeExecutionRepository.UpsertPositions(List<Position> positions)
-        {
-            UpsertPositionsAsync(positions).GetAwaiter().GetResult();
-        }
-
-        private async Task UpsertPositionsAsync(List<Position> positions)
-        {
-            if (positions == null || !positions.Any())
-            {
-                Console.WriteLine("No positions to upsert.");
-                return;
-            }
-
-            int insertedCount = 0;
-            int updatedCount = 0;
-
-            foreach (var position in positions)
-            {
-                // Ensure instrument exists before upserting position
-                if (position.Id == 0)
-                {
-                    await CreatePositionAsync(position.InstrumentId, position.Instrument?.DataName ?? "Unknown", position.OpenDate, position.LastReportedPrice ?? 0m, "O");
-                    insertedCount++;
-                }
-                else
-                {
-                    await UpdatePositionAsync(position.Id, DateTime.Now, position.LastReportedPrice ?? 0m, "O");
-                    updatedCount++;
-                }
-            }
-            Console.WriteLine($"Successfully processed {positions.Count} positions: {insertedCount} inserted, {updatedCount} updated.");
+            return (await GetAsync(new TradeExecutionByPositionIdSpecification(positionId))).ToList();
         }
     }
 }

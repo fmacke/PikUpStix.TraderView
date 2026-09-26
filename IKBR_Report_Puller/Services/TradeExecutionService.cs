@@ -16,8 +16,7 @@ namespace TraderView.Application.Services
         }
         Task<List<TradeExecution>> ITradeExecutionService.GetTradeExecutions()
         {
-            var executions = _repository.GetTradeExecutions();
-            return Task.FromResult(executions);
+            return _repository.GetTradeExecutionsAsync();
         }
     }
 }

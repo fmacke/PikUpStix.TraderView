@@ -25,7 +25,7 @@ namespace PikUpStix.TraderView.Services
             _tradeHistoryReportService = tradeHistoryReportService;
         }
 
-        public void CreateExcelFileReport(List<Position> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
+        public async Task CreateExcelFileReport(List<Position> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
         {
             try
             {
@@ -39,7 +39,7 @@ namespace PikUpStix.TraderView.Services
 
                 using (var package = new ExcelPackage())
                 {
-                    CreateOpenPositionsWorkSheet(package, openPositions);                   
+                    await CreateOpenPositionsWorkSheet(package, openPositions);                   
                     _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "TradeExecution History");
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution History Aggregated");
@@ -61,10 +61,10 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private void CreateOpenPositionsWorkSheet(ExcelPackage package, List<Position> openPositions)
+        private async Task CreateOpenPositionsWorkSheet(ExcelPackage package, List<Position> openPositions)
         {
             // Prepare the report data
-            var reportData = PrepareOpenPositionReportData(openPositions);
+            var reportData = await PrepareOpenPositionReportData(openPositions);
 
             // Write data to worksheet
             WriteOpenPositionsToWorksheet(package, reportData);
@@ -76,7 +76,7 @@ namespace PikUpStix.TraderView.Services
         /// </summary>
         /// <param name="openPositions">List of open positions to process</param>
         /// <returns>List of calculated open position report data</returns>
-        public List<OpenPositionReportData> PrepareOpenPositionReportData(List<Position> openPositions)
+        public async Task<List<OpenPositionReportData>> PrepareOpenPositionReportData(List<Position> openPositions)
         {
             var reportDataList = new List<OpenPositionReportData>();
 
@@ -92,7 +92,7 @@ namespace PikUpStix.TraderView.Services
                     decimal positionValue = position.LastReportedPrice * currentPositionQuantity;
                     decimal unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
                     DateTime? dateOpened = position.OpenDate;
-                    var trades = _tradeExecutionRepository.GetTradeExecutionsByConIdAndAccount(conid, accountId);
+                    var trades = await _tradeExecutionRepository.GetTradeExecutionsByConIdAndAccountAsync(conid, accountId);
 
                     var openTrades = new Queue<(DateTime tradeDate, decimal quantity)>();
                     foreach (var trade in trades)

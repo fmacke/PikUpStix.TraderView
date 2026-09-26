@@ -12,5 +12,9 @@ public interface IPositionRepository : IRepository<Position>
 
     Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice);
 
-    Task<IReadOnlyList<Position>> GetOpenPositionsAsync();
+    Task<List<Position>> GetAllPositionsAsync();
+
+    Task<List<Position>> GetOpenPositionsAsync();
+
+    Task UpsertPositionsAsync(List<Position> positions);
 }

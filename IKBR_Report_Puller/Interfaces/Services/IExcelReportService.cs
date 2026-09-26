@@ -12,7 +12,7 @@ namespace TraderView.Application.Interfaces.Services
         /// <param name="openPositions">The list of open positions to include in the report.</param>
         /// <param name="tradeExecutions">The list of trade executions to include in the report.</param>
         /// <param name="outputFilePath">The file path where the Excel report will be saved.</param>    
-        void CreateExcelFileReport(List<Position> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath);
+        Task CreateExcelFileReport(List<Position> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath);
 
         /// <summary>
         /// Prepares the open position report data by calculating all necessary values.
@@ -20,6 +20,6 @@ namespace TraderView.Application.Interfaces.Services
         /// </summary>
         /// <param name="openPositions">List of open positions to process</param>
         /// <returns>List of calculated open position report data</returns>
-        List<OpenPositionReportData> PrepareOpenPositionReportData(IReadOnlyList<Position> openPositions);
+        Task<List<OpenPositionReportData>> PrepareOpenPositionReportData(IReadOnlyList<Position> openPositions);
     }
 }

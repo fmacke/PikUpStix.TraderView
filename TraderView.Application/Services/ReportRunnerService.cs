@@ -11,6 +11,7 @@ namespace PikUpStix.TraderView.Services
     {
         private readonly IReportFetchingService _reportFetchingService;
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
+        private readonly IPositionRepository _positionRepository;
         private readonly IInstrumentRepository _instrumentRepository;
         private readonly IExcelReportService _excelReportService;
         private readonly IConfiguration _config;
@@ -24,6 +25,7 @@ namespace PikUpStix.TraderView.Services
         public ReportRunnerService(
             IReportFetchingService reportFetchingService,
             ITradeExecutionRepository tradeExecutionRepository,
+            IPositionRepository positionRepository,
             IInstrumentRepository instrumentRepository,
             IExcelReportService excelReportService,
             ITradeHistoryReportService tradeHistoryReportService,
@@ -34,6 +36,7 @@ namespace PikUpStix.TraderView.Services
         {
             _reportFetchingService = reportFetchingService;
             _tradeExecutionRepository = tradeExecutionRepository;
+            _positionRepository = positionRepository;
             _instrumentRepository = instrumentRepository;
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
@@ -49,17 +52,17 @@ namespace PikUpStix.TraderView.Services
             {
                 (IKBRReport mainReport, string fileName) = await GetReportDataFromInteractiveBrokers();
                 _instrumentRepository.UpsertInstruments(mainReport.Trades, _marketDataService.SourceName);
-                _tradeExecutionRepository.UpsertTradeExecutions(mainReport.Trades);
+                await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
                 await UpdateOpenPositionPrices();
-                var executions = _tradeExecutionRepository.GetTradeExecutions();
+                var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
 
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                SaveTradeConfirms(todayReportXml);
+                await SaveTradeConfirms(todayReportXml);
 
                 if (writeOutputtoExcel)
                 {
-                    var openPositions = _tradeExecutionRepository.GetOpenPositions();
-                    _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
+                    var openPositions = await _positionRepository.GetOpenPositionsAsync();
+                    await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
                     await WriteTodayReportToExcel(todayReportXml);
                 }
                 if (updateMarketData)
@@ -88,21 +91,21 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private void SaveTradeConfirms(XDocument todayReportXml)
+        private async Task SaveTradeConfirms(XDocument todayReportXml)
         {
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
 
             // Insert instruments first, then trade confirmations
             _instrumentRepository.UpsertInstruments(todayReport.TradeConfirms, _marketDataService.SourceName);
-            _tradeExecutionRepository.InsertTradeConfirmations(todayReport.TradeConfirms);
-        }     
+            await _tradeExecutionRepository.InsertTradeConfirmationsAsync(todayReport.TradeConfirms);
+        }
 
         private async Task UpdateOpenPositionPrices()
         {
-            var openPositions = _tradeExecutionRepository.GetOpenPositions();
+            var openPositions = await _positionRepository.GetOpenPositionsAsync();
             await _marketDataService.FetchLatestPrices(openPositions);
-            _tradeExecutionRepository.UpsertPositions(openPositions);
+            await _positionRepository.UpsertPositionsAsync(openPositions);
         }
 
         private async Task<string> WriteTodayReportToExcel(XDocument todayReportXml) 
