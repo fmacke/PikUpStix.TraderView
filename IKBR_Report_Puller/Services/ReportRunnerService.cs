@@ -47,12 +47,12 @@ namespace PikUpStix.TraderView.Services
                 await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
                 await UpdateOpenPositionPrices();
                 await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
-                //var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
+                var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
 
-                //XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                ////XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                //await SaveTradeConfirms(todayReportXml);
-                //await SaveEquitySummaries(todayReportXml);
+                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+                //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
+                await SaveTradeConfirms(todayReportXml);
+                await SaveEquitySummaries(todayReportXml);
 
                 //if (writeOutputtoExcel)
                 //{
@@ -185,8 +185,8 @@ namespace PikUpStix.TraderView.Services
         private async Task<IKBRReport> GetReportDataFromInteractiveBrokers(bool writeOutputToDrive)
         {
             // Fetch and process main report
-            //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260922_194251_TraderSyncAccess.xml");
-            XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260927_172750_TraderSyncAccess.xml");
+            //XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
 
             if (writeOutputToDrive)
             {

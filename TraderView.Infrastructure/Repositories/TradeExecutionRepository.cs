@@ -49,7 +49,7 @@ namespace TraderView.Infrastructure.Repositories
                 {
                     try
                     {
-                        trade.Position.InstrumentId = Convert.ToInt32(await _instrumentService.GetInstrumentIdByConIdAsync(trade.Conid));
+                        //trade.Position.InstrumentId = Convert.ToInt32(await _instrumentService.GetInstrumentIdByConIdAsync(trade.Conid));
                         var openPosition = await GetOpenPositionAsync(trade.Position.InstrumentId);
                         trade.PositionId = openPosition?.Id ?? await CreatePositionAsync(trade.Position.InstrumentId, trade.Symbol, trade.TradeDate, Convert.ToDecimal(trade.TradePrice), "O");
                         trade.Id = await CreateTradeExecutionAsync(trade);
@@ -70,7 +70,19 @@ namespace TraderView.Infrastructure.Repositories
                         // Entry was made by TradeConfirmation so will be missing key details. Update the record with the new trade execution details.
                         trade.Id = tradeExecInDb.Id; // Ensure we have the correct Id for the update
                         trade.PositionId = tradeExecInDb.PositionId; // Preserve the existing PositionId
-                        await UpdateTradeExecutionAsync(trade);
+
+                        // Map incoming values into the tracked entity to avoid multiple tracked
+                        // instances with the same key. Copy scalar values from the incoming
+                        // trade into the tracked tradeExecInDb and persist.
+                        try
+                        {
+                            _context.Entry(tradeExecInDb).CurrentValues.SetValues(trade);
+                            await UpdateAsync(tradeExecInDb);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Error updating trade execution (Id: {tradeExecInDb.Id}): {ex.Message}");
+                        }
                     }
                 }
             }

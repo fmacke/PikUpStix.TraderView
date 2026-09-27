@@ -17,11 +17,16 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+      <!-- AutoMapper removed; using EF Core CurrentValues.SetValues for mapping to avoid extra dependency -->
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\IKBR_Report_Puller\TraderView.Application.csproj" />
     <ProjectReference Include="..\TraderView.Domain\TraderView.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Mappings\" />
   </ItemGroup>
 
 </Project>

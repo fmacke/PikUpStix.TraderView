@@ -56,6 +56,8 @@ namespace TraderView.Console
                         options.UseSqlServer(BuildConnectionString(hostContext.Configuration));
                     });
 
+                    // No AutoMapper registration here; repository uses EF Core CurrentValues.SetValues for mapping
+
                     // Register repositories 
                     // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
                     services.AddScoped<IInstrumentRepository>(provider =>

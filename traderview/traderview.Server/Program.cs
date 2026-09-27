@@ -33,6 +33,8 @@ public partial class Program
             options.UseSqlServer(connectionString);
         });
 
+        // No AutoMapper registration here; repository uses EF Core CurrentValues.SetValues for mapping
+
         // Register repositories 
         // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
         builder.Services.AddScoped<IInstrumentRepository>(provider =>
