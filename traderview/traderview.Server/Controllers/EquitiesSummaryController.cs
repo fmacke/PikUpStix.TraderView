@@ -17,9 +17,7 @@ public class EquitiesSummaryController : ControllerBase
     /// <summary>
     /// Constructor
     /// </summary>
-    public EquitiesSummaryController(
-        IEquitySummaryService equitySummaryService,
-        ILogger<EquitiesSummaryController> logger)
+    public EquitiesSummaryController(IEquitySummaryService equitySummaryService, ILogger<EquitiesSummaryController> logger)
     {
         _equitySummaryService = equitySummaryService;
         _logger = logger;

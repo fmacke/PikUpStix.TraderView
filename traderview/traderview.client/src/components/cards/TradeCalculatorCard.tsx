@@ -113,6 +113,20 @@ export const TradeCalculatorCard: React.FC = () => {
         void init();
     }, []);
 
+    // Fetch latest asset value on component mount
+    useEffect(() => {
+        const loadLatestAssetValue = async () => {
+            try {
+                const assetValue = await apiService.getLatestAssetValue();
+                setRequest(prev => ({ ...prev, tradingCapital: assetValue.totalAssetValue }));
+            } catch (error) {
+                console.error('Failed to fetch latest asset value:', error);
+            }
+        };
+
+        void loadLatestAssetValue();
+    }, []);
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         // Support checkboxes (use checked) and numeric/text inputs (use value)
         const target = e.target as HTMLInputElement;
