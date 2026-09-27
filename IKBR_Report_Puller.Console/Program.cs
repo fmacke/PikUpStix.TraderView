@@ -72,6 +72,8 @@ namespace TraderView.Console
                         return new PositionRepository(db);
                     });
 
+                    services.AddScoped<IInstrumentService, InstrumentService>();
+                    services.AddScoped<IPositionService, PositionService>();
                     services.AddScoped<ITradeExecutionRepository>(provider =>
                     {
                         var db = provider.GetRequiredService<AppDbContext>();
@@ -80,25 +82,25 @@ namespace TraderView.Console
                         return new TradeExecutionRepository(db, instrumentService, positionService);
                     });
 
-                    services.AddSingleton<IHistoricalDataRepository>(provider =>
+                    services.AddScoped<IHistoricalDataRepository>(provider =>
                     {
                         var db = provider.GetRequiredService<AppDbContext>();
                         return new HistoricalDataRepository(db);
                     });
 
-                    services.AddSingleton<IEconomicCalendarRepository>(provider =>
+                    services.AddScoped<IEconomicCalendarRepository>(provider =>
                     {
                         var db = provider.GetRequiredService<AppDbContext>();
                         return new EconomicCalendarRepository(db);
                     });
 
-                    services.AddSingleton<ICanSlimCandidateRepository>(provider =>
+                    services.AddScoped<ICanSlimCandidateRepository>(provider =>
                     {
                         var db = provider.GetRequiredService<AppDbContext>();
                         return new CanSlimCandidateRepository(db);
                     });
 
-                    services.AddSingleton<IEquitySummaryRepository>(provider =>
+                    services.AddScoped<IEquitySummaryRepository>(provider =>
                     {
                         var db = provider.GetRequiredService<AppDbContext>();
                         return new EquitySummaryRepository(db);
@@ -127,7 +129,6 @@ namespace TraderView.Console
                         var config = provider.GetRequiredService<IConfiguration>();
                         var apiKey = config["FinancialModelingPrep:ApiKey"];
                         var baseUrl = config["FinancialModelingPrep:BaseUrl"];
-
                         return new FinancialModellingPrepCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
                     });
 
@@ -153,18 +154,13 @@ namespace TraderView.Console
                     });
                     services.AddScoped<IReportRunnerService, ReportRunnerService>();
                     services.AddScoped<IExcelReportService, ExcelReportService>();
-                    services.AddScoped<IPositionService, PositionService>(provider =>
-                    {
-                        var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
-                        var positionRepo = provider.GetRequiredService<IPositionRepository>();
-                        return new PositionService(positionRepo);
-                    });
+
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
-                    services.AddSingleton<ICanSlimScreenerService, CanSlimScreenerService>();
-                    services.AddSingleton<ICurrentPerformanceService, CurrentPerformanceService>();
-                    services.AddSingleton<IEquitySummaryService, EquitySummaryService>();
-                    services.AddScoped<IInstrumentService, InstrumentService>();
+                    services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
+                    services.AddScoped<ICurrentPerformanceService, CurrentPerformanceService>();
+                    services.AddScoped<IEquitySummaryService, EquitySummaryService>();
+                    
                     services.AddScoped<Application>();
                 })
                 .Build();

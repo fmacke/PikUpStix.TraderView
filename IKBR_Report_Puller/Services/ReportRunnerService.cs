@@ -25,16 +25,7 @@ namespace PikUpStix.TraderView.Services
         const int maxRetries = 3;
         const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
-        public ReportRunnerService(
-            IReportFetchingService reportFetchingService,
-            ITradeExecutionRepository tradeExecutionRepository,
-            IPositionRepository positionRepository,
-            IInstrumentService instrumentService,
-            IExcelReportService excelReportService,
-            ITradeHistoryReportService tradeHistoryReportService,
-            IMarketDataService marketDataService,
-            IEquitySummaryService equitySummaryService,
-            IConfiguration config)
+        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionRepository tradeExecutionRepository, IPositionRepository positionRepository,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
             _tradeExecutionRepository = tradeExecutionRepository;
@@ -54,38 +45,38 @@ namespace PikUpStix.TraderView.Services
                 IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
                 await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
                 await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
-
                 await UpdateOpenPositionPrices();
-                var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
+                await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
+                //var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
 
-                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                await SaveTradeConfirms(todayReportXml);
-                await SaveEquitySummaries(todayReportXml);
+                //XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+                ////XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
+                //await SaveTradeConfirms(todayReportXml);
+                //await SaveEquitySummaries(todayReportXml);
 
-                if (writeOutputtoExcel)
-                {
-                    var openPositions = await _positionRepository.GetOpenPositionsAsync();
-                    await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
-                    await WriteTodayReportToExcel(todayReportXml);
-                }
-                if (updateMarketData)
-                {
-                    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                    await _marketDataService.FetchAndSaveChartData(new List<string>()
-                    {
-                        "^GSPC",//spx
-                        "^RUT",//iwm
-                        //"CLUSD",//wti crude oil
-                        "BTCUSD",//bitcoin
-                        "GCUSD",//gold
-                        "XAGUSD",//silver
-                        "QQQ",//nasdaq
-                        "^VIX"
-                     }, 300);
-                }
+                //if (writeOutputtoExcel)
+                //{
+                //    var openPositions = await _positionRepository.GetOpenPositionsAsync();
+                //    await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
+                //    await WriteTodayReportToExcel(todayReportXml);
+                //}
+                //if (updateMarketData)
+                //{
+                //    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
+                //    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                //    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                //    await _marketDataService.FetchAndSaveChartData(new List<string>()
+                //    {
+                //        "^GSPC",//spx
+                //        "^RUT",//iwm
+                //        //"CLUSD",//wti crude oil
+                //        "BTCUSD",//bitcoin
+                //        "GCUSD",//gold
+                //        "XAGUSD",//silver
+                //        "QQQ",//nasdaq
+                //        "^VIX"
+                //     }, 300);
+                //}
             }
             catch (Exception ex)
             {
