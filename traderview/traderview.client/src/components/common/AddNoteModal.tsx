@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import './AddNoteModal.css';
 import { apiService } from '../../services/apiService';
 import type { ListItem } from '../../types/api';
+import ListItemSelect from './ListItemSelect';
 
 interface AddNoteModalProps {
     isOpen: boolean;
@@ -17,39 +18,34 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
     const [selectedEntryMethodId, setSelectedEntryMethodId] = useState<number | null>(null);
     const [isLoadingEntryMethods, setIsLoadingEntryMethods] = useState(false);
     const [errorTypes, setErrorTypes] = useState<ListItem[]>([]);
+    const [exitTypes, setExitTypes] = useState<ListItem[]>([]);
     const [selectedErrorTypeId, setSelectedErrorTypeId] = useState<number | null>(null);
     const [isLoadingErrorTypes, setIsLoadingErrorTypes] = useState(false);
+    const [selectedExitTypeId, setSelectedExitTypeId] = useState<number | null>(null);
+    const [isLoadingExitTypes, setIsLoadingExitTypes] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
-            fetchEntryMethods();
-            fetchErrorTypes();
+            fetchListItems('EntryMethod', setEntryMethods, setIsLoadingEntryMethods);
+            fetchListItems('EntryError', setErrorTypes, setIsLoadingErrorTypes);
+            fetchListItems('ExitMethod', setExitTypes, setIsLoadingExitTypes);
         }
     }, [isOpen]);
 
-    const fetchEntryMethods = async () => {
-        setIsLoadingEntryMethods(true);
+    const fetchListItems = async (
+        category: string,
+        setItems: React.Dispatch<React.SetStateAction<ListItem[]>>,
+        setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+    ) => {
+        setIsLoading(true);
         try {
-            const methods = await apiService.getEntryMethods();
-            setEntryMethods(methods);
+            const items = await apiService.getListItems(category);
+            setItems(items);
         } catch (error) {
-            console.error('Error fetching entry methods:', error);
-            // Continue without entry methods - the dropdown will just be empty
+            console.error(`Error fetching ${category} list items:`, error);
+            // Continue without items - the dropdown will just be empty
         } finally {
-            setIsLoadingEntryMethods(false);
-        }
-    };
-
-    const fetchErrorTypes = async () => {
-        setIsLoadingErrorTypes(true);
-        try {
-            const types = await apiService.getErrorTypes();
-            setErrorTypes(types);
-        } catch (error) {
-            console.error('Error fetching error types:', error);
-            // Continue without error types - the dropdown will just be empty
-        } finally {
-            setIsLoadingErrorTypes(false);
+            setIsLoading(false);
         }
     };
 
@@ -119,39 +115,38 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
 
                 <form onSubmit={handleSubmit}>
                     <div className="modal-body">
-                        <div className="form-group">
-                            <label htmlFor="entryMethod">Entry Method</label>
-                            <select
-                                id="entryMethod"
-                                value={selectedEntryMethodId ?? ''}
-                                onChange={(e) => setSelectedEntryMethodId(e.target.value ? parseInt(e.target.value) : null)}
-                                disabled={isSubmitting || isLoadingEntryMethods}
-                            >
-                                <option value="">-- Select Entry Method (Optional) --</option>
-                                {entryMethods.map((method) => (
-                                    <option key={method.id} value={method.id}>
-                                        {method.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <ListItemSelect
+                            id="entryMethod"
+                            label="Entry Method"
+                            items={entryMethods}
+                            selectedId={selectedEntryMethodId}
+                            onChange={setSelectedEntryMethodId}
+                            isLoading={isLoadingEntryMethods}
+                            isDisabled={isSubmitting}
+                            placeholder="-- Select Entry Method (Optional) --"
+                        />
 
-                        <div className="form-group">
-                            <label htmlFor="errorType">Error Type</label>
-                            <select
-                                id="errorType"
-                                value={selectedErrorTypeId ?? ''}
-                                onChange={(e) => setSelectedErrorTypeId(e.target.value ? parseInt(e.target.value) : null)}
-                                disabled={isSubmitting || isLoadingErrorTypes}
-                            >
-                                <option value="">-- Select Error Type (Optional) --</option>
-                                {errorTypes.map((type) => (
-                                    <option key={type.id} value={type.id}>
-                                        {type.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <ListItemSelect
+                            id="errorType"
+                            label="Error Type"
+                            items={errorTypes}
+                            selectedId={selectedErrorTypeId}
+                            onChange={setSelectedErrorTypeId}
+                            isLoading={isLoadingErrorTypes}
+                            isDisabled={isSubmitting}
+                            placeholder="-- Select Error Type (Optional) --"
+                        />
+
+                        <ListItemSelect
+                            id="exitType"
+                            label="Exit Type"
+                            items={exitTypes}
+                            selectedId={selectedExitTypeId}
+                            onChange={setSelectedExitTypeId}
+                            isLoading={isLoadingExitTypes}
+                            isDisabled={isSubmitting}
+                            placeholder="-- Select Exit Type (Optional) --"
+                        />
 
                         <div className="form-group">
                             <label htmlFor="comment">Comment</label>

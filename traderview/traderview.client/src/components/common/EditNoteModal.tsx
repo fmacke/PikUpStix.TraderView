@@ -27,32 +27,24 @@ function EditNoteModal({ isOpen, onClose, onSubmit, note }: EditNoteModalProps) 
             setEntryDate(note.entryDate);
             setSelectedEntryMethodId(note.tradeTypeId);
             setSelectedErrorTypeId(note.errorTypeId);
-            fetchEntryMethods();
-            fetchErrorTypes();
+            fetchListItems('EntryMethod', setEntryMethods, setIsLoadingEntryMethods);
+            fetchListItems('ErrorType', setErrorTypes, setIsLoadingErrorTypes);
         }
     }, [isOpen, note]);
 
-    const fetchEntryMethods = async () => {
-        setIsLoadingEntryMethods(true);
+    const fetchListItems = async (
+        category: string,
+        setItems: React.Dispatch<React.SetStateAction<ListItem[]>>,
+        setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+    ) => {
+        setIsLoading(true);
         try {
-            const methods = await apiService.getEntryMethods();
-            setEntryMethods(methods);
+            const items = await apiService.getListItems(category);
+            setItems(items);
         } catch (error) {
-            console.error('Error fetching entry methods:', error);
+            console.error(`Error fetching ${category} list items:`, error);
         } finally {
-            setIsLoadingEntryMethods(false);
-        }
-    };
-
-    const fetchErrorTypes = async () => {
-        setIsLoadingErrorTypes(true);
-        try {
-            const types = await apiService.getErrorTypes();
-            setErrorTypes(types);
-        } catch (error) {
-            console.error('Error fetching error types:', error);
-        } finally {
-            setIsLoadingErrorTypes(false);
+            setIsLoading(false);
         }
     };
 

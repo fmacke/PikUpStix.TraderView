@@ -10,6 +10,7 @@ public class AllTradeExecutionsSpecification : BaseSpecification<TradeExecution>
 {
     public AllTradeExecutionsSpecification()
     {
+        AddInclude(x => x.Position);
         ApplyOrdering(x => x.TradeDate, isDescending: false);
         ApplyOrdering(x => x.DateTime, isDescending: false);
     }

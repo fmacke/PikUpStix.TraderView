@@ -221,28 +221,15 @@ export const apiService = {
         }
     },
 
-    // Get all EntryMethod list items
-    async getEntryMethods(): Promise<ListItem[]> {
-        console.log('Making API call to /lists/entrymethod');
+    // Get list items for a specific category
+    async getListItems(category: string): Promise<ListItem[]> {
+        console.log(`Making API call to /lists/${category}`);
         try {
-            const response = await apiClient.get<ListItem[]>('/lists/entrymethod');
-            console.log('Get EntryMethod list items API response received:', response.data);
+            const response = await apiClient.get<ListItem[]>(`/lists/${category}`);
+            console.log(`Get list items for category '${category}' API response received:`, response.data);
             return response.data;
         } catch (error) {
-            console.error('Get EntryMethod list items API call failed:', error);
-            throw error;
-        }
-    },
-
-    // Get all ErrorType list items
-    async getErrorTypes(): Promise<ListItem[]> {
-        console.log('Making API call to /lists/entryerror');
-        try {
-            const response = await apiClient.get<ListItem[]>('/lists/entryerror');
-            console.log('Get ErrorType list items API response received:', response.data);
-            return response.data;
-        } catch (error) {
-            console.error('Get ErrorType list items API call failed:', error);
+            console.error(`Get list items for category '${category}' API call failed:`, error);
             throw error;
         }
     },

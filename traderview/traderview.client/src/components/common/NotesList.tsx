@@ -25,13 +25,13 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote }: NotesList
             try {
                 setListItemsLoading(true);
                 const [entryMethods, entryErrors] = await Promise.all([
-                    apiService.getEntryMethods(),
-                    apiService.getErrorTypes()
+                    apiService.getListItems('EntryMethod'),
+                    apiService.getListItems('ErrorType')
                 ]);
 
                 // Create maps for quick lookup
-                const tradeTypeMap = new Map(entryMethods.map(item => [item.id, item.name]));
-                const errorTypeMap = new Map(entryErrors.map(item => [item.id, item.name]));
+                const tradeTypeMap = new Map(entryMethods.map((item: { id: number; name: string }) => [item.id, item.name]));
+                const errorTypeMap = new Map(entryErrors.map((item: { id: number; name: string }) => [item.id, item.name]));
 
                 setTradeTypes(tradeTypeMap);
                 setErrorTypes(errorTypeMap);
