@@ -30,4 +30,5 @@ public interface IEquitySummaryRepository : IRepository<EquitySummary>
     /// <param name="endDate">The end date (inclusive)</param>
     /// <returns>List of equity summaries within the date range</returns>
     Task<IReadOnlyList<EquitySummary>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
+    Task UpsertEquitySummariesAsync(List<EquitySummary> equitySummaries);
 }

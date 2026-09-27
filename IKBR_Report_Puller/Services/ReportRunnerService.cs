@@ -43,16 +43,16 @@ namespace PikUpStix.TraderView.Services
             try
             {
                 IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
-                await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
-                await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
-                await UpdateOpenPositionPrices();
+                //await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
+                //await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
+                //await UpdateOpenPositionPrices();
                 await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
-                var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
+                //var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
 
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
                 //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                await SaveTradeConfirms(todayReportXml);
-                await SaveEquitySummaries(todayReportXml);
+                //await SaveTradeConfirms(todayReportXml);
+                //await SaveEquitySummaries(todayReportXml);
 
                 //if (writeOutputtoExcel)
                 //{

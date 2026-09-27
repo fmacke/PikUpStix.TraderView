@@ -53,9 +53,9 @@ namespace PikUpStix.TraderView.Services
             await _equitySummaryRepository.DeleteAsync(entity);
             return true;
         }
-        Task IEquitySummaryService.UpsertEquitySummariesAsync(List<EquitySummary> equitySummaries)
+        async Task IEquitySummaryService.UpsertEquitySummariesAsync(List<EquitySummary> equitySummaries)
         {
-            throw new NotImplementedException();
+            await _equitySummaryRepository.UpsertEquitySummariesAsync(equitySummaries);
         }
     }
 }

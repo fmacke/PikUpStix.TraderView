@@ -40,5 +40,39 @@ namespace TraderView.Infrastructure.Repositories
             var specification = new EquitySummaryByDateRangeSpecification(startDate, endDate);
             return await GetAsync(specification);
         }
+
+        async Task IEquitySummaryRepository.UpsertEquitySummariesAsync(List<EquitySummary> equitySummaries)
+        {
+            foreach (var summary in equitySummaries)
+            {
+                var existingSummary = await GetByAccountAndDateAsync(summary.AccountId, summary.ReportDate);
+                if (existingSummary != null)
+                {
+                    existingSummary.AcctAlias = summary.AcctAlias;
+                    existingSummary.Model = summary.Model;
+                    existingSummary.Currency = summary.Currency;
+                    existingSummary.Cash = summary.Cash;
+                    existingSummary.CashLong = summary.CashLong;
+                    existingSummary.CashShort = summary.CashShort;
+                    existingSummary.Stock = summary.Stock;
+                    existingSummary.StockLong = summary.StockLong;
+                    existingSummary.StockShort = summary.StockShort;
+                    existingSummary.Funds = summary.Funds;
+                    existingSummary.FundsLong = summary.FundsLong;
+                    existingSummary.FundsShort = summary.FundsShort;
+                    existingSummary.DividendAccruals = summary.DividendAccruals;
+                    existingSummary.DividendAccrualsLong = summary.DividendAccrualsLong;
+                    existingSummary.DividendAccrualsShort = summary.DividendAccrualsShort;
+                    existingSummary.Total = summary.Total;
+                    existingSummary.TotalLong = summary.TotalLong;
+                    existingSummary.TotalShort = summary.TotalShort;
+                    await UpdateAsync(existingSummary);
+                }
+                else
+                {
+                    await AddAsync(summary);
+                }
+            }
+        }
     }
 }
