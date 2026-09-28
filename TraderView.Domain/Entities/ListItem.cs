@@ -19,7 +19,9 @@ namespace TraderView.Domain.Entities
 
         public DateTime UpdatedAt { get; set; }
 
-        public virtual ICollection<Note> Notes { get; set; } = new List<Note>();
+        // Notes navigation removed to avoid creating an unintended shadow foreign key (ListItemId)
+        // when the inverse navigation is not present on Note. Use explicit navigations on
+        // the dependent entities (Note, StrategyStage, StrategyStageStep) when needed.
 
         public virtual ICollection<StrategyStageStep> StrategyStageSteps { get; set; } = new List<StrategyStageStep>();
 

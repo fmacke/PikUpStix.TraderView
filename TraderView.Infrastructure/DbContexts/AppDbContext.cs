@@ -246,13 +246,48 @@ namespace TraderView.Infrastructure.DbContexts
 
             modelBuilder.Entity<Note>(entity =>
             {
+                entity.ToTable("Notes");
+
+                entity.HasKey(e => e.Id);
+
                 entity.HasIndex(e => e.PositionId, "IX_Notes_PositionId");
 
-                entity.Property(e => e.EntryDate).HasDefaultValueSql("(getutcdate())");
-                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getutcdate())");
+                entity.Property(e => e.PositionId)
+                    .IsRequired()
+                    .HasColumnName("PositionId");
+
+                entity.Property(e => e.TradeExecutionId)
+                    .HasColumnName("TradeExecutionId");
+
+                entity.Property(e => e.TradeTypeId)
+                    .HasColumnName("TradeTypeId");
+
+                entity.Property(e => e.ErrorTypeId)
+                    .HasColumnName("ErrorTypeId");
+
+                entity.Property(e => e.ExitTypeId)
+                    .HasColumnName("ExitTypeId");
+
+                entity.Property(e => e.Comment)
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)")
+                    .HasColumnName("Comment");
+
+                entity.Property(e => e.EntryDate)
+                    .IsRequired()
+                    .HasColumnType("datetime2(7)")
+                    .HasColumnName("EntryDate")
+                    .HasDefaultValueSql("(getutcdate())");
+
+                entity.Property(e => e.UpdatedAt)
+                    .IsRequired()
+                    .HasColumnType("datetime2(7)")
+                    .HasColumnName("UpdatedAt")
+                    .HasDefaultValueSql("(getutcdate())");
 
                 entity.HasOne(d => d.Position).WithMany(p => p.Notes)
                     .HasForeignKey(d => d.PositionId)
+                    .OnDelete(DeleteBehavior.Cascade)
                     .HasConstraintName("FK_Notes_Positions");
             });
 
