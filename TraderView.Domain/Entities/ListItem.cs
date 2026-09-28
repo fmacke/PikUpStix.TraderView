@@ -23,8 +23,8 @@ namespace TraderView.Domain.Entities
         // when the inverse navigation is not present on Note. Use explicit navigations on
         // the dependent entities (Note, StrategyStage, StrategyStageStep) when needed.
 
-        public virtual ICollection<StrategyStageStep> StrategyStageSteps { get; set; } = new List<StrategyStageStep>();
+        //public virtual ICollection<StrategyStageStep> StrategyStageSteps { get; set; } = new List<StrategyStageStep>();
 
-        public virtual ICollection<StrategyStage> StrategyStages { get; set; } = new List<StrategyStage>();
+        //public virtual ICollection<StrategyStage> StrategyStages { get; set; } = new List<StrategyStage>();
     }
 }
