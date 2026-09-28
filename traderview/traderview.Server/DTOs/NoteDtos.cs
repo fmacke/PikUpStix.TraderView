@@ -11,7 +11,9 @@ namespace traderview.Server.DTOs
         public DateTime EntryDate { get; set; }
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
+        public int? ExitTypeId { get; set; }
     }
+
 
     /// <summary>
     /// DTO for updating an existing note
@@ -23,6 +25,7 @@ namespace traderview.Server.DTOs
         public DateTime EntryDate { get; set; }
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
+        public int? ExitTypeId { get; set; }
     }
 
     /// <summary>
@@ -38,5 +41,6 @@ namespace traderview.Server.DTOs
         public DateTime EntryDate { get; set; }
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
+        public int? ExitTypeId { get; set; }
     }
 }

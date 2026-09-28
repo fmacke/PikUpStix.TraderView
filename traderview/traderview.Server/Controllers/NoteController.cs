@@ -45,7 +45,8 @@ namespace traderview.Server.Controllers
                     createNoteDto.Comment,
                     createNoteDto.EntryDate,
                     createNoteDto.TradeTypeId,
-                    createNoteDto.ErrorTypeId
+                    createNoteDto.ErrorTypeId,
+                    createNoteDto.ExitTypeId
                 );
 
                 var createdNote = new NoteDto
@@ -57,7 +58,8 @@ namespace traderview.Server.Controllers
                     EntryDate = createNoteDto.EntryDate,
                     TradeTypeId = createNoteDto.TradeTypeId,
                     UpdatedAt = DateTime.UtcNow,
-                    ErrorTypeId = createNoteDto.ErrorTypeId
+                    ErrorTypeId = createNoteDto.ErrorTypeId,
+                    ExitTypeId = createNoteDto.ExitTypeId
                 };
 
                 _logger.LogInformation("Note created with ID {NoteId}", noteId);
@@ -104,6 +106,7 @@ namespace traderview.Server.Controllers
                     EntryDate = note.EntryDate,
                     TradeTypeId = note.TradeTypeId,
                     ErrorTypeId = note.ErrorTypeId,
+                    ExitTypeId = note.ExitTypeId,
                     UpdatedAt = note.UpdatedAt
                 };
 
@@ -142,7 +145,8 @@ namespace traderview.Server.Controllers
                     EntryDate = n.EntryDate,
                     UpdatedAt = n.UpdatedAt,
                     TradeTypeId = n.TradeTypeId,
-                    ErrorTypeId = n.ErrorTypeId
+                    ErrorTypeId = n.ErrorTypeId,
+                    ExitTypeId = n.ExitTypeId
                 }).ToList();
 
                 return Ok(noteDtos);
@@ -191,7 +195,8 @@ namespace traderview.Server.Controllers
                     updateNoteDto.Comment,
                     DateTime.Now,
                     updateNoteDto.TradeTypeId,
-                    updateNoteDto.ErrorTypeId
+                    updateNoteDto.ErrorTypeId,
+                    updateNoteDto.ExitTypeId
                 );
 
                 if (!isUpdated)
@@ -211,7 +216,8 @@ namespace traderview.Server.Controllers
                     EntryDate = updateNoteDto.EntryDate,
                     TradeTypeId = updateNoteDto.TradeTypeId,
                     UpdatedAt = DateTime.UtcNow,
-                    ErrorTypeId = updateNoteDto.ErrorTypeId
+                    ErrorTypeId = updateNoteDto.ErrorTypeId,
+                    ExitTypeId = updateNoteDto.ExitTypeId
                 };
 
                 _logger.LogInformation("Note with ID {NoteId} updated successfully", updateNoteDto.Id);

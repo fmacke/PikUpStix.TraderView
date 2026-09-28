@@ -59,17 +59,17 @@ namespace PikUpStix.TraderView.Services
         /// <summary>
         /// Creates a new note asynchronously
         /// </summary>
-        public async Task<int> CreateAsync(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int? tradeTypeId, int? errorTypeId)
+        public async Task<int> CreateAsync(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int? tradeTypeId, int? errorTypeId, int? exitTypeId)
         {
-            return await Task.Run(() => _noteRepository.InsertAsync(positionId, tradeExecutionId, comment, entryDate, tradeTypeId, errorTypeId));
+            return await Task.Run(() => _noteRepository.InsertAsync(positionId, tradeExecutionId, comment, entryDate, tradeTypeId, errorTypeId, exitTypeId));
         }
 
         /// <summary>
         /// Updates an existing note asynchronously
         /// </summary>
-        public async Task<bool> UpdateAsync(int id, int positionId, int? tradeExecutionId, string comment, DateTime updatedAt, int? tradeTypeId, int? errorTypeId)
+        public async Task<bool> UpdateAsync(int id, int positionId, int? tradeExecutionId, string comment, DateTime updatedAt, int? tradeTypeId, int? errorTypeId, int? exitTypeId)
         {
-            return await Task.Run(() => _noteRepository.UpdateAsync(id, positionId, tradeExecutionId, comment, updatedAt, tradeTypeId, errorTypeId));
+            return await Task.Run(() => _noteRepository.UpdateAsync(id, positionId, tradeExecutionId, comment, updatedAt, tradeTypeId, errorTypeId, exitTypeId));
         }
 
         /// <summary>

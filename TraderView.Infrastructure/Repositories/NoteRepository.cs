@@ -52,27 +52,37 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Inserts a new note into the database
         /// </summary>
-        public async Task<int> InsertAsync(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int? tradeTypeId, int? errorTypeId)
+        public async Task<int> InsertAsync(int positionId, int? tradeExecutionId, string comment, DateTime entryDate, int? tradeTypeId, int? errorTypeId, int? exitTypeId)
         {
-            var note = new Note
+            try
             {
-                PositionId = positionId,
-                TradeExecutionId = tradeExecutionId,
-                Comment = comment,
-                EntryDate = entryDate,
-                UpdatedAt = entryDate,
-                TradeTypeId = tradeTypeId,
-                ErrorTypeId = errorTypeId
-            };
+                var note = new Note
+                {
+                    PositionId = positionId,
+                    TradeExecutionId = tradeExecutionId,
+                    Comment = comment,
+                    EntryDate = entryDate,
+                    UpdatedAt = entryDate,
+                    TradeTypeId = tradeTypeId,
+                    ErrorTypeId = errorTypeId,
+                    ExitTypeId = exitTypeId
+                };
 
-            var inserted = await AddAsync(note);
-            return inserted.Id;
+                var inserted = await AddAsync(note);
+                return inserted.Id;
+            }
+            catch (Exception ex)
+            {
+                // Log the exception (you can use a logging framework here)
+                Console.WriteLine($"Error inserting note: {ex.Message}");
+                throw; // Rethrow the exception to be handled by the caller
+            }
         }
 
         /// <summary>
         /// Updates an existing note
         /// </summary>
-        public async Task<bool> UpdateAsync(int id, int positionId, int? tradeExecutionId, string comment, DateTime updatedAt, int? tradeTypeId, int? errorTypeId)
+        public async Task<bool> UpdateAsync(int id, int positionId, int? tradeExecutionId, string comment, DateTime updatedAt, int? tradeTypeId, int? errorTypeId, int? exitTypeId)
         {
             var note = await GetByIdAsync(id);
             if (note == null)
@@ -84,6 +94,7 @@ namespace TraderView.Infrastructure.Repositories
             note.UpdatedAt = updatedAt;
             note.TradeTypeId = tradeTypeId;
             note.ErrorTypeId = errorTypeId;
+            note.ExitTypeId = exitTypeId;
 
             await UpdateAsync(note);
             return true;
