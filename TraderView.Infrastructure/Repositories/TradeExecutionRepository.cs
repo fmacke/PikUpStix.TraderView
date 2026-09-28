@@ -50,12 +50,36 @@ namespace TraderView.Infrastructure.Repositories
                     try
                     {
                         //trade.Position.InstrumentId = Convert.ToInt32(await _instrumentService.GetInstrumentIdByConIdAsync(trade.Conid));
-                        var openPosition = await GetOpenPositionAsync(trade.Position.InstrumentId);
-                        trade.PositionId = openPosition?.Id ?? await CreatePositionAsync(trade.Position.InstrumentId, trade.Symbol, trade.TradeDate, Convert.ToDecimal(trade.TradePrice), "O");
+                        var openPosition = await _positionService.GetOpenPositionAsync(trade.Position.InstrumentId);
+                        if (openPosition != null)
+                        {
+                            // Link by FK only. Do NOT assign the navigation property from an entity
+                            // that may be tracked by another context or service instance — that
+                            // results in "another instance with the same key value is already being tracked".
+                            trade.PositionId = openPosition.Id;
+                            trade.Position = null;
+                        }
+                        else
+                        {
+                            // No open position — create a fresh Position instance so EF will add it
+                            // together with the TradeExecution. Avoid reusing any Position instance
+                            // that might have been created or tracked elsewhere.
+                            var newPosition = new Position
+                            {
+                                InstrumentId = trade.Position?.InstrumentId ?? 0,
+                                OpenDate = trade.TradeDate,
+                                Status = "Open",
+                                LastReportedPrice = trade.Position?.LastReportedPrice,
+                                LastReportedPriceUpdated = trade.Position?.LastReportedPriceUpdated
+                            };
+
+                            trade.Position = newPosition;
+                            trade.PositionId = null; // let EF set FK when saving
+                        }
                         trade.Id = await CreateTradeExecutionAsync(trade);
                         var totalQuantity = await GetTotalQuantityForPositionAsync(trade.PositionId ?? 0);
                         if (totalQuantity == 0)
-                            await ClosePositionAsync(trade.PositionId ?? 0, trade.DateTime);
+                            await _positionService.ClosePositionAsync(trade.PositionId ?? 0, trade.DateTime);
                     }
                     catch (Exception ex)
                     {
@@ -105,22 +129,6 @@ namespace TraderView.Infrastructure.Repositories
         private async Task<TradeExecution?> GetTradeExecutionByExecIDAsync(string ibExecID)
         {
             return await GetSingleAsync(new TradeExecutionByIbExecIdSpecification(ibExecID));
-        }
-
-        /// <summary>
-        /// Gets all positions from the database
-        /// </summary>
-        private async Task<Position?> GetOpenPositionAsync(int instrumentId)
-        {
-            try
-            {
-                return await _positionService.GetOpenPositionAsync(instrumentId);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error retrieving open position for InstrumentId {instrumentId}: {ex.Message}");
-                return null;
-            }
         }
 
         /// <summary>
@@ -178,7 +186,7 @@ namespace TraderView.Infrastructure.Repositories
                         Position? existingPosition = null;
 
                         // Check for open position for the trade's symbol and instrument
-                        existingPosition = await GetOpenPositionAsync(instrumentId.Value);
+                        existingPosition = await _positionService.GetOpenPositionAsync(instrumentId.Value);
 
                         if (existingPosition != null)
                         {
@@ -190,14 +198,14 @@ namespace TraderView.Infrastructure.Repositories
                                 tradeConfirm.OpenCloseIndicator = "C";
                                 if (existingPosition?.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity == 0)
                                 {
-                                    await ClosePositionAsync(existingPosition.Id, tradeConfirm.TradeDate);
+                                    await _positionService.ClosePositionAsync(existingPosition.Id, tradeConfirm.TradeDate);
                                 }
                             }
                         }
                         else
                         {
                             tradeConfirm.OpenCloseIndicator = "O";
-                            tradeConfirm.PositionId = await CreatePositionAsync(instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice, tradeConfirm.OpenCloseIndicator);
+                            tradeConfirm.PositionId = await _positionService.CreatePositionAsync(instrumentId.Value, tradeConfirm.Symbol, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
                         }
                         tradeConfirm.Id = await CreateTradeConfirmationAsync(tradeConfirm);
                     }
@@ -208,20 +216,6 @@ namespace TraderView.Infrastructure.Repositories
                 }
             }              
             Console.WriteLine("Successfully processed today's trade confirmations.");
-        }
-        private async Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice, string openCloseIndicator)
-        {
-            try
-            {
-                var positionId = await _positionService.CreatePositionAsync(instrumentId, symbol, openDate, openPrice);
-                Console.WriteLine($"Created new Position (Id: {positionId}) for symbol {symbol}, InstrumentId {instrumentId} on {openDate:yyyy-MM-dd}");
-                return positionId;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error inserting position for instrumentId {instrumentId} on {openDate:yyyy-MM-dd}: {ex.Message}");
-                throw;
-            }
         }
 
         private async Task UpdatePositionAsync(int positionId, DateTime latestPriceUpdated, decimal latestPrice, string openCloseIndicator)
@@ -244,25 +238,7 @@ namespace TraderView.Infrastructure.Repositories
             }
         }
 
-        private async Task ClosePositionAsync(int positionId, DateTime closeDate)
-        {
-            try
-            {
-                var position = await _context.Set<Position>().FindAsync(positionId);
-                if (position != null)
-                {
-                    position.CloseDate = closeDate;
-                    position.Status = "Closed";
-                    _context.Set<Position>().Update(position);
-                    await _context.SaveChangesAsync();
-                    Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error closing position with Id: {positionId}. {ex.Message}");
-            }
-        }
+        
 
         public async Task UpdateTradeExecutionAsync(TradeExecution execution)
         {

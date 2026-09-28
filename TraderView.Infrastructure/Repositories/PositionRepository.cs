@@ -19,10 +19,8 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Gets an open position by symbol and instrument ID.
         /// </summary>
-        async Task<Position?> IPositionRepository.GetOpenPositionAsync(string symbol, int instrumentId)
+        async Task<Position?> IPositionRepository.GetOpenPositionAsync(int instrumentId)
         {
-            _ = symbol;
-
             return await _context.Set<Position>()
                 .AsNoTracking()
                 .Include(p => p.Instrument)
@@ -52,6 +50,44 @@ namespace TraderView.Infrastructure.Repositories
             await _context.SaveChangesAsync();
 
             return position.Id;
+        }
+        async Task IPositionRepository.UpdatePositionAsync(int positionId, DateTime dateTime, decimal price, string status)
+        {
+            try
+            {
+                var position = await _context.Set<Position>().FindAsync(positionId);
+                if (position != null)
+                {
+                    position.LastReportedPrice = price;
+                    position.LastReportedPriceUpdated = dateTime;
+                    position.Status = status;
+                    _context.Set<Position>().Update(position);
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error updating position with Id: {positionId}. {ex.Message}");
+            }
+        }
+        async Task IPositionRepository.ClosePositionAsync(int positionId, DateTime closeDate)
+        {
+            try
+            {
+                var position = await _context.Set<Position>().FindAsync(positionId);
+                if (position != null)
+                {
+                    position.CloseDate = closeDate;
+                    position.Status = "Closed";
+                    _context.Set<Position>().Update(position);
+                    await _context.SaveChangesAsync();
+                    Console.WriteLine($"Closed Position (Id: {positionId}) on {closeDate:yyyy-MM-dd}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error closing position with Id: {positionId}. {ex.Message}");
+            }
         }
 
         /// <summary>
@@ -152,52 +188,18 @@ namespace TraderView.Infrastructure.Repositories
                 // Ensure instrument exists before upserting position
                 if (position.Id == 0)
                 {
-                    await CreatePositionAsync(position.InstrumentId, position.Instrument?.DataName ?? "Unknown", position.OpenDate, position.LastReportedPrice ?? 0m);
+                    await ((IPositionRepository)this).CreatePositionAsync(position.InstrumentId, position.Instrument?.DataName ?? "Unknown", position.OpenDate, position.LastReportedPrice ?? 0m);
                     insertedCount++;
                 }
                 else
                 {
-                    await UpdatePositionAsync(position.Id, DateTime.Now, position.LastReportedPrice ?? 0m, "O");
+                    await ((IPositionRepository)this).UpdatePositionAsync(position.Id, DateTime.Now, position.LastReportedPrice ?? 0m, "Open");
                     updatedCount++;
                 }
             }
             Console.WriteLine($"Successfully processed {positions.Count} positions: {insertedCount} inserted, {updatedCount} updated.");
         }
 
-        private async Task CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
-        {
-            _ = symbol;
-            var position = new Position
-            {
-                InstrumentId = instrumentId,
-                OpenDate = openDate,
-                Status = "Open",
-                LastReportedPrice = openPrice,
-                LastReportedPriceUpdated = DateTime.UtcNow
-            };
-
-            await _context.Set<Position>().AddAsync(position);
-            await _context.SaveChangesAsync();
-        }
-
-        private async Task UpdatePositionAsync(int positionId, DateTime dateTime, decimal price, string status)
-        {
-            try
-            {
-                var position = await _context.Set<Position>().FindAsync(positionId);
-                if (position != null)
-                {
-                    position.LastReportedPrice = price;
-                    position.LastReportedPriceUpdated = dateTime;
-                    position.Status = status;
-                    _context.Set<Position>().Update(position);
-                    await _context.SaveChangesAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error updating position with Id: {positionId}. {ex.Message}");
-            }
-        }
+        
     }
 }

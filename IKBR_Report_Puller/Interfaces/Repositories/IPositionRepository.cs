@@ -8,7 +8,7 @@ namespace TraderView.Application.Interfaces.Repositories;
 /// </summary>
 public interface IPositionRepository : IRepository<Position>
 {
-    Task<Position?> GetOpenPositionAsync(string symbol, int instrumentId);
+    Task<Position?> GetOpenPositionAsync(int instrumentId);
 
     Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice);
 
@@ -17,4 +17,6 @@ public interface IPositionRepository : IRepository<Position>
     Task<List<Position>> GetOpenPositionsAsync();
 
     Task UpsertPositionsAsync(List<Position> positions);
+    Task UpdatePositionAsync(int positionId, DateTime dateTime, decimal price, string status);
+    Task ClosePositionAsync(int positionId, DateTime closeDate);
 }

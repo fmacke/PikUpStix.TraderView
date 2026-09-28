@@ -43,40 +43,40 @@ namespace PikUpStix.TraderView.Services
             try
             {
                 IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
-                //await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
-                //await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
-                //await UpdateOpenPositionPrices();
+                await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
+                await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
+                await UpdateOpenPositionPrices();
                 await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
-                //var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
+                var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
 
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
                 //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                //await SaveTradeConfirms(todayReportXml);
-                //await SaveEquitySummaries(todayReportXml);
+                await SaveTradeConfirms(todayReportXml);
+                await SaveEquitySummaries(todayReportXml);
 
-                //if (writeOutputtoExcel)
-                //{
-                //    var openPositions = await _positionRepository.GetOpenPositionsAsync();
-                //    await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
-                //    await WriteTodayReportToExcel(todayReportXml);
-                //}
-                //if (updateMarketData)
-                //{
-                //    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                //    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                //    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
-                //    await _marketDataService.FetchAndSaveChartData(new List<string>()
-                //    {
-                //        "^GSPC",//spx
-                //        "^RUT",//iwm
-                //        //"CLUSD",//wti crude oil
-                //        "BTCUSD",//bitcoin
-                //        "GCUSD",//gold
-                //        "XAGUSD",//silver
-                //        "QQQ",//nasdaq
-                //        "^VIX"
-                //     }, 300);
-                //}
+                if (writeOutputtoExcel)
+                {
+                    var openPositions = await _positionRepository.GetOpenPositionsAsync();
+                    await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
+                    await WriteTodayReportToExcel(todayReportXml);
+                }
+                if (updateMarketData)
+                {
+                    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
+                    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30));
+                    await _marketDataService.FetchAndSaveChartData(new List<string>()
+                    {
+                        "^GSPC",//spx
+                        "^RUT",//iwm
+                        //"CLUSD",//wti crude oil
+                        "BTCUSD",//bitcoin
+                        "GCUSD",//gold
+                        "XAGUSD",//silver
+                        "QQQ",//nasdaq
+                        "^VIX"
+                     }, 300);
+                }
             }
             catch (Exception ex)
             {
@@ -185,8 +185,8 @@ namespace PikUpStix.TraderView.Services
         private async Task<IKBRReport> GetReportDataFromInteractiveBrokers(bool writeOutputToDrive)
         {
             // Fetch and process main report
-            XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260927_172750_TraderSyncAccess.xml");
-            //XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
+            //XDocument mainReportXml = LoadXmlDocument("C:\\Users\\finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260927_172750_TraderSyncAccess.xml");
+            XDocument mainReportXml = await _reportFetchingService.FetchMainReportAsync(maxRetries, delayInSeconds);
 
             if (writeOutputToDrive)
             {

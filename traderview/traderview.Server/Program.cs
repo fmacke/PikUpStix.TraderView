@@ -65,7 +65,7 @@ public partial class Program
             var db = provider.GetRequiredService<AppDbContext>();
             return new EconomicCalendarRepository(db);
         });
-        builder.Services.AddSingleton<ICanSlimCandidateRepository>(provider =>
+        builder.Services.AddScoped<ICanSlimCandidateRepository>(provider =>
         {
             var db = provider.GetRequiredService<AppDbContext>();
             return new CanSlimCandidateRepository(db);

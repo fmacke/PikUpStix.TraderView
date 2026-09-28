@@ -21,6 +21,7 @@ namespace PikUpStix.TraderView.Services
                 throw new InvalidOperationException($"Position with ID {positionId} not found.");
             }
             position.CloseDate = closeDate;
+            position.Status = "Closed";
             await _positionRepository.UpdateAsync(position);
         }
 
@@ -32,7 +33,7 @@ namespace PikUpStix.TraderView.Services
 
         async Task<Position?> IPositionService.GetOpenPositionAsync(int instrumentId)
         {
-            return await _positionRepository.GetOpenPositionAsync(string.Empty, instrumentId);
+            return await _positionRepository.GetOpenPositionAsync(instrumentId);
         }
 
         async Task<IReadOnlyList<Position>> IPositionService.GetOpenPositionsAsync()

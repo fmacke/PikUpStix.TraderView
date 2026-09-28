@@ -44,7 +44,7 @@ namespace TraderView.Domain.Entities
         public decimal? ChangePercentage { get; set; }
 
         [JsonPropertyName("unit")]
-        public string Unit { get; set; }
+        public string? Unit { get; set; }
         public DateTime CreatedAt { get; set; }
 
         public DateTime UpdatedAt { get; set; }

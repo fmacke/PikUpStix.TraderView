@@ -1,4 +1,5 @@
 using TraderView.Application.Interfaces.Repositories;
+using Microsoft.EntityFrameworkCore;
 using TraderView.Application.Specifications;
 using TraderView.Application.Specifications.EconomicCalendars;
 using TraderView.Domain.Entities;
@@ -11,8 +12,10 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public class EconomicCalendarRepository : EfBaseRepository<EconomicCalendar>, IEconomicCalendarRepository
     {
+        private DbContext _context;
         public EconomicCalendarRepository(AppDbContext db) : base(db)
         {
+            _context = db;
         }
 
         /// <summary>
@@ -26,10 +29,22 @@ namespace TraderView.Infrastructure.Repositories
                 return;
             }
 
+            // Determine the incoming date range so we fetch all potentially matching
+            // rows from the database. Using the full DateTime (not Date) preserves
+            // the time component so later comparisons against the incoming
+            // event.Timestamp succeed.
+            var minDate = events.Min(e => e.Date);
+            var maxDate = events.Max(e => e.Date);
+
             try
             {
-                // Get existing events to determine which ones to update and which to insert
-                var existingEvents = await GetAllAsync();
+                // Get existing events up to the earliest incoming entry date so we only
+                // compare against relevant rows.
+                // Fetch existing events that fall within the incoming range (inclusive)
+                // so we can accurately match by full Date/Time, Country and Event.
+                var existingEvents = await _context.Set<EconomicCalendar>()
+                    .Where(e => e.Date >= minDate && e.Date <= maxDate)
+                    .ToListAsync();
                 var now = DateTime.UtcNow;
 
                 foreach (var evt in events)
