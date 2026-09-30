@@ -202,15 +202,16 @@ export const apiService = {
     },
 
     // Update an existing note
-    async updateNote(noteId: number, comment: string, entryDate: string, tradeTypeId: number | null, errorTypeId: number | null): Promise<Note> {
-        console.log('Making API call to PUT /notes', { noteId, comment, entryDate, tradeTypeId, errorTypeId });
+    async updateNote(noteId: number, comment: string, entryDate: string, tradeTypeId: number | null, errorTypeId: number | null, exitTypeId: number | null): Promise<Note> {
+        console.log('Making API call to PUT /notes', { noteId, comment, entryDate, tradeTypeId, errorTypeId, exitTypeId });
         try {
             const updateNoteRequest = {
                 id: noteId,
                 comment: comment,
                 entryDate: entryDate,
                 tradeTypeId: tradeTypeId,
-                errorTypeId: errorTypeId
+                errorTypeId: errorTypeId,
+                exitTypeId: exitTypeId
             };
             const response = await apiClient.put<Note>('/notes', updateNoteRequest);
             console.log('Update note API response received:', response.data);

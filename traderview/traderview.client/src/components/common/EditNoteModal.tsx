@@ -7,7 +7,7 @@ import ListItemSelect from './ListItemSelect';
 interface EditNoteModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null) => Promise<void> | Promise<unknown>;
+    onSubmit: (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null) => Promise<void> | Promise<unknown>;
     note: Note | null;
 }
 
@@ -70,8 +70,8 @@ function EditNoteModal({ isOpen, onClose, onSubmit, note }: EditNoteModalProps) 
 
         setIsSubmitting(true);
         try {
-            console.log('EditNoteModal: About to call onSubmit with noteId:', note.id, 'positionId:', note.positionId, 'comment:', comment, 'entryDate:', entryDate, 'entryMethodId:', selectedEntryMethodId, 'and errorTypeId:', selectedErrorTypeId);
-            const result = await onSubmit(note.id, note.positionId, comment, entryDate, selectedEntryMethodId, selectedErrorTypeId);
+            console.log('EditNoteModal: About to call onSubmit with noteId:', note.id, 'positionId:', note.positionId, 'comment:', comment, 'entryDate:', entryDate, 'entryMethodId:', selectedEntryMethodId, 'and errorTypeId:', selectedErrorTypeId, 'and exitMethodId:', selectedExitMethodId);
+            const result = await onSubmit(note.id, note.positionId, comment, entryDate, selectedEntryMethodId, selectedErrorTypeId, selectedExitMethodId);
             console.log('EditNoteModal: onSubmit returned successfully:', result);
             onClose(); // Close the modal
         } catch (error) {

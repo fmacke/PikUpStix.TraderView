@@ -78,7 +78,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
         setIsNoteModalOpen(false);
     };
 
-    const handleSubmitNote = async (comment: string, entryMethodId: number | null, errorTypeId: number | null) => {
+    const handleSubmitNote = async (comment: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null) => {
         if (!trade) {
             throw new Error('No trade selected');
         }
@@ -88,8 +88,9 @@ function TradeDetail({ trade }: TradeDetailProps) {
             tradeExecutionId: null, // Can be extended later to link to specific executions
             comment: comment,
             entryDate: new Date().toISOString(),
-            tradeTypeId: entryMethodId ?? null, // Use selected entry method or null if not selected
-            errorTypeId: errorTypeId ?? null // Use selected error type or null
+            tradeTypeId: entryMethodId ?? null, 
+            errorTypeId: errorTypeId ?? null,
+            exitTypeId: exitTypeId ?? null
         };
 
         const result = await apiService.createNote(noteRequest);
@@ -112,8 +113,8 @@ function TradeDetail({ trade }: TradeDetailProps) {
         setSelectedNoteForEdit(null);
     };
 
-    const handleSubmitEditNote = async (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null) => {
-        const result = await apiService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId);
+    const handleSubmitEditNote = async (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null) => {
+        const result = await apiService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId, exitTypeId);
         console.log('Note updated successfully', result);
 
         // Refresh notes list after updating a note

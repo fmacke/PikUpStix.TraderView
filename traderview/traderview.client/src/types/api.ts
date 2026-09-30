@@ -116,6 +116,7 @@ export interface Note {
     entryDate: string;
     tradeTypeId: number | null;
     errorTypeId: number | null;
+    exitTypeId: number | null;
     category: string;
     name: string;
 }
@@ -127,6 +128,7 @@ export interface CreateNoteRequest {
     entryDate: string;
     tradeTypeId: number | null;
     errorTypeId: number | null;
+    exitTypeId: number | null;
 }
 
 export interface ListItem {

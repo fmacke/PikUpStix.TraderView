@@ -13,6 +13,7 @@ interface NotesListProps {
 function NotesList({ notes, loading, variant = 'simple', onEditNote }: NotesListProps) {
     const [tradeTypes, setTradeTypes] = useState<Map<number, string>>(new Map());
     const [errorTypes, setErrorTypes] = useState<Map<number, string>>(new Map());
+    const [exitTypes, setexitTypes] = useState<Map<number, string>>(new Map());
     const [listItemsLoading, setListItemsLoading] = useState(false);
 
     // Fetch list items when component mounts (for detailed variant)
@@ -24,17 +25,20 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote }: NotesList
         const fetchListItems = async () => {
             try {
                 setListItemsLoading(true);
-                const [entryMethods, entryErrors] = await Promise.all([
+                const [entryMethods, entryErrors, exitMethods] = await Promise.all([
                     apiService.getListItems('EntryMethod'),
-                    apiService.getListItems('ErrorType')
+                    apiService.getListItems('EntryError'),
+                    apiService.getListItems('ExitMethod')
                 ]);
 
                 // Create maps for quick lookup
                 const tradeTypeMap = new Map(entryMethods.map((item: { id: number; name: string }) => [item.id, item.name]));
                 const errorTypeMap = new Map(entryErrors.map((item: { id: number; name: string }) => [item.id, item.name]));
+                const exitTypeMap = new Map(exitMethods.map((item: { id: number; name: string }) => [item.id, item.name]));
 
                 setTradeTypes(tradeTypeMap);
                 setErrorTypes(errorTypeMap);
+                setexitTypes(exitTypeMap);
             } catch (error) {
                 console.error('Error fetching list items:', error);
                 // Continue without list items if fetch fails
@@ -64,7 +68,12 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote }: NotesList
         return errorTypes.get(errorTypeId) || `Unknown (${errorTypeId})`;
     };
 
-    return (
+    const getExitTypeName = (exitTypeId: number | null): string => {
+        if (exitTypeId === null || exitTypeId === undefined) return '-';
+        return exitTypes.get(exitTypeId) || `Unknown (${exitTypeId})`;
+    };
+
+return (
         <div className="notes-table-container">
             <table className="notes-table">
                 <thead>
@@ -75,6 +84,7 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote }: NotesList
                             <>
                                 <th>TradeType</th>
                                 <th>ErrorType</th>
+                                <th>ExitType</th>
                             </>
                         )}
                         {onEditNote && <th>Actions</th>}
@@ -89,6 +99,7 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote }: NotesList
                                 <>
                                     <td>{getTradeTypeName(note.tradeTypeId)}</td>
                                     <td>{getErrorTypeName(note.errorTypeId)}</td>
+                                    <td>{getExitTypeName(note.exitTypeId)}</td>
                                 </>
                             )}
                             {onEditNote && (
