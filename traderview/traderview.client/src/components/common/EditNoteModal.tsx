@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import './AddNoteModal.css';
 import { apiService } from '../../services/apiService';
 import type { ListItem, Note } from '../../types/api';
+import ListItemSelect from './ListItemSelect';
 
 interface EditNoteModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null) => Promise<void> | Promise<any>;
+    onSubmit: (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null) => Promise<void> | Promise<unknown>;
     note: Note | null;
 }
 
@@ -20,17 +21,9 @@ function EditNoteModal({ isOpen, onClose, onSubmit, note }: EditNoteModalProps) 
     const [errorTypes, setErrorTypes] = useState<ListItem[]>([]);
     const [selectedErrorTypeId, setSelectedErrorTypeId] = useState<number | null>(null);
     const [isLoadingErrorTypes, setIsLoadingErrorTypes] = useState(false);
-
-    useEffect(() => {
-        if (isOpen && note) {
-            setComment(note.comment);
-            setEntryDate(note.entryDate);
-            setSelectedEntryMethodId(note.tradeTypeId);
-            setSelectedErrorTypeId(note.errorTypeId);
-            fetchListItems('EntryMethod', setEntryMethods, setIsLoadingEntryMethods);
-            fetchListItems('ErrorType', setErrorTypes, setIsLoadingErrorTypes);
-        }
-    }, [isOpen, note]);
+    const [exitMethods, setExitMethods] = useState<ListItem[]>([]);
+    const [selectedExitMethodId, setSelectedExitMethodId] = useState<number | null>(null);
+    const [isLoadingExitMethods, setIsLoadingExitMethods] = useState(false);
 
     const fetchListItems = async (
         category: string,
@@ -47,6 +40,21 @@ function EditNoteModal({ isOpen, onClose, onSubmit, note }: EditNoteModalProps) 
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        if (isOpen && note) {
+            setComment(note.comment);
+            setEntryDate(note.entryDate);
+            setSelectedEntryMethodId(note.tradeTypeId);
+            setSelectedErrorTypeId(note.errorTypeId);
+            setSelectedExitMethodId(note.exitTypeId)
+            fetchListItems('EntryMethod', setEntryMethods, setIsLoadingEntryMethods);
+            fetchListItems('ErrorType', setErrorTypes, setIsLoadingErrorTypes);
+            fetchListItems('ExitMethod', setExitMethods, setIsLoadingExitMethods);
+        }
+    }, [isOpen, note]);
+
+
 
     if (!isOpen || !note) {
         return null;
@@ -118,39 +126,38 @@ function EditNoteModal({ isOpen, onClose, onSubmit, note }: EditNoteModalProps) 
                             />
                         </div>
 
-                        <div className="form-group">
-                            <label htmlFor="entryMethod">Entry Method</label>
-                            <select
-                                id="entryMethod"
-                                value={selectedEntryMethodId ?? ''}
-                                onChange={(e) => setSelectedEntryMethodId(e.target.value ? parseInt(e.target.value) : null)}
-                                disabled={isSubmitting || isLoadingEntryMethods}
-                            >
-                                <option value="">-- Select Entry Method (Optional) --</option>
-                                {entryMethods.map((method) => (
-                                    <option key={method.id} value={method.id}>
-                                        {method.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <ListItemSelect
+                            id="entryMethod"
+                            label="Entry Method"
+                            items={entryMethods}
+                            selectedId={selectedEntryMethodId}
+                            onChange={setSelectedEntryMethodId}
+                            isLoading={isLoadingEntryMethods}
+                            isDisabled={isSubmitting}
+                            placeholder="-- Select Entry Method (Optional) --"
+                        />
 
-                        <div className="form-group">
-                            <label htmlFor="errorType">Error Type</label>
-                            <select
-                                id="errorType"
-                                value={selectedErrorTypeId ?? ''}
-                                onChange={(e) => setSelectedErrorTypeId(e.target.value ? parseInt(e.target.value) : null)}
-                                disabled={isSubmitting || isLoadingErrorTypes}
-                            >
-                                <option value="">-- Select Error Type (Optional) --</option>
-                                {errorTypes.map((type) => (
-                                    <option key={type.id} value={type.id}>
-                                        {type.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                        <ListItemSelect
+                            id="errorType"
+                            label="Error Type"
+                            items={errorTypes}
+                            selectedId={selectedErrorTypeId}
+                            onChange={setSelectedErrorTypeId}
+                            isLoading={isLoadingErrorTypes}
+                            isDisabled={isSubmitting}
+                            placeholder="-- Select Error Type (Optional) --"
+                        />
+
+                        <ListItemSelect
+                            id="exitMethod"
+                            label="Exit Method"
+                            items={exitMethods}
+                            selectedId={selectedExitMethodId}
+                            onChange={setSelectedExitMethodId}
+                            isLoading={isLoadingExitMethods}
+                            isDisabled={isSubmitting}
+                            placeholder="-- Select Exit Method (Optional) --"
+                        />
 
                         <div className="form-group">
                             <label htmlFor="comment">Comment</label>

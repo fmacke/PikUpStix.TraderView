@@ -7,7 +7,7 @@ import ListItemSelect from './ListItemSelect';
 interface AddNoteModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (comment: string, entryMethodId: number | null, errorTypeId: number | null) => Promise<void> | Promise<any>;
+    onSubmit: (comment: string, entryMethodId: number | null, errorTypeId: number | null, exitMethodId: number | null) => Promise<void> | Promise<any>;
     positionId: number;
 }
 
@@ -18,17 +18,17 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
     const [selectedEntryMethodId, setSelectedEntryMethodId] = useState<number | null>(null);
     const [isLoadingEntryMethods, setIsLoadingEntryMethods] = useState(false);
     const [errorTypes, setErrorTypes] = useState<ListItem[]>([]);
-    const [exitTypes, setExitTypes] = useState<ListItem[]>([]);
+    const [exitMethods, setExitMethods] = useState<ListItem[]>([]);
     const [selectedErrorTypeId, setSelectedErrorTypeId] = useState<number | null>(null);
     const [isLoadingErrorTypes, setIsLoadingErrorTypes] = useState(false);
-    const [selectedExitTypeId, setSelectedExitTypeId] = useState<number | null>(null);
-    const [isLoadingExitTypes, setIsLoadingExitTypes] = useState(false);
+    const [selectedExitMethodId, setSelectedExitMethodId] = useState<number | null>(null);
+    const [isLoadingExitMethods, setIsLoadingExitMethods] = useState(false);
 
     useEffect(() => {
         if (isOpen) {
             fetchListItems('EntryMethod', setEntryMethods, setIsLoadingEntryMethods);
             fetchListItems('EntryError', setErrorTypes, setIsLoadingErrorTypes);
-            fetchListItems('ExitMethod', setExitTypes, setIsLoadingExitTypes);
+            fetchListItems('ExitMethod', setExitMethods, setIsLoadingExitMethods);
         }
     }, [isOpen]);
 
@@ -63,12 +63,13 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
 
         setIsSubmitting(true);
         try {
-            console.log('AddNoteModal: About to call onSubmit with comment:', comment, 'entryMethodId:', selectedEntryMethodId, 'and errorTypeId:', selectedErrorTypeId);
-            const result = await onSubmit(comment, selectedEntryMethodId, selectedErrorTypeId);
+            console.log('AddNoteModal: About to call onSubmit with comment:', comment, 'entryMethodId:', selectedEntryMethodId, 'and errorTypeId:', selectedErrorTypeId, 'and exitMethodId:', selectedExitMethodId);
+            const result = await onSubmit(comment, selectedEntryMethodId, selectedErrorTypeId, selectedExitMethodId);
             console.log('AddNoteModal: onSubmit returned successfully:', result);
             setComment(''); // Clear the form
-            setSelectedEntryMethodId(null); // Clear the entry method selection
-            setSelectedErrorTypeId(null); // Clear the error type selection
+            setSelectedEntryMethodId(null); 
+            setSelectedErrorTypeId(null); 
+            setSelectedExitMethodId(null);
             onClose(); // Close the modal
         } catch (error) {
             console.error('AddNoteModal: Error submitting note:', error);
@@ -87,6 +88,7 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
             setComment(''); // Clear the form when closing
             setSelectedEntryMethodId(null); // Clear the entry method selection
             setSelectedErrorTypeId(null); // Clear the error type selection
+            setSelectedExitMethodId(null);
             onClose();
         }
     };
@@ -138,14 +140,14 @@ function AddNoteModal({ isOpen, onClose, onSubmit, positionId }: AddNoteModalPro
                         />
 
                         <ListItemSelect
-                            id="exitType"
-                            label="Exit Type"
-                            items={exitTypes}
-                            selectedId={selectedExitTypeId}
-                            onChange={setSelectedExitTypeId}
-                            isLoading={isLoadingExitTypes}
+                            id="exitMethod"
+                            label="Exit Method"
+                            items={exitMethods}
+                            selectedId={selectedExitMethodId}
+                            onChange={setSelectedExitMethodId}
+                            isLoading={isLoadingExitMethods}
                             isDisabled={isSubmitting}
-                            placeholder="-- Select Exit Type (Optional) --"
+                            placeholder="-- Select Exit Method (Optional) --"
                         />
 
                         <div className="form-group">
