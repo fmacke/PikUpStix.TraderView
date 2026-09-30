@@ -187,7 +187,7 @@ namespace PikUpStix.TraderView.Services.MarketData
         {
             try
             {
-                var url = $"{_baseUrl}/fx/{baseCurrency}{quoteCurrency}";
+                var url = $"{_baseUrl}/quote?symbol={baseCurrency}{quoteCurrency}&apikey={_apiKey}";
                 Console.WriteLine($"Fetching exchange rate for {baseCurrency}/{quoteCurrency}");
 
                 var response = await _httpClient.GetAsync(url);
@@ -199,36 +199,28 @@ namespace PikUpStix.TraderView.Services.MarketData
                 {
                     var root = jsonDoc.RootElement;
 
-                    // Handle object response
-                    if (root.ValueKind == JsonValueKind.Object)
+                    // Handle array response - extract first element's 'price' property
+                    if (root.ValueKind == JsonValueKind.Array && root.GetArrayLength() > 0)
                     {
-                        if (root.TryGetProperty(quoteCurrency, out var rateElement))
+                        var element = root[0];
+                        if (element.TryGetProperty("price", out var priceElement))
                         {
-                            if (rateElement.TryGetDecimal(out var rate))
-                                return rate;
+                            if (priceElement.TryGetDecimal(out var price))
+                                return price;
                         }
                     }
-                    // Handle array response
-                    else if (root.ValueKind == JsonValueKind.Array)
+                    // Handle object response - try to get 'price' property directly
+                    else if (root.ValueKind == JsonValueKind.Object)
                     {
-                        foreach (var element in root.EnumerateArray())
+                        if (root.TryGetProperty("price", out var priceElement))
                         {
-                            if (element.TryGetProperty(quoteCurrency, out var rateElement))
-                            {
-                                if (rateElement.TryGetDecimal(out var rate))
-                                    return rate;
-                            }
+                            if (priceElement.TryGetDecimal(out var price))
+                                return price;
                         }
                     }
 
-                    // Fallthrough to try direct parse
+                    throw new JsonException("Could not find 'price' property in exchange rate response.");
                 }
-
-                // Fallback: try parse raw content as decimal
-                if (decimal.TryParse(content, out var direct))
-                    return direct;
-
-                throw new JsonException("Unexpected JSON structure for exchange rate response.");
             }
             catch (HttpRequestException ex)
             {
