@@ -1,13 +1,5 @@
-using Microsoft.Data.SqlClient;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Engineering;
-using TraderView.Application.Features.Instruments.Command.Create;
-using TraderView.Application.Features.Instruments.Query.GetBy;
-using TraderView.Application.Features;
-using Microsoft.EntityFrameworkCore;
-using TraderView.Application.Features.TradeExecutions.Query.GetBy;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Persistence;
-using TraderView.Application.Mappers;
 using TraderView.Application.Specifications.Instruments;
 using TraderView.Domain.Entities;
 using TraderView.Infrastructure.DbContexts;

@@ -1,7 +1,7 @@
 using TraderView.Application.Specifications;
 using TraderView.Domain.Entities;
 
-namespace TraderView.Application.Features.TradeExecutions.Specifications;
+namespace TraderView.Application.Specifications.TradeExecutions;
 
 /// <summary>
 /// Specification for checking if a trade execution exists by IB execution ID

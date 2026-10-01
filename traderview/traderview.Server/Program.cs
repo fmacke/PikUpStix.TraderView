@@ -149,6 +149,7 @@ public partial class Program
         {
             cfg.AddProfile<CurrentPerformanceProfile>();
             cfg.AddProfile<DesiredPerformanceResultsProfile>();
+            cfg.AddProfile<CanSlimCandidateProfile>();
         });
 
         var app = builder.Build();

@@ -177,7 +177,6 @@ namespace TraderView.Infrastructure.DbContexts
             modelBuilder.Entity<CanSlimScreenerSnapshot>(entity =>
             {
                 entity.HasKey(e => e.Id).HasName("PK_CanSlimScreenerSnapshot");
-
                 entity.Property(e => e.CreatedAt).HasColumnType("datetime");
             });
 
@@ -337,10 +336,10 @@ namespace TraderView.Infrastructure.DbContexts
                 //    .HasForeignKey(d => d.CategoryId)
                 //    .HasConstraintName("FK_StrategyStages_Lists");
 
-                //entity.HasOne(d => d.Strategy).WithMany(p => p.StrategyStages)
-                //    .HasForeignKey(d => d.StrategyId)
-                //    .OnDelete(DeleteBehavior.ClientSetNull)
-                //    .HasConstraintName("FK_StrategyStages_Strategies");
+                entity.HasOne(d => d.Strategy).WithMany(p => p.StrategyStages)
+                    .HasForeignKey(d => d.StrategyId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StrategyStages_Strategies");
             });
 
             modelBuilder.Entity<StrategyStageStep>(entity =>
@@ -362,10 +361,10 @@ namespace TraderView.Infrastructure.DbContexts
                 //    .HasForeignKey(d => d.CategoryId)
                 //    .HasConstraintName("FK_StrategyStageSteps_Lists");
 
-                //entity.HasOne(d => d.Stage).WithMany(p => p.StrategyStageSteps)
-                //    .HasForeignKey(d => d.StageId)
-                //    .OnDelete(DeleteBehavior.ClientSetNull)
-                //    .HasConstraintName("FK_StrategyStageSteps_StrategyStages");
+                entity.HasOne(d => d.Stage).WithMany(p => p.StrategyStageSteps)
+                    .HasForeignKey(d => d.StageId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_StrategyStageSteps_StrategyStages");
             });
 
             modelBuilder.Entity<StrategyStageStepsRule>(entity =>

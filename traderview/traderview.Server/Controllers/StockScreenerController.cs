@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using AutoMapper;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Domain.Entities.FMP;
 using traderview.Server.Dtos;
@@ -11,13 +12,16 @@ namespace traderview.Server.Controllers
     {
         private readonly ILogger<StockScreenerController> _logger;
         private readonly ICompanyScreeningService _companyScreeningService;
+        private readonly IMapper _mapper;
 
         public StockScreenerController(
             ILogger<StockScreenerController> logger,
-            ICompanyScreeningService companyScreeningService)
+            ICompanyScreeningService companyScreeningService,
+            IMapper mapper)
         {
             _logger = logger;
             _companyScreeningService = companyScreeningService;
+            _mapper = mapper;
         }
         /// <summary>
         /// Run the stock screener to get a list of qualifying CAN SLIM candidates
@@ -58,22 +62,7 @@ namespace traderview.Server.Controllers
             {
                 _logger.LogInformation("Fetching all qualifying CAN SLIM candidates");
                 var stocksShortList = await _companyScreeningService.GetLatestScreenerResults();
-                var dto = stocksShortList.Select(s => new CanSlimCandidateDto
-                {
-                    Id = s.Id,
-                    CanSlimScreenerSnapshotId = s.CanSlimScreenerSnapshotId,
-                    Symbol = s.Symbol,
-                    Exchange = s.Exchange,
-                    CompanyName = s.CompanyName,
-                    Sector = s.Sector,
-                    Industry = s.Industry,
-                    Price = s.Price,
-                    Volume = s.Volume,
-                    MarketCap = s.MarketCap,
-                    CreatedAtUtc = s.CreatedAtUtc,
-                    EvaluationDateUtc = s.EvaluationDateUtc,
-                    PassesBoth = s.PassesBoth
-                }).ToList();
+                var dto = _mapper.Map<IReadOnlyList<CanSlimCandidateDto>>(stocksShortList);
 
                 return Ok(dto);
             }
