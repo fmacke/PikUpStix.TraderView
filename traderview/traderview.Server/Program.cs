@@ -86,6 +86,11 @@ public partial class Program
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
             return new EquitySummaryRepository(db);
         });
+        builder.Services.AddScoped<IStrategyRepository>(provider =>
+        {
+            AppDbContext db = provider.GetRequiredService<AppDbContext>();
+            return new StrategyRepository(db);
+        });
 
         // Register custom services        
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
@@ -138,6 +143,7 @@ public partial class Program
         builder.Services.AddScoped<IDesiredPerformanceForecastService, DesiredPerformanceForecastService>();
         builder.Services.AddScoped<ITradeCalculatorService, TradeCalculatorService>();
         builder.Services.AddScoped<IEquitySummaryService, EquitySummaryService>();
+        builder.Services.AddScoped<IStrategyService, StrategyService>();
 
 
         builder.Services.AddControllers();
@@ -150,6 +156,7 @@ public partial class Program
             cfg.AddProfile<CurrentPerformanceProfile>();
             cfg.AddProfile<DesiredPerformanceResultsProfile>();
             cfg.AddProfile<CanSlimCandidateProfile>();
+            cfg.AddProfile<StrategyProfile>();
         });
 
         var app = builder.Build();

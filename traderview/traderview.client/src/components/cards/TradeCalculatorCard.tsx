@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import { apiService } from '../../services/apiService';
 import type { TradeCalculationRequest, TradeCalculationResponse } from '../../types/api';
+import type { ListItem } from '../../types/api';
+import ListItemSelect from '../common/ListItemSelect';
 
 export const TradeCalculatorCard: React.FC = () => {
     const [request, setRequest] = useState<TradeCalculationRequest>({
@@ -17,10 +19,30 @@ export const TradeCalculatorCard: React.FC = () => {
     });
 
     const [currencyPair, setCurrencyPair] = useState<string>('GBP/USD');
-
     const [result, setResult] = useState<TradeCalculationResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const [isSubmitting] = useState(false);
+    const [strategies, setStrategies] = useState<ListItem[]>([]);
+    const [selectedStrategyId, setSelectedStrategyId] = useState<number | null>(null);
+    const [isLoadingStrategies, setIsLoadingStrategies] = useState(false);
+
+    const fetchListItems = async (
+        category: string,
+        setItems: React.Dispatch<React.SetStateAction<ListItem[]>>,
+        setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
+    ) => {
+        setIsLoading(true);
+        try {
+            const items = await apiService.getListItems(category);
+            setItems(items);
+        } catch (error) {
+            console.error(`Error fetching ${category} list items:`, error);
+            // Continue without items - the dropdown will just be empty
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     // Validate that all required inputs have valid values
     const isValidRequest = (req: TradeCalculationRequest): boolean => {
@@ -57,7 +79,8 @@ export const TradeCalculatorCard: React.FC = () => {
             // calling async setter that will update state; suppress linter about setState-in-effect for this intentional pattern
             // eslint-disable-next-line react-hooks/set-state-in-effect
             void calculateTrade();
-        } else {
+        } else {        
+            
             setResult(null);
             setError(null);
         }
@@ -109,7 +132,7 @@ export const TradeCalculatorCard: React.FC = () => {
                 console.error('Failed to initialize exchange rate for', currencyPair, error);
             }
         };
-
+        fetchListItems('EntryMethod', setStrategies, setIsLoadingStrategies);
         void init();
     }, []);
 
@@ -300,6 +323,21 @@ export const TradeCalculatorCard: React.FC = () => {
                         className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                     />
                 </div>
+
+                <ListItemSelect
+                    id="strategy"
+                    items={strategies}
+                    selectedId={selectedStrategyId}
+                    label="Strategy"
+                    onChange={setSelectedStrategyId}
+                    isLoading={isLoadingStrategies}
+                    isDisabled={isSubmitting}
+                    placeholder="-- Select Strategy (Optional) --"
+                    inline={true}
+                    wrapperClassName="mb-4"
+                    labelClassName="w-48 flex-shrink-0"
+                    className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                />
             </div>
 
             {/* Output Section */}

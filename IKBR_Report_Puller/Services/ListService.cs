@@ -10,7 +10,6 @@ namespace PikUpStix.TraderView.Services
     public class ListService : IListService
     {
         private readonly IListRepository _listRepository;
-
         public ListService(IListRepository listRepository)
         {
             _listRepository = listRepository;
