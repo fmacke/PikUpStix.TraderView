@@ -12,7 +12,9 @@ import type {
     RiskMatrixCalculationResultDto,
     TradeCalculationRequest,
     TradeCalculationResponse,
-    AssetValueChartData
+    AssetValueChartData,
+    PositionCalculatorCreateDto,
+    PositionCalculatorDto
 } from '../types/api';
 
 // API base URL - will use the proxy configured in vite.config.ts in development
@@ -76,6 +78,40 @@ export const apiService = {
             throw error;
         }
     },
+
+    // Get notes for a position
+    async getNotesByPositionId(positionId: number): Promise<Note[]> {
+        try {
+            const response = await apiClient.get<Note[]>(`/notes/position/${positionId}`);
+            return response.data;
+        } catch (error) {
+            console.error('getNotesByPositionId failed', error);
+            throw error;
+        }
+    },
+
+    // Update a note
+    async updateNote(noteId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null): Promise<Note> {
+        try {
+            const body = { comment, entryDate, tradeTypeId: entryMethodId, errorTypeId, exitTypeId };
+            const response = await apiClient.put<Note>(`/notes/${noteId}`, body);
+            return response.data;
+        } catch (error) {
+            console.error('updateNote failed', error);
+            throw error;
+        }
+    },
+
+    // Get current performance summary
+    async getCurrentPerformance(): Promise<CurrentPerformanceResult> {
+        try {
+            const response = await apiClient.get<CurrentPerformanceResult>('/currentperformance');
+            return response.data;
+        } catch (error) {
+            console.error('getCurrentPerformance failed', error);
+            throw error;
+        }
+    },   
 
     // Get RS indicator data for a specific trade
     async getRSIndicator(
@@ -177,74 +213,23 @@ export const apiService = {
     },
 
     // Create a new note
-    async createNote(noteRequest: CreateNoteRequest): Promise<Note> {
-        console.log('Making API call to /notes', noteRequest);
+    async createNote(request: CreateNoteRequest): Promise<Note> {
         try {
-            const response = await apiClient.post<Note>('/notes', noteRequest);
-            console.log('Create note API response received:', response.data);
+            const response = await apiClient.post<Note>('/notes', request);
             return response.data;
-        } catch (error: unknown) {
-            console.error('Create note API call failed:', error);
+        } catch (error) {
+            console.error('createNote failed', error);
             throw error;
         }
     },
 
-    // Get notes for a specific position
-    async getNotesByPositionId(positionId: number): Promise<Note[]> {
-        console.log(`Making API call to /notes/position/${positionId}`);
-        try {
-            const response = await apiClient.get<Note[]>(`/notes/position/${positionId}`);
-            console.log('Get notes API response received:', response.data);
-            return response.data;
-        } catch (error: unknown) {
-            console.error('Get notes API call failed:', error);
-            throw error;
-        }
-    },
-
-    // Update an existing note
-    async updateNote(noteId: number, comment: string, entryDate: string, tradeTypeId: number | null, errorTypeId: number | null, exitTypeId: number | null): Promise<Note> {
-        console.log('Making API call to PUT /notes', { noteId, comment, entryDate, tradeTypeId, errorTypeId, exitTypeId });
-        try {
-            const updateNoteRequest = {
-                id: noteId,
-                comment: comment,
-                entryDate: entryDate,
-                tradeTypeId: tradeTypeId,
-                errorTypeId: errorTypeId,
-                exitTypeId: exitTypeId
-            };
-            const response = await apiClient.put<Note>('/notes', updateNoteRequest);
-            console.log('Update note API response received:', response.data);
-            return response.data;
-        } catch (error: unknown) {
-            console.error('Update note API call failed:', error);
-            throw error;
-        }
-    },
-
-    // Get list items for a specific category
+    // Get list items by category
     async getListItems(category: string): Promise<ListItem[]> {
-        console.log(`Making API call to /lists/${category}`);
         try {
-            const response = await apiClient.get<ListItem[]>(`/lists/${category}`);
-            console.log(`Get list items for category '${category}' API response received:`, response.data);
+            const response = await apiClient.get<ListItem[]>(`/list/${category}`);
             return response.data;
-        } catch (error: unknown) {
-            console.error(`Get list items for category '${category}' API call failed:`, error);
-            throw error;
-        }
-    },
-
-    // Get position review risk matrix calculation from RiskController
-    async getCurrentPerformance(): Promise<CurrentPerformanceResult> {
-        console.log('Making API call to /risk/currentperformance');
-        try {
-            const response = await apiClient.get<CurrentPerformanceResult>('/risk/currentperformance');
-            console.log('Current Performance API response received:', response.data);
-            return response.data;
-        } catch (error: unknown) {
-            console.error('Current Performance  API call failed:', error);
+        } catch (error) {
+            console.error('getListItems failed', error);
             throw error;
         }
     },
@@ -276,6 +261,19 @@ export const apiService = {
             return response.data;
         } catch (error: unknown) {
             console.error('Trade calculator API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Save a PositionCalculator record
+    async savePositionCalculator(dto: PositionCalculatorCreateDto): Promise<PositionCalculatorDto> {
+        console.log('Making API call to /PositionCalculator', dto);
+        try {
+            const response = await apiClient.post<PositionCalculatorDto>('/PositionCalculator', dto);
+            console.log('PositionCalculator saved:', response.data);
+            return response.data;
+        } catch (error: unknown) {
+            console.error('savePositionCalculator API call failed:', error);
             throw error;
         }
     },

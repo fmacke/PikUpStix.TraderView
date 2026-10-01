@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { apiService } from '../../services/apiService';
 import type { TradeCalculationRequest, TradeCalculationResponse } from '../../types/api';
 import type { ListItem } from '../../types/api';
@@ -25,24 +25,7 @@ export const TradeCalculatorCard: React.FC = () => {
     const [isSubmitting] = useState(false);
     const [strategies, setStrategies] = useState<ListItem[]>([]);
     const [selectedStrategyId, setSelectedStrategyId] = useState<number | null>(null);
-    const [isLoadingStrategies, setIsLoadingStrategies] = useState(false);
-
-    const fetchListItems = async (
-        category: string,
-        setItems: React.Dispatch<React.SetStateAction<ListItem[]>>,
-        setIsLoading: React.Dispatch<React.SetStateAction<boolean>>
-    ) => {
-        setIsLoading(true);
-        try {
-            const items = await apiService.getListItems(category);
-            setItems(items);
-        } catch (error) {
-            console.error(`Error fetching ${category} list items:`, error);
-            // Continue without items - the dropdown will just be empty
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const [isLoadingStrategies] = useState(false);
 
     // Validate that all required inputs have valid values
     const isValidRequest = (req: TradeCalculationRequest): boolean => {
@@ -87,52 +70,57 @@ export const TradeCalculatorCard: React.FC = () => {
     }, [request]);
 
     // Update exchange rate when currency pair changes
+    // Track initialization to avoid firing calculateTrade while we're setting initial values
+    const isInitializing = useRef(false);
+
+    // Unified initialization on mount: fetch strategies, latest asset value and initial exchange rate
     useEffect(() => {
-        const updateRate = async () => {
-            try {
-                const parts = currencyPair.split('/').map(p => p.trim().toUpperCase());
-                if (parts.length !== 2) return;
+        isInitializing.current = true;
 
-                const base = parts[0];
-                const quote = parts[1];
-
-                if (base === quote) {
-                    setRequest(prev => ({ ...prev, exchangeRate: 1 }));
-                    return;
-                }
-
-                const rate = await apiService.getExchangeRate(base, quote);
-                setRequest(prev => ({ ...prev, exchangeRate: rate }));
-            } catch (error) {
-                console.error('Failed to update exchange rate for', currencyPair, error);
-            }
-        };
-
-        updateRate();
-    }, [currencyPair]);
-
-    // Ensure exchange rate fetched on initial mount as well
-    useEffect(() => {
         const init = async () => {
             try {
+                // Kick off requests in parallel
+                const listPromise = apiService.getListItems('EntryMethod');
+                const assetPromise = apiService.getLatestAssetValue();
+
+                // compute exchange rate
                 const parts = currencyPair.split('/').map(p => p.trim().toUpperCase());
-                if (parts.length !== 2) return;
-
-                const base = parts[0];
-                const quote = parts[1];
-
-                if (base === quote) {
-                    setRequest(prev => ({ ...prev, exchangeRate: 1 }));
-                    return;
+                let ratePromise: Promise<number> | null = null;
+                if (parts.length === 2) {
+                    const [base, quote] = parts;
+                    if (base === quote) {
+                        ratePromise = Promise.resolve(1);
+                    } else {
+                        ratePromise = apiService.getExchangeRate(base, quote);
+                    }
                 }
 
-                const rate = await apiService.getExchangeRate(base, quote);
-                setRequest(prev => ({ ...prev, exchangeRate: rate }));
+                const [lists, assetValue, rate] = await Promise.all([listPromise, assetPromise, ratePromise]);
+
+                if (lists) {
+                    setStrategies(lists);
+                    if (lists.length > 0 && selectedStrategyId == null) {
+                        setSelectedStrategyId(lists[0].id);
+                    }
+                }
+
+                if (assetValue) {
+                    // set trading capital once
+                    setRequest(prev => ({ ...prev, tradingCapital: assetValue.totalAssetValue }));
+                }
+
+                if (rate != null) {
+                    // set exchange rate once
+                    setRequest(prev => ({ ...prev, exchangeRate: rate }));
+                }
             } catch (error) {
-                console.error('Failed to initialize exchange rate for', currencyPair, error);
+                console.error('Initialization failed for TradeCalculatorCard', error);
+            } finally {
+                // small timeout to ensure other state updates settle before enabling calculations
+                setTimeout(() => { isInitializing.current = false; }, 0);
             }
         };
-        fetchListItems('EntryMethod', setStrategies, setIsLoadingStrategies);
+
         void init();
     }, []);
 

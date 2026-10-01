@@ -1,4 +1,3 @@
-
 export interface Trade {
     id: number;
     positionId: number;
@@ -210,4 +209,57 @@ export interface AssetValueChartData {
     totalAssetValue: number;
     totalLongValue: number;
     totalShortValue: number;
+}
+
+export interface PositionCalculatorDto {
+    id: number;
+    positionId: number;
+    orderSetupDate: string;
+    symbol: string;
+    currencyPair: string;
+    exchangeRate: number;
+    proposedPurchasePrice: number;
+    tradingCapital: number;
+    riskPerPosition: number;
+    maxExposureOnPosition: number;
+    gainLossRatioPercent: number;
+    stopLossAtOverride: number | null;
+    strategyId: number;
+    lotSizeAccountCurrency: number;
+    lotSizeStockCurrency: number;
+    lotSizePercent: number;
+    shareQuantity: number;
+    stopLossAt: number;
+    lossCurrency: number;
+    lossPercent: number;
+    priceTarget: number;
+    takeProfitAtPercent: number;
+    overallProfitAccountCurrency: number;
+    overallProfitStockCurrency: number;
+}
+
+export interface PositionCalculatorCreateDto {
+    positionId: number;
+    orderSetupDate: string;
+    symbol: string;
+    currencyPair: string;
+    exchangeRate: number;
+    proposedPurchasePrice: number;
+    tradingCapital: number;
+    riskPerPosition: number;
+    maxExposureOnPosition: number;
+    gainLossRatioPercent: number;
+    stopLossAtOverride?: number | null;
+    strategyId: number;
+    lotSizeAccountCurrency: number;
+    lotSizeStockCurrency: number;
+    lotSizePercent: number;
+    shareQuantity: number;
+    stopLossAt: number;
+    lossCurrency: number;
+    lossPercent: number;
+    priceTarget: number;
+    takeProfitAtPercent: number;
+    overallProfitAccountCurrency: number;
+    overallProfitStockCurrency: number;
 }
