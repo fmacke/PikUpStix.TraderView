@@ -139,7 +139,7 @@ export interface ListItem {
 
 export interface CanSlimCandidate {
     id: number;
-    canSlimScreenerSnapShotId: number;
+    canSlimScreenerSnapshotId: number;
     symbol: string;
     exchange: string;
     companyName: string;
@@ -150,7 +150,7 @@ export interface CanSlimCandidate {
     volume: number;
     marketCap: number;
     createdAtUtc: string;
-    evaluationDateUtc: Date;
+    evaluationDateUtc: string;
 }
 export interface RiskMatrixCalculationResultDto {
     averageCurrencyGainOnWinningTrade: number;

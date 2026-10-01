@@ -110,8 +110,8 @@ function OpenPositionsView() {
         setSelectedNoteForEdit(null);
     };
 
-    const handleSubmitEditNote = async (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null) => {
-        const result = await apiService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId);
+    const handleSubmitEditNote = async (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null) => {
+        const result = await apiService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId, exitTypeId);
 
         // Refresh notes for the position that was edited
         const notesData = await apiService.getNotesByPositionId(positionId);

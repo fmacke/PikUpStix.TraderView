@@ -8,6 +8,7 @@ import type {
     CreateNoteRequest,
     ListItem,
     CanSlimCandidate,
+    CurrentPerformanceResult,
     RiskMatrixCalculationResultDto,
     TradeCalculationRequest,
     TradeCalculationResponse,
@@ -70,7 +71,7 @@ export const apiService = {
             );
             console.log('API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('API call failed:', error);
             throw error;
         }
@@ -94,7 +95,7 @@ export const apiService = {
             );
             console.log('RS indicator API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('RS indicator API call failed:', error);
             throw error;
         }
@@ -113,7 +114,7 @@ export const apiService = {
             );
             console.log('IBKR sync API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('IBKR sync API call failed:', error);
             throw error;
         }
@@ -132,20 +133,20 @@ export const apiService = {
             );
             console.log('StockScreener sync API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('StockScreener sync API call failed:', error);
             throw error;
         }
     },
     // Get the latest screener results
     async getLatestScreenerResults(): Promise<CanSlimCandidate[]> {
-        console.log('Making API call to /stockscreener/GetLatestScreenerResults');
+        console.log('PPMaking API call to /stockscreener/GetLatestScreenerResults');
         try {
             const response = await apiClient.get<CanSlimCandidate[]>('/stockscreener/GetCanSlimCandidates');
-            console.log('GetLatestScreenerResults API response received:', response.data);
+            console.log('EEGetLatestScreenerResults API response received:', response.data);
             return response.data;
-        } catch (error) {
-            console.error('GetLatestScreenerResults API call failed:', error);
+        } catch (error: unknown) {
+            console.error('JJGetLatestScreenerResults API call failed:', error);
             throw error;
         }
     },
@@ -157,7 +158,7 @@ export const apiService = {
             const response = await apiClient.get<number>('/marketdata/exchange-rate', { params: { baseCurrency: baseCurrency, quote: quoteCurrency } });
             console.log('GetExchangeRate API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('GetExchangeRate API call failed:', error);
             throw error;
         }
@@ -169,7 +170,7 @@ export const apiService = {
             const response = await apiClient.get<OpenPosition[]>('/openpositions');
             console.log('Open positions API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Open positions API call failed:', error);
             throw error;
         }
@@ -182,7 +183,7 @@ export const apiService = {
             const response = await apiClient.post<Note>('/notes', noteRequest);
             console.log('Create note API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Create note API call failed:', error);
             throw error;
         }
@@ -195,7 +196,7 @@ export const apiService = {
             const response = await apiClient.get<Note[]>(`/notes/position/${positionId}`);
             console.log('Get notes API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Get notes API call failed:', error);
             throw error;
         }
@@ -216,7 +217,7 @@ export const apiService = {
             const response = await apiClient.put<Note>('/notes', updateNoteRequest);
             console.log('Update note API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Update note API call failed:', error);
             throw error;
         }
@@ -229,20 +230,20 @@ export const apiService = {
             const response = await apiClient.get<ListItem[]>(`/lists/${category}`);
             console.log(`Get list items for category '${category}' API response received:`, response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error(`Get list items for category '${category}' API call failed:`, error);
             throw error;
         }
     },
 
     // Get position review risk matrix calculation from RiskController
-    async getCurrentPerformance(): Promise<any> {
+    async getCurrentPerformance(): Promise<CurrentPerformanceResult> {
         console.log('Making API call to /risk/currentperformance');
         try {
-            const response = await apiClient.get('/risk/currentperformance');
+            const response = await apiClient.get<CurrentPerformanceResult>('/risk/currentperformance');
             console.log('Current Performance API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Current Performance  API call failed:', error);
             throw error;
         }
@@ -261,7 +262,7 @@ export const apiService = {
             });
             console.log('Desired performance API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Desired performance API call failed:', error);
             throw error;
         }
@@ -273,7 +274,7 @@ export const apiService = {
             const response = await apiClient.post<TradeCalculationResponse>('/tradecalculator/calculate', request);
             console.log('Trade calculator API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Trade calculator API call failed:', error);
             throw error;
         }
@@ -291,7 +292,7 @@ export const apiService = {
             });
             console.log('Asset value over time API response received:', response.data);
             return response.data;
-        } catch (error) {
+        } catch (error: unknown) {
             console.error('Asset value over time API call failed:', error);
             throw error;
         }

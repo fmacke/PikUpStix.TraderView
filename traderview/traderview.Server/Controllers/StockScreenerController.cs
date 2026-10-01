@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Domain.Entities.FMP;
+using traderview.Server.Dtos;
 
 namespace traderview.Server.Controllers
 {
@@ -49,15 +50,32 @@ namespace traderview.Server.Controllers
         /// </summary>
         /// <returns>A list of qualifying CAN SLIM candidates</returns>
         [HttpGet("GetCanSlimCandidates")]
-        [ProducesResponseType(typeof(IReadOnlyList<CanSlimCandidate>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(IReadOnlyList<CanSlimCandidateDto>), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IReadOnlyList<CanSlimCandidate>>> GetCanSlimCandidates()
+        public async Task<ActionResult<IReadOnlyList<CanSlimCandidateDto>>> GetCanSlimCandidates()
         {
             try
             {
                 _logger.LogInformation("Fetching all qualifying CAN SLIM candidates");
                 var stocksShortList = await _companyScreeningService.GetLatestScreenerResults();
-                return Ok(stocksShortList);
+                var dto = stocksShortList.Select(s => new CanSlimCandidateDto
+                {
+                    Id = s.Id,
+                    CanSlimScreenerSnapshotId = s.CanSlimScreenerSnapshotId,
+                    Symbol = s.Symbol,
+                    Exchange = s.Exchange,
+                    CompanyName = s.CompanyName,
+                    Sector = s.Sector,
+                    Industry = s.Industry,
+                    Price = s.Price,
+                    Volume = s.Volume,
+                    MarketCap = s.MarketCap,
+                    CreatedAtUtc = s.CreatedAtUtc,
+                    EvaluationDateUtc = s.EvaluationDateUtc,
+                    PassesBoth = s.PassesBoth
+                }).ToList();
+
+                return Ok(dto);
             }
             catch (Exception ex)
             {
