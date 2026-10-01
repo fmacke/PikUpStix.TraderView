@@ -36,6 +36,7 @@ namespace TraderView.Infrastructure.DbContexts
         public virtual DbSet<Note> Notes { get; set; }
 
         public virtual DbSet<Position> Positions { get; set; }
+        public virtual DbSet<PositionCalculator> PositionCalculators { get; set; }
 
         public virtual DbSet<Strategy> Strategies { get; set; }
 
@@ -148,6 +149,39 @@ namespace TraderView.Infrastructure.DbContexts
                     .HasForeignKey(d => d.CanSlimScreenerSnapshotId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CanSlimCandidates_CanSlimScreenerSnapshot");
+            });
+
+            modelBuilder.Entity<PositionCalculator>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK_PositionCalculator");
+
+                entity.Property(e => e.OrderSetupDate).HasColumnType("datetime");
+                entity.Property(e => e.Symbol).HasMaxLength(100).IsUnicode(false);
+                entity.Property(e => e.CurrencyPair).HasMaxLength(50).IsUnicode(false);
+                entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.ProposedPurchasePrice).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.TradingCapital).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.RiskPerPosition).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.MaxExposureOnPosition).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.GainLossRatioPercent).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.StopLossAtOverride).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.LotSizeAccountCurrency).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.LotSizeStockCurrency).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.LotSizePercent).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.ShareQuantity).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.StopLossAt).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.LossCurrency).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.LossPercent).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.PriceTarget).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.TakeProfitAtPercent).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.OverallProfitAccountCurrency).HasColumnType("decimal(18, 5)");
+                entity.Property(e => e.OverallProfitStockCurrency).HasColumnType("decimal(18, 5)");
+
+                entity.HasOne(d => d.Strategy)
+                    .WithMany()
+                    .HasForeignKey(d => d.StrategyId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_PositionCalculator_Strategies");
             });
 
             modelBuilder.Entity<CanSlimCandidateAnnualHistory>(entity =>

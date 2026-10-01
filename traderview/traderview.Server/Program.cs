@@ -91,6 +91,11 @@ public partial class Program
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
             return new StrategyRepository(db);
         });
+        builder.Services.AddScoped<IPositionCalculatorRepository>(provider =>
+        {
+            AppDbContext db = provider.GetRequiredService<AppDbContext>();
+            return new PositionCalculatorRepository(db);
+        });
 
         // Register custom services        
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
@@ -103,6 +108,11 @@ public partial class Program
         {
             var positionRepo = provider.GetRequiredService<IPositionRepository>();
             return new PositionService(positionRepo);
+        });
+        builder.Services.AddScoped<IPositionCalculatorService, PositionCalculatorService>(provider =>
+        {
+            var repo = provider.GetRequiredService<IPositionCalculatorRepository>();
+            return new PositionCalculatorService(repo);
         });
         builder.Services.AddScoped<FinancialModellingPrepService>(provider =>
         {
@@ -157,6 +167,7 @@ public partial class Program
             cfg.AddProfile<DesiredPerformanceResultsProfile>();
             cfg.AddProfile<CanSlimCandidateProfile>();
             cfg.AddProfile<StrategyProfile>();
+            cfg.AddProfile<PositionCalculatorProfile>();
         });
 
         var app = builder.Build();
