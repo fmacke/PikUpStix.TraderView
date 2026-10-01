@@ -8,6 +8,7 @@ public partial class Strategy
     public int Id { get; set; }
 
     public string Name { get; set; } = null!;
+    public int ListItemId { get; set; }
 
     public DateTime CreatedAt { get; set; }
 

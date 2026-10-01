@@ -315,6 +315,9 @@ namespace TraderView.Infrastructure.DbContexts
                 entity.Property(e => e.Name)
                     .HasMaxLength(200)
                     .IsUnicode(false);
+                entity.Property(e => e.ListItemId)
+                    .IsRequired()
+                    .HasColumnName("ListItemId");
             });
 
             modelBuilder.Entity<StrategyStage>(entity =>
