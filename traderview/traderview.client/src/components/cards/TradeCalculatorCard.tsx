@@ -80,7 +80,7 @@ export const TradeCalculatorCard: React.FC = () => {
                 takeProfitAtPercent: result.takeProfitAt,
                 overallProfitAccountCurrency: result.overallProfitGbp,
                 overallProfitStockCurrency: result.overallProfitUsd,
-                comment: result.comment,
+                comment: request.comment,
             } as PositionCalculatorCreateDto;
 
             const saved: PositionCalculatorDto = await apiService.savePositionCalculator(dto);
