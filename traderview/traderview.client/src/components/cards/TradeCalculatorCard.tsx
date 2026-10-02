@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiService } from '../../services/apiService';
-import type { TradeCalculationRequest, TradeCalculationResponse } from '../../types/api';
+import type { TradeCalculationRequest, TradeCalculationResponse, PositionCalculatorCreateDto, PositionCalculatorDto } from '../../types/api';
 import type { ListItem } from '../../types/api';
 import ListItemSelect from '../common/ListItemSelect';
 
@@ -16,6 +16,7 @@ export const TradeCalculatorCard: React.FC = () => {
         gainLossRatio: 200,
         calculationMode: 'LotSize',
         stopLossAtInput: 0,
+        comment: '',
     });
 
     const [currencyPair, setCurrencyPair] = useState<string>('GBP/USD');
@@ -26,6 +27,8 @@ export const TradeCalculatorCard: React.FC = () => {
     const [strategies, setStrategies] = useState<ListItem[]>([]);
     const [selectedStrategyId, setSelectedStrategyId] = useState<number | null>(null);
     const [isLoadingStrategies] = useState(false);
+    const [saving, setSaving] = useState(false);
+    const [saveMessage, setSaveMessage] = useState<string | null>(null);
 
     // Validate that all required inputs have valid values
     const isValidRequest = (req: TradeCalculationRequest): boolean => {
@@ -43,6 +46,54 @@ export const TradeCalculatorCard: React.FC = () => {
         );
     };
 
+    const handleSave = async () => {
+        if (!result) {
+            setSaveMessage('Nothing to save');
+            return;
+        }
+
+        try {
+            setSaving(true);
+            setSaveMessage(null);
+
+            const dto: PositionCalculatorCreateDto = {
+                positionId: 0,
+                orderSetupDate: request.tradeDate,
+                symbol: request.instrument,
+                currencyPair: currencyPair,
+                exchangeRate: request.exchangeRate,
+                proposedPurchasePrice: request.buyPrice,
+                tradingCapital: request.tradingCapital,
+                riskPerPosition: request.riskPerTrade,
+                maxExposureOnPosition: request.maxExposure,
+                gainLossRatioPercent: request.gainLossRatio,
+                stopLossAtOverride: request.stopLossAtInput === 0 ? undefined : request.stopLossAtInput,
+                strategyId: selectedStrategyId ?? 0,
+                lotSizeAccountCurrency: result.lotGbp,
+                lotSizeStockCurrency: result.lotUsd,
+                lotSizePercent: result.lotPercent,
+                shareQuantity: result.shares,
+                stopLossAt: result.stopLossAt,
+                lossCurrency: result.lossGbp,
+                lossPercent: result.lossPercentage,
+                priceTarget: result.priceTarget,
+                takeProfitAtPercent: result.takeProfitAt,
+                overallProfitAccountCurrency: result.overallProfitGbp,
+                overallProfitStockCurrency: result.overallProfitUsd,
+                comment: result.comment,
+            } as PositionCalculatorCreateDto;
+
+            const saved: PositionCalculatorDto = await apiService.savePositionCalculator(dto);
+            setSaveMessage('Saved successfully');
+            console.log('PositionCalculator saved', saved);
+        } catch (err) {
+            console.error('Save failed', err);
+            setSaveMessage('Save failed. See console for details.');
+        } finally {
+            setSaving(false);
+        }
+    };
+
     const calculateTrade = async () => {
         try {
             setLoading(true);
@@ -57,16 +108,37 @@ export const TradeCalculatorCard: React.FC = () => {
         }
     };
 
+    // Debounced calculation effect. Skip while component is initializing to
+    // avoid firing calculations from initial state setup.
+    const calcTimeoutRef = useRef<number | null>(null);
+    const CALC_DEBOUNCE_MS = 300;
+
     useEffect(() => {
+        if (isInitializing.current) return;
+
+        // clear any pending timeout when request changes
+        if (calcTimeoutRef.current) {
+            window.clearTimeout(calcTimeoutRef.current);
+            calcTimeoutRef.current = null;
+        }
+
         if (isValidRequest(request)) {
-            // calling async setter that will update state; suppress linter about setState-in-effect for this intentional pattern
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            void calculateTrade();
-        } else {        
-            
+            calcTimeoutRef.current = window.setTimeout(() => {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                void calculateTrade();
+                calcTimeoutRef.current = null;
+            }, CALC_DEBOUNCE_MS);
+        } else {
             setResult(null);
             setError(null);
         }
+
+        return () => {
+            if (calcTimeoutRef.current) {
+                window.clearTimeout(calcTimeoutRef.current);
+                calcTimeoutRef.current = null;
+            }
+        };
     }, [request]);
 
     // Update exchange rate when currency pair changes
@@ -124,19 +196,7 @@ export const TradeCalculatorCard: React.FC = () => {
         void init();
     }, []);
 
-    // Fetch latest asset value on component mount
-    useEffect(() => {
-        const loadLatestAssetValue = async () => {
-            try {
-                const assetValue = await apiService.getLatestAssetValue();
-                setRequest(prev => ({ ...prev, tradingCapital: assetValue.totalAssetValue }));
-            } catch (error) {
-                console.error('Failed to fetch latest asset value:', error);
-            }
-        };
-
-        void loadLatestAssetValue();
-    }, []);
+    // Note: fetching latest asset value is handled in the unified init effect above.
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         // Support checkboxes (use checked) and numeric/text inputs (use value)
@@ -146,7 +206,7 @@ export const TradeCalculatorCard: React.FC = () => {
         setRequest(prev => {
             const newValue: string | number | boolean = type === 'checkbox'
                 ? checked
-                : ['instrument', 'tradeDate'].includes(name)
+                : ['instrument', 'tradeDate', 'comment'].includes(name)
                     ? value
                     : value === ''
                         ? 0
@@ -190,12 +250,28 @@ export const TradeCalculatorCard: React.FC = () => {
         <div className="dashboard-card">
             <div className="flex justify-between items-center">
                 <h3>Trading Position Calculator</h3>
-                {loading && <span className="text-sm text-blue-600 animate-pulse">Calculating...</span>}
+                <div className="flex items-center gap-3">
+                    {loading && <span className="text-sm text-blue-600 animate-pulse">Calculating...</span>}
+                    <button
+                        type="button"
+                        onClick={handleSave}
+                        disabled={!result || saving}
+                        className={`px-3 py-1 rounded bg-blue-600 text-white text-sm ${(!result || saving) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                    >
+                        {saving ? 'Saving...' : 'Save'}
+                    </button>
+                </div>
             </div>
 
             {error && (
                 <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
                     {error}
+                </div>
+            )}
+
+            {saveMessage && (
+                <div className="p-3 mt-2 bg-blue-50 border border-blue-200 text-blue-800 rounded-md text-sm">
+                    {saveMessage}
                 </div>
             )}
 
@@ -326,6 +402,16 @@ export const TradeCalculatorCard: React.FC = () => {
                     labelClassName="w-48 flex-shrink-0"
                     className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
                 />
+                <div className="flex items-center gap-4 mb-4">
+                    <label className="w-48 flex-shrink-0">Comment</label>
+                    <input
+                        type="text"
+                        name="comment"
+                        value={request.comment}
+                        onChange={handleChange}
+                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                    />
+                </div>
             </div>
 
             {/* Output Section */}

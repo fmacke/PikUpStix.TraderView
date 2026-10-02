@@ -105,7 +105,7 @@ export const apiService = {
     // Get current performance summary
     async getCurrentPerformance(): Promise<CurrentPerformanceResult> {
         try {
-            const response = await apiClient.get<CurrentPerformanceResult>('/currentperformance');
+            const response = await apiClient.get<CurrentPerformanceResult>('/risk/currentperformance');
             return response.data;
         } catch (error) {
             console.error('getCurrentPerformance failed', error);
@@ -226,7 +226,7 @@ export const apiService = {
     // Get list items by category
     async getListItems(category: string): Promise<ListItem[]> {
         try {
-            const response = await apiClient.get<ListItem[]>(`/list/${category}`);
+            const response = await apiClient.get<ListItem[]>(`/lists/${category}`);
             return response.data;
         } catch (error) {
             console.error('getListItems failed', error);

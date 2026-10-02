@@ -51,8 +51,7 @@ namespace TraderView.Domain.Entities
         public decimal OverallProfitAccountCurrency { get; set; }
 
         public decimal OverallProfitStockCurrency { get; set; }
-
-        // Navigation
+        public string? Comment { get; set; }
         public virtual Strategy? Strategy { get; set; }
     }
 }

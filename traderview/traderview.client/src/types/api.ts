@@ -187,6 +187,7 @@ export interface TradeCalculationRequest {
     gainLossRatio: number;
     calculationMode: string;
     stopLossAtInput: number;
+    comment: string;
 }
 export interface TradeCalculationResponse {
     lotSizeGbp: number;
@@ -202,6 +203,7 @@ export interface TradeCalculationResponse {
     priceTarget: number;
     overallProfitGbp: number;
     overallProfitUsd: number;
+    comment: string;
 }
 
 export interface AssetValueChartData {
@@ -236,6 +238,7 @@ export interface PositionCalculatorDto {
     takeProfitAtPercent: number;
     overallProfitAccountCurrency: number;
     overallProfitStockCurrency: number;
+    comment: string
 }
 
 export interface PositionCalculatorCreateDto {
@@ -262,4 +265,5 @@ export interface PositionCalculatorCreateDto {
     takeProfitAtPercent: number;
     overallProfitAccountCurrency: number;
     overallProfitStockCurrency: number;
+    comment: string;
 }

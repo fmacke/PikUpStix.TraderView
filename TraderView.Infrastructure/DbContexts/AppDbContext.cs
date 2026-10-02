@@ -176,7 +176,7 @@ namespace TraderView.Infrastructure.DbContexts
                 entity.Property(e => e.TakeProfitAtPercent).HasColumnType("decimal(18, 5)");
                 entity.Property(e => e.OverallProfitAccountCurrency).HasColumnType("decimal(18, 5)");
                 entity.Property(e => e.OverallProfitStockCurrency).HasColumnType("decimal(18, 5)");
-
+                entity.Property(e => e.Comment).HasColumnType("varchar(1000)");
                 entity.HasOne(d => d.Strategy)
                     .WithMany()
                     .HasForeignKey(d => d.StrategyId)

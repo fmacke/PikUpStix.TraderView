@@ -28,6 +28,7 @@ namespace traderview.Server.DTOs
         public decimal TakeProfitAtPercent { get; set; }
         public decimal OverallProfitAccountCurrency { get; set; }
         public decimal OverallProfitStockCurrency { get; set; }
+        public string? Comment { get; set; }
     }
 
     public class PositionCalculatorCreateDto
@@ -80,6 +81,7 @@ namespace traderview.Server.DTOs
         public decimal TakeProfitAtPercent { get; set; }
         public decimal OverallProfitAccountCurrency { get; set; }
         public decimal OverallProfitStockCurrency { get; set; }
+        public string? Comment { get; set; }
     }
 
     public class PositionCalculatorUpdateDto : PositionCalculatorCreateDto

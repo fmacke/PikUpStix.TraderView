@@ -7,6 +7,6 @@ namespace TraderView.Application.Interfaces.Repositories
     /// </summary>
     public interface IStrategyRepository : IRepository<Strategy>
     {
-        
+        Task<Strategy?> GetByListItemId(int listItemId);
     }
 }

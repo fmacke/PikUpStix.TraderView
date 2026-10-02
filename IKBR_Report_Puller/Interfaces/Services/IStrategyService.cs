@@ -6,5 +6,6 @@ namespace TraderView.Application.Interfaces.Services
     {
         Task<IReadOnlyList<Strategy>> GetAllAsync();
         Task<Strategy?> GetByIdAsync(int id);
+        Task<Strategy?> GetByListItemId(int listItemId);
     }
 }

@@ -11,13 +11,15 @@ namespace traderview.Server.Controllers
     public class PositionCalculatorController : ControllerBase
     {
         private readonly IPositionCalculatorService _service;
+        private readonly IStrategyService _strategyService;
         private readonly ILogger<PositionCalculatorController> _logger;
         private readonly IMapper _mapper;
 
-        public PositionCalculatorController(ILogger<PositionCalculatorController> logger, IPositionCalculatorService service, IMapper mapper)
+        public PositionCalculatorController(ILogger<PositionCalculatorController> logger, IPositionCalculatorService service, IStrategyService strategyService, IMapper mapper)
         {
             _logger = logger;
             _service = service;
+            _strategyService = strategyService;
             _mapper = mapper;
         }
 
@@ -47,7 +49,10 @@ namespace traderview.Server.Controllers
 
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-
+            var strategy = await _strategyService.GetByListItemId(request.StrategyId);
+            if (strategy == null)
+                return NotFound($"Strategy with ID {request.StrategyId} not found.");
+            request.StrategyId = strategy.Id; // Ensure the StrategyId is set correctly
             var entity = _mapper.Map<PositionCalculator>(request);
             var created = await _service.CreateAsync(entity);
             var dto = _mapper.Map<PositionCalculatorDto>(created);

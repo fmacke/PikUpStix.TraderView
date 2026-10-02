@@ -19,5 +19,9 @@ namespace PikUpStix.TraderView.Services
         {
             return await Task.Run(() => _strategyRepository.GetByIdAsync(id));
         }
+        public async Task<Strategy?> GetByListItemId(int listItemId)
+        {
+            return await Task.Run(() => _strategyRepository.GetByListItemId(listItemId));
+        }
     }
 }
