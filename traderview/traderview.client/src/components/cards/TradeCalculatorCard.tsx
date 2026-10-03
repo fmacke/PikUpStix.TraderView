@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { apiService } from '../../services/apiService';
 import type { TradeCalculationRequest, TradeCalculationResponse, PositionCalculatorCreateDto, PositionCalculatorDto } from '../../types/api';
+import CompoundedPositionsCalculator from './CompoundedPositionsCalculator';
 import type { ListItem } from '../../types/api';
 import ListItemSelect from '../common/ListItemSelect';
 
@@ -8,11 +9,11 @@ export const TradeCalculatorCard: React.FC = () => {
     const [request, setRequest] = useState<TradeCalculationRequest>({
         tradeDate: new Date().toISOString().split('T')[0],
         instrument: 'TICKER-CODE',
-        exchangeRate: 1.36,
-        buyPrice: 520,
+        exchangeRate: 1,
+        buyPrice: 100,
         tradingCapital: 100000,
-        riskPerTrade: 5,
-        maxExposure: 2.5,
+        riskPerTrade: 6.25,
+        maxExposure: 4,
         gainLossRatio: 200,
         calculationMode: 'LotSize',
         stopLossAtInput: 0,
@@ -416,7 +417,8 @@ export const TradeCalculatorCard: React.FC = () => {
 
             {/* Output Section */}
             {result && (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-green-50 text-xs">
+                <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-green-50 text-xs">
                     <div className="md:col-span-3">
                         <p>STOP LOSS DETAILS</p>
                     </div>
@@ -477,7 +479,10 @@ export const TradeCalculatorCard: React.FC = () => {
                             £{result.overallProfitGbp.toFixed(2)} / ${result.overallProfitUsd.toFixed(2)}
                         </div>
                     </div>
-                </div>
+                    </div>
+                    {/* Compounded positions component - updates whenever main result updates */}
+                    <CompoundedPositionsCalculator request={request} trigger={result} />
+                </>
             )}
         </div>
     );

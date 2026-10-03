@@ -12,6 +12,7 @@ import type {
     RiskMatrixCalculationResultDto,
     TradeCalculationRequest,
     TradeCalculationResponse,
+    CompoundPositions,
     AssetValueChartData,
     PositionCalculatorCreateDto,
     PositionCalculatorDto
@@ -261,6 +262,19 @@ export const apiService = {
             return response.data;
         } catch (error: unknown) {
             console.error('Trade calculator API call failed:', error);
+            throw error;
+        }
+    },
+
+    // Calculate compounded positions (quarter, half, full) from the server
+    async calculateCompoundPositions(request: TradeCalculationRequest): Promise<CompoundPositions> {
+        console.log('Making API call to /tradecalculator/calculate-compound', request);
+        try {
+            const response = await apiClient.post<CompoundPositions>('/tradecalculator/calculate-compound', request);
+            console.log('Trade compound API response received:', response.data);
+            return response.data;
+        } catch (error: unknown) {
+            console.error('Trade compound API call failed:', error);
             throw error;
         }
     },

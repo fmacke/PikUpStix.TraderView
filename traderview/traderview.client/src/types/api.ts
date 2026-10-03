@@ -12,6 +12,45 @@ export interface Trade {
     buySell: string;
 }
 
+export interface CompoundPositions {
+    quarterPosition: TradeCalculationCompoundedPosition;
+    halfPosition: TradeCalculationCompoundedPosition;
+    fullPosition: TradeCalculationCompoundedPosition;
+}
+
+export interface TradeCalculationCompoundedPosition {
+    tradeDate: string;
+    instrument: string;
+    exchangeRate: number;
+
+    tradingCapital: number;
+    riskPerPositionPercentage: number;
+    stopLossOnPositionPercentage: number;
+
+    positionSizeUsd: number;
+    positionSizeGbp: number;
+    positionRiskUsd: number;
+    positionRiskGbp: number;
+    accountRiskPercentage: number;
+
+    buyPriceUsd: number;
+    buyPriceGbp: number;
+    shares: number;
+    totalShares: number;
+    averageSharePriceUsd: number;
+
+    stopLossAtUsd: number;
+    profitLossTargetPercentage: number;
+    profitTargetUsd: number;
+    takeProfitOrPyramidAtUsd: number;
+    targetSharePriceUsd: number;
+    targetSharePricePercentage: number;
+
+    winUsd: number;
+    lossUsd: number;
+    winLossRatioPercentage: number;
+}
+
 export interface TradeDetail {
     trade: Trade;
     instrument: Instrument;

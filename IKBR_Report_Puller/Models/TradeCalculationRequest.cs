@@ -1,6 +1,10 @@
-﻿using System;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2010.CustomUI;
+using System;
 using System.Collections.Generic;
+using System.Runtime.ConstrainedExecution;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TraderView.Application.Models
 {
@@ -32,10 +36,49 @@ namespace TraderView.Application.Models
         public decimal OverallProfitGbp { get; set; }
         public decimal OverallProfitUsd { get; set; }
     }
+    public class TradeCalculationCompoundedPosition
+    {
+        // Identification & Meta
+        public DateTime TradeDate { get; set; }
+        public string Instrument { get; set; } = string.Empty;
+        public decimal ExchangeRate { get; set; }
+
+        // Capital & Risk Settings
+        public decimal TradingCapital { get; set; }
+        public decimal RiskPerPositionPercentage { get; set; }
+        public decimal StopLossOnPositionPercentage { get; set; }
+
+        // Calculated Position Metrics
+        public decimal PositionSizeUsd { get; set; }
+        public decimal PositionSizeGbp { get; set; }
+        public decimal PositionRiskUsd { get; set; }
+        public decimal PositionRiskGbp { get; set; }
+        public decimal AccountRiskPercentage { get; set; }
+
+        // Price & Shares
+        public decimal BuyPriceUsd { get; set; }
+        public decimal BuyPriceGbp { get; set; }
+        public decimal Shares { get; set; }
+        public decimal TotalShares { get; set; }
+        public decimal AverageSharePriceUsd { get; set; }
+
+        // Targets & Stop Loss
+        public decimal StopLossAtUsd { get; set; }
+        public decimal ProfitLossTargetPercentage { get; set; }
+        public decimal ProfitTargetUsd { get; set; }
+        public decimal TakeProfitOrPyramidAtUsd { get; set; }
+        public decimal TargetSharePriceUsd { get; set; }
+        public decimal TargetSharePricePercentage { get; set; }
+
+        // Outcomes & Ratios
+        public decimal WinUsd { get; set; }
+        public decimal LossUsd { get; set; }
+        public decimal WinLossRatioPercentage { get; set; }
+    }
     public class CompoundPositions
     {
-        public TradeCalculationResponse QuarterPosition { get; set; }
-        public TradeCalculationResponse HalfPosition { get; set; }
-        public TradeCalculationResponse FullPosition { get; set; }
+        public TradeCalculationCompoundedPosition QuarterPosition { get; set; }
+        public TradeCalculationCompoundedPosition HalfPosition { get; set; }
+        public TradeCalculationCompoundedPosition FullPosition { get; set; }
     }
 }

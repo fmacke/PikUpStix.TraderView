@@ -81,7 +81,8 @@ namespace TraderView.Application.Services
 
             var compoundPositions = new CompoundPositions
             {
-                QuarterPosition = quarterPosition,
+                // QuarterPosition needs to be a TradeCalculationCompoundedPosition. Create from quarterPosition with multiplier=1
+                QuarterPosition = ScalePosition(quarterPosition, 1m),
                 HalfPosition = halfPosition,
                 FullPosition = fullPosition
             };
@@ -89,24 +90,51 @@ namespace TraderView.Application.Services
             return compoundPositions;
         }
 
-        private TradeCalculationResponse ScalePosition(TradeCalculationResponse basePosition, decimal multiplier)
+        private TradeCalculationCompoundedPosition ScalePosition(TradeCalculationResponse basePosition, decimal multiplier)
         {
-            return new TradeCalculationResponse
+            // Map available fields from TradeCalculationResponse into the new TradeCalculationCompoundedPosition
+            // Some fields (like trading capital or instrument) are not present on TradeCalculationResponse
+            // and therefore are left as defaults or derived where possible.
+            var pos = new TradeCalculationCompoundedPosition
             {
-                LotSizeGbp = basePosition.LotSizeGbp * multiplier,
-                LotGbp = basePosition.LotGbp * multiplier,
-                LotUsd = basePosition.LotUsd * multiplier,
-                LotPercent = basePosition.LotPercent * multiplier,
+                TradeDate = DateTime.Today,
+                Instrument = string.Empty,
+                ExchangeRate = 0m,
+
+                // Risk / capital related - derive what we can
+                TradingCapital = 0m,
+                RiskPerPositionPercentage = basePosition.LotPercent * 100m,
+                StopLossOnPositionPercentage = basePosition.LossPercentage * 100m,
+
+                // Scaled position sizes
+                PositionSizeUsd = basePosition.LotUsd * multiplier,
+                PositionSizeGbp = basePosition.LotGbp * multiplier,
+                PositionRiskUsd = basePosition.LossUsd * multiplier,
+                PositionRiskGbp = basePosition.LossGbp * multiplier,
+                AccountRiskPercentage = basePosition.LossPercentage * multiplier * 100m,
+
+                // Price and shares
+                BuyPriceUsd = 0m,
+                BuyPriceGbp = 0m,
                 Shares = basePosition.Shares * multiplier,
-                StopLossAt = basePosition.StopLossAt, // Price level remains constant
-                LossGbp = basePosition.LossGbp * multiplier,
+                TotalShares = basePosition.Shares * multiplier,
+                AverageSharePriceUsd = 0m,
+
+                // Targets & stop loss
+                StopLossAtUsd = basePosition.StopLossAt,
+                ProfitLossTargetPercentage = basePosition.TakeProfitAt,
+                ProfitTargetUsd = basePosition.OverallProfitUsd * multiplier,
+                TakeProfitOrPyramidAtUsd = basePosition.OverallProfitUsd * multiplier,
+                TargetSharePriceUsd = basePosition.PriceTarget,
+                TargetSharePricePercentage = basePosition.TakeProfitAt,
+
+                // Outcomes
+                WinUsd = basePosition.OverallProfitUsd * multiplier,
                 LossUsd = basePosition.LossUsd * multiplier,
-                LossPercentage = basePosition.LossPercentage * multiplier,
-                TakeProfitAt = basePosition.TakeProfitAt, // Percentage / ratio remains constant
-                PriceTarget = basePosition.PriceTarget, // Price level remains constant
-                OverallProfitGbp = basePosition.OverallProfitGbp * multiplier,
-                OverallProfitUsd = basePosition.OverallProfitUsd * multiplier
+                WinLossRatioPercentage = basePosition.TakeProfitAt
             };
+
+            return pos;
         }
     }
     
