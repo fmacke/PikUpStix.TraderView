@@ -37,7 +37,7 @@ namespace traderview.Server.Controllers
             }
 
             var quarterPosition = _calculatorService.CalculatePosition(request);
-            var result = _calculatorService.CalculateCompoundPositions(quarterPosition);
+            var result = _calculatorService.CalculateCompoundPositions(request, quarterPosition);
             return Ok(result);
         }
     }

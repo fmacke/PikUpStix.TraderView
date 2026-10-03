@@ -7,45 +7,62 @@ interface Props {
     trigger: TradeCalculationResponse | null;
 }
 
-const SmallStat: React.FC<{ label: string; value: string | number }> = ({ label, value }) => (
-    <div className="mb-2">
-        <div className="text-xs text-gray-600">{label}</div>
-        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">{value}</div>
-    </div>
-);
+const SmallStat: React.FC<{ label: string; value: string | number; highlight?: 'green' | 'yellow' }> = ({ label, value, highlight = 'green' }) => {
+    const bg = highlight === 'yellow' ? 'bg-yellow-200' : 'bg-green-200';
+    return (
+        <div className="mb-2">
+            <div className="text-xs text-gray-600">{label}</div>
+            <div className={`mt-1 p-2 ${bg} rounded-md font-semibold text-gray-800`}>{value}</div>
+        </div>
+    );
+};
 
 const ColumnBox: React.FC<{ title: string; pos: TradeCalculationCompoundedPosition }> = ({ title, pos }) => (
     <div className="p-3 border rounded bg-white shadow-sm">
         <div className="font-bold mb-2 text-sm">{title}</div>
-        <SmallStat label="Trade Date" value={pos.tradeDate} />
-        <SmallStat label="Instrument" value={pos.instrument} />
-        <SmallStat label="Exchange Rate" value={pos.exchangeRate.toFixed(4)} />
-        <SmallStat label="Trading Capital" value={`£${pos.tradingCapital.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <SmallStat label="Risk Per Position" value={`${pos.riskPerPositionPercentage.toFixed(2)}%`} />
-        <SmallStat label="Stop Loss On Position" value={`${pos.stopLossOnPositionPercentage.toFixed(2)}%`} />
 
-        <SmallStat label="Position Size (USD)" value={`$${pos.positionSizeUsd.toFixed(2)}`} />
-        <SmallStat label="Position Size (GBP)" value={`£${pos.positionSizeGbp.toFixed(2)}`} />
-        <SmallStat label="Position Risk (USD)" value={`$${pos.positionRiskUsd.toFixed(2)}`} />
-        <SmallStat label="Position Risk (GBP)" value={`£${pos.positionRiskGbp.toFixed(2)}`} />
-        <SmallStat label="Account Risk" value={`${pos.accountRiskPercentage.toFixed(2)}%`} />
+        {/* Header block */}
+        <SmallStat label="Trade Date" value={new Date(pos.tradeDate).toLocaleDateString()} />
+        <SmallStat label="Instrument" value={pos.instrument || '-'} />
+        <SmallStat label="Exchange Rate" value={pos.exchangeRate?.toFixed(4) ?? '0.0000'} />
+        <SmallStat label="Trading Capital" value={`£${(pos.tradingCapital ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Risk Per Position" value={`${(pos.riskPerPositionPercentage ?? 0).toFixed(2)}%`} />
+        <SmallStat label="Stop Loss On Position" value={`${(pos.stopLossOnPositionPercentage ?? 0).toFixed(2)}%`} />
 
-        <SmallStat label="Buy Price (USD)" value={`$${pos.buyPriceUsd.toFixed(2)}`} />
-        <SmallStat label="Buy Price (GBP)" value={`£${pos.buyPriceGbp.toFixed(2)}`} />
-        <SmallStat label="Shares" value={pos.shares.toFixed(2)} />
-        <SmallStat label="Total Shares" value={pos.totalShares.toFixed(2)} />
-        <SmallStat label="Avg Share Price (USD)" value={`$${pos.averageSharePriceUsd.toFixed(2)}`} />
+        {/* Position sizes */}
+        <SmallStat label="Position Size (USD)" value={`$${(pos.positionSizeUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Position Size (GBP)" value={`£${(pos.positionSizeGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Position Risk (USD)" value={`$${(pos.positionRiskUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Position Risk (GBP)" value={`£${(pos.positionRiskGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Account Risk" value={`${(pos.accountRiskPercentage ?? 0).toFixed(2)}%`} />
 
-        <SmallStat label="Stop Loss At (USD)" value={`$${pos.stopLossAtUsd.toFixed(2)}`} />
-        <SmallStat label="Profit/Loss Target" value={`${pos.profitLossTargetPercentage.toFixed(2)}%`} />
-        <SmallStat label="Profit Target (USD)" value={`$${pos.profitTargetUsd.toFixed(2)}`} />
-        <SmallStat label="Take Profit / Pyramid At (USD)" value={`$${pos.takeProfitOrPyramidAtUsd.toFixed(2)}`} />
-        <SmallStat label="Target Share Price (USD)" value={`$${pos.targetSharePriceUsd.toFixed(2)}`} />
-        <SmallStat label="Target Share Price (%)" value={`${pos.targetSharePricePercentage.toFixed(2)}%`} />
+        {/* Price and shares */}
+        <SmallStat label="Buy Price (USD)" value={`$${(pos.buyPriceUsd ?? 0).toFixed(2)}`} highlight="yellow" />
+        <SmallStat label="Buy Price (GBP)" value={`£${(pos.buyPriceGbp ?? 0).toFixed(2)}`} />
+        <SmallStat label="Shares" value={(pos.shares ?? 0).toFixed(2)} />
+        <SmallStat label="Total Shares" value={(pos.totalShares ?? 0).toFixed(2)} />
+        <SmallStat label="Avg Share Price (USD)" value={`$${(pos.averageSharePriceUsd ?? 0).toFixed(2)}`} />
 
-        <SmallStat label="Win (USD)" value={`$${pos.winUsd.toFixed(2)}`} />
-        <SmallStat label="Loss (USD)" value={`$${pos.lossUsd.toFixed(2)}`} />
-        <SmallStat label="Win/Loss Ratio (%)" value={`${pos.winLossRatioPercentage.toFixed(2)}%`} />
+        {/* Stop / targets */}
+        <SmallStat label="Stop Loss At (USD)" value={`$${(pos.stopLossAtUsd ?? 0).toFixed(2)}`} />
+        <SmallStat label="Profit/Loss Target" value={`${(pos.profitLossTargetPercentage ?? 0).toFixed(2)}%`} highlight="yellow" />
+        <SmallStat label="Profit Target (USD)" value={`$${(pos.profitTargetUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Take Profit / Pyramid At (USD)" value={`$${(pos.takeProfitOrPyramidAtUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <div className="flex items-center gap-2">
+            <div className="flex-1">
+                <div className="text-xs text-gray-600">Target Share Price (USD)</div>
+                <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">${(pos.targetSharePriceUsd ?? 0).toFixed(2)}</div>
+            </div>
+            <div className="w-24">
+                <div className="text-xs text-gray-600">%</div>
+                <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">{(pos.targetSharePricePercentage ?? 0).toFixed(2)}%</div>
+            </div>
+        </div>
+
+        {/* Outcomes */}
+        <SmallStat label="Win (USD)" value={`$${(pos.winUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Loss (USD)" value={`$${(pos.lossUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Win/Loss Ratio (%)" value={`${(pos.winLossRatioPercentage ?? 0).toFixed(2)}%`} />
     </div>
 );
 
