@@ -20,7 +20,7 @@ namespace TraderView.Application.Services
 
             if (request.StopLossAtInput == null || request.StopLossAtInput == 0)
             {
-                
+
                 // Stop Loss set by RiskPerTrade Size logic
                 response.LotGbp = response.LotSizeGbp;
                 response.LotUsd = response.LotGbp * request.ExchangeRate;
@@ -49,7 +49,7 @@ namespace TraderView.Application.Services
             }
             else
             {
-               if (request.StopLossAtInput != null && request.StopLossAtInput != 0)  // sometime user inputs empty figure here so no calc should be made
+                if (request.StopLossAtInput != null && request.StopLossAtInput != 0)  // sometime user inputs empty figure here so no calc should be made
                 {
                     // Stop Loss set by Stop Loss Point logic (Right section of excel)
                     response.StopLossAt = Convert.ToDecimal(request.StopLossAtInput);
@@ -63,7 +63,7 @@ namespace TraderView.Application.Services
                     response.LossGbp = response.LossUsd / request.ExchangeRate;
                     response.LossPercentage = response.LossUsd / request.TradingCapital;
 
-                    response.LotPercent = (response.Shares * request.BuyPrice) / (response.LotSizeGbp * request.ExchangeRate) ;
+                    response.LotPercent = (response.Shares * request.BuyPrice) / (response.LotSizeGbp * request.ExchangeRate);
                     response.TakeProfitAt = gainLossRatio * maxExposure * 100; // Or percentage based
                     response.PriceTarget = request.BuyPrice + (request.BuyPrice * (gainLossRatio * (request.BuyPrice - response.StopLossAt) / request.BuyPrice));
 
@@ -74,5 +74,40 @@ namespace TraderView.Application.Services
 
             return response;
         }
+        public CompoundPositions CalculateCompoundPositions(TradeCalculationResponse quarterPosition)
+        {
+            var halfPosition = ScalePosition(quarterPosition, 2m);
+            var fullPosition = ScalePosition(quarterPosition, 4m);
+
+            var compoundPositions = new CompoundPositions
+            {
+                QuarterPosition = quarterPosition,
+                HalfPosition = halfPosition,
+                FullPosition = fullPosition
+            };
+
+            return compoundPositions;
+        }
+
+        private TradeCalculationResponse ScalePosition(TradeCalculationResponse basePosition, decimal multiplier)
+        {
+            return new TradeCalculationResponse
+            {
+                LotSizeGbp = basePosition.LotSizeGbp * multiplier,
+                LotGbp = basePosition.LotGbp * multiplier,
+                LotUsd = basePosition.LotUsd * multiplier,
+                LotPercent = basePosition.LotPercent * multiplier,
+                Shares = basePosition.Shares * multiplier,
+                StopLossAt = basePosition.StopLossAt, // Price level remains constant
+                LossGbp = basePosition.LossGbp * multiplier,
+                LossUsd = basePosition.LossUsd * multiplier,
+                LossPercentage = basePosition.LossPercentage * multiplier,
+                TakeProfitAt = basePosition.TakeProfitAt, // Percentage / ratio remains constant
+                PriceTarget = basePosition.PriceTarget, // Price level remains constant
+                OverallProfitGbp = basePosition.OverallProfitGbp * multiplier,
+                OverallProfitUsd = basePosition.OverallProfitUsd * multiplier
+            };
+        }
     }
+    
 }

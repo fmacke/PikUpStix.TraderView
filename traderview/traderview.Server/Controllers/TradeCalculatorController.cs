@@ -28,5 +28,17 @@ namespace traderview.Server.Controllers
             var result = _calculatorService.CalculatePosition(request);
             return Ok(result);
         }
+        [HttpPost("calculate-compound")]
+        public ActionResult<CompoundPositions> CalculateCompound([FromBody] TradeCalculationRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest("Invalid calculation request.");
+            }
+
+            var quarterPosition = _calculatorService.CalculatePosition(request);
+            var result = _calculatorService.CalculateCompoundPositions(quarterPosition);
+            return Ok(result);
+        }
     }
 }

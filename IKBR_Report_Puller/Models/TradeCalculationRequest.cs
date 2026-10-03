@@ -32,4 +32,10 @@ namespace TraderView.Application.Models
         public decimal OverallProfitGbp { get; set; }
         public decimal OverallProfitUsd { get; set; }
     }
+    public class CompoundPositions
+    {
+        public TradeCalculationResponse QuarterPosition { get; set; }
+        public TradeCalculationResponse HalfPosition { get; set; }
+        public TradeCalculationResponse FullPosition { get; set; }
+    }
 }
