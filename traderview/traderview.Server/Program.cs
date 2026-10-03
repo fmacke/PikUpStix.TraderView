@@ -96,6 +96,11 @@ public partial class Program
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
             return new PositionCalculatorRepository(db);
         });
+        builder.Services.AddScoped<ICompoundPositionRepository>(provider =>
+        {
+            AppDbContext db = provider.GetRequiredService<AppDbContext>();
+            return new CompoundPositionRepository(db);
+        });
 
         // Register custom services        
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();

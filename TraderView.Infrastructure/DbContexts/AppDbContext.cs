@@ -37,6 +37,7 @@ namespace TraderView.Infrastructure.DbContexts
 
         public virtual DbSet<Position> Positions { get; set; }
         public virtual DbSet<PositionCalculator> PositionCalculators { get; set; }
+        public virtual DbSet<CompoundPosition> CompoundPositions { get; set; }
 
         public virtual DbSet<Strategy> Strategies { get; set; }
 
@@ -149,6 +150,28 @@ namespace TraderView.Infrastructure.DbContexts
                     .HasForeignKey(d => d.CanSlimScreenerSnapshotId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CanSlimCandidates_CanSlimScreenerSnapshot");
+            });
+
+            modelBuilder.Entity<CompoundPosition>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Instrument).HasMaxLength(100).IsUnicode(false);
+                entity.Property(e => e.TradeDate).HasColumnType("datetime");
+                entity.Property(e => e.ExchangeRate).HasColumnType("decimal(18,6)");
+                entity.Property(e => e.TradingCapital).HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.PositionSizeUsd).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.PositionSizeGbp).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.PositionRiskUsd).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.PositionRiskGbp).HasColumnType("decimal(18,2)");
+
+                entity.Property(e => e.BuyPriceUsd).HasColumnType("decimal(18,2)");
+                entity.Property(e => e.BuyPriceGbp).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(d => d.PositionCalculator)
+                      .WithMany(p => p.CompoundPositions)
+                      .HasForeignKey(d => d.PositionCalculatorId)
+                      .OnDelete(Microsoft.EntityFrameworkCore.DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<PositionCalculator>(entity =>

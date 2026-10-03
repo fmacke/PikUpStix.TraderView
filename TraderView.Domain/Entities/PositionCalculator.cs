@@ -53,5 +53,6 @@ namespace TraderView.Domain.Entities
         public decimal OverallProfitStockCurrency { get; set; }
         public string? Comment { get; set; }
         public virtual Strategy? Strategy { get; set; }
+        public virtual ICollection<CompoundPosition>? CompoundPositions { get; set; }
     }
 }

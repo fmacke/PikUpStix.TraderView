@@ -57,6 +57,15 @@ export const TradeCalculatorCard: React.FC = () => {
             setSaving(true);
             setSaveMessage(null);
 
+            // compute compound positions and include them in the saved DTO
+            let compoundArray = undefined;
+            try {
+                const compound = await apiService.calculateCompoundPositions(request);
+                compoundArray = [compound.quarterPosition, compound.halfPosition, compound.fullPosition];
+            } catch (err) {
+                console.warn('Failed to calculate compound positions for save', err);
+            }
+
             const dto: PositionCalculatorCreateDto = {
                 positionId: 0,
                 orderSetupDate: request.tradeDate,
@@ -82,6 +91,7 @@ export const TradeCalculatorCard: React.FC = () => {
                 overallProfitAccountCurrency: result.overallProfitGbp,
                 overallProfitStockCurrency: result.overallProfitUsd,
                 comment: request.comment,
+                compoundPositions: compoundArray,
             } as PositionCalculatorCreateDto;
 
             const saved: PositionCalculatorDto = await apiService.savePositionCalculator(dto);

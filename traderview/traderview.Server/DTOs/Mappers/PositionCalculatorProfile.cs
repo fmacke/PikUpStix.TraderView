@@ -11,5 +11,6 @@ public class PositionCalculatorProfile : Profile
         CreateMap<PositionCalculator, PositionCalculatorDto>().ReverseMap();
         CreateMap<PositionCalculatorCreateDto, PositionCalculator>();
         CreateMap<PositionCalculatorUpdateDto, PositionCalculator>();
+        CreateMap<CompoundPositionDto, TraderView.Domain.Entities.CompoundPosition>().ReverseMap();
     }
 }

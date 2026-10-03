@@ -305,4 +305,5 @@ export interface PositionCalculatorCreateDto {
     overallProfitAccountCurrency: number;
     overallProfitStockCurrency: number;
     comment: string;
+    compoundPositions?: CompoundPositions;
 }
