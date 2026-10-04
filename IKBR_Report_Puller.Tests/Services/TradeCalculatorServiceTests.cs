@@ -45,9 +45,9 @@ namespace IKBR_Report_Puller.Tests.Services
             Assert.AreEqual(Math.Round(q.PositionSizeUsd * 2m, 6), Math.Round(h.PositionSizeUsd, 6), "Half position size should be double quarter");
             Assert.AreEqual(Math.Round(q.PositionSizeUsd * 4m, 6), Math.Round(f.PositionSizeUsd, 6), "Full position size should be quadruple quarter");
 
-            // Shares scale proportionally
-            Assert.AreEqual(Math.Round(q.Shares * 2m, 6), Math.Round(h.Shares, 6), "Half shares should be double quarter");
-            Assert.AreEqual(Math.Round(q.Shares * 4m, 6), Math.Round(f.Shares, 6), "Full shares should be quadruple quarter");
+            // Total shares scale proportionally across tiers (quarter=1x, half=2x, full=4x)
+            Assert.AreEqual(Math.Round(q.TotalShares * 2m, 6), Math.Round(h.TotalShares, 6), "Half total shares should be double quarter total shares");
+            Assert.AreEqual(Math.Round(q.TotalShares * 4m, 6), Math.Round(f.TotalShares, 6), "Full total shares should be quadruple quarter total shares");
 
             // Stop loss level computed from buy price and max exposure
             var expectedStop = q.BuyPriceUsd * (1 - (request.MaxExposure / 100m));

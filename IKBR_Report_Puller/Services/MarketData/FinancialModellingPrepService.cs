@@ -43,7 +43,7 @@ namespace PikUpStix.TraderView.Services.MarketData
         /// <summary>
         /// Fetches economic calendar data from API, saves to file and database
         /// </summary>
-        async Task<List<EconomicCalendar>> IMarketDataService.FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate)
+        async Task<List<EconomicCalendar>> IMarketDataService.FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate, bool outputDataToFile)
         {
             try
             {
@@ -73,8 +73,11 @@ namespace PikUpStix.TraderView.Services.MarketData
 
                     Console.WriteLine($"Retrieved {events.Count} economic calendar barData.");
 
-                    // Save to file
-                    await SaveToFileAsync(events, fromDateStr, toDateStr);
+                    if (outputDataToFile)
+                    {
+                        // Save to file
+                        await SaveToFileAsync(events, fromDateStr, toDateStr);
+                    }
 
                     // Save to database
                     await _repository.UpsertEconomicCalendarEventsAsync(events);

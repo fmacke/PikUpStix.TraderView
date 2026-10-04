@@ -10,5 +10,6 @@ namespace TraderView.Application.Interfaces.Services
     {
         TradeCalculationResponse CalculatePosition(TradeCalculationRequest request);
         CompoundPositions CalculateCompoundPositions(TradeCalculationRequest request, TradeCalculationResponse quarterPosition);
+        Task<List<CompoundPositions>> GenerateCompoundPositionsReportAsync();
     }
 }

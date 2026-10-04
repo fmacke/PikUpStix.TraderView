@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Models;
 
@@ -8,6 +9,16 @@ namespace TraderView.Application.Services
 {
     public class TradeCalculatorService : ITradeCalculatorService
     {
+        private readonly TraderView.Application.Interfaces.Services.IPositionService? _positionService;
+
+        public TradeCalculatorService()
+        {
+        }
+
+        public TradeCalculatorService(TraderView.Application.Interfaces.Services.IPositionService positionService)
+        {
+            _positionService = positionService;
+        }
         public TradeCalculationResponse CalculatePosition(TradeCalculationRequest request)
         {
             var response = new TradeCalculationResponse();
@@ -121,15 +132,60 @@ namespace TraderView.Application.Services
             full.WinUsd = (full.TargetSharePriceUsd - full.AverageSharePriceUsd) * full.TotalShares;
             full.LossUsd = (full.AverageSharePriceUsd - full.StopLossAtUsd) * full.TotalShares;
 
-            var compoundPositions = new CompoundPositions
+            return new CompoundPositions
             {
                 QuarterPosition = quarter,
                 HalfPosition = half,
                 FullPosition = full
             };
-
-            return compoundPositions;
         }
+
+        public async Task<List<CompoundPositions>> GenerateCompoundPositionsReportAsync()
+        {
+            if (_positionService == null) throw new InvalidOperationException("IPositionService is not available. Ensure service is constructed with IPositionService injected.");
+
+            var openPositions = await _positionService.GetOpenPositionsAsync();
+            var results = new List<CompoundPositions>();
+
+            foreach (var pos in openPositions)
+            {
+                // Determine a buy price: prefer LastReportedPrice, otherwise compute weighted average of entry trades
+                decimal buyPrice = 0m;
+                if (pos.LastReportedPrice.HasValue && pos.LastReportedPrice.Value > 0m)
+                {
+                    buyPrice = Convert.ToDecimal(pos.TradeExecutions.OrderBy(x => x.Id).First().TradePrice);
+                }
+                else if (pos.TradeExecutions != null && pos.TradeExecutions.Count > 0)
+                {
+                    var entries = pos.TradeExecutions.Where(te => te.Quantity.HasValue && te.Quantity.Value > 0 && te.TradePrice.HasValue);
+                    var totalQty = entries.Sum(e => e.Quantity ?? 0m);
+                    if (totalQty > 0m)
+                    {
+                        var weighted = entries.Sum(e => (e.TradePrice ?? 0m) * (e.Quantity ?? 0m));
+                        buyPrice = weighted / totalQty;
+                    }
+                }
+
+                if (buyPrice <= 0m) continue; // skip positions without a valid price
+
+                var exchangeRate = pos.TradeExecutions?.FirstOrDefault(te => te.FxRateToBase.HasValue && te.FxRateToBase.Value > 0m)?.FxRateToBase ?? 1m;
+
+                var request = new TradeCalculationRequest
+                {
+                    TradeDate = pos.OpenDate,
+                    Instrument = pos.Instrument?.InstrumentName ?? string.Empty,
+                    BuyPrice = buyPrice,
+                    ExchangeRate = exchangeRate
+                };
+
+                var quarter = CalculatePosition(request);
+                var compound = CalculateCompoundPositions(request, quarter);
+                results.Add(compound);
+            }
+
+            return results;
+        }
+
 
         private TradeCalculationCompoundedPosition ScalePositionTier(TradeCalculationRequest request, decimal buyPriceUsd, decimal riskPercentForTier, decimal takeProfitPercent)
         {

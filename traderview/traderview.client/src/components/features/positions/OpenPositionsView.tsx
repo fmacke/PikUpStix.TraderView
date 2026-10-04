@@ -230,7 +230,27 @@ function OpenPositionsView() {
 
     return (
         <div className="open-positions-container">
-            <h1>Open Positions</h1>
+            <div className="open-positions-header">
+                <h1>Open Positions</h1>
+                <div className="header-actions">
+                    <button onClick={async () => {
+                        try {
+                            const blob = await apiService.downloadCompoundPositionsReport();
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = `CompoundPositions_${new Date().toISOString().replace(/[:.]/g, '-')}.xlsx`;
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            window.URL.revokeObjectURL(url);
+                        } catch (err) {
+                            console.error('Failed to download compound positions report', err);
+                            alert('Failed to download compound positions report. See console for details.');
+                        }
+                    }}>Download Compound Positions</button>
+                </div>
+            </div>
             <div className="positions-table-container">
                 <table className="positions-table">
                     <thead>

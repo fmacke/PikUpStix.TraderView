@@ -39,13 +39,13 @@ const ColumnBox: React.FC<{ title: string; pos: TradeCalculationCompoundedPositi
         {/* Price and shares */}
         <SmallStat label="Buy Price (USD)" value={`$${(pos.buyPriceUsd ?? 0).toFixed(2)}`} highlight="yellow" />
         <SmallStat label="Buy Price (GBP)" value={`£${(pos.buyPriceGbp ?? 0).toFixed(2)}`} />
-        <SmallStat label="Shares" value={(pos.shares ?? 0).toFixed(2)} />
+        <SmallStat label="Shares" value={(pos.shares ?? 0).toFixed(2)} highlight="yellow" />
         <SmallStat label="Total Shares" value={(pos.totalShares ?? 0).toFixed(2)} />
         <SmallStat label="Avg Share Price (USD)" value={`$${(pos.averageSharePriceUsd ?? 0).toFixed(2)}`} />
 
         {/* Stop / targets */}
-        <SmallStat label="Stop Loss At (USD)" value={`$${(pos.stopLossAtUsd ?? 0).toFixed(2)}`} />
-        <SmallStat label="Profit/Loss Target" value={`${(pos.profitLossTargetPercentage ?? 0).toFixed(2)}%`} highlight="yellow" />
+        <SmallStat label="Stop Loss At (USD)" value={`$${(pos.stopLossAtUsd ?? 0).toFixed(2)}`}  highlight="yellow"  />
+        <SmallStat label="Profit/Loss Target" value={`${(pos.profitLossTargetPercentage ?? 0).toFixed(2)}%`}/>
         <SmallStat label="Profit Target (USD)" value={`$${(pos.profitTargetUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Take Profit / Pyramid At (USD)" value={`$${(pos.takeProfitOrPyramidAtUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <div className="flex items-center gap-2">

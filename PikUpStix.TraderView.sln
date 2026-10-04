@@ -25,6 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PineScripts", "PineScripts"
 		PineScripts\CS FTD Tracker.js = PineScripts\CS FTD Tracker.js
 		PineScripts\CS Relative Strength.js = PineScripts\CS Relative Strength.js
 		PineScripts\CS SMAs.js = PineScripts\CS SMAs.js
+		FM - Compound Position Calculator.js = FM - Compound Position Calculator.js
 		Minervini - 3-C and Low-C.js = Minervini - 3-C and Low-C.js
 		Minervini - VCP.js = Minervini - VCP.js
 	EndProjectSection

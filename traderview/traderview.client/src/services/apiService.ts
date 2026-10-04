@@ -340,4 +340,15 @@ export const apiService = {
             throw error;
         }
     },
+    // Download compound positions report as Excel
+    async downloadCompoundPositionsReport(): Promise<Blob> {
+        console.log('Making API call to /tradecalculator/compound-report');
+        try {
+            const response = await apiClient.get<Blob>('/tradecalculator/compound-report', { responseType: 'blob' as const, timeout: 120000 });
+            return response.data;
+        } catch (error) {
+            console.error('downloadCompoundPositionsReport API call failed', error);
+            throw error;
+        }
+    },
 };

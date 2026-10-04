@@ -10,7 +10,7 @@ namespace TraderView.Application.Interfaces.Services
         string SourceName { get; }
 
         Task<decimal> GetExchangeRate(string baseCurrency, string quoteCurrency);
-        Task<List<EconomicCalendar>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate);
+        Task<List<EconomicCalendar>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate, bool outputDataToFile);
         Task FetchAndSaveChartData(List<HistoricalTrade> trades);
         Task FetchAndSaveChartData(List<string> symbols, int lookBackDays);
         Task FetchLatestPrices(List<Position> positions);
