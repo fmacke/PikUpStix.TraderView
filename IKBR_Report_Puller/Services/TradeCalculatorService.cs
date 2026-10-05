@@ -189,8 +189,8 @@ namespace TraderView.Application.Services
 
         private TradeCalculationCompoundedPosition ScalePositionTier(TradeCalculationRequest request, decimal buyPriceUsd, decimal riskPercentForTier, decimal takeProfitPercent)
         {
-            var positionSizeUsd = request.TradingCapital * (riskPercentForTier / 100m);
-            var positionSizeGbp = request.ExchangeRate != 0 ? positionSizeUsd / request.ExchangeRate : 0m;
+            var positionSizeGbp = request.TradingCapital * (riskPercentForTier / 100m);
+            var positionSizeUsd = request.ExchangeRate != 0 ? positionSizeGbp * request.ExchangeRate : 0m;
 
             var shares = buyPriceUsd > 0 ? positionSizeUsd / buyPriceUsd : 0m;
 
