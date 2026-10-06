@@ -5,7 +5,7 @@ namespace traderview.Server.DTOs
     public class PositionCalculatorDto
     {
         public int Id { get; set; }
-        public int PositionId { get; set; }
+        public int? PositionId { get; set; }
         public DateTime OrderSetupDate { get; set; }
         public string Symbol { get; set; } = null!;
         public string CurrencyPair { get; set; } = null!;
@@ -34,8 +34,8 @@ namespace traderview.Server.DTOs
 
     public class PositionCalculatorCreateDto
     {
-        [Required]
-        public int PositionId { get; set; }
+        // PositionId is optional; calculators may be created unlinked
+        public int? PositionId { get; set; }
 
         [Required]
         public DateTime OrderSetupDate { get; set; }

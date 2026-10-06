@@ -6,7 +6,8 @@ namespace TraderView.Domain.Entities
     {
         public int Id { get; set; }
 
-        public int PositionId { get; set; }
+        // Make nullable so calculators can be unlinked / optional
+        public int? PositionId { get; set; }
 
         public DateTime OrderSetupDate { get; set; }
 
@@ -53,6 +54,8 @@ namespace TraderView.Domain.Entities
         public decimal OverallProfitStockCurrency { get; set; }
         public string? Comment { get; set; }
         public virtual Strategy? Strategy { get; set; }
+        // optional navigation to Position
+        public virtual Position? Position { get; set; }
         public virtual ICollection<CompoundPosition>? CompoundPositions { get; set; }
     }
 }

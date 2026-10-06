@@ -292,6 +292,48 @@ export const apiService = {
         }
     },
 
+    // Get linked position calculators for a position
+    async getPositionCalculators(positionId: number): Promise<PositionCalculatorDto[]> {
+        try {
+            const response = await apiClient.get<PositionCalculatorDto[]>(`/positions/${positionId}/calculators`);
+            return response.data;
+        } catch (error) {
+            console.error('getPositionCalculators failed', error);
+            throw error;
+        }
+    },
+
+    // Get candidate position calculators that can be linked to a position
+    async getPositionCalculatorCandidates(positionId: number): Promise<PositionCalculatorDto[]> {
+        try {
+            const response = await apiClient.get<PositionCalculatorDto[]>(`/positions/${positionId}/calculators/candidates`);
+            return response.data;
+        } catch (error) {
+            console.error('getPositionCalculatorCandidates failed', error);
+            throw error;
+        }
+    },
+
+    // Link position calculators to a position
+    async linkPositionCalculators(positionId: number, calculatorIds: number[]): Promise<void> {
+        try {
+            await apiClient.post(`/positions/${positionId}/calculators/link`, { calculatorIds });
+        } catch (error) {
+            console.error('linkPositionCalculators failed', error);
+            throw error;
+        }
+    },
+
+    // Unlink position calculators from a position
+    async unlinkPositionCalculators(positionId: number, calculatorIds: number[]): Promise<void> {
+        try {
+            await apiClient.post(`/positions/${positionId}/calculators/unlink`, { calculatorIds });
+        } catch (error) {
+            console.error('unlinkPositionCalculators failed', error);
+            throw error;
+        }
+    },
+
     // Get asset value over time for date range
     async getAssetValueOverTime(startDate: Date, endDate: Date): Promise<AssetValueChartData[]> {
         console.log('Making API call to /equities/asset-value-over-time');

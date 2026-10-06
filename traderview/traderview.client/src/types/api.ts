@@ -254,7 +254,7 @@ export interface AssetValueChartData {
 
 export interface PositionCalculatorDto {
     id: number;
-    positionId: number;
+    positionId: number | null;
     orderSetupDate: string;
     symbol: string;
     currencyPair: string;

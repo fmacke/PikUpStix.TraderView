@@ -1,0 +1,30 @@
+.pc-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.pc-modal-content {
+  background: #fff;
+  padding: 16px;
+  border-radius: 6px;
+  width: 900px;
+  max-width: 95%;
+  max-height: 85%;
+  overflow: auto;
+}
+.pc-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.pc-modal-body { margin-top: 12px; }
+.pc-table { width: 100%; border-collapse: collapse; }
+.pc-table th, .pc-table td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
+.pc-modal-footer { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }

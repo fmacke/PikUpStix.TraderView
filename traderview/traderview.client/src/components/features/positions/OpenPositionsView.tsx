@@ -6,6 +6,7 @@ import type { SortConfig } from '../../common/SortableTableHeader';
 import AddNoteModal from '../../common/AddNoteModal';
 import EditNoteModal from '../../common/EditNoteModal';
 import NotesList from '../../common/NotesList';
+import PositionCalculatorsModal from '../../common/PositionCalculatorsModal';
 import './OpenPositionsView.css';
 
 function OpenPositionsView() {
@@ -19,6 +20,7 @@ function OpenPositionsView() {
     const [selectedPosition, setSelectedPosition] = useState<OpenPosition | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
     const [notesLoading, setNotesLoading] = useState<boolean>(false);
+    const [isCalcModalOpen, setIsCalcModalOpen] = useState<boolean>(false);
 
     const loadOpenPositions = async () => {
         try {
@@ -36,12 +38,16 @@ function OpenPositionsView() {
     };
 
     useEffect(() => {
-        loadOpenPositions();
+        // avoid calling setState synchronously inside effect — schedule in a microtask
+        setTimeout(() => {
+            void loadOpenPositions();
+        }, 0);
     }, []);
 
     useEffect(() => {
         if (!selectedPosition) {
-            setNotes([]);
+            // Avoid synchronous setState in effect
+            setTimeout(() => setNotes([]), 0);
             return;
         }
 
@@ -201,6 +207,7 @@ function OpenPositionsView() {
                 <div className="loading-container">
                     <p><em>Loading open positions...</em></p>
                 </div>
+            <PositionCalculatorsModal isOpen={isCalcModalOpen} positionId={selectedPosition?.positionId ?? 0} onClose={() => setIsCalcModalOpen(false)} />
             </div>
         );
     }
@@ -301,6 +308,16 @@ function OpenPositionsView() {
                                         }}
                                     >
                                         Add Note
+                                    </button>
+                                    <button
+                                        className="add-note-button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedPosition(position);
+                                            setIsCalcModalOpen(true);
+                                        }}
+                                    >
+                                        Link Calculations
                                     </button>
                                 </td>
                             </tr>
