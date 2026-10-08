@@ -5,12 +5,13 @@ import type { Trade } from './types/api';
 import TradeList from './components/features/trade/TradeList';
 import TradeRollerList from './components/features/trade/TradeRollerList';
 import TradeDetail from './components/features/trade/TradeDetail';
-import OpenPositionsView from './components/features/positions/OpenPositionsView';
+import OpenPositionsView from './components/features/views/OpenPositionsView';
 import RiskCalculatorView from './components/features/views/RiskCalculatorView';
 import StockScreenerView from './components/features/views/StockScreenerView';
+import JournalView from './components/features/views/JournalView';
 import SyncButton from './components/common/SyncButton';
 
-type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener';
+type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener' | 'journal';
 
 function App() {
     const [trades, setTrades] = useState<Trade[]>([]);
@@ -89,6 +90,12 @@ function App() {
                     >
                         Screener
                     </button>
+                    <button
+                        onClick={() => setViewMode('journal')}
+                        className={`nav-button ${viewMode === 'journal' ? 'active' : ''}`}
+                    >
+                        Journal
+                    </button>
                 </div>
 
                 <div className="nav-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -146,6 +153,7 @@ function App() {
             {viewMode === 'positions' && <OpenPositionsView />}
             {viewMode === 'riskcalculator' && <RiskCalculatorView />}
             {viewMode === 'stockscreener' && <StockScreenerView />}
+            {viewMode === 'journal' && <JournalView />}
         </div>
         
     );

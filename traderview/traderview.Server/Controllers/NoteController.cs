@@ -46,7 +46,8 @@ namespace traderview.Server.Controllers
                     createNoteDto.EntryDate,
                     createNoteDto.TradeTypeId,
                     createNoteDto.ErrorTypeId,
-                    createNoteDto.ExitTypeId
+                    createNoteDto.ExitTypeId,
+                    createNoteDto.Time
                 );
 
                 var createdNote = new NoteDto
@@ -59,7 +60,8 @@ namespace traderview.Server.Controllers
                     TradeTypeId = createNoteDto.TradeTypeId,
                     UpdatedAt = DateTime.UtcNow,
                     ErrorTypeId = createNoteDto.ErrorTypeId,
-                    ExitTypeId = createNoteDto.ExitTypeId
+                    ExitTypeId = createNoteDto.ExitTypeId,
+                    Time = createNoteDto.Time
                 };
 
                 _logger.LogInformation("Note created with ID {NoteId}", noteId);
@@ -73,6 +75,71 @@ namespace traderview.Server.Controllers
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { message = "Error creating note", detail = ex.Message }
+                );
+            }
+        }
+
+        /// <summary>
+        /// Get journal entries (notes linked to ListItems with Category = 'JournalEntry')
+        /// </summary>
+        [HttpGet("journal")]
+        [ProducesResponseType(typeof(List<NoteDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<List<NoteDto>>> GetJournalEntriesAsync()
+        {
+            try
+            {
+                var notes = await _noteService.GetJournalEntriesAsync();
+
+                var noteDtos = notes.Select(n => new NoteDto
+                {
+                    Id = n.Id,
+                    PositionId = n.PositionId,
+                    TradeExecutionId = n.TradeExecutionId,
+                    Comment = n.Comment,
+                    EntryDate = n.EntryDate,
+                    UpdatedAt = n.UpdatedAt,
+                    TradeTypeId = n.TradeTypeId,
+                    ErrorTypeId = n.ErrorTypeId,
+                    ExitTypeId = n.ExitTypeId,
+                    Time = n.Time
+                }).ToList();
+
+                return Ok(noteDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching journal entries");
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { message = "Error fetching journal entries", detail = ex.Message }
+                );
+            }
+        }
+
+        /// <summary>
+        /// Delete a note by id
+        /// </summary>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> DeleteNoteAsync(int id)
+        {
+            try
+            {
+                var deleted = await _noteService.DeleteAsync(id);
+                if (!deleted)
+                    return NotFound(new { message = $"Note with ID {id} not found" });
+
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting note {NoteId}", id);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { message = "Error deleting note", detail = ex.Message }
                 );
             }
         }
@@ -196,7 +263,8 @@ namespace traderview.Server.Controllers
                     DateTime.Now,
                     updateNoteDto.TradeTypeId,
                     updateNoteDto.ErrorTypeId,
-                    updateNoteDto.ExitTypeId
+                    updateNoteDto.ExitTypeId,
+                    updateNoteDto.Time
                 );
 
                 if (!isUpdated)
@@ -213,11 +281,12 @@ namespace traderview.Server.Controllers
                     PositionId = existingNote.PositionId,
                     TradeExecutionId = existingNote.TradeExecutionId,
                     Comment = updateNoteDto.Comment,
-                    EntryDate = updateNoteDto.EntryDate,
+                    EntryDate = existingNote.EntryDate,
                     TradeTypeId = updateNoteDto.TradeTypeId,
                     UpdatedAt = DateTime.UtcNow,
                     ErrorTypeId = updateNoteDto.ErrorTypeId,
-                    ExitTypeId = updateNoteDto.ExitTypeId
+                    ExitTypeId = updateNoteDto.ExitTypeId,
+                    Time = updateNoteDto.Time
                 };
 
                 _logger.LogInformation("Note with ID {NoteId} updated successfully", updateNoteDto.Id);

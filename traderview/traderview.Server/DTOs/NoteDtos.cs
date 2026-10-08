@@ -5,13 +5,14 @@ namespace traderview.Server.DTOs
     /// </summary>
     public class CreateNoteDto
     {
-        public int PositionId { get; set; }
+        public int? PositionId { get; set; }
         public int? TradeExecutionId { get; set; }
         public string Comment { get; set; } = string.Empty;
         public DateTime EntryDate { get; set; }
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
         public int? ExitTypeId { get; set; }
+        public decimal? Time { get; set; }
     }
 
 
@@ -22,10 +23,11 @@ namespace traderview.Server.DTOs
     {
         public int Id { get; set; }
         public string Comment { get; set; } = string.Empty;
-        public DateTime EntryDate { get; set; }
+        public DateTime UpdatedAt { get; set; }
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
         public int? ExitTypeId { get; set; }
+        public decimal? Time { get; set; }
     }
 
     /// <summary>
@@ -34,7 +36,7 @@ namespace traderview.Server.DTOs
     public class NoteDto
     {
         public int Id { get; set; }
-        public int PositionId { get; set; }
+        public int? PositionId { get; set; }
         public int? TradeExecutionId { get; set; }
         public string Comment { get; set; } = string.Empty;
         public DateTime UpdatedAt { get; set; } 
@@ -42,5 +44,9 @@ namespace traderview.Server.DTOs
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
         public int? ExitTypeId { get; set; }
+        public decimal? Time { get; set; }
+        // Optional fields populated for journal entries when available
+        public string? Category { get; set; }
+        public string? Name { get; set; }
     }
 }

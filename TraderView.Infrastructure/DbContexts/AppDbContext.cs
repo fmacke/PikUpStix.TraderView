@@ -64,6 +64,22 @@ namespace TraderView.Infrastructure.DbContexts
                     optionsBuilder.UseSqlServer("Data Source=localhost;Initial Catalog=TradingBE;User ID=sa;Password=...");
                 }
             }
+
+            optionsBuilder.EnableSensitiveDataLogging();
+
+            var serviceProvider = optionsBuilder.Options.FindExtension<CoreOptionsExtension>()?.ApplicationServiceProvider;
+            if (serviceProvider != null)
+            {
+                var interceptorType = global::System.Type.GetType("TraderView.Infrastructure.Interceptors.ReaderLoggingInterceptor, TraderView.Infrastructure");
+                if (interceptorType != null)
+                {
+                    var interceptor = serviceProvider.GetService(interceptorType) as Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor;
+                    if (interceptor != null)
+                    {
+                        optionsBuilder.AddInterceptors(interceptor);
+                    }
+                }
+            }
         }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -150,6 +166,37 @@ namespace TraderView.Infrastructure.DbContexts
                     .HasForeignKey(d => d.CanSlimScreenerSnapshotId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CanSlimCandidates_CanSlimScreenerSnapshot");
+            });
+
+            // Explicit configuration for Note to ensure nullable FKs are mapped correctly
+            modelBuilder.Entity<Note>(entity =>
+            {
+                entity.HasKey(e => e.Id).HasName("PK_Notes");
+
+                entity.Property(e => e.Comment)
+                    .IsRequired()
+                    .HasColumnType("nvarchar(max)");
+
+                entity.Property(e => e.EntryDate)
+                    .IsRequired();
+
+                entity.Property(e => e.UpdatedAt)
+                    .IsRequired();
+
+                // Explicitly map nullable FK properties so EF does not treat them as required
+                entity.Property(e => e.PositionId).IsRequired(false);
+                entity.Property(e => e.TradeExecutionId).IsRequired(false);
+                entity.Property(e => e.TradeTypeId).IsRequired(false);
+                entity.Property(e => e.ErrorTypeId).IsRequired(false);
+                entity.Property(e => e.ExitTypeId).IsRequired(false);
+                entity.Property(e => e.Time).IsRequired(false).HasColumnType("decimal(18,1)");
+
+                // Configure optional relationship to Position
+                entity.HasOne(e => e.Position)
+                      .WithMany(p => p.Notes)
+                      .HasForeignKey(e => e.PositionId)
+                      .OnDelete(DeleteBehavior.Cascade)
+                      .IsRequired(false);
             });
 
             modelBuilder.Entity<CompoundPosition>(entity =>
@@ -291,61 +338,63 @@ namespace TraderView.Infrastructure.DbContexts
             modelBuilder.Entity<ListItem>(entity =>
             {
                 entity.HasIndex(e => e.Name, "IX_Lists_Name");
-
                 entity.Property(e => e.Category).HasMaxLength(50);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getutcdate())");
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.IsActive).HasDefaultValue(true);
                 entity.Property(e => e.Name).HasMaxLength(100);
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getutcdate())");
+                entity.Property(e => e.ParentListId).HasColumnName("ParentListId");
             });
 
-            modelBuilder.Entity<Note>(entity =>
-            {
-                entity.ToTable("Notes");
+            //modelBuilder.Entity<Note>(entity =>
+            //{
+            //    entity.ToTable("Notes");
 
-                entity.HasKey(e => e.Id);
+            //    entity.HasKey(e => e.Id);
 
-                entity.HasIndex(e => e.PositionId, "IX_Notes_PositionId");
+            //    entity.HasIndex(e => e.PositionId, "IX_Notes_PositionId");
 
-                entity.Property(e => e.PositionId)
-                    .IsRequired()
-                    .HasColumnName("PositionId");
+            //    entity.Property(e => e.PositionId)
+            //        .IsRequired()
+            //        .HasColumnName("PositionId");
 
-                entity.Property(e => e.TradeExecutionId)
-                    .HasColumnName("TradeExecutionId");
+            //    entity.Property(e => e.TradeExecutionId)
+            //        .HasColumnName("TradeExecutionId");
 
-                entity.Property(e => e.TradeTypeId)
-                    .HasColumnName("TradeTypeId");
+            //    entity.Property(e => e.TradeTypeId)
+            //        .HasColumnName("TradeTypeId");
 
-                entity.Property(e => e.ErrorTypeId)
-                    .HasColumnName("ErrorTypeId");
+            //    entity.Property(e => e.ErrorTypeId)
+            //        .HasColumnName("ErrorTypeId");
 
-                entity.Property(e => e.ExitTypeId)
-                    .HasColumnName("ExitTypeId");
+            //    entity.Property(e => e.ExitTypeId)
+            //        .HasColumnName("ExitTypeId");
 
-                entity.Property(e => e.Comment)
-                    .IsRequired()
-                    .HasColumnType("nvarchar(max)")
-                    .HasColumnName("Comment");
+            //    entity.Property(e => e.Comment)
+            //        .IsRequired()
+            //        .HasColumnType("nvarchar(max)")
+            //        .HasColumnName("Comment");
 
-                entity.Property(e => e.EntryDate)
-                    .IsRequired()
-                    .HasColumnType("datetime2(7)")
-                    .HasColumnName("EntryDate")
-                    .HasDefaultValueSql("(getutcdate())");
+            //    entity.Property(e => e.EntryDate)
+            //        .IsRequired()
+            //        .HasColumnType("datetime2(7)")
+            //        .HasColumnName("EntryDate")
+            //        .HasDefaultValueSql("(getutcdate())");
 
-                entity.Property(e => e.UpdatedAt)
-                    .IsRequired()
-                    .HasColumnType("datetime2(7)")
-                    .HasColumnName("UpdatedAt")
-                    .HasDefaultValueSql("(getutcdate())");
+            //    entity.Property(e => e.UpdatedAt)
+            //        .IsRequired()
+            //        .HasColumnType("datetime2(7)")
+            //        .HasColumnName("UpdatedAt")
+            //        .HasDefaultValueSql("(getutcdate())");
 
-                entity.HasOne(d => d.Position).WithMany(p => p.Notes)
-                    .HasForeignKey(d => d.PositionId)
-                    .OnDelete(DeleteBehavior.Cascade)
-                    .HasConstraintName("FK_Notes_Positions");
-            });
+            //    entity.Property(e => e.Time).HasColumnType("decimal(18, 5)");
+
+            //    entity.HasOne(d => d.Position).WithMany(p => p.Notes)
+            //        .HasForeignKey(d => d.PositionId)
+            //        .OnDelete(DeleteBehavior.Cascade)
+            //        .HasConstraintName("FK_Notes_Positions");
+            //});
 
             modelBuilder.Entity<Position>(entity =>
             {

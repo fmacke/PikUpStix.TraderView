@@ -28,9 +28,23 @@ public partial class Program
         });
 
         // Register EF Core DbContext for repositories that use AppDbContext
+        // Register ReaderLoggingInterceptor so AppDbContext can pick it up
+        builder.Services.AddSingleton<TraderView.Infrastructure.DbContexts.ReaderLoggingInterceptor>();
+
+        // Register EF Core DbContext for repositories that use AppDbContext with logging enabled
         builder.Services.AddDbContext<AppDbContext>(options =>
         {
             options.UseSqlServer(connectionString);
+            // enable EF Core console logging
+            options.EnableSensitiveDataLogging();
+            options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
+            // Add interceptor from DI
+            var sp = builder.Services.BuildServiceProvider();
+            var interceptor = sp.GetService<TraderView.Infrastructure.DbContexts.ReaderLoggingInterceptor>();
+            if (interceptor != null)
+            {
+                options.AddInterceptors(interceptor);
+            }
         });
 
         // No AutoMapper registration here; repository uses EF Core CurrentValues.SetValues for mapping

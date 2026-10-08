@@ -94,8 +94,17 @@ export const apiService = {
     // Update a note
     async updateNote(noteId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null): Promise<Note> {
         try {
-            const body = { comment, entryDate, tradeTypeId: entryMethodId, errorTypeId, exitTypeId };
-            const response = await apiClient.put<Note>(`/notes/${noteId}`, body);
+            // Server expects UpdateNoteDto in body (PUT /api/notes)
+            const body = {
+                id: noteId,
+                comment,
+                // use provided entryDate where applicable as a timestamp for UpdatedAt; fall back to now
+                updatedAt: entryDate ?? new Date().toISOString(),
+                tradeTypeId: entryMethodId,
+                errorTypeId,
+                exitTypeId
+            };
+            const response = await apiClient.put<Note>('/notes', body);
             return response.data;
         } catch (error) {
             console.error('updateNote failed', error);
@@ -220,6 +229,27 @@ export const apiService = {
             return response.data;
         } catch (error) {
             console.error('createNote failed', error);
+            throw error;
+        }
+    },
+
+    // Get journal entries (notes whose tradeType list item category is 'JournalEntry')
+    async getJournalEntries(): Promise<Note[]> {
+        try {
+            const response = await apiClient.get<Note[]>('/notes/journal');
+            return response.data;
+        } catch (error) {
+            console.error('getJournalEntries failed', error);
+            throw error;
+        }
+    },
+
+    // Delete a note by id
+    async deleteNote(noteId: number): Promise<void> {
+        try {
+            await apiClient.delete(`/notes/${noteId}`);
+        } catch (error) {
+            console.error('deleteNote failed', error);
             throw error;
         }
     },

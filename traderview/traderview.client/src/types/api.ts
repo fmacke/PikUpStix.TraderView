@@ -160,7 +160,7 @@ export interface Note {
 }
 
 export interface CreateNoteRequest {
-    positionId: number;
+    positionId: number | null;
     tradeExecutionId: number | null;
     comment: string;
     entryDate: string;
@@ -173,6 +173,8 @@ export interface ListItem {
     id: number;
     category: string;
     name: string;
+    parentListId?: number | null;
+    description?: string | null;
 }
 
 export interface CanSlimCandidate {

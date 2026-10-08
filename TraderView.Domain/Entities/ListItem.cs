@@ -6,6 +6,7 @@ namespace TraderView.Domain.Entities
     public class ListItem
     {
         public int Id { get; set; }
+        public int? ParentListId { get; set; }
 
         public string Name { get; set; } = null!;
 

@@ -8,9 +8,10 @@ interface NotesListProps {
     loading: boolean;
     variant?: 'simple' | 'detailed';
     onEditNote?: (note: Note) => void;
+    onDeleteNote?: (noteId: number) => void;
 }
 
-function NotesList({ notes, loading, variant = 'simple', onEditNote }: NotesListProps) {
+function NotesList({ notes, loading, variant = 'simple', onEditNote, onDeleteNote }: NotesListProps) {
     const [tradeTypes, setTradeTypes] = useState<Map<number, string>>(new Map());
     const [errorTypes, setErrorTypes] = useState<Map<number, string>>(new Map());
     const [exitTypes, setexitTypes] = useState<Map<number, string>>(new Map());
@@ -112,6 +113,16 @@ return (
                                     >
                                         Edit
                                     </button>
+                                    {onDeleteNote && (
+                                        <button
+                                            className="delete-note-button"
+                                            onClick={() => onDeleteNote(note.id)}
+                                            type="button"
+                                            title="Delete note"
+                                        >
+                                            Delete
+                                        </button>
+                                    )}
                                 </td>
                             )}
                         </tr>

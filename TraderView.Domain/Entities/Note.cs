@@ -6,7 +6,7 @@ namespace TraderView.Domain.Entities
     public class Note
     {
         public int Id { get; set; }
-        public int PositionId { get; set; }
+        public int? PositionId { get; set; }
         public int? TradeExecutionId { get; set; }
         public int? ErrorTypeId { get; set; }
         public int? ExitTypeId { get; set; }
@@ -14,6 +14,7 @@ namespace TraderView.Domain.Entities
         public string Comment { get; set; } = null!;
         public DateTime EntryDate { get; set; }
         public DateTime UpdatedAt { get; set; }
+        public decimal? Time { get; set; }
         public virtual Position Position { get; set; } = null!;
     }
 }
