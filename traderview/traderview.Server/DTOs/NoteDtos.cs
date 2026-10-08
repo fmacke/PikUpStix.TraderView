@@ -8,11 +8,10 @@ namespace traderview.Server.DTOs
         public int? PositionId { get; set; }
         public int? TradeExecutionId { get; set; }
         public string Comment { get; set; } = string.Empty;
-        public DateTime EntryDate { get; set; }
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
         public int? ExitTypeId { get; set; }
-        public decimal? Time { get; set; }
+        public decimal? Time { get; set; } = 0m;
     }
 
 
@@ -27,7 +26,7 @@ namespace traderview.Server.DTOs
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
         public int? ExitTypeId { get; set; }
-        public decimal? Time { get; set; }
+        public decimal? Time { get; set; } = 0m;
     }
 
     /// <summary>
@@ -44,8 +43,7 @@ namespace traderview.Server.DTOs
         public int? TradeTypeId { get; set; }
         public int? ErrorTypeId { get; set; }
         public int? ExitTypeId { get; set; }
-        public decimal? Time { get; set; }
-        // Optional fields populated for journal entries when available
+        public decimal? Time { get; set; } = 0m;
         public string? Category { get; set; }
         public string? Name { get; set; }
     }

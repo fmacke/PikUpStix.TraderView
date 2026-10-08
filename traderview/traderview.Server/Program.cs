@@ -18,36 +18,16 @@ public partial class Program
 
         // Register HttpClient and HttpClientFactory
         builder.Services.AddHttpClient();
-
-        // Build connection string and register DB connection factory and AppDbContext
         var connectionString = BuildConnectionString(builder.Configuration);
-
         builder.Services.AddSingleton<IDbConnectionFactory>(provider =>
         {
             return new TraderView.Infrastructure.Data.SqlConnectionFactory(connectionString);
         });
-
-        // Register EF Core DbContext for repositories that use AppDbContext
-        // Register ReaderLoggingInterceptor so AppDbContext can pick it up
-        builder.Services.AddSingleton<TraderView.Infrastructure.DbContexts.ReaderLoggingInterceptor>();
-
-        // Register EF Core DbContext for repositories that use AppDbContext with logging enabled
         builder.Services.AddDbContext<AppDbContext>(options =>
         {
             options.UseSqlServer(connectionString);
-            // enable EF Core console logging
-            options.EnableSensitiveDataLogging();
-            options.LogTo(Console.WriteLine, Microsoft.Extensions.Logging.LogLevel.Information);
-            // Add interceptor from DI
             var sp = builder.Services.BuildServiceProvider();
-            var interceptor = sp.GetService<TraderView.Infrastructure.DbContexts.ReaderLoggingInterceptor>();
-            if (interceptor != null)
-            {
-                options.AddInterceptors(interceptor);
-            }
         });
-
-        // No AutoMapper registration here; repository uses EF Core CurrentValues.SetValues for mapping
 
         // Register repositories 
         // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency

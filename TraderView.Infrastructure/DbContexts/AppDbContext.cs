@@ -60,24 +60,7 @@ namespace TraderView.Infrastructure.DbContexts
                 }
                 else
                 {
-                    // fallback (e.g., environment/config) or leave unconfigured
-                    optionsBuilder.UseSqlServer("Data Source=localhost;Initial Catalog=TradingBE;User ID=sa;Password=...");
-                }
-            }
-
-            optionsBuilder.EnableSensitiveDataLogging();
-
-            var serviceProvider = optionsBuilder.Options.FindExtension<CoreOptionsExtension>()?.ApplicationServiceProvider;
-            if (serviceProvider != null)
-            {
-                var interceptorType = global::System.Type.GetType("TraderView.Infrastructure.Interceptors.ReaderLoggingInterceptor, TraderView.Infrastructure");
-                if (interceptorType != null)
-                {
-                    var interceptor = serviceProvider.GetService(interceptorType) as Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor;
-                    if (interceptor != null)
-                    {
-                        optionsBuilder.AddInterceptors(interceptor);
-                    }
+                    throw new Exception("No database connection details provided.");
                 }
             }
         }
@@ -168,35 +151,50 @@ namespace TraderView.Infrastructure.DbContexts
                     .HasConstraintName("FK_CanSlimCandidates_CanSlimScreenerSnapshot");
             });
 
-            // Explicit configuration for Note to ensure nullable FKs are mapped correctly
             modelBuilder.Entity<Note>(entity =>
             {
+                entity.ToTable("Notes", "dbo");
+
+                // Primary Key
                 entity.HasKey(e => e.Id).HasName("PK_Notes");
 
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd()
+                    .UseIdentityColumn();
+
+                // Required String
                 entity.Property(e => e.Comment)
                     .IsRequired()
                     .HasColumnType("nvarchar(max)");
 
+                // Date Columns
                 entity.Property(e => e.EntryDate)
-                    .IsRequired();
+                    .IsRequired()
+                    .HasColumnType("datetime2(7)");
 
                 entity.Property(e => e.UpdatedAt)
-                    .IsRequired();
+                    .IsRequired()
+                    .HasColumnType("datetime2(7)");
 
-                // Explicitly map nullable FK properties so EF does not treat them as required
+                // Nullable Decimal
+                entity.Property(e => e.Time)
+                    .IsRequired(false)
+                    .HasColumnType("decimal(18, 1)");
+
+                // Nullable Foreign Keys
                 entity.Property(e => e.PositionId).IsRequired(false);
                 entity.Property(e => e.TradeExecutionId).IsRequired(false);
                 entity.Property(e => e.TradeTypeId).IsRequired(false);
                 entity.Property(e => e.ErrorTypeId).IsRequired(false);
                 entity.Property(e => e.ExitTypeId).IsRequired(false);
-                entity.Property(e => e.Time).IsRequired(false).HasColumnType("decimal(18,1)");
 
-                // Configure optional relationship to Position
+                // Relationship to Position
                 entity.HasOne(e => e.Position)
-                      .WithMany(p => p.Notes)
-                      .HasForeignKey(e => e.PositionId)
-                      .OnDelete(DeleteBehavior.Cascade)
-                      .IsRequired(false);
+                    .WithMany(p => p.Notes)
+                    .HasForeignKey(e => e.PositionId)
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .HasConstraintName("FK_Notes_Positions1")
+                    .IsRequired(false);
             });
 
             modelBuilder.Entity<CompoundPosition>(entity =>

@@ -14,7 +14,7 @@ namespace TraderView.Domain.Entities
         public string Comment { get; set; } = null!;
         public DateTime EntryDate { get; set; }
         public DateTime UpdatedAt { get; set; }
-        public decimal? Time { get; set; }
+        public decimal? Time { get; set; } = 0m;
         public virtual Position Position { get; set; } = null!;
     }
 }
