@@ -11,15 +11,18 @@ namespace traderview.Server.Controllers
         private readonly ILogger<OpenPositionController> _logger;
         private readonly IPositionService _openPositionService;
         private readonly IExcelReportService _excelReportService;
+        private readonly IReportRunnerService _reportRunnerService;
 
         public OpenPositionController(
             ILogger<OpenPositionController> logger,
             IPositionService openPositionsService,
-            IExcelReportService excelReportService)
+            IExcelReportService excelReportService,
+            IReportRunnerService reportRunnerService)
         {
             _logger = logger;
             _openPositionService = openPositionsService;
             _excelReportService = excelReportService;
+            _reportRunnerService = reportRunnerService;
         }
 
         /// <summary>
@@ -79,6 +82,32 @@ namespace traderview.Server.Controllers
                 return StatusCode(
                     StatusCodes.Status500InternalServerError,
                     new { message = "Error fetching open positions", detail = ex.Message }
+                );
+            }
+        }
+
+        /// <summary>
+        /// Run trade confirm report - fetches trade confirmations from Interactive Brokers and updates database
+        /// </summary>
+        /// <returns>Success message if report runs successfully</returns>
+        [HttpPost("run-trade-confirm-report")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<object>> RunTradeConfirmReportAsync()
+        {
+            try
+            {
+                _logger.LogInformation("Starting trade confirm report run...");
+                await _reportRunnerService.RunTradeConfirmReport();
+                _logger.LogInformation("Trade confirm report run completed successfully");
+                return Ok(new { message = "Trade confirm report completed successfully", timestamp = DateTime.UtcNow });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error running trade confirm report");
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { message = "Error running trade confirm report", detail = ex.Message }
                 );
             }
         }

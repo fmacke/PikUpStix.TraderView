@@ -38,6 +38,12 @@ namespace PikUpStix.TraderView.Services
             _config = config;
             outputFilePath = _config["FinancialModelingPrep:OutputFilePath"];
         }
+        public async Task RunTradeConfirmReport()
+        {
+            XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+            await SaveTradeConfirms(todayReportXml);
+            await SaveEquitySummaries(todayReportXml);
+        }
         public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData)
         {
             try

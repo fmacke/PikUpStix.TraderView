@@ -423,4 +423,23 @@ export const apiService = {
             throw error;
         }
     },
+
+    // Run trade confirm report - fetches trade confirmations from Interactive Brokers and updates database
+    async runTradeConfirmReport(): Promise<{ message: string; timestamp: string }> {
+        console.log('Making API call to /openpositions/run-trade-confirm-report');
+        try {
+            const response = await apiClient.post<{ message: string; timestamp: string }>(
+                '/openpositions/run-trade-confirm-report',
+                {},
+                {
+                    timeout: 300000 // 5 minute timeout for long-running operation
+                }
+            );
+            console.log('Trade confirm report API response received:', response.data);
+            return response.data;
+        } catch (error: unknown) {
+            console.error('Trade confirm report API call failed:', error);
+            throw error;
+        }
+    },
 };

@@ -21,7 +21,7 @@ namespace TraderView.Infrastructure.Repositories
         /// </summary>
         public async Task<IReadOnlyList<Note>> GetJournalEntriesAsync()
         {
-            return await GetAllAsync();
+            //return await GetAllAsync();
             try
             {
                 // Use an existence subquery to find Notes whose TradeTypeId links to a ListItem

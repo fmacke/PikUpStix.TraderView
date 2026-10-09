@@ -21,6 +21,7 @@ function OpenPositionsView() {
     const [notes, setNotes] = useState<Note[]>([]);
     const [notesLoading, setNotesLoading] = useState<boolean>(false);
     const [isCalcModalOpen, setIsCalcModalOpen] = useState<boolean>(false);
+    const [isRunningTradeConfirmReport, setIsRunningTradeConfirmReport] = useState<boolean>(false);
 
     const loadOpenPositions = async () => {
         try {
@@ -130,6 +131,23 @@ function OpenPositionsView() {
         return result;
     };
 
+    const handleRunTradeConfirmReport = async () => {
+        try {
+            setIsRunningTradeConfirmReport(true);
+            const result = await apiService.runTradeConfirmReport();
+            console.log('Trade confirm report completed:', result);
+            alert(`Trade confirm report completed successfully at ${new Date(result.timestamp).toLocaleString()}`);
+            // Reload open positions after successful report completion
+            await loadOpenPositions();
+        } catch (err) {
+            console.error('Failed to run trade confirm report', err);
+            const errorMessage = err instanceof Error ? err.message : 'Failed to run trade confirm report. See console for details.';
+            alert(errorMessage);
+        } finally {
+            setIsRunningTradeConfirmReport(false);
+        }
+    };
+
     const formatCurrency = (value: number | null, decimals: number = 2) => {
         if (value === null || value === undefined) return '-';
         return value.toLocaleString('en-US', {
@@ -201,6 +219,10 @@ function OpenPositionsView() {
         return openPositions?.reduce((sum, pos) => sum + (Number(pos.currentMargin) || 0), 0) ?? 0;
     }, [openPositions]);
 
+    const totalValue = useMemo(() => {
+        return openPositions?.reduce((sum, pos) => sum + (Number(pos.value) || 0), 0) ?? 0;
+    }, [openPositions]);
+
     if (loading) {
         return (
             <div className="open-positions-container">
@@ -256,6 +278,9 @@ function OpenPositionsView() {
                             alert('Failed to download compound positions report. See console for details.');
                         }
                     }}>Download Compound Positions</button>
+                    <button onClick={handleRunTradeConfirmReport} disabled={isRunningTradeConfirmReport}>
+                        {isRunningTradeConfirmReport ? 'Running Trade Confirm Report...' : 'Run Trade Confirm Report'}
+                    </button>
                 </div>
             </div>
             <div className="positions-table-container">
@@ -324,6 +349,18 @@ function OpenPositionsView() {
                         ))}
                     </tbody>
                     <tfoot>
+                        <tr className="summary-row">
+                            <td colSpan={6} className="summary-label" style={{ textAlign: 'right', fontWeight: 'bold' }}>
+                                Total Value:
+                            </td>
+                            <td
+                                className="number-cell summary-value"
+                                style={{ fontWeight: 'bold' }}
+                            >
+                                {formatCurrency(totalValue)}
+                            </td>
+                            <td colSpan={2}></td>
+                        </tr>
                         <tr className="summary-row">
                             <td colSpan={9} className="summary-label" style={{ textAlign: 'right', fontWeight: 'bold' }}>
                                 Total Margin:
