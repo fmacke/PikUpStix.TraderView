@@ -15,31 +15,48 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote, onDeleteNot
     const [tradeTypes, setTradeTypes] = useState<Map<number, string>>(new Map());
     const [errorTypes, setErrorTypes] = useState<Map<number, string>>(new Map());
     const [exitTypes, setexitTypes] = useState<Map<number, string>>(new Map());
+    const [taskTypes, setTaskTypes] = useState<Map<number, string>>(new Map());
+    const [subtaskTypes, setSubtaskTypes] = useState<Map<number, string>>(new Map());
     const [listItemsLoading, setListItemsLoading] = useState(false);
 
-    // Fetch list items when component mounts (for detailed variant)
+    // Fetch list items when component mounts
     useEffect(() => {
-        if (variant !== 'detailed') {
-            return;
-        }
-
         const fetchListItems = async () => {
             try {
                 setListItemsLoading(true);
-                const [entryMethods, entryErrors, exitMethods] = await Promise.all([
+
+                // Always fetch task and subtask types for simple variant
+                const taskAndSubtaskPromises = [
+                    apiService.getListItems('JournalTaskType'),
+                    apiService.getListItems('JournalSubTaskType')
+                ];
+
+                // Also fetch other types for detailed variant
+                const otherTypesPromises = variant === 'detailed' ? [
                     apiService.getListItems('EntryMethod'),
                     apiService.getListItems('EntryError'),
                     apiService.getListItems('ExitMethod')
-                ]);
+                ] : [];
+
+                const results = await Promise.all([...taskAndSubtaskPromises, ...otherTypesPromises]);
 
                 // Create maps for quick lookup
-                const tradeTypeMap = new Map(entryMethods.map((item: { id: number; name: string }) => [item.id, item.name]));
-                const errorTypeMap = new Map(entryErrors.map((item: { id: number; name: string }) => [item.id, item.name]));
-                const exitTypeMap = new Map(exitMethods.map((item: { id: number; name: string }) => [item.id, item.name]));
+                const taskTypeMap = new Map(results[0].map((item: { id: number; name: string }) => [item.id, item.name]));
+                const subtaskTypeMap = new Map(results[1].map((item: { id: number; name: string }) => [item.id, item.name]));
 
-                setTradeTypes(tradeTypeMap);
-                setErrorTypes(errorTypeMap);
-                setexitTypes(exitTypeMap);
+                setTaskTypes(taskTypeMap);
+                setSubtaskTypes(subtaskTypeMap);
+
+                // Set detailed variant types if applicable
+                if (variant === 'detailed') {
+                    const tradeTypeMap = new Map(results[2].map((item: { id: number; name: string }) => [item.id, item.name]));
+                    const errorTypeMap = new Map(results[3].map((item: { id: number; name: string }) => [item.id, item.name]));
+                    const exitTypeMap = new Map(results[4].map((item: { id: number; name: string }) => [item.id, item.name]));
+
+                    setTradeTypes(tradeTypeMap);
+                    setErrorTypes(errorTypeMap);
+                    setexitTypes(exitTypeMap);
+                }
             } catch (error) {
                 console.error('Error fetching list items:', error);
                 // Continue without list items if fetch fails
@@ -74,13 +91,31 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote, onDeleteNot
         return exitTypes.get(exitTypeId) || `Unknown (${exitTypeId})`;
     };
 
+    const getTaskTypeName = (taskTypeId: number | null): string => {
+        if (taskTypeId === null || taskTypeId === undefined) return '-';
+        return taskTypes.get(taskTypeId) || `Unknown (${taskTypeId})`;
+    };
+
+    const getSubtaskTypeName = (subtaskTypeId: number | null): string => {
+        if (subtaskTypeId === null || subtaskTypeId === undefined) return '-';
+        return subtaskTypes.get(subtaskTypeId) || `Unknown (${subtaskTypeId})`;
+    };
+
+    const getEntryTime = (entryDate: string): string => {
+        const date = new Date(entryDate);
+        return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    };
+
 return (
         <div className="notes-table-container">
             <table className="notes-table">
                 <thead>
                     <tr>
                         <th>Date</th>
+                        <th>Time</th>
                         <th>Comment</th>
+                        <th>Task</th>
+                        <th>Subtask</th>
                         {variant === 'detailed' && (
                             <>
                                 <th>TradeType</th>
@@ -95,7 +130,10 @@ return (
                     {notes.map((note) => (
                         <tr key={note.id}>
                             <td className="note-date">{new Date(note.entryDate).toLocaleDateString()}</td>
+                            <td className="note-time">{getEntryTime(note.entryDate)}</td>
                             <td className="note-comment">{note.comment}</td>
+                            <td className="note-task">{getTaskTypeName(note.errorTypeId)}</td>
+                            <td className="note-subtask">{getSubtaskTypeName(note.exitTypeId)}</td>
                             {variant === 'detailed' && (
                                 <>
                                     <td>{getTradeTypeName(note.tradeTypeId)}</td>

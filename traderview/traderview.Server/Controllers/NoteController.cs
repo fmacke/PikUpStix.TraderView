@@ -237,7 +237,7 @@ namespace traderview.Server.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<NoteDto>> UpdateNoteAsync([FromBody] UpdateNoteDto updateNoteDto)
+        public async Task<ActionResult<NoteDto>> UpdateNoteAsync([FromBody] UpdateNoteDto updateNoteDto, bool isJournalEntry)
         {
             try
             {
@@ -253,6 +253,14 @@ namespace traderview.Server.Controllers
                 {
                     return NotFound(new { message = $"Note with ID {updateNoteDto.Id} not found" });
                 }
+
+                //if(isJournalEntry)
+                //{
+                //    updateNoteDto.Time = updateNoteDto.ExitTypeId;
+                //    updateNoteDto.ExitTypeId = updateNoteDto.ErrorTypeId;
+                //    updateNoteDto.ErrorTypeId = updateNoteDto.TradeTypeId;
+                //    updateNoteDto.TradeTypeId = existingNote.TradeTypeId;
+                //}
 
                 var isUpdated = await _noteService.UpdateAsync(
                     updateNoteDto.Id,

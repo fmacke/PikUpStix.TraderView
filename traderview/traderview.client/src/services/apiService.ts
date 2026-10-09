@@ -92,7 +92,7 @@ export const apiService = {
     },
 
     // Update a note
-    async updateNote(noteId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null): Promise<Note> {
+    async updateNote(noteId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null, time?: number | null): Promise<Note> {
         try {
             // Server expects UpdateNoteDto in body (PUT /api/notes)
             const body = {
@@ -102,7 +102,8 @@ export const apiService = {
                 updatedAt: entryDate ?? new Date().toISOString(),
                 tradeTypeId: entryMethodId,
                 errorTypeId,
-                exitTypeId
+                exitTypeId,
+                time: time ?? null
             };
             const response = await apiClient.put<Note>('/notes', body);
             return response.data;

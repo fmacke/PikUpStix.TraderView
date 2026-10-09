@@ -45,9 +45,24 @@
     color: #6c757d;
 }
 
+.note-time {
+    width: 120px;
+    color: #6c757d;
+}
+
 .note-comment {
     color: #374151;
     word-wrap: break-word;
+}
+
+.note-task {
+    width: 150px;
+    color: #374151;
+}
+
+.note-subtask {
+    width: 150px;
+    color: #374151;
 }
 
 .note-actions {
