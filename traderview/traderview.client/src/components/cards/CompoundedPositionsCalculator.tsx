@@ -22,10 +22,6 @@ const ColumnBox: React.FC<{ title: string; pos: TradeCalculationCompoundedPositi
         <div className="font-bold mb-2 text-sm">{title}</div>
 
         {/* Header block */}
-        <SmallStat label="Trade Date" value={new Date(pos.tradeDate).toLocaleDateString()} />
-        <SmallStat label="Instrument" value={pos.instrument || '-'} />
-        <SmallStat label="Exchange Rate" value={pos.exchangeRate?.toFixed(4) ?? '0.0000'} />
-        <SmallStat label="Trading Capital" value={`£${(pos.tradingCapital ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Risk Per Position" value={`${(pos.riskPerPositionPercentage ?? 0).toFixed(2)}%`} />
         <SmallStat label="Stop Loss On Position" value={`${(pos.stopLossOnPositionPercentage ?? 0).toFixed(2)}%`} />
 
@@ -45,7 +41,6 @@ const ColumnBox: React.FC<{ title: string; pos: TradeCalculationCompoundedPositi
 
         {/* Stop / targets */}
         <SmallStat label="Stop Loss At (USD)" value={`$${(pos.stopLossAtUsd ?? 0).toFixed(2)}`}  highlight="yellow"  />
-        <SmallStat label="Profit/Loss Target" value={`${(pos.profitLossTargetPercentage ?? 0).toFixed(2)}%`}/>
         <SmallStat label="Profit Target (USD)" value={`$${(pos.profitTargetUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Take Profit / Pyramid At (USD)" value={`$${(pos.takeProfitOrPyramidAtUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <div className="flex items-center gap-2">

@@ -23,59 +23,61 @@ namespace TraderView.Application.Services
         public TradeCalculationResponse CalculatePosition(TradeCalculationRequest request)
         {
             var response = new TradeCalculationResponse();
-            var gainLossRatio = request.GainLossRatio / 100; // 200%
-            var riskPerTrade = request.RiskPerTrade / 100;   // 5%
-            var maxExposure = request.MaxExposure / 100;     // 2.5%
+            var gainLossRatio = request.GainLossRatio / 100m; // e.g., 200% -> 2.0
+            var riskPerTrade = request.RiskPerTrade / 100m;   // e.g., 5% -> 0.05
+            var maxExposure = request.MaxExposure / 100m;     // e.g., 4% -> 0.04
 
-            // RiskPerTrade Size £ = TradingCapital * LotSizePercentage
+            // Base capital risked in GBP
             response.LotSizeGbp = request.TradingCapital * riskPerTrade;
 
+            // Scenario 1: Stop Loss calculated by percentage (MaxExposure)
             if (request.StopLossAtInput == null || request.StopLossAtInput == 0)
             {
-                // Stop Loss set by RiskPerTrade Size logic
                 response.LotGbp = response.LotSizeGbp;
                 response.LotUsd = response.LotGbp * request.ExchangeRate;
                 response.LotPercent = 1;
-                response.Shares = (response.LotUsd) / request.BuyPrice;
+                response.Shares = response.LotUsd / request.BuyPrice;
 
-                // STOP LOSS AT = BuyPrice - (BuyPrice * MaxExposure)
+                // Stop Loss At = BuyPrice - (BuyPrice * MaxExposure)
                 response.StopLossAt = request.BuyPrice - (request.BuyPrice * maxExposure);
 
-                // LOSS = (BuyPrice - StopLossAt) * Shares
+                // Loss calculations
                 response.LossUsd = (request.BuyPrice - response.StopLossAt) * response.Shares;
                 response.LossGbp = response.LossUsd / request.ExchangeRate;
-
-                // LOSS % = LossGbp / TradingCapital
                 response.LossPercentage = response.LossGbp / request.TradingCapital;
 
-                // TAKE PROFIT AT ratio calculation
-                response.TakeProfitAt = gainLossRatio * maxExposure * 100;
-                response.PriceTarget = request.BuyPrice + (request.BuyPrice * (response.TakeProfitAt / 100));
+                // Take Profit Target
+                response.TakeProfitAt = gainLossRatio * maxExposure * 100m;
+                response.PriceTarget = request.BuyPrice + (request.BuyPrice * (response.TakeProfitAt / 100m));
 
-                // OVERALL PROFIT = (PriceTarget - BuyPrice) * Shares
                 response.OverallProfitUsd = (response.PriceTarget - request.BuyPrice) * response.Shares;
                 response.OverallProfitGbp = response.OverallProfitUsd / request.ExchangeRate;
             }
             else
             {
-                if (request.StopLossAtInput != null && request.StopLossAtInput != 0)
+                // Scenario 2: Hard Price Stop Loss Override
+                response.StopLossAt = Convert.ToDecimal(request.StopLossAtInput);
+                var stopLossDistance = request.BuyPrice - response.StopLossAt;
+
+                if (stopLossDistance > 0)
                 {
-                    response.StopLossAt = Convert.ToDecimal(request.StopLossAtInput);
+                    var targetRiskUsd = response.LotSizeGbp * request.ExchangeRate * maxExposure;
 
-                    response.Shares = (maxExposure * response.LotSizeGbp * request.ExchangeRate) / (request.BuyPrice - response.StopLossAt);
-                    response.LotGbp = (response.Shares * request.BuyPrice) / request.ExchangeRate;
-                    response.LotUsd = response.LotGbp * request.ExchangeRate;
+                    response.Shares = targetRiskUsd / stopLossDistance;
+                    response.LotUsd = response.Shares * request.BuyPrice;
+                    response.LotGbp = response.LotUsd / request.ExchangeRate;
 
-                    response.LossUsd = response.Shares * (request.BuyPrice - response.StopLossAt);
+                    response.LossUsd = response.Shares * stopLossDistance;
                     response.LossGbp = response.LossUsd / request.ExchangeRate;
-                    response.LossPercentage = response.LossUsd / request.TradingCapital;
+                    response.LossPercentage = response.LossGbp / request.TradingCapital;
 
-                    response.LotPercent = (response.Shares * request.BuyPrice) / (response.LotSizeGbp * request.ExchangeRate);
-                    response.TakeProfitAt = gainLossRatio * maxExposure * 100;
-                    response.PriceTarget = request.BuyPrice + (request.BuyPrice * (gainLossRatio * (request.BuyPrice - response.StopLossAt) / request.BuyPrice));
+                    response.LotPercent = request.TradingCapital != 0 ? response.LotGbp / request.TradingCapital : 0m;
+                    response.TakeProfitAt = gainLossRatio * maxExposure * 100m;
 
-                    response.OverallProfitGbp = response.LossGbp * gainLossRatio;
-                    response.OverallProfitUsd = response.OverallProfitGbp * request.ExchangeRate;
+                    response.PriceTarget = request.BuyPrice + (stopLossDistance * gainLossRatio);
+
+                    response.OverallProfitUsd = (response.PriceTarget - request.BuyPrice) * response.Shares;
+                    response.OverallProfitGbp = response.OverallProfitUsd / request.ExchangeRate;
                 }
             }
 
@@ -94,10 +96,17 @@ namespace TraderView.Application.Services
 
             var baseRiskPercent = request.RiskPerTrade;
 
-            // Inverted / Decreasing Pyramiding Scale (e.g., Pilot 1.0x, Add 0.5x, Add 0.5x)
-            var quarter = ScalePositionTier(request, buy1, baseRiskPercent * 1.0m, takeProfitPercent);
-            var half = ScalePositionTier(request, buy2, baseRiskPercent * 0.5m, takeProfitPercent);
-            var full = ScalePositionTier(request, buy3, baseRiskPercent * 0.5m, takeProfitPercent);
+            // Determine if stop loss is overridden by a specific hard price from quarterPosition
+            decimal? overrideStopLossPrice = null;
+            if (quarterPosition != null && quarterPosition.StopLossAt != 0)
+            {
+                overrideStopLossPrice = quarterPosition.StopLossAt;
+            }
+
+            // Inverted / Decreasing Pyramiding Scale (Pilot 1.0x, Add 0.5x, Add 0.5x) with dynamic quantity adjustment for overrides
+            var quarter = ScalePositionTier(request, buy1, baseRiskPercent * 1.0m, takeProfitPercent, overrideStopLossPrice);
+            var half = ScalePositionTier(request, buy2, baseRiskPercent * 0.5m, takeProfitPercent, overrideStopLossPrice);
+            var full = ScalePositionTier(request, buy3, baseRiskPercent * 0.5m, takeProfitPercent, overrideStopLossPrice);
 
             // Aggregate positions cumulatively for weighted cost basis and exposure
             quarter.TotalShares = quarter.Shares;
@@ -120,16 +129,19 @@ namespace TraderView.Application.Services
             quarter.TakeProfitOrPyramidAtUsd = quarter.TargetSharePriceUsd * quarter.TotalShares;
             quarter.WinUsd = (quarter.TargetSharePriceUsd - quarter.AverageSharePriceUsd) * quarter.TotalShares;
             quarter.LossUsd = (quarter.AverageSharePriceUsd - quarter.StopLossAtUsd) * quarter.TotalShares;
+            quarter.WinLossRatioPercentage = 100 * (quarter.WinUsd / quarter.LossUsd);
 
             half.ProfitTargetUsd = (half.TargetSharePriceUsd - half.BuyPriceUsd) * half.TotalShares;
             half.TakeProfitOrPyramidAtUsd = half.TargetSharePriceUsd * half.TotalShares;
             half.WinUsd = (half.TargetSharePriceUsd - half.AverageSharePriceUsd) * half.TotalShares;
             half.LossUsd = (half.AverageSharePriceUsd - half.StopLossAtUsd) * half.TotalShares;
+            half.WinLossRatioPercentage = 100 * (half.WinUsd / half.LossUsd);
 
             full.ProfitTargetUsd = (full.TargetSharePriceUsd - full.BuyPriceUsd) * full.TotalShares;
             full.TakeProfitOrPyramidAtUsd = full.TargetSharePriceUsd * full.TotalShares;
             full.WinUsd = (full.TargetSharePriceUsd - full.AverageSharePriceUsd) * full.TotalShares;
             full.LossUsd = (full.AverageSharePriceUsd - full.StopLossAtUsd) * full.TotalShares;
+            full.WinLossRatioPercentage = 100 * (full.WinUsd / full.LossUsd);
 
             return new CompoundPositions
             {
@@ -184,21 +196,60 @@ namespace TraderView.Application.Services
             return results;
         }
 
-        private TradeCalculationCompoundedPosition ScalePositionTier(TradeCalculationRequest request, decimal buyPriceUsd, decimal riskPercentForTier, decimal takeProfitPercent)
+        private TradeCalculationCompoundedPosition ScalePositionTier(
+            TradeCalculationRequest request,
+            decimal buyPriceUsd,
+            decimal riskPercentForTier,
+            decimal takeProfitPercent,
+            decimal? overrideStopLossPrice)
         {
             var positionSizeGbp = request.TradingCapital * (riskPercentForTier / 100m);
             var positionSizeUsd = request.ExchangeRate != 0 ? positionSizeGbp * request.ExchangeRate : 0m;
 
-            var shares = buyPriceUsd > 0 ? positionSizeUsd / buyPriceUsd : 0m;
+            decimal stopLossPercent;
+            decimal stopLossAtUsd;
+            decimal shares;
 
-            var stopLossPercent = request.MaxExposure / 100m;
-            var positionRiskUsd = positionSizeUsd * stopLossPercent;
+            if (overrideStopLossPrice.HasValue && overrideStopLossPrice.Value > 0)
+            {
+                // Calculate the price offset ratio from the quarter position override
+                // Assuming the user's override distance applies relative to each tier's buy price, 
+                // or we compute the absolute distance from the original quarter stop loss offset.
+                // Here we maintain the custom stop distance relative to each tier's specific buy price:
+                // StopLossAtUsd for tier = buyPriceUsd - (buy1 - overrideStopLossPrice)
+                var originalBuy1 = request.BuyPrice;
+                var priceDropOffset = originalBuy1 - overrideStopLossPrice.Value;
+
+                stopLossAtUsd = buyPriceUsd - priceDropOffset;
+                var stopLossDistance = buyPriceUsd - stopLossAtUsd;
+
+                stopLossPercent = buyPriceUsd > 0 ? (stopLossDistance / buyPriceUsd) * 100m : request.MaxExposure;
+
+                if (stopLossDistance > 0)
+                {
+                    // Recalculate shares dynamically so total dollar risk stays fixed to max exposure bounds
+                    var targetRiskUsd = positionSizeUsd * (request.MaxExposure / 100m);
+                    shares = targetRiskUsd / stopLossDistance;
+                }
+                else
+                {
+                    shares = buyPriceUsd > 0 ? positionSizeUsd / buyPriceUsd : 0m;
+                }
+            }
+            else
+            {
+                // Default percentage-based calculation
+                stopLossPercent = request.MaxExposure;
+                stopLossAtUsd = buyPriceUsd * (1 - (stopLossPercent / 100m));
+                shares = buyPriceUsd > 0 ? positionSizeUsd / buyPriceUsd : 0m;
+            }
+
+            var positionRiskUsd = shares * (buyPriceUsd - stopLossAtUsd);
             var positionRiskGbp = request.ExchangeRate != 0 ? positionRiskUsd / request.ExchangeRate : 0m;
             var accountRiskPercentage = request.TradingCapital != 0 ? (positionRiskGbp / request.TradingCapital) * 100m : 0m;
 
-            var stopLossAtUsd = buyPriceUsd * (1 - stopLossPercent);
             var targetSharePriceUsd = buyPriceUsd * (1 + takeProfitPercent / 100m);
-            var profitLossTargetPercentage = buyPriceUsd / request.BuyPrice;
+            var profitLossTargetPercentage = request.GainLossRatio;
 
             var pos = new TradeCalculationCompoundedPosition
             {
@@ -207,9 +258,9 @@ namespace TraderView.Application.Services
                 ExchangeRate = request.ExchangeRate,
                 TradingCapital = request.TradingCapital,
                 RiskPerPositionPercentage = riskPercentForTier,
-                StopLossOnPositionPercentage = request.MaxExposure,
-                PositionSizeUsd = positionSizeUsd,
-                PositionSizeGbp = positionSizeGbp,
+                StopLossOnPositionPercentage = stopLossPercent,
+                PositionSizeUsd = shares * buyPriceUsd,
+                PositionSizeGbp = request.ExchangeRate != 0 ? (shares * buyPriceUsd) / request.ExchangeRate : 0m,
                 PositionRiskUsd = positionRiskUsd,
                 PositionRiskGbp = positionRiskGbp,
                 AccountRiskPercentage = accountRiskPercentage,
