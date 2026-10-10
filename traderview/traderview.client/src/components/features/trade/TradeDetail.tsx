@@ -90,7 +90,8 @@ function TradeDetail({ trade }: TradeDetailProps) {
             entryDate: new Date().toISOString(),
             tradeTypeId: entryMethodId ?? null, 
             errorTypeId: errorTypeId ?? null,
-            exitTypeId: exitTypeId ?? null
+            exitTypeId: exitTypeId ?? null,
+            time: null,
         };
 
         const result = await apiService.createNote(noteRequest);
