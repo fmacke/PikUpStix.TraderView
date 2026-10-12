@@ -42,6 +42,7 @@ namespace TraderView.Application.Models
         public DateTime TradeDate { get; set; }
         public string Instrument { get; set; } = string.Empty;
         public decimal ExchangeRate { get; set; }
+        public decimal TotalSizeGbp { get; set; }
 
         // Capital & Risk Settings
         public decimal TradingCapital { get; set; }

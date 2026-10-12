@@ -28,6 +28,7 @@ const ColumnBox: React.FC<{ title: string; pos: TradeCalculationCompoundedPositi
         {/* Position sizes */}
         <SmallStat label="Position Size (USD)" value={`$${(pos.positionSizeUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Position Size (GBP)" value={`£${(pos.positionSizeGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Cum. Size (GBP)" value={`£${(pos.totalSizeGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Position Risk (USD)" value={`$${(pos.positionRiskUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Position Risk (GBP)" value={`£${(pos.positionRiskGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Account Risk" value={`${(pos.accountRiskPercentage ?? 0).toFixed(2)}%`} />

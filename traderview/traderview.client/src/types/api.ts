@@ -22,6 +22,7 @@ export interface TradeCalculationCompoundedPosition {
     tradeDate: string;
     instrument: string;
     exchangeRate: number;
+    totalSizeGbp: number;
 
     tradingCapital: number;
     riskPerPositionPercentage: number;
