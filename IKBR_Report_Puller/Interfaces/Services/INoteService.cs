@@ -14,7 +14,7 @@ namespace TraderView.Application.Interfaces.Services
         Task<IReadOnlyList<Note>> GetByTradeTypeIdAsync(int tradeTypeId);
         Task<IReadOnlyList<Note>> GetJournalEntriesAsync();
         Task<int> CreateAsync(int? positionId, int? tradeExecutionId, string comment, int? tradeTypeId, int? errorTypeId, int? exitTypeId, decimal? time);
-        Task<bool> UpdateAsync(int id, int? positionId, int? tradeExecutionId, string comment, int? tradeTypeId, int? errorTypeId, int? exitTypeId, decimal? time);
+        Task<bool> UpdateAsync(int id, int? positionId, int? tradeExecutionId, string comment, DateTime entryDate, int? tradeTypeId, int? errorTypeId, int? exitTypeId, decimal? time);
         Task<bool> DeleteAsync(int id);
         Task<IReadOnlyList<Note>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
     }

@@ -116,7 +116,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Updates an existing note
         /// </summary>
-        public async Task<bool> UpdateAsync(int id, int? positionId, int? tradeExecutionId, string comment, DateTime updatedAt, int? tradeTypeId, int? errorTypeId, int? exitTypeId, decimal? time)
+        public async Task<bool> UpdateAsync(int id, int? positionId, int? tradeExecutionId, string comment, DateTime entryDate, DateTime updatedAt, int? tradeTypeId, int? errorTypeId, int? exitTypeId, decimal? time)
         {
             var note = await GetByIdAsync(id);
             if (note == null)
@@ -125,6 +125,7 @@ namespace TraderView.Infrastructure.Repositories
             note.PositionId = positionId;
             note.TradeExecutionId = tradeExecutionId;
             note.Comment = comment;
+            note.EntryDate = entryDate;
             note.UpdatedAt = updatedAt;
             note.TradeTypeId = tradeTypeId;
             note.ErrorTypeId = errorTypeId;

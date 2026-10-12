@@ -98,8 +98,8 @@ export const apiService = {
             const body = {
                 id: noteId,
                 comment,
-                // use provided entryDate where applicable as a timestamp for UpdatedAt; fall back to now
-                updatedAt: entryDate ?? new Date().toISOString(),
+                entryDate: entryDate ?? new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
                 tradeTypeId: entryMethodId,
                 errorTypeId,
                 exitTypeId,

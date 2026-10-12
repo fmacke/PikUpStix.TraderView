@@ -44,10 +44,10 @@ namespace PikUpStix.TraderView.Services
             var entryDate = DateTime.Now;
             return await Task.Run(() => _noteRepository.InsertAsync(positionId, tradeExecutionId, comment, entryDate, tradeTypeId, errorTypeId, exitTypeId, time));
         }
-        public async Task<bool> UpdateAsync(int id, int? positionId, int? tradeExecutionId, string comment, int? tradeTypeId, int? errorTypeId, int? exitTypeId, decimal? time)
+        public async Task<bool> UpdateAsync(int id, int? positionId, int? tradeExecutionId, string comment, DateTime entryDate, int? tradeTypeId, int? errorTypeId, int? exitTypeId, decimal? time)
         {
             var updatedAt = DateTime.Now;
-            return await Task.Run(() => _noteRepository.UpdateAsync(id, positionId, tradeExecutionId, comment, updatedAt, tradeTypeId, errorTypeId, exitTypeId, time));
+            return await Task.Run(() => _noteRepository.UpdateAsync(id, positionId, tradeExecutionId, comment, entryDate, updatedAt, tradeTypeId, errorTypeId, exitTypeId, time));
         }
         public async Task<bool> DeleteAsync(int id)
         {

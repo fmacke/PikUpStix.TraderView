@@ -267,6 +267,7 @@ namespace traderview.Server.Controllers
                     existingNote.PositionId,
                     existingNote.TradeExecutionId,
                     updateNoteDto.Comment,
+                    updateNoteDto.EntryDate,
                     updateNoteDto.TradeTypeId,
                     updateNoteDto.ErrorTypeId,
                     updateNoteDto.ExitTypeId,

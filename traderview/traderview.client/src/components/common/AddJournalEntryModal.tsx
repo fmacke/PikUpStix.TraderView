@@ -136,7 +136,7 @@ function AddJournalEntryModal({ isOpen, onClose, onSubmit }: AddJournalEntryModa
                                 value={timeSpent ?? ''}
                                 onChange={(e) => setTimeSpent(e.target.value ? Number(e.target.value) : null)}
                                 min="0"
-                                step="1"
+                                step="0.25"
                                 placeholder="Enter time spent in hours"
                                 disabled={isSubmitting}
                             />
