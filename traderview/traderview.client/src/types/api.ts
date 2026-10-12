@@ -161,6 +161,25 @@ export interface Note {
     name: string;
 }
 
+export interface TradeExecution {
+    id: number;
+    positionId: number;
+    instrumentId?: number;
+    symbol?: string | null;
+    tradeId?: number | null;
+    dateTime: string;
+    tradeDate?: string | null;
+    quantity?: number | null;
+    tradePrice?: number | null;
+    buySell?: string | null;
+    fifoPnlRealized?: number | null;
+    ibCommission?: number | null;
+    ibCommissionCurrency?: string | null;
+    closePrice?: number | null;
+    cost?: number | null;
+    ibExecId?: string | null;
+}
+
 export interface CreateNoteRequest {
     positionId: number | null;
     tradeExecutionId: number | null;

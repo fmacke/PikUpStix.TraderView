@@ -5,6 +5,7 @@ import type {
     RSIndicatorData,
     OpenPosition,
     Note,
+    TradeExecution,
     CreateNoteRequest,
     ListItem,
     CanSlimCandidate,
@@ -87,6 +88,17 @@ export const apiService = {
             return response.data;
         } catch (error) {
             console.error('getNotesByPositionId failed', error);
+            throw error;
+        }
+    },
+
+    // Get trade executions for a position
+    async getTradeExecutionsByPositionId(positionId: number): Promise<TradeExecution[]> {
+        try {
+            const response = await apiClient.get<TradeExecution[]>(`/tradeexecutions/position/${positionId}`);
+            return response.data;
+        } catch (error) {
+            console.error('getTradeExecutionsByPositionId failed', error);
             throw error;
         }
     },

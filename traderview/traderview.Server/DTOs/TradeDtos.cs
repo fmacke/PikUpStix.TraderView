@@ -38,6 +38,10 @@ namespace traderview.Server.DTOs
         public string? BuySell { get; set; }
         public decimal? FifoPnlRealized { get; set; }
         public decimal? IbCommission { get; set; }
+        public string? IbCommissionCurrency { get; set; }
+        public decimal? ClosePrice { get; set; }
+        public decimal? Cost { get; set; }
+        public string? IbExecId { get; set; }
     }
 
     public class CandlestickDto

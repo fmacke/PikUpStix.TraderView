@@ -1,11 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { apiService } from '../../../services/apiService';
-import type { OpenPosition, CreateNoteRequest, Note } from '../../../types/api';
+import type { OpenPosition, CreateNoteRequest, Note, TradeExecution } from '../../../types/api';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
 import AddNoteModal from '../../common/AddNoteModal';
 import EditNoteModal from '../../common/EditNoteModal';
 import NotesList from '../../common/NotesList';
+import TradeExecutionsList from '../../common/TradeExecutionsList';
 import PositionCalculatorsModal from '../../common/PositionCalculatorsModal';
 import './OpenPositionsView.css';
 
@@ -20,6 +21,8 @@ function OpenPositionsView() {
     const [selectedPosition, setSelectedPosition] = useState<OpenPosition | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
     const [notesLoading, setNotesLoading] = useState<boolean>(false);
+    const [tradeExecutions, setTradeExecutions] = useState<TradeExecution[]>([]);
+    const [tradeExecutionsLoading, setTradeExecutionsLoading] = useState<boolean>(false);
     const [isCalcModalOpen, setIsCalcModalOpen] = useState<boolean>(false);
     const [isRunningTradeConfirmReport, setIsRunningTradeConfirmReport] = useState<boolean>(false);
 
@@ -66,6 +69,29 @@ function OpenPositionsView() {
         };
 
         fetchNotes();
+    }, [selectedPosition?.positionId]);
+
+    useEffect(() => {
+        if (!selectedPosition) {
+            // Avoid synchronous setState in effect
+            setTimeout(() => setTradeExecutions([]), 0);
+            return;
+        }
+
+        const fetchTradeExecutions = async () => {
+            try {
+                setTradeExecutionsLoading(true);
+                const tradeExecutionsData = await apiService.getTradeExecutionsByPositionId(selectedPosition.positionId);
+                setTradeExecutions(tradeExecutionsData);
+            } catch (err) {
+                console.error('Error fetching trade executions:', err);
+                setTradeExecutions([]);
+            } finally {
+                setTradeExecutionsLoading(false);
+            }
+        };
+
+        fetchTradeExecutions();
     }, [selectedPosition?.positionId]);
 
     const handleAddNoteClick = (positionId: number) => {
@@ -382,6 +408,12 @@ function OpenPositionsView() {
                 <div className="notes-section">
                     <h2>Notes for {selectedPosition.symbol}</h2>
                     <NotesList notes={notes} loading={notesLoading} variant="detailed" onEditNote={handleEditNoteClick} />
+                </div>
+            )}
+
+            {selectedPosition && (
+                <div className="trade-executions-section">
+                    <TradeExecutionsList tradeExecutions={tradeExecutions} loading={tradeExecutionsLoading} />
                 </div>
             )}
 

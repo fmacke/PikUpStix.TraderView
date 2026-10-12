@@ -18,5 +18,11 @@ namespace TraderView.Application.Services
         {
             return _repository.GetTradeExecutionsAsync();
         }
+
+        Task<List<TradeExecution>> ITradeExecutionService.GetTradeExecutionsByPositionIdAsync(int positionId)
+        {
+            return _repository.GetTradeExecutionsByPositionIdAsync(positionId);
+        }
     }
 }
+

@@ -1,0 +1,141 @@
+.trade-executions-container {
+    margin-top: 30px;
+    padding: 16px;
+    background-color: #ffffff;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.trade-executions-title {
+    margin: 0 0 16px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #212529;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+}
+
+.trade-executions-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.trade-executions-table thead {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.trade-executions-table th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+    border-right: 1px solid #dee2e6;
+}
+
+.trade-executions-table th:last-child {
+    border-right: none;
+}
+
+.trade-executions-table tbody tr {
+    border-bottom: 1px solid #dee2e6;
+    transition: background-color 0.15s ease;
+}
+
+.trade-executions-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.trade-executions-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.trade-executions-table td {
+    padding: 10px 8px;
+    color: #212529;
+    border-right: 1px solid #f0f0f0;
+}
+
+.trade-executions-table td:last-child {
+    border-right: none;
+}
+
+/* Number cells - right aligned */
+.number-cell {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+    color: #495057;
+}
+
+/* Currency cells - center aligned */
+.currency-cell {
+    text-align: center;
+    font-weight: 500;
+}
+
+/* ID cells */
+.execution-id {
+    text-align: center;
+    color: #6c757d;
+    font-family: 'Courier New', monospace;
+}
+
+/* Date and time cells */
+.execution-date {
+    text-align: center;
+    color: #495057;
+}
+
+.execution-time {
+    text-align: center;
+    color: #6c757d;
+    font-family: 'Courier New', monospace;
+}
+
+/* Loading and empty states */
+.trade-executions-loading,
+.trade-executions-empty {
+    padding: 20px;
+    text-align: center;
+    color: #6c757d;
+    font-size: 14px;
+    font-style: italic;
+}
+
+.trade-executions-loading {
+    color: #495057;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .trade-executions-table {
+        font-size: 12px;
+    }
+
+    .trade-executions-table th,
+    .trade-executions-table td {
+        padding: 8px 6px;
+    }
+}
+
+@media (max-width: 768px) {
+    .trade-executions-container {
+        padding: 8px;
+        margin-top: 20px;
+    }
+
+    .trade-executions-table {
+        font-size: 11px;
+    }
+
+    .trade-executions-table th,
+    .trade-executions-table td {
+        padding: 6px 4px;
+    }
+
+    .trade-executions-title {
+        font-size: 16px;
+    }
+}

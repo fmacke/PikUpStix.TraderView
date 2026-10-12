@@ -19,5 +19,15 @@ namespace PikUpStix.TraderView.Services
         {
             return await _positionRepository.GetOpenPositionsAsync();
         }
+
+        async Task<List<TradeExecution>> ITradeExecutionService.GetTradeExecutions()
+        {
+            return await _tradeExecutionRepository.GetTradeExecutionsAsync();
+        }
+
+        async Task<List<TradeExecution>> ITradeExecutionService.GetTradeExecutionsByPositionIdAsync(int positionId)
+        {
+            return await _tradeExecutionRepository.GetTradeExecutionsByPositionIdAsync(positionId);
+        }
     }
 }
