@@ -96,17 +96,22 @@ namespace TraderView.Application.Services
 
             var baseRiskPercent = request.RiskPerTrade;
 
-            // Determine if stop loss is overridden by a specific hard price from quarterPosition
             decimal? overrideStopLossPrice = null;
             if (quarterPosition != null && quarterPosition.StopLossAt != 0)
             {
                 overrideStopLossPrice = quarterPosition.StopLossAt;
             }
 
-            // Inverted / Decreasing Pyramiding Scale (Pilot 1.0x, Add 0.5x, Add 0.5x) with dynamic quantity adjustment for overrides
+            // Tier 3: Pilot Entry (1/4 position)
             var quarter = ScalePositionTier(request, buy1, baseRiskPercent * 1.0m, takeProfitPercent, overrideStopLossPrice);
+
+            // Tier 2: Half Position Add (Price rises 2-3%, stop loss moved to cost basis minus 1% to lock in profit)
             var half = ScalePositionTier(request, buy2, baseRiskPercent * 0.5m, takeProfitPercent, overrideStopLossPrice);
+            half.StopLossAtUsd = buy1 * 0.99m; // Lock in profit relative to initial cost basis minus 1%
+
+            // Tier 1 / Full Position: Final Add (Price rises a further 2-3%, trailing stop applied)
             var full = ScalePositionTier(request, buy3, baseRiskPercent * 0.5m, takeProfitPercent, overrideStopLossPrice);
+            full.StopLossAtUsd = buy2 * 0.99m; // Trail stop relative to Tier 2 cost basis buffer
 
             // Aggregate positions cumulatively for weighted cost basis and exposure
             quarter.TotalShares = quarter.Shares;
@@ -215,8 +220,6 @@ namespace TraderView.Application.Services
 
             if (overrideStopLossPrice.HasValue && overrideStopLossPrice.Value > 0)
             {
-                // Maintain consistent percentage-based stop distance relative to each tier's buy price 
-                // if derived from a percentage override, or calculate based on the override ratio percentage.
                 var originalBuy1 = request.BuyPrice;
                 var overridePercentage = originalBuy1 > 0 ? (originalBuy1 - overrideStopLossPrice.Value) / originalBuy1 : (request.MaxExposure / 100m);
 
@@ -226,7 +229,6 @@ namespace TraderView.Application.Services
 
                 if (stopLossDistance > 0)
                 {
-                    // Correctly size the shares so that the monetary risk for this tier stays within bounds
                     var targetRiskUsd = positionSizeUsd * overridePercentage;
                     shares = targetRiskUsd / stopLossDistance;
                 }
@@ -237,7 +239,6 @@ namespace TraderView.Application.Services
             }
             else
             {
-                // Default percentage-based calculation using MaxExposure
                 stopLossPercent = request.MaxExposure;
                 stopLossAtUsd = buyPriceUsd * (1m - (stopLossPercent / 100m));
                 var stopLossDistance = buyPriceUsd - stopLossAtUsd;

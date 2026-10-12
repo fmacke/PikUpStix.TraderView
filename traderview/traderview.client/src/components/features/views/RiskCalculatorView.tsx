@@ -49,9 +49,7 @@ export const RiskCalculatorView: React.FC = () => {
                     Error loading chart: {chartError}
                 </div>
             )}
-            {!isLoadingChart && chartData.length > 0 && (
-                <AssetValueChart data={chartData} title="Portfolio Asset Value (90 Days)" showLongShort={true} />
-            )}
+            
 
             {/* Main Layout Container forcing side-by-side via Flexbox */}
             <div style={{ display: 'flex', flexDirection: 'row', gap: '24px', alignItems: 'flex-start', width: '100%', marginTop: '24px' }}>
@@ -60,13 +58,18 @@ export const RiskCalculatorView: React.FC = () => {
                 <div style={{ flex: '7', minWidth: '0' }}>
                     <TradeCalculatorCard />
                 </div>
-
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '24px', alignItems: 'flex-start', width: '100%', marginTop: '24px' }}>
                 {/* Right Column: Performance Cards & Forecast Stack (Takes ~42% width) */}
                 <div style={{ flex: '5', display: 'flex', flexDirection: 'column', gap: '24px', minWidth: '0' }}>
                     <CurrentPerformanceCard />
                     <DesiredPerformanceCard />
                 </div>
-
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'row', gap: '24px', alignItems: 'flex-start', width: '100%', marginTop: '24px' }}>
+                {!isLoadingChart && chartData.length > 0 && (
+                    <AssetValueChart data={chartData} title="Portfolio Asset Value (90 Days)" showLongShort={true} />
+                )}
             </div>
         </div>
     );

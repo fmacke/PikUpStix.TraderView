@@ -428,6 +428,8 @@ export const TradeCalculatorCard: React.FC = () => {
             {/* Output Section */}
             {result && (
                 <>
+                    {/* Compounded positions component - updates whenever main result updates */}
+                    <CompoundedPositionsCalculator request={request} trigger={result} />
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-green-50 text-xs">
                     <div className="md:col-span-3">
                         <p>STOP LOSS DETAILS</p>
@@ -490,8 +492,7 @@ export const TradeCalculatorCard: React.FC = () => {
                         </div>
                     </div>
                     </div>
-                    {/* Compounded positions component - updates whenever main result updates */}
-                    <CompoundedPositionsCalculator request={request} trigger={result} />
+                    
                 </>
             )}
         </div>
