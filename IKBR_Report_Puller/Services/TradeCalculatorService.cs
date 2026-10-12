@@ -46,7 +46,7 @@ namespace TraderView.Application.Services
                 response.LossGbp = response.LossUsd / request.ExchangeRate;
                 response.LossPercentage = response.LossGbp / request.TradingCapital;
 
-                // Take Profit Target
+                // Take Profit Target based on GainLossRatio and MaxExposure
                 response.TakeProfitAt = gainLossRatio * maxExposure * 100m;
                 response.PriceTarget = request.BuyPrice + (request.BuyPrice * (response.TakeProfitAt / 100m));
 
@@ -86,15 +86,15 @@ namespace TraderView.Application.Services
 
         public CompoundPositions CalculateCompoundPositions(TradeCalculationRequest request, TradeCalculationResponse quarterPosition)
         {
-            var takeProfitPercent = quarterPosition.TakeProfitAt;
+            // Define standard breakout continuation step percentage for pyramiding (e.g., +2.5% price advance per add)
+            const decimal pyramidStepPercent = 2.5m;
 
             var buy1 = request.BuyPrice;
-            var target1 = buy1 * (1 + takeProfitPercent / 100m);
-            var buy2 = target1;
-            var target2 = buy2 * (1 + takeProfitPercent / 100m);
-            var buy3 = target2;
+            var buy2 = buy1 * (1m + pyramidStepPercent / 100m);
+            var buy3 = buy2 * (1m + pyramidStepPercent / 100m);
 
             var baseRiskPercent = request.RiskPerTrade;
+            var takeProfitPercent = quarterPosition.TakeProfitAt;
 
             decimal? overrideStopLossPrice = null;
             if (quarterPosition != null && quarterPosition.StopLossAt != 0)
@@ -102,16 +102,14 @@ namespace TraderView.Application.Services
                 overrideStopLossPrice = quarterPosition.StopLossAt;
             }
 
-            // Tier 3: Pilot Entry (1/4 position)
+            // Tier 3: Pilot Entry (1/4 position block)
             var quarter = ScalePositionTier(request, buy1, baseRiskPercent * 1.0m, takeProfitPercent, overrideStopLossPrice);
 
-            // Tier 2: Half Position Add (Price rises 2-3%, stop loss moved to cost basis minus 1% to lock in profit)
+            // Tier 2: Half Position Add
             var half = ScalePositionTier(request, buy2, baseRiskPercent * 0.5m, takeProfitPercent, overrideStopLossPrice);
-            half.StopLossAtUsd = buy1 * 0.99m; // Lock in profit relative to initial cost basis minus 1%
 
-            // Tier 1 / Full Position: Final Add (Price rises a further 2-3%, trailing stop applied)
+            // Tier 1 / Full Position: Final Add
             var full = ScalePositionTier(request, buy3, baseRiskPercent * 0.5m, takeProfitPercent, overrideStopLossPrice);
-            full.StopLossAtUsd = buy2 * 0.99m; // Trail stop relative to Tier 2 cost basis buffer
 
             // Aggregate positions cumulatively for weighted cost basis and exposure
             quarter.TotalShares = quarter.Shares;
@@ -132,6 +130,11 @@ namespace TraderView.Application.Services
                    (incrementalFullShares * full.BuyPriceUsd)) / full.TotalShares
                 : 0m;
             full.TotalSizeGbp = (full.TotalShares * full.AverageSharePriceUsd) / request.ExchangeRate;
+
+            // Align stop losses with SEPA methodology:
+            // Ensure stop loss floors sit at or above the weighted average cost basis to prevent underwater stop-outs.
+            half.StopLossAtUsd = half.AverageSharePriceUsd;
+            full.StopLossAtUsd = buy2;
 
             quarter.ProfitTargetUsd = (quarter.TargetSharePriceUsd - quarter.BuyPriceUsd) * quarter.TotalShares;
             quarter.TakeProfitOrPyramidAtUsd = quarter.TargetSharePriceUsd * quarter.TotalShares;

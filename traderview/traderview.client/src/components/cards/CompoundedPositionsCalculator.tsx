@@ -23,19 +23,14 @@ const ColumnBox: React.FC<{ title: string; pos: TradeCalculationCompoundedPositi
 
         {/* Header block */}
         <SmallStat label="Risk Per Position" value={`${(pos.riskPerPositionPercentage ?? 0).toFixed(2)}%`} />
-        <SmallStat label="Stop Loss On Position" value={`${(pos.stopLossOnPositionPercentage ?? 0).toFixed(2)}%`} />
 
         {/* Position sizes */}
-        <SmallStat label="Position Size (USD)" value={`$${(pos.positionSizeUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <SmallStat label="Position Size (GBP)" value={`£${(pos.positionSizeGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Position Size" value={`$${(pos.positionSizeUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` + ' / ' + `£${(pos.positionSizeGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Cum. Size (GBP)" value={`£${(pos.totalSizeGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <SmallStat label="Position Risk (USD)" value={`$${(pos.positionRiskUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <SmallStat label="Position Risk (GBP)" value={`£${(pos.positionRiskGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
         <SmallStat label="Account Risk" value={`${(pos.accountRiskPercentage ?? 0).toFixed(2)}%`} />
 
         {/* Price and shares */}
         <SmallStat label="Buy Price (USD)" value={`$${(pos.buyPriceUsd ?? 0).toFixed(2)}`} highlight="yellow" />
-        <SmallStat label="Buy Price (GBP)" value={`£${(pos.buyPriceGbp ?? 0).toFixed(2)}`} />
         <SmallStat label="Shares" value={(pos.shares ?? 0).toFixed(2)} highlight="yellow" />
         <SmallStat label="Total Shares" value={(pos.totalShares ?? 0).toFixed(2)} />
         <SmallStat label="Avg Share Price (USD)" value={`$${(pos.averageSharePriceUsd ?? 0).toFixed(2)}`} />
