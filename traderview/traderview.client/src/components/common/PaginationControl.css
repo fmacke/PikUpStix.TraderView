@@ -1,0 +1,145 @@
+.pagination-control {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-top: 20px;
+    padding: 16px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* Left section - Items per page */
+.pagination-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.items-per-page-label {
+    font-weight: 600;
+    color: #495057;
+    margin: 0;
+    white-space: nowrap;
+}
+
+.items-per-page-select {
+    padding: 8px 12px;
+    font-size: 14px;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    background-color: #ffffff;
+    color: #495057;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.items-per-page-select:hover {
+    border-color: #adb5bd;
+}
+
+.items-per-page-select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Center section - Item count info */
+.pagination-center {
+    flex: 1;
+    text-align: center;
+}
+
+.pagination-info {
+    color: #6c757d;
+    font-size: 13px;
+}
+
+/* Right section - Navigation buttons and page indicator */
+.pagination-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pagination-button {
+    padding: 8px 12px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #007bff;
+    background-color: #ffffff;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+}
+
+.pagination-button:hover:not(:disabled) {
+    background-color: #007bff;
+    color: #ffffff;
+}
+
+.pagination-button:disabled {
+    color: #adb5bd;
+    border-color: #adb5bd;
+    background-color: #e9ecef;
+    cursor: not-allowed;
+}
+
+.pagination-button:active:not(:disabled) {
+    transform: scale(0.98);
+}
+
+.pagination-pages {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 8px;
+    font-weight: 600;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.current-page {
+    color: #007bff;
+    font-size: 15px;
+}
+
+.page-separator {
+    color: #adb5bd;
+}
+
+.total-pages {
+    color: #6c757d;
+    font-size: 13px;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .pagination-control {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .pagination-left,
+    .pagination-center,
+    .pagination-right {
+        width: 100%;
+    }
+
+    .pagination-left {
+        justify-content: center;
+    }
+
+    .pagination-right {
+        justify-content: center;
+    }
+
+    .items-per-page-select {
+        width: 100%;
+        max-width: 150px;
+    }
+}

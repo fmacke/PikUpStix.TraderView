@@ -3,6 +3,8 @@ import AddJournalEntryModal from '../../common/AddJournalEntryModal';
 import EditJournalEntryModal from '../../common/EditJournalEntryModal';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
+import { PaginationControl } from '../../common/PaginationControl';
+import type { PaginationConfig } from '../../common/PaginationControl';
 import { apiService } from '../../../services/apiService';
 import type { Note } from '../../../types/api';
 import './JournalView.css';
@@ -17,6 +19,11 @@ function JournalView() {
     const [sortConfig, setSortConfig] = useState<SortConfig<Note>>({
         key: 'entryDate',
         direction: 'desc'
+    });
+    const [paginationConfig, setPaginationConfig] = useState<PaginationConfig>({
+        currentPage: 1,
+        itemsPerPage: 20,
+        totalItems: 0
     });
     const [taskTypes, setTaskTypes] = useState<Map<number, string>>(new Map());
     const [subtaskTypes, setSubtaskTypes] = useState<Map<number, string>>(new Map());
@@ -123,6 +130,21 @@ function JournalView() {
         }));
     };
 
+    const handlePageChange = (page: number) => {
+        setPaginationConfig(prev => ({
+            ...prev,
+            currentPage: page
+        }));
+    };
+
+    const handleItemsPerPageChange = (itemsPerPage: number) => {
+        setPaginationConfig(prev => ({
+            ...prev,
+            itemsPerPage,
+            currentPage: 1  // Reset to first page when changing items per page
+        }));
+    };
+
     const sortedNotes = useMemo(() => {
         if (!notes || notes.length === 0) return [];
 
@@ -151,6 +173,24 @@ function JournalView() {
                 : strB.localeCompare(strA);
         });
     }, [notes, sortConfig]);
+
+    // Update pagination total items when sorted notes change
+    useMemo(() => {
+        setPaginationConfig(prev => ({
+            ...prev,
+            totalItems: sortedNotes.length,
+            currentPage: prev.currentPage > Math.ceil(sortedNotes.length / prev.itemsPerPage) && sortedNotes.length > 0
+                ? Math.ceil(sortedNotes.length / prev.itemsPerPage)
+                : prev.currentPage
+        }));
+    }, [sortedNotes]);
+
+    // Paginate sorted notes
+    const paginatedNotes = useMemo(() => {
+        const start = (paginationConfig.currentPage - 1) * paginationConfig.itemsPerPage;
+        const end = start + paginationConfig.itemsPerPage;
+        return sortedNotes.slice(start, end);
+    }, [sortedNotes, paginationConfig.currentPage, paginationConfig.itemsPerPage]);
 
     const getTaskTypeName = (taskTypeId: number | null): string => {
         if (taskTypeId === null || taskTypeId === undefined) return '-';
@@ -203,7 +243,7 @@ function JournalView() {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedNotes.map((note) => (
+                            {paginatedNotes.map((note) => (
                                 <tr key={note.id}>
                                     <td className="note-date">{new Date(note.entryDate).toLocaleDateString()}</td>
                                     <td className="note-comment">{note.comment}</td>
@@ -232,6 +272,11 @@ function JournalView() {
                             ))}
                         </tbody>
                     </table>
+                    <PaginationControl
+                        config={paginationConfig}
+                        onPageChange={handlePageChange}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                    />
                 </div>
             )}
 
