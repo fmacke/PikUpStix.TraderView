@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import type { IChartApi } from 'lightweight-charts';
 import type { Trade, RSDataPoint } from '../../../types/api';
-import { apiService } from '../../../services/apiService';
+import { tradeService } from '../../../services';
 import './TradingViewChart.css';
 
 interface TradingViewChartProps {
@@ -36,7 +36,7 @@ function TradingViewChart({ trade, rsData }: TradingViewChartProps) {
 
                 // Fetch candlestick data with up to 100 bars before entry and 100 bars after exit
                 // Using 150 calendar days to approximately get 100 trading days (accounting for weekends/holidays)
-                const tradeContext = await apiService.getTradeCandlesticks(trade.positionId, 150, 150);
+                const tradeContext = await tradeService.getTradeCandlesticks(trade.positionId, 150, 150);
 
                 console.log('Received candlestick data:', tradeContext);
 

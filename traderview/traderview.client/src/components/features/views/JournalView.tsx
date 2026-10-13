@@ -5,7 +5,7 @@ import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
 import { PaginationControl } from '../../common/PaginationControl';
 import type { PaginationConfig } from '../../common/PaginationControl';
-import { apiService } from '../../../services/apiService';
+import { notesService, listsService } from '../../../services';
 import type { Note } from '../../../types/api';
 import './JournalView.css';
 
@@ -33,7 +33,7 @@ function JournalView() {
             try {
                 setLoading(true);
                 setError(null);
-                const data = await apiService.getJournalEntries();
+                const data = await notesService.getJournalEntries();
                 setNotes(data);
             } catch (err) {
                 console.error('Error loading journal entries', err);
@@ -51,8 +51,8 @@ function JournalView() {
         const fetchListItems = async () => {
             try {
                 const taskAndSubtaskPromises = [
-                    apiService.getListItems('JournalTaskType'),
-                    apiService.getListItems('JournalSubTaskType')
+                    listsService.getListItems('JournalTaskType'),
+                    listsService.getListItems('JournalSubTaskType')
                 ];
 
                 const results = await Promise.all(taskAndSubtaskPromises);
@@ -75,7 +75,7 @@ function JournalView() {
         try {
             setLoading(true);
             setError(null);
-            const data = await apiService.getJournalEntries();
+            const data = await notesService.getJournalEntries();
             setNotes(data);
         } catch (err) {
             console.error('Error loading journal entries', err);
@@ -87,7 +87,7 @@ function JournalView() {
 
     const handleAddSubmit = async (comment: string, journalTaskTypeId: number | null, journalSubTaskTypeId: number | null, entryDateParam?: string, timeSpent?: number | null) => {
         // Determine the JournalEntry list item id (should be a single item)
-        const journalEntryItems = await apiService.getListItems('JournalEntry');
+        const journalEntryItems = await listsService.getListItems('JournalEntry');
         const journalEntryId = journalEntryItems.length > 0 ? journalEntryItems[0].id : null;
 
         const request = {
@@ -103,7 +103,7 @@ function JournalView() {
             time: timeSpent ?? null
         };
 
-        await apiService.createNote(request);
+        await notesService.createNote(request);
         await loadJournal();
     };
 
@@ -119,7 +119,7 @@ function JournalView() {
 
     const handleDelete = async (noteId: number) => {
         if (!confirm('Delete this journal entry?')) return;
-        await apiService.deleteNote(noteId);
+        await notesService.deleteNote(noteId);
         await loadJournal();
     };
 

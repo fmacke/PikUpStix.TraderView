@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { apiService } from '../../../services/apiService';
+import { notesService, tradeService, positionsService, syncService } from '../../../services';
 import type { OpenPosition, CreateNoteRequest, Note, TradeExecution } from '../../../types/api';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
@@ -30,7 +30,7 @@ function OpenPositionsView() {
         try {
             setLoading(true);
             setError(null);
-            const positions = await apiService.getOpenPositions();
+            const positions = await positionsService.getOpenPositions();
             setOpenPositions(positions);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to load open positions';
@@ -58,7 +58,7 @@ function OpenPositionsView() {
         const fetchNotes = async () => {
             try {
                 setNotesLoading(true);
-                const notesData = await apiService.getNotesByPositionId(selectedPosition.positionId);
+                const notesData = await notesService.getNotesByPositionId(selectedPosition.positionId);
                 setNotes(notesData);
             } catch (err) {
                 console.error('Error fetching notes:', err);
@@ -81,7 +81,7 @@ function OpenPositionsView() {
         const fetchTradeExecutions = async () => {
             try {
                 setTradeExecutionsLoading(true);
-                const tradeExecutionsData = await apiService.getTradeExecutionsByPositionId(selectedPosition.positionId);
+                const tradeExecutionsData = await tradeService.getTradeExecutionsByPositionId(selectedPosition.positionId);
                 setTradeExecutions(tradeExecutionsData);
             } catch (err) {
                 console.error('Error fetching trade executions:', err);
@@ -124,10 +124,10 @@ function OpenPositionsView() {
             time: null,
         };
 
-        const result = await apiService.createNote(noteRequest);
+        const result = await notesService.createNote(noteRequest);
 
         if (selectedPosition && selectedPosition.positionId === selectedPositionId) {
-            const notesData = await apiService.getNotesByPositionId(selectedPositionId);
+            const notesData = await notesService.getNotesByPositionId(selectedPositionId);
             setNotes(notesData);
         }
 
@@ -145,10 +145,11 @@ function OpenPositionsView() {
     };
 
     const handleSubmitEditNote = async (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null) => {
-        const result = await apiService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId, exitTypeId);
+
+        const result = await notesService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId, exitTypeId);
 
         // Refresh notes for the position that was edited
-        const notesData = await apiService.getNotesByPositionId(positionId);
+        const notesData = await notesService.getNotesByPositionId(positionId);
 
         // If the edited position is currently selected, update the notes list
         if (selectedPosition && selectedPosition.positionId === positionId) {
@@ -161,7 +162,7 @@ function OpenPositionsView() {
     const handleRunTradeConfirmReport = async () => {
         try {
             setIsRunningTradeConfirmReport(true);
-            const result = await apiService.runTradeConfirmReport();
+        const result = await syncService.runTradeConfirmReport();
             console.log('Trade confirm report completed:', result);
             alert(`Trade confirm report completed successfully at ${new Date(result.timestamp).toLocaleString()}`);
             // Reload open positions after successful report completion

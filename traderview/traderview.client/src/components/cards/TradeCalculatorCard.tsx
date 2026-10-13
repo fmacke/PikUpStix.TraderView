@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { apiService } from '../../services/apiService';
+import { riskService, positionsService, listsService } from '../../services';
 import type { TradeCalculationRequest, TradeCalculationResponse, PositionCalculatorCreateDto, PositionCalculatorDto } from '../../types/api';
 import CompoundedPositionsCalculator from './CompoundedPositionsCalculator';
 import type { ListItem } from '../../types/api';
@@ -60,7 +60,7 @@ export const TradeCalculatorCard: React.FC = () => {
             // compute compound positions and include them in the saved DTO
             let compoundArray = undefined;
             try {
-                const compound = await apiService.calculateCompoundPositions(request);
+                const compound = await riskService.calculateCompoundPositions(request);
                 compoundArray = [compound.quarterPosition, compound.halfPosition, compound.fullPosition];
             } catch (err) {
                 console.warn('Failed to calculate compound positions for save', err);
@@ -94,7 +94,7 @@ export const TradeCalculatorCard: React.FC = () => {
                 compoundPositions: compoundArray,
             } as PositionCalculatorCreateDto;
 
-            const saved: PositionCalculatorDto = await apiService.savePositionCalculator(dto);
+            const saved: PositionCalculatorDto = await positionsService.savePositionCalculator(dto);
             setSaveMessage('Saved successfully');
             console.log('PositionCalculator saved', saved);
         } catch (err) {
@@ -109,7 +109,7 @@ export const TradeCalculatorCard: React.FC = () => {
         try {
             setLoading(true);
             setError(null);
-            const data = await apiService.calculateTradePosition(request);
+            const data = await riskService.calculateTradePosition(request);
             setResult(data);
         } catch (error) {
             console.error(error);
@@ -163,8 +163,8 @@ export const TradeCalculatorCard: React.FC = () => {
         const init = async () => {
             try {
                 // Kick off requests in parallel
-                const listPromise = apiService.getListItems('EntryMethod');
-                const assetPromise = apiService.getLatestAssetValue();
+                const listPromise = listsService.getListItems('EntryMethod');
+                const assetPromise = positionsService.getLatestAssetValue();
 
                 // compute exchange rate
                 const parts = currencyPair.split('/').map(p => p.trim().toUpperCase());
@@ -174,7 +174,7 @@ export const TradeCalculatorCard: React.FC = () => {
                     if (base === quote) {
                         ratePromise = Promise.resolve(1);
                     } else {
-                        ratePromise = apiService.getExchangeRate(base, quote);
+                        ratePromise = positionsService.getExchangeRate(base, quote);
                     }
                 }
 

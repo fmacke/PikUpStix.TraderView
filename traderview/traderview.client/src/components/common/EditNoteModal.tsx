@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import './AddNoteModal.css';
-import { apiService } from '../../services/apiService';
+import { listsService } from '../../services';
 import type { ListItem, Note } from '../../types/api';
 import ListItemSelect from './ListItemSelect';
 
@@ -32,7 +32,7 @@ function EditNoteModal({ isOpen, onClose, onSubmit, note }: EditNoteModalProps) 
     ) => {
         setIsLoading(true);
         try {
-            const items = await apiService.getListItems(category);
+            const items = await listsService.getListItems(category);
             setItems(items);
         } catch (error) {
             console.error(`Error fetching ${category} list items:`, error);

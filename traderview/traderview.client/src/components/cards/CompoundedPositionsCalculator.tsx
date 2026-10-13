@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiService } from '../../services/apiService';
+import { riskService } from '../../services';
 import type { TradeCalculationRequest, TradeCalculationResponse, CompoundPositions, TradeCalculationCompoundedPosition } from '../../types/api';
 
 interface Props {
@@ -67,7 +67,7 @@ const CompoundedPositionsCalculator: React.FC<Props> = ({ request, trigger }) =>
             if (!request) return;
             setLoading(true);
             try {
-                const data = await apiService.calculateCompoundPositions(request);
+                const data = await riskService.calculateCompoundPositions(request);
                 setCompound(data as CompoundPositions);
             } catch (err) {
                 console.error('Failed to calculate compound positions', err);

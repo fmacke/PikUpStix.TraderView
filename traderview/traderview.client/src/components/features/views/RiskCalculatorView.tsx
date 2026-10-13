@@ -3,7 +3,7 @@ import CurrentPerformanceCard from '../../cards/CurrentPerformanceCard';
 import DesiredPerformanceCard from '../../cards/DesiredPerformanceCard';
 import TradeCalculatorCard from '../../cards/TradeCalculatorCard';
 import AssetValueChart from '../charts/AssetValueChart';
-import { apiService } from '../../../services/apiService';
+import { positionsService } from '../../../services';
 import type { AssetValueChartData } from '../../../types/api';
 
 export const RiskCalculatorView: React.FC = () => {
@@ -21,7 +21,7 @@ export const RiskCalculatorView: React.FC = () => {
                 const startDate = new Date();
                 startDate.setDate(startDate.getDate() - 90);
 
-                const data = await apiService.getAssetValueOverTime(startDate, endDate);
+                const data = await positionsService.getAssetValueOverTime(startDate, endDate);
                 setChartData(data);
             } catch (error) {
                 console.error('Failed to load asset value data:', error);

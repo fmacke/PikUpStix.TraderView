@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { apiService } from '../../services/apiService';
+import { positionsService } from '../../services';
 import type { PositionCalculatorDto } from '../../types/api';
 import './PositionCalculatorsModal.css';
 
@@ -19,7 +19,7 @@ export default function PositionCalculatorsModal({ positionId, isOpen, onClose }
         const load = async () => {
             setLoading(true);
             try {
-                const data = await apiService.getPositionCalculatorCandidates(positionId);
+                const data = await positionsService.getPositionCalculatorCandidates(positionId);
                 setItems(data);
                 // preselect those already linked
                 const pre = new Set<number>(data.filter(d => d.positionId === positionId).map(d => d.id));
@@ -44,7 +44,7 @@ export default function PositionCalculatorsModal({ positionId, isOpen, onClose }
 
     const handleLink = async () => {
         try {
-            await apiService.linkPositionCalculators(positionId, Array.from(selected));
+            await positionsService.linkPositionCalculators(positionId, Array.from(selected));
             onClose();
         } catch (e) {
             console.error('Link failed', e);
@@ -54,7 +54,7 @@ export default function PositionCalculatorsModal({ positionId, isOpen, onClose }
 
     const handleUnlink = async () => {
         try {
-            await apiService.unlinkPositionCalculators(positionId, Array.from(selected));
+            await positionsService.unlinkPositionCalculators(positionId, Array.from(selected));
             onClose();
         } catch (e) {
             console.error('Unlink failed', e);

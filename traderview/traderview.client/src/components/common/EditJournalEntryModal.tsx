@@ -23,7 +23,7 @@ function EditJournalEntryModal({ isOpen, onClose, onSubmit, note }: EditJournalE
     // Fetchers
     const fetchTaskTypes = async () => {
         try {
-            const items = await apiService.getListItems('JournalTaskType');
+            const items = await listsService.getListItems('JournalTaskType');
             setTaskTypes(items);
         } catch (err) {
             console.error('Error fetching JournalTaskType items', err);

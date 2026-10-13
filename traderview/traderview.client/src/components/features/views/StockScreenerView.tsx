@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { apiService } from '../../../services/apiService';
+import { syncService } from '../../../services';
 import type { CanSlimCandidate } from '../../../types/api';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
@@ -20,7 +20,7 @@ function StockScreenerView() {
         try {
             setLoading(true);
             setError(null);
-            const data = await apiService.getLatestScreenerResults();
+            const data = await syncService.getLatestScreenerResults();
             setCandidates(data);
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Failed to load CAN SLIM candidates';

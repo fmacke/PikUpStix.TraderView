@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Note } from '../../types/api';
-import { apiService } from '../../services/apiService';
+import { listsService } from '../../services';
 import './NotesList.css';
 
 interface NotesListProps {
@@ -27,15 +27,15 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote, onDeleteNot
 
                 // Always fetch task and subtask types for simple variant
                 const taskAndSubtaskPromises = [
-                    apiService.getListItems('JournalTaskType'),
-                    apiService.getListItems('JournalSubTaskType')
+                listsService.getListItems('JournalTaskType'),
+                    listsService.getListItems('JournalSubTaskType')
                 ];
 
                 // Also fetch other types for detailed variant
                 const otherTypesPromises = variant === 'detailed' ? [
-                    apiService.getListItems('EntryMethod'),
-                    apiService.getListItems('EntryError'),
-                    apiService.getListItems('ExitMethod')
+                    listsService.getListItems('EntryMethod'),
+                    listsService.getListItems('EntryError'),
+                    listsService.getListItems('ExitMethod')
                 ] : [];
 
                 const results = await Promise.all([...taskAndSubtaskPromises, ...otherTypesPromises]);

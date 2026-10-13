@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { apiService } from './services/apiService';
+import { tradeService, syncService } from './services';
 import type { Trade } from './types/api';
 import TradeList from './components/features/trade/TradeList';
 import TradeRollerList from './components/features/trade/TradeRollerList';
@@ -104,7 +104,7 @@ function App() {
                         label="Sync IBKR Data"
                         syncingLabel="Syncing IBKR..."
                         title="Sync data from Interactive Brokers"
-                        onSync={() => apiService.syncIBKRData()}
+                        onSync={() => syncService.syncIBKRData()}
                         onSuccess={populateTradeData}
                     />
 
@@ -113,7 +113,7 @@ function App() {
                         label="Sync Screener Data"
                         syncingLabel="Syncing Screener..."
                         title="Sync screener data from FMP"
-                        onSync={() => apiService.syncFMPData()} 
+                        onSync={() => syncService.syncFMPData()}
                         onSuccess={populateTradeData}
                     />
                 </div>
@@ -162,7 +162,7 @@ function App() {
         try {
             setLoading(true);
             setError(null);
-            const data = await apiService.getTrades();
+            const data = await tradeService.getTrades();
             setTrades(data);
             if (data.length > 0) {
                 const sortedData = [...data].sort((a, b) => {

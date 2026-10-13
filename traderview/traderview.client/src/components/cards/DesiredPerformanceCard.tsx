@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { apiService } from '../../services/apiService';
+import { riskService } from '../../services';
 import { type RiskMatrixCalculationResultDto } from '../../types/api.ts';
 
 export const DesiredPerformanceCard: React.FC = () => {
@@ -14,7 +14,7 @@ export const DesiredPerformanceCard: React.FC = () => {
     const fetchDesiredPerformance = useCallback(async () => {
         try {
             setLoading(true);
-            const result = await apiService.getDesiredPerformance(
+            const result = await riskService.getDesiredPerformance(
                 portfolioSize,
                 positionSizePercent,
                 desiredReturnPercent

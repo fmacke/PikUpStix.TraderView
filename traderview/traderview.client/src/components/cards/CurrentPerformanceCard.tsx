@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { apiService } from '../../services/apiService';
+import { riskService } from '../../services';
 import { type CurrentPerformanceResult } from '../../types/api';
 
 export const CurrentPerformanceCard: React.FC = () => {
@@ -11,7 +11,7 @@ export const CurrentPerformanceCard: React.FC = () => {
         const fetchRiskMatrix = async () => {
             try {
                 setLoading(true);
-                const result = await apiService.getCurrentPerformance();
+                const result = await riskService.getCurrentPerformance();
                 setData(result);
             } catch (err: unknown) {
                 if (err instanceof Error) {
