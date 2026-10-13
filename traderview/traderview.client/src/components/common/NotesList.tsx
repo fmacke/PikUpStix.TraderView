@@ -114,8 +114,6 @@ return (
                         <th>Date</th>
                         <th>Time</th>
                         <th>Comment</th>
-                        <th>Task</th>
-                        <th>Subtask</th>
                         {variant === 'detailed' && (
                             <>
                                 <th>TradeType</th>
@@ -132,8 +130,6 @@ return (
                             <td className="note-date">{new Date(note.entryDate).toLocaleDateString()}</td>
                             <td className="note-time">{getEntryTime(note.entryDate)}</td>
                             <td className="note-comment">{note.comment}</td>
-                            <td className="note-task">{getTaskTypeName(note.errorTypeId)}</td>
-                            <td className="note-subtask">{getSubtaskTypeName(note.exitTypeId)}</td>
                             {variant === 'detailed' && (
                                 <>
                                     <td>{getTradeTypeName(note.tradeTypeId)}</td>

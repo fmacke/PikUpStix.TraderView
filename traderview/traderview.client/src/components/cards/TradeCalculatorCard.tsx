@@ -249,7 +249,7 @@ export const TradeCalculatorCard: React.FC = () => {
                     return;
                 }
 
-                const rate = await apiService.getExchangeRate(base, quote);
+                        const rate = await positionsService.getExchangeRate(base, quote);
                 setRequest(prev => ({ ...prev, exchangeRate: rate }));
             } catch (error) {
                 console.error('Failed to update exchange rate on pair change for', val, error);

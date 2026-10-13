@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import './AddNoteModal.css';
-import { listsService } from '../../services';
-import type { ListItem, Note } from '../../types/api';
-import ListItemSelect from './ListItemSelect';
+import { listsService } from '../../../services/listsService';
+import type { ListItem, Note } from '../../../types/api';
+import ListItemSelect from '../../common/ListItemSelect';
 
 interface EditNoteModalProps {
     isOpen: boolean;

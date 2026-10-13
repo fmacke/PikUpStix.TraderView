@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import type { Trade, RSIndicatorData, CreateNoteRequest, Note } from '../../../types/api';
-import { apiService } from '../../../services/apiService';
+import { tradeService, notesService } from '../../../services';
 import './TradeDetail.css';
 import TradingViewChart from '../charts/TradingViewChart';
 import RSMetricsDashboard from '../metrics/RSMetricsDashboard';
-import AddNoteModal from '../../common/AddNoteModal';
-import EditNoteModal from '../../common/EditNoteModal';
+import AddNoteModal from '../modals/AddNoteModal';
+import EditNoteModal from '../modals/EditNoteModal';
 import NotesList from '../../common/NotesList';
 
 interface TradeDetailProps {
@@ -33,7 +33,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
             try {
                 setRsLoading(true);
                 setRsError(null);
-                const data = await apiService.getRSIndicator(trade.id);
+                const data = await tradeService.getRSIndicator(trade.id);
                 setRsData(data);
             } catch (error) {
                 console.error('Error fetching RS indicator data:', error);
@@ -57,7 +57,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
         const fetchNotes = async () => {
             try {
                 setNotesLoading(true);
-                const notesData = await apiService.getNotesByPositionId(trade.positionId);
+                const notesData = await notesService.getNotesByPositionId(trade.positionId);
                 setNotes(notesData);
             } catch (error) {
                 console.error('Error fetching notes:', error);
@@ -94,11 +94,11 @@ function TradeDetail({ trade }: TradeDetailProps) {
             time: null,
         };
 
-        const result = await apiService.createNote(noteRequest);
+        const result = await notesService.createNote(noteRequest);
         console.log('Note created successfully', result);
 
         // Refresh notes list after adding a new note
-        const notesData = await apiService.getNotesByPositionId(trade.positionId);
+        const notesData = await notesService.getNotesByPositionId(trade.positionId);
         setNotes(notesData);
 
         return result;
@@ -115,11 +115,11 @@ function TradeDetail({ trade }: TradeDetailProps) {
     };
 
     const handleSubmitEditNote = async (noteId: number, positionId: number, comment: string, entryDate: string, entryMethodId: number | null, errorTypeId: number | null, exitTypeId: number | null) => {
-        const result = await apiService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId, exitTypeId);
+        const result = await notesService.updateNote(noteId, comment, entryDate, entryMethodId, errorTypeId, exitTypeId);
         console.log('Note updated successfully', result);
 
         // Refresh notes list after updating a note
-        const notesData = await apiService.getNotesByPositionId(positionId);
+        const notesData = await notesService.getNotesByPositionId(positionId);
         setNotes(notesData);
 
         return result;

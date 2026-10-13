@@ -3,8 +3,8 @@ import { notesService, tradeService, positionsService, syncService } from '../..
 import type { OpenPosition, CreateNoteRequest, Note, TradeExecution } from '../../../types/api';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
-import AddNoteModal from '../../common/AddNoteModal';
-import EditNoteModal from '../../common/EditNoteModal';
+import AddNoteModal from '../modals/AddNoteModal';
+import EditNoteModal from '../modals/EditNoteModal';
 import NotesList from '../../common/NotesList';
 import TradeExecutionsList from '../../common/TradeExecutionsList';
 import PositionCalculatorsModal from '../../common/PositionCalculatorsModal';
@@ -292,7 +292,7 @@ function OpenPositionsView() {
                 <div className="header-actions">
                     <button onClick={async () => {
                         try {
-                            const blob = await apiService.downloadCompoundPositionsReport();
+                            const blob = await positionsService.downloadCompoundPositionsReport();
                             const url = window.URL.createObjectURL(blob);
                             const a = document.createElement('a');
                             a.href = url;

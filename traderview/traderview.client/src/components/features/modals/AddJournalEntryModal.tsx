@@ -1,23 +1,22 @@
 import { useState, useEffect } from 'react';
 import './AddNoteModal.css';
-import { apiService } from '../../services/apiService';
-import type { ListItem, Note } from '../../types/api';
+import { listsService } from '../../../services/listsService';
+import type { ListItem } from '../../../types/api';
 
-interface EditJournalEntryModalProps {
+interface AddJournalEntryModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSubmit: (noteId: number, comment: string, journalTaskTypeId: number | null, journalSubTaskTypeId: number | null, entryDate: string, timeSpent: number | null) => Promise<void>;
-    note: Note | null;
+    onSubmit: (comment: string, journalTaskTypeId: number | null, journalSubTaskTypeId: number | null, entryDate?: string, timeSpent?: number | null) => Promise<void>;
 }
 
-function EditJournalEntryModal({ isOpen, onClose, onSubmit, note }: EditJournalEntryModalProps) {
+function AddJournalEntryModal({ isOpen, onClose, onSubmit }: AddJournalEntryModalProps) {
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [taskTypes, setTaskTypes] = useState<ListItem[]>([]);
     const [subTaskTypes, setSubTaskTypes] = useState<ListItem[]>([]);
     const [selectedTaskTypeId, setSelectedTaskTypeId] = useState<number | null>(null);
     const [selectedSubTaskTypeId, setSelectedSubTaskTypeId] = useState<number | null>(null);
-    const [entryDate, setEntryDate] = useState<string>('');
+    const [entryDate, setEntryDate] = useState<string>(new Date().toISOString());
     const [timeSpent, setTimeSpent] = useState<number | null>(null);
 
     // Fetchers
@@ -32,7 +31,7 @@ function EditJournalEntryModal({ isOpen, onClose, onSubmit, note }: EditJournalE
 
     const fetchSubTaskTypes = async () => {
         try {
-            const items = await apiService.getListItems('JournalSubTaskType');
+            const items = await listsService.getListItems('JournalSubTaskType');
             setSubTaskTypes(items);
         } catch (err) {
             console.error('Error fetching JournalSubTaskType items', err);
@@ -46,26 +45,15 @@ function EditJournalEntryModal({ isOpen, onClose, onSubmit, note }: EditJournalE
                 await fetchTaskTypes();
                 await fetchSubTaskTypes();
             } catch (err) {
-                // errors logged in fetchers
+                console.error('Error:', err);
             }
         })();
     }, [isOpen]);
 
-    // Populate form when note changes
-    useEffect(() => {
-        if (isOpen && note) {
-            setComment(note.comment);
-            setEntryDate(note.entryDate);
-            setSelectedTaskTypeId(note.errorTypeId);
-            setSelectedSubTaskTypeId(note.exitTypeId);
-            setTimeSpent(note.time);
-        }
-    }, [isOpen, note]);
-
     // Filter sub tasks based on selected task type (computed)
     const filtered = selectedTaskTypeId == null ? [] : subTaskTypes.filter(s => s.parentListId === selectedTaskTypeId);
 
-    if (!isOpen || !note) return null;
+    if (!isOpen) return null;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -76,11 +64,15 @@ function EditJournalEntryModal({ isOpen, onClose, onSubmit, note }: EditJournalE
 
         setIsSubmitting(true);
         try {
-            await onSubmit(note.id, comment, selectedTaskTypeId, selectedSubTaskTypeId, entryDate, timeSpent);
+            await onSubmit(comment, selectedTaskTypeId, selectedSubTaskTypeId, entryDate, timeSpent);
+            setComment('');
+            setSelectedTaskTypeId(null);
+            setSelectedSubTaskTypeId(null);
+            setTimeSpent(null);
             onClose();
         } catch (err) {
-            console.error('Failed to update journal entry', err);
-            alert('Failed to update journal entry');
+            console.error('Failed to create journal entry', err);
+            alert('Failed to create journal entry');
         } finally {
             setIsSubmitting(false);
         }
@@ -94,7 +86,7 @@ function EditJournalEntryModal({ isOpen, onClose, onSubmit, note }: EditJournalE
         <div className="modal-overlay" onClick={handleOverlayClick}>
             <div className="modal-content">
                 <div className="modal-header">
-                    <h2>Edit Journal Entry</h2>
+                    <h2>Add Journal Entry</h2>
                     <button className="modal-close-button" onClick={() => !isSubmitting && onClose()} type="button">&times;</button>
                 </div>
 
@@ -144,20 +136,16 @@ function EditJournalEntryModal({ isOpen, onClose, onSubmit, note }: EditJournalE
                                 value={timeSpent ?? ''}
                                 onChange={(e) => setTimeSpent(e.target.value ? Number(e.target.value) : null)}
                                 min="0"
-                                step="1"
+                                step="0.25"
                                 placeholder="Enter time spent in hours"
                                 disabled={isSubmitting}
                             />
-                        </div>
-
-                        <div className="form-info">
-                            <small>Entry ID: {note.id}</small>
                         </div>
                     </div>
 
                     <div className="modal-footer">
                         <button type="button" className="modal-cancel-button" onClick={() => !isSubmitting && onClose()} disabled={isSubmitting}>Cancel</button>
-                        <button type="submit" className="modal-submit-button" disabled={isSubmitting}>Update Entry</button>
+                        <button type="submit" className="modal-submit-button" disabled={isSubmitting}>Add Entry</button>
                     </div>
                 </form>
             </div>
@@ -165,4 +153,4 @@ function EditJournalEntryModal({ isOpen, onClose, onSubmit, note }: EditJournalE
     );
 }
 
-export default EditJournalEntryModal;
+export default AddJournalEntryModal;

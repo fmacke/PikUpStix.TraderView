@@ -179,7 +179,7 @@ namespace TraderView.Infrastructure.DbContexts
                 // Nullable Decimal
                 entity.Property(e => e.Time)
                     .IsRequired(false)
-                    .HasColumnType("decimal(18, 1)");
+                    .HasColumnType("decimal(18, 2)");
 
                 // Nullable Foreign Keys
                 entity.Property(e => e.PositionId).IsRequired(false);

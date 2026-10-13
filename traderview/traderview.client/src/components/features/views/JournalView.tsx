@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
-import AddJournalEntryModal from '../../common/AddJournalEntryModal';
-import EditJournalEntryModal from '../../common/EditJournalEntryModal';
+import AddJournalEntryModal from '../modals/AddJournalEntryModal';
+import EditJournalEntryModal from '../modals/EditJournalEntryModal';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
 import { PaginationControl } from '../../common/PaginationControl';
@@ -108,7 +108,8 @@ function JournalView() {
     };
 
     const handleEditSubmit = async (noteId: number, comment: string, journalTaskTypeId: number | null, journalSubTaskTypeId: number | null, entryDate: string, timeSpent: number | null) => {
-        await apiService.updateNote(noteId, comment, entryDate, journalTaskTypeId, journalSubTaskTypeId, timeSpent);
+        // For journal entries we store task/subtask in errorTypeId/exitTypeId per API spec
+        await notesService.updateNote(noteId, comment, entryDate, null, journalTaskTypeId, journalSubTaskTypeId, timeSpent);
         await loadJournal();
     };
 
