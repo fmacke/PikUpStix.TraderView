@@ -114,7 +114,7 @@ namespace TraderView.Application.Services
             // Aggregate positions cumulatively for weighted cost basis and exposure
             quarter.TotalShares = quarter.Shares;
             quarter.AverageSharePriceUsd = quarter.BuyPriceUsd;
-            quarter.TotalSizeGbp = (quarter.Shares * quarter.BuyPriceGbp) / request.ExchangeRate;
+            quarter.TotalSizeGbp = (quarter.Shares * quarter.BuyPriceGbp);
 
             half.TotalShares = quarter.Shares + half.Shares;
             half.AverageSharePriceUsd = half.TotalShares > 0
