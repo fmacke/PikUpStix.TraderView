@@ -15,8 +15,6 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote, onDeleteNot
     const [tradeTypes, setTradeTypes] = useState<Map<number, string>>(new Map());
     const [errorTypes, setErrorTypes] = useState<Map<number, string>>(new Map());
     const [exitTypes, setexitTypes] = useState<Map<number, string>>(new Map());
-    const [taskTypes, setTaskTypes] = useState<Map<number, string>>(new Map());
-    const [subtaskTypes, setSubtaskTypes] = useState<Map<number, string>>(new Map());
     const [listItemsLoading, setListItemsLoading] = useState(false);
 
     // Fetch list items when component mounts
@@ -39,13 +37,6 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote, onDeleteNot
                 ] : [];
 
                 const results = await Promise.all([...taskAndSubtaskPromises, ...otherTypesPromises]);
-
-                // Create maps for quick lookup
-                const taskTypeMap = new Map(results[0].map((item: { id: number; name: string }) => [item.id, item.name]));
-                const subtaskTypeMap = new Map(results[1].map((item: { id: number; name: string }) => [item.id, item.name]));
-
-                setTaskTypes(taskTypeMap);
-                setSubtaskTypes(subtaskTypeMap);
 
                 // Set detailed variant types if applicable
                 if (variant === 'detailed') {
@@ -89,16 +80,6 @@ function NotesList({ notes, loading, variant = 'simple', onEditNote, onDeleteNot
     const getExitTypeName = (exitTypeId: number | null): string => {
         if (exitTypeId === null || exitTypeId === undefined) return '-';
         return exitTypes.get(exitTypeId) || `Unknown (${exitTypeId})`;
-    };
-
-    const getTaskTypeName = (taskTypeId: number | null): string => {
-        if (taskTypeId === null || taskTypeId === undefined) return '-';
-        return taskTypes.get(taskTypeId) || `Unknown (${taskTypeId})`;
-    };
-
-    const getSubtaskTypeName = (subtaskTypeId: number | null): string => {
-        if (subtaskTypeId === null || subtaskTypeId === undefined) return '-';
-        return subtaskTypes.get(subtaskTypeId) || `Unknown (${subtaskTypeId})`;
     };
 
     const getEntryTime = (entryDate: string): string => {
