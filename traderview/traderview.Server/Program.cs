@@ -40,14 +40,16 @@ public partial class Program
         builder.Services.AddScoped<IPositionRepository>(provider =>
         {
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
-            return new PositionRepository(db);
+            var marketRegimeService = provider.GetRequiredService<ITradingReportService>();
+            return new PositionRepository(db, marketRegimeService);
         });
         builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
         {
             var db = provider.GetRequiredService<AppDbContext>();
             var instrumentService = provider.GetRequiredService<IInstrumentService>();
             var positionService = provider.GetRequiredService<IPositionService>();
-            return new TradeExecutionRepository(db, instrumentService, positionService);
+            var marketRegimeService = provider.GetRequiredService<ITradingReportService>();
+            return new TradeExecutionRepository(db, instrumentService, positionService, marketRegimeService);
         });
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
         {

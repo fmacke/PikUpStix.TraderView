@@ -25,9 +25,9 @@ namespace PikUpStix.TraderView.Services
             await _positionRepository.UpdateAsync(position);
         }
 
-        async Task<int> IPositionService.CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
+        async Task<int> IPositionService.CreatePositionAsync(int instrumentId, DateTime openDate, decimal openPrice, string marketRegime)
         {
-            var positionIdTask = await _positionRepository.CreatePositionAsync(instrumentId, symbol, openDate, openPrice);
+            var positionIdTask = await _positionRepository.CreatePositionAsync(instrumentId, openDate, openPrice, marketRegime);
             return positionIdTask;
         }
 

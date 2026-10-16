@@ -406,7 +406,9 @@ namespace TraderView.Infrastructure.DbContexts
                 entity.Property(e => e.Status)
                     .HasMaxLength(20)
                     .HasDefaultValue("Open");
-
+                entity.Property(e => e.MarketRegime)
+                    .HasMaxLength(50)
+                    .IsRequired(false);
                 entity.HasOne(d => d.Instrument).WithMany(p => p.Positions)
                     .HasForeignKey(d => d.InstrumentId)
                     .OnDelete(DeleteBehavior.ClientSetNull)

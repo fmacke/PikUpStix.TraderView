@@ -10,7 +10,7 @@ public interface IPositionRepository : IRepository<Position>
 {
     Task<Position?> GetOpenPositionAsync(int instrumentId);
 
-    Task<int> CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice);
+    Task<int> CreatePositionAsync(int instrumentId, DateTime openDate, decimal openPrice, string marketRegime);
 
     Task<List<Position>> GetAllPositionsAsync();
 

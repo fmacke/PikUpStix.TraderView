@@ -4,16 +4,19 @@ using TraderView.Application.Interfaces.Repositories;
 using TraderView.Domain.Entities;
 using TraderView.Infrastructure.DbContexts;
 using System.Linq;
+using TraderView.Application.Interfaces.Services;
 
 namespace TraderView.Infrastructure.Repositories
 {
     public class PositionRepository : EfBaseRepository<Position>, IPositionRepository
     {
         private readonly AppDbContext _context;
+        private readonly ITradingReportService _marketRegimeService;
 
-        public PositionRepository(AppDbContext db) : base(db)
+        public PositionRepository(AppDbContext db, ITradingReportService marketRegimeService) : base(db)
         {
             _context = db;
+            _marketRegimeService = marketRegimeService ?? throw new ArgumentNullException(nameof(marketRegimeService));
         }
 
         /// <summary>
@@ -33,17 +36,16 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Creates a new position and returns its ID.
         /// </summary>
-        async Task<int> IPositionRepository.CreatePositionAsync(int instrumentId, string symbol, DateTime openDate, decimal openPrice)
+        async Task<int> IPositionRepository.CreatePositionAsync(int instrumentId, DateTime openDate, decimal openPrice, string marketRegime)
         {
-            _ = symbol;
-
             var position = new Position
             {
                 InstrumentId = instrumentId,
                 OpenDate = openDate,
                 Status = "Open",
                 LastReportedPrice = openPrice,
-                LastReportedPriceUpdated = DateTime.UtcNow
+                LastReportedPriceUpdated = DateTime.UtcNow,
+                MarketRegime = marketRegime
             };
 
             await _context.Set<Position>().AddAsync(position);
@@ -188,7 +190,8 @@ namespace TraderView.Infrastructure.Repositories
                 // Ensure instrument exists before upserting position
                 if (position.Id == 0)
                 {
-                    await ((IPositionRepository)this).CreatePositionAsync(position.InstrumentId, position.Instrument?.DataName ?? "Unknown", position.OpenDate, position.LastReportedPrice ?? 0m);
+                    var marketRegime = await _marketRegimeService.DetermineRegimeAsync(position.OpenDate, new CancellationToken());
+                    await ((IPositionRepository)this).CreatePositionAsync(position.InstrumentId, position.OpenDate, position.LastReportedPrice ?? 0m, marketRegime);
                     insertedCount++;
                 }
                 else
