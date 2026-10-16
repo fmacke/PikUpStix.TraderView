@@ -14,7 +14,7 @@ namespace PikUpStix.TraderView.Services
     public class ReportRunnerService : IReportRunnerService
     {
         private readonly IReportFetchingService _reportFetchingService;
-        private readonly ITradeExecutionRepository _tradeExecutionRepository;
+        private readonly ITradeExecutionService _tradeExecutionService;
         private readonly IPositionService _positionService;
         private readonly IEquitySummaryService _equitySummaryService;
         private readonly IInstrumentService _instrumentService;
@@ -25,10 +25,10 @@ namespace PikUpStix.TraderView.Services
         const int maxRetries = 3;
         const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
-        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionRepository tradeExecutionRepository, IPositionService positionService,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IConfiguration config)
+        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionService tradeExecutionService, IPositionService positionService,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
-            _tradeExecutionRepository = tradeExecutionRepository;
+            _tradeExecutionService = tradeExecutionService;
             _positionService = positionService;
             _equitySummaryService = equitySummaryService;
             _instrumentService = instrumentService;
@@ -50,10 +50,10 @@ namespace PikUpStix.TraderView.Services
             {
                 IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
                 await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
-                await _tradeExecutionRepository.UpsertTradeExecutionsAsync(mainReport.Trades);
+                await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades);
                 await UpdateOpenPositionPrices();
                 await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
-                var executions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
+                var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
 
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
                 //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
@@ -96,7 +96,7 @@ namespace PikUpStix.TraderView.Services
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
             // Insert instruments first, then trade confirmations
             await _instrumentService.UpsertInstrumentsAsync(todayReport.TradeConfirms, _marketDataService.SourceName).ConfigureAwait(false);
-            await _tradeExecutionRepository.InsertTradeConfirmationsAsync(todayReport.TradeConfirms);
+            await _tradeExecutionService.UpsertTradeConfirmationsAsync(todayReport.TradeConfirms);
         }
 
         private async Task SaveEquitySummaries(XDocument todayReportXml)

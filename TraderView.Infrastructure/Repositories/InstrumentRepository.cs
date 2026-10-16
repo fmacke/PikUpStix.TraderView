@@ -11,9 +11,11 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public class InstrumentRepository : EfBaseRepository<Instrument>, IInstrumentRepository
     {
-        public InstrumentRepository(AppDbContext db, IDbConnectionFactory connectionFactory) : base(db)
+        public InstrumentRepository(AppDbContext db)
+            : base(db)
         {
-        }        
+            
+        }
         public async Task UpsertInstrumentsAsync(List<TradeConfirm> tradeConfirms, string source)
         {
             await UpsertInstrumentsAsync(ConvertToTradeExecute(tradeConfirms), source);

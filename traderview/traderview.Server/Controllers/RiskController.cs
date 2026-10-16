@@ -33,7 +33,7 @@ namespace traderview.Server.Controllers
         {       
             try
             {
-                var executions = await _tradeExecutionService.GetTradeExecutions();
+                var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
                 _tradeHistoryService.CreateTradeHistoryReport(executions);
                 var trades = await _riskMatrixService.CalculateExpectedRoi(_tradeHistoryService.RiskMatrixCalculationRequest);
                 var tradesDto = _mapper.Map<CurrentPerformanceResultDto>(trades);
@@ -55,7 +55,7 @@ namespace traderview.Server.Controllers
         {
             try
             {
-                var executions = await _tradeExecutionService.GetTradeExecutions();
+                var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
                 var inputs = _resultsBasedAssumptionForecastService.GetInputsFromTradingHistory(portfolioSize, positionSizePercent, desiredReturnPercent, executions);
                 var outputsDto = _mapper.Map<DesiredPerformanceResultsDto>(_resultsBasedAssumptionForecastService.CalculateForecast(inputs)  );
                 return Ok(outputsDto);

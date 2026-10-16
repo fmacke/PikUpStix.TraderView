@@ -30,12 +30,10 @@ public partial class Program
         });
 
         // Register repositories 
-        // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
         builder.Services.AddScoped<IInstrumentRepository>(provider =>
         {
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
-            var factory = provider.GetRequiredService<IDbConnectionFactory>();
-            return new InstrumentRepository(db, factory);
+            return new InstrumentRepository(db);
         });
         builder.Services.AddScoped<IPositionRepository>(provider =>
         {
@@ -45,9 +43,7 @@ public partial class Program
         builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
         {
             var db = provider.GetRequiredService<AppDbContext>();
-            var instrumentService = provider.GetRequiredService<IInstrumentService>();
-            var positionService = provider.GetRequiredService<IPositionService>();
-            return new TradeExecutionRepository(db, instrumentService, positionService);
+            return new TradeExecutionRepository(db);
         });
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
         {
@@ -98,11 +94,11 @@ public partial class Program
 
         // Register custom services        
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
-        builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();
-        builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
+        builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();        
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
         builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>();
         builder.Services.AddScoped<IInstrumentService, InstrumentService>();
+        builder.Services.AddScoped<ITradingReportService, TradingReportService>();
         builder.Services.AddScoped<IPositionService, PositionService>(provider =>
         {
             var positionRepo = provider.GetRequiredService<IPositionRepository>();
@@ -154,6 +150,7 @@ public partial class Program
         builder.Services.AddScoped<ITradeCalculatorService, TradeCalculatorService>();
         builder.Services.AddScoped<IEquitySummaryService, EquitySummaryService>();
         builder.Services.AddScoped<IStrategyService, StrategyService>();
+        builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
 
 
         builder.Services.AddControllers();

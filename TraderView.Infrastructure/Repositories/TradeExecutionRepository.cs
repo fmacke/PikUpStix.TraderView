@@ -12,108 +12,15 @@ namespace TraderView.Infrastructure.Repositories
     /// </summary>
     public class TradeExecutionRepository : EfBaseRepository<TradeExecution>, ITradeExecutionRepository
     {
-        private readonly IInstrumentService _instrumentService;
-        private readonly IPositionService _positionService;
-        private readonly ITradingReportService _marketRegimeService;
         private readonly AppDbContext _context;
 
-        public TradeExecutionRepository(AppDbContext db, IInstrumentService instrumentService, IPositionService positionService) 
+        public TradeExecutionRepository(AppDbContext db) 
             : base(db)
         {
-            _instrumentService = instrumentService;
-            _positionService = positionService ?? throw new ArgumentNullException(nameof(positionService));
             _context = db ?? throw new ArgumentNullException(nameof(db));
         }
 
-        /// <summary>
-        /// Inserts or updates trade executions from a report
-        /// </summary>
-        async Task ITradeExecutionRepository.UpsertTradeExecutionsAsync(List<TradeExecution> trades)
-        {
-            if (trades == null || !trades.Any())
-            {
-                Console.WriteLine("No trades to insert.");
-                return;
-            }
-
-            foreach (var trade in trades)
-            {
-                string ibExecID = trade.IbExecId;
-                if (string.IsNullOrEmpty(ibExecID))
-                {
-                    continue;
-                }
-
-                var executionExists = await TradeExistsAsync(ibExecID);
-
-                if (!executionExists)
-                {
-                    try
-                    {
-                        //trade.Position.InstrumentId = Convert.ToInt32(await _instrumentService.GetInstrumentIdByConIdAsync(trade.Conid));
-                        var openPosition = await _positionService.GetOpenPositionAsync(trade.Position.InstrumentId);
-                        if (openPosition != null)
-                        {
-                            // Link by FK only. Do NOT assign the navigation property from an entity
-                            // that may be tracked by another context or service instance — that
-                            // results in "another instance with the same key value is already being tracked".
-                            trade.PositionId = openPosition.Id;
-                            trade.Position = null;
-                        }
-                        else
-                        {
-                            // No open position — create a fresh Position instance so EF will add it
-                            // together with the TradeExecution. Avoid reusing any Position instance
-                            // that might have been created or tracked elsewhere.
-                            var newPosition = new Position
-                            {
-                                InstrumentId = trade.Position?.InstrumentId ?? 0,
-                                OpenDate = trade.TradeDate,
-                                Status = "Open",
-                                LastReportedPrice = trade.Position?.LastReportedPrice,
-                                LastReportedPriceUpdated = trade.Position?.LastReportedPriceUpdated
-                            };
-
-                            trade.Position = newPosition;
-                            trade.PositionId = null; // let EF set FK when saving
-                        }
-                        trade.Id = await CreateTradeExecutionAsync(trade);
-                        var totalQuantity = await GetTotalQuantityForPositionAsync(trade.PositionId ?? 0);
-                        if (totalQuantity == 0)
-                            await _positionService.ClosePositionAsync(trade.PositionId ?? 0, trade.DateTime);
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error inserting trade with ibExecID {ibExecID}: {ex.Message}");
-                    }
-                }
-                else
-                {
-                    var tradeExecInDb = await GetTradeExecutionByExecIDAsync(ibExecID);
-                    if (tradeExecInDb != null && !tradeExecInDb.TransactionId.HasValue)
-                    {
-                        // Entry was made by TradeConfirmation so will be missing key details. Update the record with the new trade execution details.
-                        trade.Id = tradeExecInDb.Id; // Ensure we have the correct Id for the update
-                        trade.PositionId = tradeExecInDb.PositionId; // Preserve the existing PositionId
-
-                        // Map incoming values into the tracked entity to avoid multiple tracked
-                        // instances with the same key. Copy scalar values from the incoming
-                        // trade into the tracked tradeExecInDb and persist.
-                        try
-                        {
-                            _context.Entry(tradeExecInDb).CurrentValues.SetValues(trade);
-                            await UpdateAsync(tradeExecInDb);
-                        }
-                        catch (Exception ex)
-                        {
-                            Console.WriteLine($"Error updating trade execution (Id: {tradeExecInDb.Id}): {ex.Message}");
-                        }
-                    }
-                }
-            }
-        }
-
-        private async Task<bool> TradeExistsAsync(string ibExecID)
+        async Task<bool> ITradeExecutionRepository.TradeExecutionExistsAsync(string ibExecID)
         {
             try
             {
@@ -127,7 +34,7 @@ namespace TraderView.Infrastructure.Repositories
             }
         }
 
-        private async Task<TradeExecution?> GetTradeExecutionByExecIDAsync(string ibExecID)
+        async Task<TradeExecution?> ITradeExecutionRepository.GetTradeExecutionByExecIDAsync(string ibExecID)
         {
             return await GetSingleAsync(new TradeExecutionByIbExecIdSpecification(ibExecID));
         }
@@ -135,7 +42,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Gets the total quantity for a position by summing all trade executions
         /// </summary>
-        private async Task<decimal> GetTotalQuantityForPositionAsync(int positionId)
+        async Task<decimal> ITradeExecutionRepository.GetTotalQuantityForPositionAsync(int positionId)
         {
             try
             {
@@ -159,66 +66,6 @@ namespace TraderView.Infrastructure.Repositories
             return (await GetAsync(new AllTradeExecutionsSpecification())).ToList();
         }
 
-        /// <summary>
-        /// Inserts or updates today's trade confirmations
-        /// </summary>
-        async Task ITradeExecutionRepository.InsertTradeConfirmationsAsync(List<TradeConfirm> tradeConfirms)
-        {
-            if (tradeConfirms == null || !tradeConfirms.Any())
-            {
-                Console.WriteLine("No trade confirmations to process.");
-                return;
-            }
-
-            foreach (var tradeConfirm in tradeConfirms)
-            {
-                if (string.IsNullOrEmpty(tradeConfirm.IbExecID))
-                {
-                    Console.WriteLine("TradeExecution confirmation missing execID. Skipping.");
-                    continue;
-                }
-
-                if (!await TradeExistsAsync(tradeConfirm.IbExecID))
-                {
-                    var instrumentId = await _instrumentService.GetInstrumentIdByConIdAsync(tradeConfirm.Conid);
-
-                    if (instrumentId.HasValue)
-                    {
-                        Position? existingPosition = null;
-
-                        // Check for open position for the trade's symbol and instrument
-                        existingPosition = await _positionService.GetOpenPositionAsync(instrumentId.Value);
-
-                        if (existingPosition != null)
-                        {
-                            var openDirection = existingPosition.TradeExecutions.MinBy(x => x.Id).BuySell;
-                            tradeConfirm.PositionId = existingPosition.Id;
-                            tradeConfirm.OpenCloseIndicator = "O";
-                            if (tradeConfirm.BuySell != openDirection)
-                            {
-                                tradeConfirm.OpenCloseIndicator = "C";
-                                if (existingPosition?.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity == 0)
-                                {
-                                    await _positionService.ClosePositionAsync(existingPosition.Id, tradeConfirm.TradeDate);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            tradeConfirm.OpenCloseIndicator = "O";                            
-                            tradeConfirm.PositionId = await _positionService.CreatePositionAsync(instrumentId.Value, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
-                        }
-                        tradeConfirm.Id = await CreateTradeConfirmationAsync(tradeConfirm);
-                    }
-                    else
-                    {
-                        Console.WriteLine($"Instrument not found for symbol {tradeConfirm.Symbol} with Conid {tradeConfirm.Conid}. Skipping trade confirmation.");
-                    }
-                }
-            }              
-            Console.WriteLine("Successfully processed today's trade confirmations.");
-        }
-
         private async Task UpdatePositionAsync(int positionId, DateTime latestPriceUpdated, decimal latestPrice, string openCloseIndicator)
         {
             try
@@ -238,30 +85,7 @@ namespace TraderView.Infrastructure.Repositories
                 throw;
             }
         }
-
-        
-
-        public async Task UpdateTradeExecutionAsync(TradeExecution execution)
-        {
-            await UpdateAsync(execution);
-        }
-
-        private async Task<int> CreateTradeExecutionAsync(TradeExecution trade)
-        {
-            try
-            {
-                var createdTrade = await AddAsync(trade);
-                Console.WriteLine($"Created new Trade Execution (Id: {createdTrade.Id}) for symbol {trade.Symbol}, on {trade.TradeDate:yyyy-MM-dd}");
-                return createdTrade.Id;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error inserting trade execution for symbol {trade.Symbol}: {ex.Message}");
-                throw;
-            }
-        }
-
-        private async Task<int> CreateTradeConfirmationAsync(TradeConfirm tradeConfirm)
+        async Task<int> ITradeExecutionRepository.CreateTradeConfirmationAsync(TradeConfirm tradeConfirm)
         {
             try
             {
@@ -377,11 +201,6 @@ namespace TraderView.Infrastructure.Repositories
 		/// Gets trade executions for a specific ConId and AccountId, ordered by trade date and time
 		/// </summary>
 		async Task<List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>> ITradeExecutionRepository.GetTradeExecutionsByConIdAndAccountAsync(long? conid, string accountId)
-		{
-			return await GetTradeExecutionsByConIdAndAccountAsync(conid, accountId);
-		}
-
-		private async Task<List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>> GetTradeExecutionsByConIdAndAccountAsync(long? conid, string accountId)
 		{
 			try
 			{

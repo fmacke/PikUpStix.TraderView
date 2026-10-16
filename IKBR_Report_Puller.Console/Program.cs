@@ -38,8 +38,8 @@ namespace TraderView.Console
                     })
                     .ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
                     {
-                        PooledConnectionLifetime = TimeSpan.FromMinutes(2),
-                        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(1)
+                        PooledConnectionLifetime = TimeSpan.FromMinutes(15),
+                        PooledConnectionIdleTimeout = TimeSpan.FromMinutes(14)
                     });
 
                     // Register DB connection factory from configuration
@@ -58,19 +58,16 @@ namespace TraderView.Console
 
                     // No AutoMapper registration here; repository uses EF Core CurrentValues.SetValues for mapping
 
-                    // Register repositories 
-                    // Note: InstrumentRepository must be registered before TradeExecutionRepository due to dependency
+                    // Register Repositories 
                     services.AddScoped<IInstrumentRepository>(provider =>
                     {
                         AppDbContext db = provider.GetRequiredService<AppDbContext>();
-                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        return new InstrumentRepository(db, factory);
+                        return new InstrumentRepository(db);
                     });
                     services.AddScoped<ITradingReportService, TradingReportService>();
                     services.AddScoped<IPositionRepository>(provider =>
                     {
                         AppDbContext db = provider.GetRequiredService<AppDbContext>();
-                        var factory = provider.GetRequiredService<IDbConnectionFactory>();
                         return new PositionRepository(db);
                     });
 
@@ -79,9 +76,7 @@ namespace TraderView.Console
                     services.AddScoped<ITradeExecutionRepository>(provider =>
                     {
                         var db = provider.GetRequiredService<AppDbContext>();
-                        var instrumentService = provider.GetRequiredService<IInstrumentService>();
-                        var positionService = provider.GetRequiredService<IPositionService>();
-                        return new TradeExecutionRepository(db, instrumentService, positionService);
+                        return new TradeExecutionRepository(db);
                     });
 
                     services.AddScoped<IHistoricalDataRepository>(provider =>
@@ -108,7 +103,8 @@ namespace TraderView.Console
                         return new EquitySummaryRepository(db);
                     });
 
-                    // Register market data service (FinancialModellingPrepService)
+                    // Register Services
+                    services.AddScoped<ITradingReportService, TradingReportService>();
                     services.AddScoped<FinancialModellingPrepService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
@@ -122,8 +118,6 @@ namespace TraderView.Console
 
                         return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, instrumentRepository, apiKey, baseUrl, outputPath);
                     });
-
-                    // Register company screening service (FinancialModellingPrepCompanyScreeningService)
                     services.AddScoped<FinancialModellingPrepCompanyScreeningService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
@@ -133,14 +127,10 @@ namespace TraderView.Console
                         var baseUrl = config["FinancialModelingPrep:BaseUrl"];
                         return new FinancialModellingPrepCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
                     });
-
-                    // Register the default IMarketDataService
                     services.AddScoped<IMarketDataService>(provider =>
                     {
                         return provider.GetRequiredService<FinancialModellingPrepService>();
                     });
-
-                    // Register the default ICompanyScreeningService
                     services.AddScoped<ICompanyScreeningService>(provider =>
                     {
                         return provider.GetRequiredService<FinancialModellingPrepCompanyScreeningService>();
@@ -153,16 +143,14 @@ namespace TraderView.Console
 
                         // Pass the factory as the second argument
                         return new IKBRReportFetchingService(config, httpClientFactory);
-                    });
-                    services.AddScoped<IReportRunnerService, ReportRunnerService>();
+                    });                    
                     services.AddScoped<IExcelReportService, ExcelReportService>();
-
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
                     services.AddScoped<ICurrentPerformanceService, CurrentPerformanceService>();
                     services.AddScoped<IEquitySummaryService, EquitySummaryService>();
-                    
+                    services.AddScoped<IReportRunnerService, ReportRunnerService>();
                     services.AddScoped<Application>();
                 })
                 .Build();

@@ -11,8 +11,9 @@ namespace TraderView.Application.Interfaces.Repositories
         Task<TradeSummary?> GetTradeSummaryByPositionIdAsync(int positionId);
         Task<List<TradeExecution>> GetTradeExecutionsAsync();
         Task<List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>> GetTradeExecutionsByConIdAndAccountAsync(long? conid, string accountId);        
-        Task InsertTradeConfirmationsAsync(List<TradeConfirm> tradeConfirms);
-        Task UpsertTradeExecutionsAsync(List<TradeExecution> trades);
-
+        Task<int> CreateTradeConfirmationAsync(TradeConfirm tradeConfirm);
+        Task<bool> TradeExecutionExistsAsync(string ibExecId);
+        Task<decimal> GetTotalQuantityForPositionAsync(int positionId);
+        Task<TradeExecution?> GetTradeExecutionByExecIDAsync(string ibExecID);
     }
 }
