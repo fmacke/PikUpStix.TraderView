@@ -26,7 +26,7 @@ namespace PikUpStix.TraderView.Services
             _tradeHistoryReportService = tradeHistoryReportService;
         }
 
-        public async Task CreateExcelFileReport(List<Position> openPositions, List<TradeExecution> tradeExecutions, string outputFilePath)
+        public async Task CreateExcelFileReport(IReadOnlyList<Position> openPositions, IReadOnlyList<TradeExecution> tradeExecutions, string outputFilePath)
         {
             try
             {
@@ -41,7 +41,7 @@ namespace PikUpStix.TraderView.Services
                 using (var package = new ExcelPackage())
                 {
                     await CreateOpenPositionsWorkSheet(package, openPositions);                   
-                    _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
+                    _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions.ToList());
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "TradeExecution History");
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution History Aggregated");
                     CreateVisualReport(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution Report");
@@ -62,7 +62,7 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private async Task CreateOpenPositionsWorkSheet(ExcelPackage package, List<Position> openPositions)
+        private async Task CreateOpenPositionsWorkSheet(ExcelPackage package, IReadOnlyList<Position> openPositions)
         {
             // Prepare the report data
             var reportData = await PrepareOpenPositionReportData(openPositions);

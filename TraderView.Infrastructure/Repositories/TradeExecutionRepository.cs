@@ -17,12 +17,11 @@ namespace TraderView.Infrastructure.Repositories
         private readonly ITradingReportService _marketRegimeService;
         private readonly AppDbContext _context;
 
-        public TradeExecutionRepository(AppDbContext db, IInstrumentService instrumentService, IPositionService positionService, ITradingReportService marketRegimeService) 
+        public TradeExecutionRepository(AppDbContext db, IInstrumentService instrumentService, IPositionService positionService) 
             : base(db)
         {
             _instrumentService = instrumentService;
             _positionService = positionService ?? throw new ArgumentNullException(nameof(positionService));
-            _marketRegimeService = marketRegimeService ?? throw new ArgumentNullException(nameof(marketRegimeService));
             _context = db ?? throw new ArgumentNullException(nameof(db));
         }
 
@@ -206,9 +205,8 @@ namespace TraderView.Infrastructure.Repositories
                         }
                         else
                         {
-                            tradeConfirm.OpenCloseIndicator = "O";
-                            var marketRegime = await _marketRegimeService.DetermineRegimeAsync(tradeConfirm.TradeDate, new CancellationToken());
-                            tradeConfirm.PositionId = await _positionService.CreatePositionAsync(instrumentId.Value, tradeConfirm.TradeDate, tradeConfirm.TradePrice, marketRegime);
+                            tradeConfirm.OpenCloseIndicator = "O";                            
+                            tradeConfirm.PositionId = await _positionService.CreatePositionAsync(instrumentId.Value, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
                         }
                         tradeConfirm.Id = await CreateTradeConfirmationAsync(tradeConfirm);
                     }

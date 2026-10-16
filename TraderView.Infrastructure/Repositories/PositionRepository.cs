@@ -11,12 +11,10 @@ namespace TraderView.Infrastructure.Repositories
     public class PositionRepository : EfBaseRepository<Position>, IPositionRepository
     {
         private readonly AppDbContext _context;
-        private readonly ITradingReportService _marketRegimeService;
 
-        public PositionRepository(AppDbContext db, ITradingReportService marketRegimeService) : base(db)
+        public PositionRepository(AppDbContext db) : base(db)
         {
             _context = db;
-            _marketRegimeService = marketRegimeService ?? throw new ArgumentNullException(nameof(marketRegimeService));
         }
 
         /// <summary>
@@ -169,40 +167,6 @@ namespace TraderView.Infrastructure.Repositories
             }
 
             return positions;
-        }
-
-        /// <summary>
-        /// Inserts or updates positions in the database
-        /// </summary>
-        async Task IPositionRepository.UpsertPositionsAsync(List<Position> positions)
-        {
-            if (positions == null || !positions.Any())
-            {
-                Console.WriteLine("No positions to upsert.");
-                return;
-            }
-
-            int insertedCount = 0;
-            int updatedCount = 0;
-
-            foreach (var position in positions)
-            {
-                // Ensure instrument exists before upserting position
-                if (position.Id == 0)
-                {
-                    var marketRegime = await _marketRegimeService.DetermineRegimeAsync(position.OpenDate, new CancellationToken());
-                    await ((IPositionRepository)this).CreatePositionAsync(position.InstrumentId, position.OpenDate, position.LastReportedPrice ?? 0m, marketRegime);
-                    insertedCount++;
-                }
-                else
-                {
-                    await ((IPositionRepository)this).UpdatePositionAsync(position.Id, DateTime.Now, position.LastReportedPrice ?? 0m, "Open");
-                    updatedCount++;
-                }
-            }
-            Console.WriteLine($"Successfully processed {positions.Count} positions: {insertedCount} inserted, {updatedCount} updated.");
-        }
-
-        
+        }        
     }
 }

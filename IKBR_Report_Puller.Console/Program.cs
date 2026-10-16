@@ -71,8 +71,7 @@ namespace TraderView.Console
                     {
                         AppDbContext db = provider.GetRequiredService<AppDbContext>();
                         var factory = provider.GetRequiredService<IDbConnectionFactory>();
-                        var marketRegimeService = provider.GetRequiredService<ITradingReportService>();
-                        return new PositionRepository(db, marketRegimeService);
+                        return new PositionRepository(db);
                     });
 
                     services.AddScoped<IInstrumentService, InstrumentService>();
@@ -82,8 +81,7 @@ namespace TraderView.Console
                         var db = provider.GetRequiredService<AppDbContext>();
                         var instrumentService = provider.GetRequiredService<IInstrumentService>();
                         var positionService = provider.GetRequiredService<IPositionService>();
-                        var marketRegimeService = provider.GetRequiredService<ITradingReportService>();
-                        return new TradeExecutionRepository(db, instrumentService, positionService, marketRegimeService);
+                        return new TradeExecutionRepository(db, instrumentService, positionService);
                     });
 
                     services.AddScoped<IHistoricalDataRepository>(provider =>

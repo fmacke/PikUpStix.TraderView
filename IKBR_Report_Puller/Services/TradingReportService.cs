@@ -22,6 +22,7 @@ namespace TraderView.Application.Services
             _historicalDataRepo = historicalDataRepo ?? throw new ArgumentNullException(nameof(historicalDataRepo));
         }
 
+
         public async Task<string> DetermineRegimeAsync(DateTime openDate, CancellationToken cancellationToken)
         {
             // Request enough history to compute 200-day SMA; repository returns candles for the range.
@@ -31,7 +32,7 @@ namespace TraderView.Application.Services
             var ordered = candles.OrderBy(c => c.Date).ToList();
             if (ordered.Count < 200) return "Unknown";
 
-            var currentClose = ordered.Last().ClosePrice;
+            var currentClose = Convert.ToDecimal(ordered.Last().ClosePrice);
 
             // Guard against insufficient subranges
             var last50 = ordered.Skip(Math.Max(0, ordered.Count - 50)).Select(c => c.ClosePrice);

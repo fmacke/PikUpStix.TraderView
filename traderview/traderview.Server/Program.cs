@@ -40,16 +40,14 @@ public partial class Program
         builder.Services.AddScoped<IPositionRepository>(provider =>
         {
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
-            var marketRegimeService = provider.GetRequiredService<ITradingReportService>();
-            return new PositionRepository(db, marketRegimeService);
+            return new PositionRepository(db);
         });
         builder.Services.AddScoped<ITradeExecutionRepository>(provider =>
         {
             var db = provider.GetRequiredService<AppDbContext>();
             var instrumentService = provider.GetRequiredService<IInstrumentService>();
             var positionService = provider.GetRequiredService<IPositionService>();
-            var marketRegimeService = provider.GetRequiredService<ITradingReportService>();
-            return new TradeExecutionRepository(db, instrumentService, positionService, marketRegimeService);
+            return new TradeExecutionRepository(db, instrumentService, positionService);
         });
         builder.Services.AddScoped<IHistoricalDataRepository>(provider =>
         {
@@ -108,7 +106,8 @@ public partial class Program
         builder.Services.AddScoped<IPositionService, PositionService>(provider =>
         {
             var positionRepo = provider.GetRequiredService<IPositionRepository>();
-            return new PositionService(positionRepo);
+            var marketRegimeService = provider.GetRequiredService<ITradingReportService>();
+            return new PositionService(positionRepo, marketRegimeService);
         });
         builder.Services.AddScoped<IPositionCalculatorService, PositionCalculatorService>(provider =>
         {

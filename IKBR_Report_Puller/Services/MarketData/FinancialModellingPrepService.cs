@@ -101,7 +101,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             }
         }
 
-        async Task IMarketDataService.FetchAndSaveChartData(List<HistoricalTrade> trades)
+        async Task IMarketDataService.FetchAndSaveChartData(IReadOnlyList<HistoricalTrade> trades)
         {
             foreach (var trade in trades)
             {
@@ -130,7 +130,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             }
         }
 
-        async Task IMarketDataService.FetchAndSaveChartData(List<string> symbols, int lookBackDays)
+        async Task IMarketDataService.FetchAndSaveChartData(IReadOnlyList<string> symbols, int lookBackDays)
         {
             foreach (var symbol in symbols)
             {
@@ -163,7 +163,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             }
         }
 
-        async Task IMarketDataService.FetchLatestPrices(List<Position> positions)
+        async Task IMarketDataService.FetchLatestPrices(IReadOnlyList<Position> positions)
         {
             foreach (var position in positions)
             {

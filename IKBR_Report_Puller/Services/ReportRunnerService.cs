@@ -15,7 +15,7 @@ namespace PikUpStix.TraderView.Services
     {
         private readonly IReportFetchingService _reportFetchingService;
         private readonly ITradeExecutionRepository _tradeExecutionRepository;
-        private readonly IPositionRepository _positionRepository;
+        private readonly IPositionService _positionService;
         private readonly IEquitySummaryService _equitySummaryService;
         private readonly IInstrumentService _instrumentService;
         private readonly IExcelReportService _excelReportService;
@@ -25,11 +25,11 @@ namespace PikUpStix.TraderView.Services
         const int maxRetries = 3;
         const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
-        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionRepository tradeExecutionRepository, IPositionRepository positionRepository,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IConfiguration config)
+        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionRepository tradeExecutionRepository, IPositionService positionService,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
             _tradeExecutionRepository = tradeExecutionRepository;
-            _positionRepository = positionRepository;
+            _positionService = positionService;
             _equitySummaryService = equitySummaryService;
             _instrumentService = instrumentService;
             _excelReportService = excelReportService;
@@ -62,7 +62,7 @@ namespace PikUpStix.TraderView.Services
 
                 if (writeOutputtoExcel)
                 {
-                    var openPositions = await _positionRepository.GetOpenPositionsAsync();
+                    var openPositions = await _positionService.GetOpenPositionsAsync();
                     await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
                     await WriteTodayReportToExcel(todayReportXml);
                 }
@@ -164,9 +164,9 @@ namespace PikUpStix.TraderView.Services
 
         private async Task UpdateOpenPositionPrices()
         {
-            var openPositions = await _positionRepository.GetOpenPositionsAsync();
+            var openPositions = await _positionService.GetOpenPositionsAsync();
             await _marketDataService.FetchLatestPrices(openPositions);
-            await _positionRepository.UpsertPositionsAsync(openPositions);
+            await _positionService.UpsertPositionsAsync(openPositions);
         }
 
         private async Task<string> WriteTodayReportToExcel(XDocument todayReportXml) 
