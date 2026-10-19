@@ -4,4 +4,5 @@ export { default as notesService } from './notesService';
 export { default as riskService } from './riskService';
 export { default as syncService } from './syncService';
 export { default as positionsService } from './positionsService';
+export { default as marketDataService } from './marketDataService';
 export { default as listsService } from './listsService';

@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { notesService, tradeService, positionsService, syncService } from '../../../services';
+import MarketRegime from '../../trade/MarketRegime';
 import type { OpenPosition, CreateNoteRequest, Note, TradeExecution } from '../../../types/api';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
@@ -290,6 +291,9 @@ function OpenPositionsView() {
             <div className="open-positions-header">
                 <h1>Open Positions</h1>
                 <div className="header-actions">
+                    <div style={{ display: 'flex', alignItems: 'center', marginRight: 12 }}>
+                        <MarketRegime />
+                    </div>
                     <button onClick={async () => {
                         try {
                             const blob = await positionsService.downloadCompoundPositionsReport();
