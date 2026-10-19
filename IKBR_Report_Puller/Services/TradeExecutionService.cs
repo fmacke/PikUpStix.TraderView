@@ -30,6 +30,10 @@ namespace TraderView.Application.Services
         {
             return await _repository.GetTradeExecutionsByPositionIdAsync(positionId);
         }
+        async Task<TradeSummary?> ITradeExecutionService.GetTradeSummaryByPositionIdAsync(int positionId)
+        {
+            return await _repository.GetTradeSummaryByPositionIdAsync(positionId);
+        }
 
         async Task ITradeExecutionService.UpsertTradeExecutionsAsync(IReadOnlyList<TradeExecution> trades)
         {
@@ -134,7 +138,7 @@ namespace TraderView.Application.Services
                 }
             }
         }
-        async Task ITradeExecutionService.UpsertTradeConfirmationsAsync(IReadOnlyList<TradeConfirm> tradeConfirms)
+        async Task ITradeExecutionService.UpsertTradeConfirmationsAsync(IReadOnlyList<TradeConfirm> tradeConfirms, string currentMarketRegime)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
             {
@@ -178,7 +182,7 @@ namespace TraderView.Application.Services
                         else
                         {
                             tradeConfirm.OpenCloseIndicator = "O";
-                            tradeConfirm.PositionId = await _positionService.CreatePositionAsync(instrumentId.Value, tradeConfirm.TradeDate, tradeConfirm.TradePrice);
+                            tradeConfirm.PositionId = await _positionService.CreatePositionAsync(instrumentId.Value, tradeConfirm.TradeDate, tradeConfirm.TradePrice, currentMarketRegime);
                         }
                         tradeConfirm.Id = await _repository.CreateTradeConfirmationAsync(tradeConfirm);
                     }

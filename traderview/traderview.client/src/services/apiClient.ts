@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
 
@@ -8,6 +9,8 @@ const apiClient = axios.create({
     headers: {
         'Content-Type': 'application/json',
     },
+    // default timeout so client doesn't hang indefinitely when backend is unreachable
+    timeout: 10000,
     validateStatus: (status) => status >= 200 && status < 300,
 });
 
@@ -34,21 +37,21 @@ apiClient.interceptors.response.use(
 );
 
 export const api = {
-    get: async <T = any>(url: string, config?: AxiosRequestConfig) => {
+    get: async <T = unknown>(url: string, config?: AxiosRequestConfig) => {
         const response = await apiClient.get<T>(url, config);
-        return response.data;
+        return response.data as T;
     },
-    post: async <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => {
+    post: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) => {
         const response = await apiClient.post<T>(url, data, config);
-        return response.data;
+        return response.data as T;
     },
-    put: async <T = any>(url: string, data?: any, config?: AxiosRequestConfig) => {
+    put: async <T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig) => {
         const response = await apiClient.put<T>(url, data, config);
-        return response.data;
+        return response.data as T;
     },
-    delete: async <T = any>(url: string, config?: AxiosRequestConfig) => {
+    delete: async <T = unknown>(url: string, config?: AxiosRequestConfig) => {
         const response = await apiClient.delete<T>(url, config);
-        return response.data;
+        return response.data as T;
     },
     // convenience for blob responses
     getBlob: async (url: string, config?: AxiosRequestConfig) => {

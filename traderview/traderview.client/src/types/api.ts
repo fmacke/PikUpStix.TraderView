@@ -12,6 +12,19 @@ export interface Trade {
     buySell: string;
 }
 
+export interface PositionOutcome {
+    id: number;
+    openDate?: string | null;
+    closeDate?: string | null;
+    status?: string | null;
+    instrumentId: number;
+    lastReportedPrice?: number | null;
+    lastReportedPriceUpdated?: string | null;
+    marketRegime?: string | null;
+    maximumFavourableExcursion: number;
+    maximumAdverseExcursion: number;
+}
+
 export interface CompoundPositions {
     quarterPosition: TradeCalculationCompoundedPosition;
     halfPosition: TradeCalculationCompoundedPosition;

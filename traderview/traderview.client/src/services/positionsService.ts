@@ -1,5 +1,5 @@
 import api from './apiClient';
-import type { OpenPosition, PositionCalculatorCreateDto, PositionCalculatorDto, AssetValueChartData } from '../types/api';
+import type { OpenPosition, PositionCalculatorCreateDto, PositionCalculatorDto, AssetValueChartData, PositionOutcome } from '../types/api';
 
 export const positionsService = {
     async getPositionCalculators(positionId: number): Promise<PositionCalculatorDto[]> {
@@ -54,6 +54,9 @@ export const positionsService = {
     async downloadCompoundPositionsReport(): Promise<Blob> {
         return api.getBlob('/tradecalculator/compound-report');
     },
+    async getPositionOutcomes(): Promise<PositionOutcome[]> {
+        return api.get<PositionOutcome[]>('/reports/position-outcomes');
+    }
 };
 
 export default positionsService;

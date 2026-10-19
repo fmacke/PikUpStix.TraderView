@@ -9,9 +9,10 @@ import OpenPositionsView from './components/features/views/OpenPositionsView';
 import RiskCalculatorView from './components/features/views/RiskCalculatorView';
 import StockScreenerView from './components/features/views/StockScreenerView';
 import JournalView from './components/features/views/JournalView';
+import ReportsView from './components/features/views/ReportsView';
 import SyncButton from './components/common/SyncButton';
 
-type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener' | 'journal';
+type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener' | 'journal' | 'reports';
 
 function App() {
     const [trades, setTrades] = useState<Trade[]>([]);
@@ -96,6 +97,12 @@ function App() {
                     >
                         Journal
                     </button>
+                    <button
+                        onClick={() => setViewMode('reports')}
+                        className={`nav-button ${viewMode === 'reports' ? 'active' : ''}`}
+                    >
+                        Reports
+                    </button>
                 </div>
 
                 <div className="nav-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -154,6 +161,7 @@ function App() {
             {viewMode === 'riskcalculator' && <RiskCalculatorView />}
             {viewMode === 'stockscreener' && <StockScreenerView />}
             {viewMode === 'journal' && <JournalView />}
+            {viewMode === 'reports' && <ReportsView />}
         </div>
         
     );
@@ -162,7 +170,9 @@ function App() {
         try {
             setLoading(true);
             setError(null);
+            console.log('[App] populateTradeData - calling tradeService.getTrades');
             const data = await tradeService.getTrades();
+            console.log('[App] populateTradeData - received data', data?.length);
             setTrades(data);
             if (data.length > 0) {
                 const sortedData = [...data].sort((a, b) => {

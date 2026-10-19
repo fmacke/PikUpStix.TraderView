@@ -7,12 +7,10 @@ namespace PikUpStix.TraderView.Services
     public class PositionService : IPositionService
     {
         private readonly IPositionRepository _positionRepository;
-        private readonly ITradingReportService _marketRegimeService;
 
-        public PositionService(IPositionRepository positionRepository, ITradingReportService marketRegimeService)
+        public PositionService(IPositionRepository positionRepository)
         {
             _positionRepository = positionRepository ?? throw new ArgumentNullException(nameof(positionRepository));
-            _marketRegimeService = marketRegimeService ?? throw new ArgumentNullException(nameof(marketRegimeService));
         }
         async Task IPositionService.ClosePositionAsync(int positionId, DateTime closeDate)
         {
@@ -25,9 +23,8 @@ namespace PikUpStix.TraderView.Services
             position.Status = "Closed";
             await _positionRepository.UpdateAsync(position);
         }
-        async Task<int> IPositionService.CreatePositionAsync(int instrumentId, DateTime openDate, decimal openPrice)
+        async Task<int> IPositionService.CreatePositionAsync(int instrumentId, DateTime openDate, decimal openPrice, string marketRegime)
         {
-            var marketRegime = await _marketRegimeService.DetermineRegimeAsync(openDate, new CancellationToken());
             var positionIdTask = await _positionRepository.CreatePositionAsync(instrumentId, openDate, openPrice, marketRegime);
             return positionIdTask;
         }
@@ -39,7 +36,11 @@ namespace PikUpStix.TraderView.Services
         {
             return await Task.Run(() => _positionRepository.GetOpenPositionsAsync());
         }
-        async Task IPositionService.UpsertPositionsAsync(IReadOnlyList<Position> positions)
+        async Task<List<Position>> IPositionService.GetAllPositionsAsync()
+        {
+            return await _positionRepository.GetAllPositionsAsync();
+        }
+        async Task IPositionService.UpsertPositionsAsync(IReadOnlyList<Position> positions, string currentMarketRegime)
         {
             if (positions == null || !positions.Any())
             {
@@ -55,8 +56,7 @@ namespace PikUpStix.TraderView.Services
                 // Ensure instrument exists before upserting position
                 if (position.Id == 0)
                 {
-                    var marketRegime = await _marketRegimeService.DetermineRegimeAsync(position.OpenDate, new CancellationToken());
-                    await _positionRepository.CreatePositionAsync(position.InstrumentId, position.OpenDate, position.LastReportedPrice ?? 0m, marketRegime);
+                    await _positionRepository.CreatePositionAsync(position.InstrumentId, position.OpenDate, position.LastReportedPrice ?? 0m, currentMarketRegime);
                     insertedCount++;
                 }
                 else

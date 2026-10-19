@@ -22,10 +22,11 @@ namespace PikUpStix.TraderView.Services
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly IMarketDataService _marketDataService;
+        private readonly IHistoricalDataService _historicalDataService;
         const int maxRetries = 3;
         const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
-        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionService tradeExecutionService, IPositionService positionService,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IConfiguration config)
+        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionService tradeExecutionService, IPositionService positionService,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IHistoricalDataService historicalDataService, IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
             _tradeExecutionService = tradeExecutionService;
@@ -34,6 +35,7 @@ namespace PikUpStix.TraderView.Services
             _instrumentService = instrumentService;
             _excelReportService = excelReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
+            _historicalDataService = historicalDataService;
             _marketDataService = marketDataService;
             _config = config;
             outputFilePath = _config["FinancialModelingPrep:OutputFilePath"];
@@ -41,7 +43,8 @@ namespace PikUpStix.TraderView.Services
         public async Task RunTradeConfirmReport()
         {
             XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-            await SaveTradeConfirms(todayReportXml);
+            string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
+            await SaveTradeConfirms(todayReportXml, currentMarketRegime);
             await SaveEquitySummaries(todayReportXml);
         }
         public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData)
@@ -51,13 +54,14 @@ namespace PikUpStix.TraderView.Services
                 IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
                 await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
                 await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades);
-                await UpdateOpenPositionPrices();
+                string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
+                await UpdateOpenPositionPrices(currentMarketRegime);
                 await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
                 var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
 
                 XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
                 //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                await SaveTradeConfirms(todayReportXml);
+                await SaveTradeConfirms(todayReportXml, currentMarketRegime);
                 await SaveEquitySummaries(todayReportXml);
 
                 if (writeOutputtoExcel)
@@ -90,13 +94,13 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private async Task SaveTradeConfirms(XDocument todayReportXml)
+        private async Task SaveTradeConfirms(XDocument todayReportXml, string currentMarketRegime)
         {
             // Convert XDocument to IKBRReport
             var todayReport = IKBRReportParser.ParseTodayReport(todayReportXml);
             // Insert instruments first, then trade confirmations
             await _instrumentService.UpsertInstrumentsAsync(todayReport.TradeConfirms, _marketDataService.SourceName).ConfigureAwait(false);
-            await _tradeExecutionService.UpsertTradeConfirmationsAsync(todayReport.TradeConfirms);
+            await _tradeExecutionService.UpsertTradeConfirmationsAsync(todayReport.TradeConfirms, currentMarketRegime);
         }
 
         private async Task SaveEquitySummaries(XDocument todayReportXml)
@@ -162,11 +166,11 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private async Task UpdateOpenPositionPrices()
+        private async Task UpdateOpenPositionPrices(string marketRegime)
         {
-            var openPositions = await _positionService.GetOpenPositionsAsync();
+            var openPositions = await _positionService.GetOpenPositionsAsync();            
             await _marketDataService.FetchLatestPrices(openPositions);
-            await _positionService.UpsertPositionsAsync(openPositions);
+            await _positionService.UpsertPositionsAsync(openPositions, marketRegime);
         }
 
         private async Task<string> WriteTodayReportToExcel(XDocument todayReportXml) 

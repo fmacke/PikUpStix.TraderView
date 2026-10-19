@@ -2,8 +2,10 @@
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using TraderView.Application.Interfaces.Repositories;
+using Microsoft.Extensions.Logging;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Domain.Entities;
+using System.Diagnostics;
 
 namespace TraderView.Application.Services
 {
@@ -14,38 +16,115 @@ namespace TraderView.Application.Services
     /// </summary>
     public class TradingReportService : ITradingReportService
     {
-        private readonly IHistoricalDataRepository _historicalDataRepo;
-        private const int SpxInstrumentId = 1002; // consider moving to configuration in future
+        private readonly IHistoricalDataService _historicalDataService;
+        private readonly IPositionService _positionService;
+        private readonly ITradeExecutionService _tradeExecutionService;
+        private readonly ILogger<TradingReportService> _logger;
+        
 
-        public TradingReportService(IHistoricalDataRepository historicalDataRepo)
+        public TradingReportService(IHistoricalDataService historicalDataService, IPositionService positionService, ITradeExecutionService tradeExecutionService, ILogger<TradingReportService> logger)
         {
-            _historicalDataRepo = historicalDataRepo ?? throw new ArgumentNullException(nameof(historicalDataRepo));
+            _historicalDataService = historicalDataService ?? throw new ArgumentNullException(nameof(historicalDataService));
+            _positionService = positionService ?? throw new ArgumentNullException(nameof(positionService));
+            _tradeExecutionService = tradeExecutionService ?? throw new ArgumentNullException(nameof(tradeExecutionService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
 
-        public async Task<string> DetermineRegimeAsync(DateTime openDate, CancellationToken cancellationToken)
+        
+
+        /// <summary>
+        /// Calculate position outcomes (MFE / MAE) for all positions.
+        /// This aggregates position/trade data and pulls historical bars to compute excursions.
+        /// </summary>
+        public async Task<List<PositionOutcome>> CalculatePositionOutcomesAsync(CancellationToken cancellationToken = default)
         {
-            // Request enough history to compute 200-day SMA; repository returns candles for the range.
-            var start = openDate.AddDays(-300);
-            var candles = await _historicalDataRepo.GetCandlesticksAsync(SpxInstrumentId, start, openDate);
+            var results = new List<PositionOutcome>();
 
-            var ordered = candles.OrderBy(c => c.Date).ToList();
-            if (ordered.Count < 200) return "Unknown";
+            var sw = Stopwatch.StartNew();
+            _logger.LogInformation("Starting CalculatePositionOutcomesAsync");
 
-            var currentClose = Convert.ToDecimal(ordered.Last().ClosePrice);
+            var positions = await _positionService.GetAllPositionsAsync();
+            if (positions == null || !positions.Any())
+            {
+                _logger.LogInformation("No positions found");
+                return results;
+            }
 
-            // Guard against insufficient subranges
-            var last50 = ordered.Skip(Math.Max(0, ordered.Count - 50)).Select(c => c.ClosePrice);
-            var last200 = ordered.Skip(Math.Max(0, ordered.Count - 200)).Select(c => c.ClosePrice);
+            _logger.LogInformation("Found {Count} positions, beginning processing", positions.Count);
 
-            var sma50 = last50.Any() ? Convert.ToDecimal(last50.Average()) : 0m;
-            var sma200 = last200.Any() ? Convert.ToDecimal(last200.Average()) : 0m;
+            int idx = 0;
+            foreach (var pos in positions)
+            {
+                idx++;
+                try
+                {
+                    if (idx % 25 == 0)
+                    {
+                        _logger.LogInformation("Processing position {Index}/{Total} (Id={PositionId})", idx, positions.Count, pos.Id);
+                    }
 
-            if (currentClose > sma50 && sma50 > sma200)
-                return "Bull";
-            if (currentClose < sma200)
-                return "Correction";
-            return "Choppy/Pressure";
+                    // Get aggregated trade summary for the position (entry/exit dates/prices)
+                    var summary = await _tradeExecutionService.GetTradeSummaryByPositionIdAsync(pos.Id);
+                    if (summary == null)
+                        continue;
+
+                    var entryDate = summary.EntryDate;
+                    var exitDate = summary.ExitDate == default ? DateTime.UtcNow : summary.ExitDate;
+
+                    // Pull historical bars for the instrument between entry and exit (inclusive)
+                    var bars = await _historicalDataService.GetCandlesticksAsync(summary.InstrumentId, entryDate.AddDays(-1), exitDate.AddDays(1));
+
+                    decimal mfe = 0m;
+                    decimal mae = 0m;
+
+                    if (bars != null && bars.Any())
+                    {
+                        var maxHigh = bars.Max(b => (decimal)b.HighPrice);
+                        var minLow = bars.Min(b => (decimal)b.LowPrice);
+
+                        // Normalize buy/sell direction - assume Buy (long) when BuySell starts with 'B'
+                        var isBuy = !string.IsNullOrWhiteSpace(summary.BuySell) && summary.BuySell.StartsWith("B", StringComparison.OrdinalIgnoreCase);
+
+                        if (isBuy)
+                        {
+                            mfe = Math.Max(0, maxHigh - summary.EntryPrice);
+                            mae = Math.Max(0, summary.EntryPrice - minLow);
+                        }
+                        else
+                        {
+                            // Short: favourable when price falls
+                            mfe = Math.Max(0, summary.EntryPrice - minLow);
+                            mae = Math.Max(0, maxHigh - summary.EntryPrice);
+                        }
+                    }
+
+                    var outcome = new PositionOutcome
+                    {
+                        Id = pos.Id,
+                        OpenDate = pos.OpenDate,
+                        CloseDate = pos.CloseDate,
+                        Status = pos.Status,
+                        InstrumentId = pos.InstrumentId,
+                        LastReportedPrice = pos.LastReportedPrice,
+                        LastReportedPriceUpdated = pos.LastReportedPriceUpdated,
+                        MarketRegime = pos.MarketRegime,
+                        MaximumFavourableExcursion = mfe,
+                        MaximumAdverseExcursion = mae
+                    };
+
+                    results.Add(outcome);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error processing position {PositionId}", pos?.Id);
+                }
+            }
+
+            sw.Stop();
+            _logger.LogInformation("CalculatePositionOutcomesAsync completed in {Elapsed}ms, processed {Count} positions", sw.ElapsedMilliseconds, results.Count);
+
+            return results;
         }
     }
 }

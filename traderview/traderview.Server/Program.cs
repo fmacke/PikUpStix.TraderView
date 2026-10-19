@@ -1,14 +1,15 @@
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using Microsoft.EntityFrameworkCore;
 using PikUpStix.TraderView.Services;
-using TraderView.Application.Interfaces.Persistence;
 using PikUpStix.TraderView.Services.MarketData;
 using traderview.Server.DTOs.Mappers;
 using traderview.Server.Services;
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
-using TraderView.Infrastructure.Repositories;
-using Microsoft.EntityFrameworkCore;
 using TraderView.Infrastructure.DbContexts;
+using TraderView.Infrastructure.Repositories;
 
 public partial class Program
 {
@@ -18,15 +19,36 @@ public partial class Program
 
         // Register HttpClient and HttpClientFactory
         builder.Services.AddHttpClient();
-        var connectionString = BuildConnectionString(builder.Configuration);
-        builder.Services.AddSingleton<IDbConnectionFactory>(provider =>
+
+        // Configure CORS for local development (allow the front-end dev server)
+        builder.Services.AddCors(options =>
         {
-            return new TraderView.Infrastructure.Data.SqlConnectionFactory(connectionString);
+            options.AddPolicy("AllowLocalDev", policy =>
+            {
+                policy.WithOrigins("https://localhost:5173")
+                      .AllowAnyHeader()
+                      .AllowAnyMethod()
+                      .AllowCredentials();
+            });
         });
+        var connectionString = BuildConnectionString(builder.Configuration);
+        //builder.Services.AddSingleton<IDbConnectionFactory>(provider =>
+        //{
+        //    return new TraderView.Infrastructure.Data.SqlConnectionFactory(connectionString);
+        //});
         builder.Services.AddDbContext<AppDbContext>(options =>
         {
             options.UseSqlServer(connectionString);
+            // enable EF Core console logging
+            options.EnableSensitiveDataLogging();
+            options.LogTo(Console.WriteLine, LogLevel.Information);
+            // Add interceptor from DI
             var sp = builder.Services.BuildServiceProvider();
+            var interceptor = sp.GetService<ReaderLoggingInterceptor>();
+            if (interceptor != null)
+            {
+                options.AddInterceptors(interceptor);
+            }
         });
 
         // Register repositories 
@@ -93,17 +115,28 @@ public partial class Program
         });
 
         // Register custom services        
+        builder.Services.AddScoped<IHistoricalDataService, HistoricalDataService>(provider =>
+        {
+            var historicalDataRepo = provider.GetRequiredService<IHistoricalDataRepository>();
+            return new HistoricalDataService(historicalDataRepo);
+        });
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
         builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();        
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
         builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>();
         builder.Services.AddScoped<IInstrumentService, InstrumentService>();
-        builder.Services.AddScoped<ITradingReportService, TradingReportService>();
+        builder.Services.AddScoped<ITradingReportService, TradingReportService>(provider =>
+        {
+            var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
+            var positionService = provider.GetRequiredService<IPositionService>();
+            var tradeExecutionService = provider.GetRequiredService<ITradeExecutionService>();
+            var logger = provider.GetRequiredService<ILogger<TradingReportService>>();
+            return new TradingReportService(historicalDataService, positionService, tradeExecutionService, logger);
+        });
         builder.Services.AddScoped<IPositionService, PositionService>(provider =>
         {
             var positionRepo = provider.GetRequiredService<IPositionRepository>();
-            var marketRegimeService = provider.GetRequiredService<ITradingReportService>();
-            return new PositionService(positionRepo, marketRegimeService);
+            return new PositionService(positionRepo);
         });
         builder.Services.AddScoped<IPositionCalculatorService, PositionCalculatorService>(provider =>
         {
@@ -180,6 +213,9 @@ public partial class Program
         }
 
         app.UseHttpsRedirection();
+
+        // Enable CORS using the policy defined above
+        app.UseCors("AllowLocalDev");
 
         app.UseAuthorization();
 

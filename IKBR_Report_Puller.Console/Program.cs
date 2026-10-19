@@ -1,16 +1,17 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using PikUpStix.TraderView.Services;
-using TraderView.Application.Interfaces.Persistence;
-using TraderView.Infrastructure.Data;
 using PikUpStix.TraderView.Services.MarketData;
+using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Interfaces.Repositories;
-using Microsoft.EntityFrameworkCore;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
-using TraderView.Infrastructure.Repositories;
+using TraderView.Infrastructure.Data;
 using TraderView.Infrastructure.DbContexts;
+using TraderView.Infrastructure.Repositories;
 
 namespace TraderView.Console
 {
@@ -104,7 +105,19 @@ namespace TraderView.Console
                     });
 
                     // Register Services
-                    services.AddScoped<ITradingReportService, TradingReportService>();
+                    services.AddScoped<IHistoricalDataService, HistoricalDataService>(provider =>
+                    {
+                        var historicalDataRepo = provider.GetRequiredService<IHistoricalDataRepository>();
+                        return new HistoricalDataService(historicalDataRepo);
+                    });
+                    services.AddScoped<ITradingReportService, TradingReportService>(provider =>
+                    {
+                        var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
+                        var positionService = provider.GetRequiredService<IPositionService>();
+                        var tradeExecutionService = provider.GetRequiredService<ITradeExecutionService>();
+                        var logger = provider.GetRequiredService<ILogger<TradingReportService>>();
+                        return new TradingReportService(historicalDataService, positionService, tradeExecutionService, logger);
+                    });
                     services.AddScoped<FinancialModellingPrepService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
