@@ -10,5 +10,10 @@ namespace TraderView.Domain.Entities
     {
         public decimal MaximumFavourableExcursion { get; set; }
         public decimal MaximumAdverseExcursion { get; set; }
+        // Instrument symbol or name for convenience when returning outcomes
+        public string? SymbolName { get; set; }
+
+        // Final margin for closed positions (nullable when position still open)
+        public decimal? Margin { get; set; }
     }
 }

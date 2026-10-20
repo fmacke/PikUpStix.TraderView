@@ -131,11 +131,6 @@ namespace TraderView.Infrastructure.Repositories
         /// </summary>
         async Task<List<Position>> IPositionRepository.GetOpenPositionsAsync()
         {
-            return await GetOpenPositionsAsListAsync();
-        }
-
-        private async Task<List<Position>> GetOpenPositionsAsListAsync()
-        {
             var positions = await _context.Set<Position>()
                 .AsNoTracking()
                 .Where(x => x.Status == "Open" && x.Instrument != null && x.Instrument.ContractUnitType != "CASH")

@@ -28,6 +28,10 @@ namespace PikUpStix.TraderView.Services
             var positionIdTask = await _positionRepository.CreatePositionAsync(instrumentId, openDate, openPrice, marketRegime);
             return positionIdTask;
         }
+        async Task<Position?> IPositionService.GetPositionByIdAsync(int positionId)
+        {
+            return await _positionRepository.GetByIdAsync(positionId);
+        }
         async Task<Position?> IPositionService.GetOpenPositionAsync(int instrumentId)
         {
             return await _positionRepository.GetOpenPositionAsync(instrumentId);

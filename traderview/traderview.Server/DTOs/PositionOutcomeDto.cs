@@ -9,10 +9,12 @@ namespace traderview.Server.DTOs
         public DateTime? CloseDate { get; set; }
         public string? Status { get; set; }
         public int InstrumentId { get; set; }
+        public string? SymbolName { get; set; }
         public decimal? LastReportedPrice { get; set; }
         public DateTime? LastReportedPriceUpdated { get; set; }
         public string? MarketRegime { get; set; }
         public decimal MaximumFavourableExcursion { get; set; }
         public decimal MaximumAdverseExcursion { get; set; }
+        public decimal? Margin { get; set; }
     }
 }

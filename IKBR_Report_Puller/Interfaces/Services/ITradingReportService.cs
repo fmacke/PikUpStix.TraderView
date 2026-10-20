@@ -10,5 +10,6 @@ namespace TraderView.Application.Interfaces.Services
     public interface ITradingReportService
     {
         Task<List<PositionOutcome>> CalculatePositionOutcomesAsync(CancellationToken cancellationToken = default);
+        Task<PositionOutcome> GetPositionReport(Position pos);
     }
 }

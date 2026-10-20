@@ -6,7 +6,7 @@ import { PaginationControl } from '../common/PaginationControl';
 import type { SortConfig } from '../common/SortableTableHeader';
 
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 50;
 
 export default function PositionReportCard() {
     const [items, setItems] = useState<PositionOutcome[]>([]);
@@ -71,23 +71,34 @@ export default function PositionReportCard() {
                     <tr>
                         <SortableTableHeader columnKey="id" title="Id" sortConfig={sortConfig} onSort={handleSort} />
                         <SortableTableHeader columnKey="instrumentId" title="Instrument" sortConfig={sortConfig} onSort={handleSort} />
+                        <SortableTableHeader columnKey="symbolName" title="Symbol" sortConfig={sortConfig} onSort={handleSort} />
                         <SortableTableHeader columnKey="openDate" title="Open Date" sortConfig={sortConfig} onSort={handleSort} />
                         <SortableTableHeader columnKey="closeDate" title="Close Date" sortConfig={sortConfig} onSort={handleSort} />
                         <SortableTableHeader columnKey="marketRegime" title="Regime" sortConfig={sortConfig} onSort={handleSort} />
                         <SortableTableHeader columnKey="maximumFavourableExcursion" title="MFE" sortConfig={sortConfig} onSort={handleSort} />
                         <SortableTableHeader columnKey="maximumAdverseExcursion" title="MAE" sortConfig={sortConfig} onSort={handleSort} />
+                        <SortableTableHeader columnKey="margin" title="Margin" sortConfig={sortConfig} onSort={handleSort} />
                     </tr>
                 </thead>
                 <tbody>
                     {paged.map(item => (
-                        <tr key={item.id}>
+                        <tr
+                            key={item.id}
+                            onClick={() => { window.location.href = `/TraderViewDetails?positionId=${item.id}`; }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') window.location.href = `/TraderViewDetails?positionId=${item.id}`; }}
+                            role="link"
+                            tabIndex={0}
+                            style={{ cursor: 'pointer' }}
+                        >
                             <td>{item.id}</td>
                             <td>{item.instrumentId}</td>
+                            <td>{item.symbolName ?? '-'}</td>
                             <td>{item.openDate ? new Date(item.openDate).toLocaleDateString() : '-'}</td>
                             <td>{item.closeDate ? new Date(item.closeDate).toLocaleDateString() : '-'}</td>
                             <td>{item.marketRegime ?? '-'}</td>
                             <td className="number-cell">{item.maximumFavourableExcursion.toFixed(2)}</td>
                             <td className="number-cell">{item.maximumAdverseExcursion.toFixed(2)}</td>
+                            <td className="number-cell">{typeof item.margin === 'number' ? item.margin.toFixed(2) : '-'}</td>
                         </tr>
                     ))}
                 </tbody>

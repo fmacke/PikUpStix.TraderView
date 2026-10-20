@@ -64,54 +64,11 @@ namespace TraderView.Application.Services
                         _logger.LogInformation("Processing position {Index}/{Total} (Id={PositionId})", idx, positions.Count, pos.Id);
                     }
 
-                    // Get aggregated trade summary for the position (entry/exit dates/prices)
-                    var summary = await _tradeExecutionService.GetTradeSummaryByPositionIdAsync(pos.Id);
-                    if (summary == null)
+                    var outcome = await ((ITradingReportService)this).GetPositionReport(pos);
+                    if (outcome == null)
+                    {
                         continue;
-
-                    var entryDate = summary.EntryDate;
-                    var exitDate = summary.ExitDate == default ? DateTime.UtcNow : summary.ExitDate;
-
-                    // Pull historical bars for the instrument between entry and exit (inclusive)
-                    var bars = await _historicalDataService.GetCandlesticksAsync(summary.InstrumentId, entryDate.AddDays(-1), exitDate.AddDays(1));
-
-                    decimal mfe = 0m;
-                    decimal mae = 0m;
-
-                    if (bars != null && bars.Any())
-                    {
-                        var maxHigh = bars.Max(b => (decimal)b.HighPrice);
-                        var minLow = bars.Min(b => (decimal)b.LowPrice);
-
-                        // Normalize buy/sell direction - assume Buy (long) when BuySell starts with 'B'
-                        var isBuy = !string.IsNullOrWhiteSpace(summary.BuySell) && summary.BuySell.StartsWith("B", StringComparison.OrdinalIgnoreCase);
-
-                        if (isBuy)
-                        {
-                            mfe = Math.Max(0, maxHigh - summary.EntryPrice);
-                            mae = Math.Max(0, summary.EntryPrice - minLow);
-                        }
-                        else
-                        {
-                            // Short: favourable when price falls
-                            mfe = Math.Max(0, summary.EntryPrice - minLow);
-                            mae = Math.Max(0, maxHigh - summary.EntryPrice);
-                        }
                     }
-
-                    var outcome = new PositionOutcome
-                    {
-                        Id = pos.Id,
-                        OpenDate = pos.OpenDate,
-                        CloseDate = pos.CloseDate,
-                        Status = pos.Status,
-                        InstrumentId = pos.InstrumentId,
-                        LastReportedPrice = pos.LastReportedPrice,
-                        LastReportedPriceUpdated = pos.LastReportedPriceUpdated,
-                        MarketRegime = pos.MarketRegime,
-                        MaximumFavourableExcursion = mfe,
-                        MaximumAdverseExcursion = mae
-                    };
 
                     results.Add(outcome);
                 }
@@ -125,6 +82,63 @@ namespace TraderView.Application.Services
             _logger.LogInformation("CalculatePositionOutcomesAsync completed in {Elapsed}ms, processed {Count} positions", sw.ElapsedMilliseconds, results.Count);
 
             return results;
+        }
+
+        async Task<PositionOutcome?> ITradingReportService.GetPositionReport(Position pos)
+        {
+            // Get aggregated trade summary for the position (entry/exit dates/prices)
+            var summary = await _tradeExecutionService.GetTradeSummaryByPositionIdAsync(pos.Id);
+            if (summary == null)
+                return null;
+
+            var entryDate = summary.EntryDate;
+            var exitDate = summary.ExitDate == default ? DateTime.UtcNow : summary.ExitDate;
+
+            // Pull historical bars for the instrument between entry and exit (inclusive)
+            var bars = await _historicalDataService.GetCandlesticksAsync(summary.InstrumentId, entryDate.AddDays(-1), exitDate.AddDays(1));
+
+            decimal mfe = 0m;
+            decimal mae = 0m;
+
+            if (bars != null && bars.Any())
+            {
+                var maxHigh = bars.Max(b => (decimal)b.HighPrice);
+                var minLow = bars.Min(b => (decimal)b.LowPrice);
+
+                // Normalize buy/sell direction - assume Buy (long) when BuySell starts with 'B'
+                var isBuy = !string.IsNullOrWhiteSpace(summary.BuySell) && summary.BuySell.StartsWith("B", StringComparison.OrdinalIgnoreCase);
+
+                if (isBuy)
+                {
+                    mfe = Math.Max(0, maxHigh - summary.EntryPrice);
+                    mae = Math.Max(0, summary.EntryPrice - minLow);
+                }
+                else
+                {
+                    // Short: favourable when price falls
+                    mfe = Math.Max(0, summary.EntryPrice - minLow);
+                    mae = Math.Max(0, maxHigh - summary.EntryPrice);
+                }
+            }
+
+            var outcome = new PositionOutcome
+            {
+                Id = pos.Id,
+                OpenDate = pos.OpenDate,
+                CloseDate = pos.CloseDate,
+                Status = pos.Status,
+                InstrumentId = pos.InstrumentId,
+                LastReportedPrice = pos.LastReportedPrice,
+                LastReportedPriceUpdated = pos.LastReportedPriceUpdated,
+                MarketRegime = pos.MarketRegime,
+                MaximumFavourableExcursion = mfe,
+                MaximumAdverseExcursion = mae,
+                // prefer symbol from summary if available, otherwise fall back to related instrument name
+                SymbolName = !string.IsNullOrWhiteSpace(summary.Symbol) ? summary.Symbol : pos.Instrument?.InstrumentName,
+                // Only set final margin for closed positions
+                Margin = pos.CloseDate != null ? summary.Pnl : (decimal?)null
+            };
+            return null;
         }
     }
 }

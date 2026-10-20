@@ -18,11 +18,15 @@ export interface PositionOutcome {
     closeDate?: string | null;
     status?: string | null;
     instrumentId: number;
+    // Optional symbol name provided by the server for convenience
+    symbolName?: string | null;
     lastReportedPrice?: number | null;
     lastReportedPriceUpdated?: string | null;
     marketRegime?: string | null;
     maximumFavourableExcursion: number;
     maximumAdverseExcursion: number;
+    // Final margin for closed positions (if available)
+    margin?: number | null;
 }
 
 export interface CompoundPositions {

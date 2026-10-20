@@ -5,6 +5,7 @@ namespace TraderView.Application.Interfaces.Services
 {
     public interface IPositionService
     {
+        Task<Position?> GetPositionByIdAsync(int positionId);
         Task<List<Position>> GetAllPositionsAsync();
         Task<IReadOnlyList<Position>> GetOpenPositionsAsync();
         Task<Position?> GetOpenPositionAsync(int instrumentId);
