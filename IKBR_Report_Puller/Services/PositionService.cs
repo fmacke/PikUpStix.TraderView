@@ -40,9 +40,9 @@ namespace PikUpStix.TraderView.Services
         {
             return await Task.Run(() => _positionRepository.GetOpenPositionsAsync());
         }
-        async Task<List<Position>> IPositionService.GetAllPositionsAsync()
+        async Task<List<Position>> IPositionService.GetAllPositionsAsync(bool loadTradeExecutions)
         {
-            return await _positionRepository.GetAllPositionsAsync();
+            return await _positionRepository.GetAllPositionsAsync(loadTradeExecutions);
         }
         async Task IPositionService.UpsertPositionsAsync(IReadOnlyList<Position> positions, string currentMarketRegime)
         {

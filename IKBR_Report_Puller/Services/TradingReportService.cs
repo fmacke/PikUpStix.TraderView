@@ -44,7 +44,7 @@ namespace TraderView.Application.Services
             var sw = Stopwatch.StartNew();
             _logger.LogInformation("Starting CalculatePositionOutcomesAsync");
 
-            var positions = await _positionService.GetAllPositionsAsync();
+            var positions = await _positionService.GetAllPositionsAsync(true);
             if (positions == null || !positions.Any())
             {
                 _logger.LogInformation("No positions found");

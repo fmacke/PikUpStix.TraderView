@@ -72,8 +72,16 @@ namespace TraderView.Console
                         return new PositionRepository(db);
                     });
 
-                    services.AddScoped<IInstrumentService, InstrumentService>();
-                    services.AddScoped<IPositionService, PositionService>();
+                    services.AddScoped<IInstrumentService, InstrumentService>(provider =>
+                    {
+                        var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
+                        return new InstrumentService(instrumentRepo);
+                    });
+                    services.AddScoped<IPositionService, PositionService>(provider =>
+                    {
+                        var positionRepo = provider.GetRequiredService<IPositionRepository>();
+                        return new PositionService(positionRepo);
+                    });
                     services.AddScoped<ITradeExecutionRepository>(provider =>
                     {
                         var db = provider.GetRequiredService<AppDbContext>();
@@ -109,6 +117,18 @@ namespace TraderView.Console
                     {
                         var historicalDataRepo = provider.GetRequiredService<IHistoricalDataRepository>();
                         return new HistoricalDataService(historicalDataRepo);
+                    });
+                    services.AddScoped<IPositionService, PositionService>(provider =>
+                    {
+                        var positionRepo = provider.GetRequiredService<IPositionRepository>();
+                        return new PositionService(positionRepo);
+                    });
+                    services.AddScoped<ITradeExecutionService, TradeExecutionService>(provider =>
+                    {
+                        var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
+                        var positionService = provider.GetRequiredService<IPositionService>();
+                        var instrumentService = provider.GetRequiredService<IInstrumentService>();
+                        return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService);
                     });
                     services.AddScoped<ITradingReportService, TradingReportService>(provider =>
                     {

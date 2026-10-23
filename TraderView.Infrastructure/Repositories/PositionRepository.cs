@@ -93,17 +93,22 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Gets all positions from the database
         /// </summary>
-        async Task<List<Position>> IPositionRepository.GetAllPositionsAsync()
+        async Task<List<Position>> IPositionRepository.GetAllPositionsAsync(bool loadTradeExecutions)
         {
             var positions = await _context.Set<Position>()
                 .AsNoTracking()
                 .Include(x => x.Instrument)
                 .ToListAsync();
 
-            if (!positions.Any())
+            if (!positions.Any() || !loadTradeExecutions)
                 return positions;
 
-            // Fetch TradeExecutions for all retrieved Positions
+            await LoadExecutions(positions);
+            return positions;
+        }
+
+        private async Task LoadExecutions(List<Position> positions)
+        {
             var positionIds = positions.Select(p => p.Id).ToList();
             var tradeExecutions = await _context.Set<TradeExecution>()
                 .AsNoTracking()
@@ -122,8 +127,6 @@ namespace TraderView.Infrastructure.Repositories
                     }
                 }
             }
-
-            return positions;
         }
 
         /// <summary>
