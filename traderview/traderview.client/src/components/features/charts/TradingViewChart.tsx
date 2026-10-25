@@ -3,6 +3,7 @@ import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import type { IChartApi } from 'lightweight-charts';
 import type { Position } from '../../../types/api';
 import { tradeService } from '../../../services';
+import { useTheme } from '../../../hooks/useTheme';
 import './TradingViewChart.css';
 
 interface TradingViewChartProps {
@@ -14,6 +15,7 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
     const chartRef = useRef<IChartApi | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const { theme } = useTheme();
 
     useEffect(() => {
         let isMounted = true;
@@ -52,15 +54,24 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
 
                 console.log('Number of candlesticks:', tradeContext.candlesticks.length);
 
+                // Define theme-aware colors
+                const isDarkMode = theme === 'dark';
+                const chartColors = {
+                    backgroundColor: isDarkMode ? '#1e1e1e' : '#ffffff',
+                    textColor: isDarkMode ? '#d4d4d4' : '#333333',
+                    gridColor: isDarkMode ? '#3a3a3a' : '#e0e0e0',
+                    borderColor: isDarkMode ? '#555555' : '#cccccc',
+                };
+
                 // Create chart
                 const chart = createChart(chartContainerRef.current!, {
                     layout: {
-                        background: { color: '#ffffff' },
-                        textColor: '#333',
+                        background: { color: chartColors.backgroundColor },
+                        textColor: chartColors.textColor,
                     },
                     grid: {
-                        vertLines: { color: '#e0e0e0' },
-                        horzLines: { color: '#e0e0e0' },
+                        vertLines: { color: chartColors.gridColor },
+                        horzLines: { color: chartColors.gridColor },
                     },
                     width: chartContainerRef.current!.clientWidth,
                     height: 400,
@@ -71,7 +82,7 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                         barSpacing: 10,
                     },
                     rightPriceScale: {
-                        borderColor: '#cccccc',
+                        borderColor: chartColors.borderColor,
                     },
                 });
 
@@ -450,7 +461,7 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                 chartRef.current = null;
             }
         };
-    }, [trade.id, trade.positionId, trade.symbol, trade.entryDate, trade.exitDate, trade.entryPrice, trade.exitPrice, trade.buySell, trade.pnl, trade.instrumentId]);
+    }, [trade.id, trade.positionId, trade.symbol, trade.entryDate, trade.exitDate, trade.entryPrice, trade.exitPrice, trade.buySell, trade.pnl, trade.instrumentId, theme]);
 
     return (
         <div className="tradingview-chart-container">

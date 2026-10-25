@@ -1,7 +1,7 @@
 .tradingview-chart-container {
     width: 100%;
     padding: 1.5rem;
-    background: #ffffff;
+    background: var(--chart-bg-color, #ffffff);
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     margin-bottom: 2rem;
@@ -15,7 +15,12 @@
     align-items: center;
     margin-bottom: 1rem;
     padding-bottom: 0.75rem;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid var(--chart-border-color, #e5e7eb);
+}
+
+.chart-header h3 {
+    margin: 0;
+    color: var(--chart-text-color, #1f2937);
 }
 
 .chart-info {
@@ -26,7 +31,7 @@
 
 .chart-period {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--chart-secondary-text-color, #6b7280);
     font-weight: 500;
 }
 
@@ -61,7 +66,7 @@
     justify-content: center;
     height: 400px;
     font-size: 0.95rem;
-    color: #6b7280;
+    color: var(--chart-secondary-text-color, #6b7280);
 }
 
 .chart-error {
@@ -71,7 +76,7 @@
 /* RS Chart Section */
 .rs-chart-section {
     margin-top: 2rem;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid var(--chart-border-color, #e5e7eb);
     padding-top: 1rem;
 }
 
@@ -86,7 +91,7 @@
     margin: 0;
     font-size: 1rem;
     font-weight: 600;
-    color: #1f2937;
+    color: var(--chart-text-color, #1f2937);
 }
 
 .rs-chart-wrapper {
@@ -106,7 +111,7 @@
     align-items: center;
     gap: 0.5rem;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--chart-secondary-text-color, #6b7280);
 }
 
 .legend-color {

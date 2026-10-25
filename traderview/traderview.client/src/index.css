@@ -13,6 +13,11 @@
     --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
     --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
     --mono: ui-monospace, Consolas, monospace;
+    /* Chart colors for light mode */
+    --chart-bg-color: #ffffff;
+    --chart-text-color: #1f2937;
+    --chart-secondary-text-color: #6b7280;
+    --chart-border-color: #e5e7eb;
     font: 18px/145% var(--sans);
     letter-spacing: 0.18px;
     color-scheme: light dark;
@@ -22,8 +27,6 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-
-
 }
 
 @media (prefers-color-scheme: dark) {
@@ -57,6 +60,11 @@
     --accent-border: rgba(192, 132, 252, 0.5);
     --social-bg: rgba(47, 48, 58, 0.5);
     --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+    /* Chart colors for dark mode */
+    --chart-bg-color: #2d2d2d;
+    --chart-text-color: #e4e4e7;
+    --chart-secondary-text-color: #a1a1a1;
+    --chart-border-color: #3f3f46;
 }
 
 :root[data-theme="dark"] #social .button-icon {
@@ -75,6 +83,11 @@
     --accent-border: rgba(170, 59, 255, 0.5);
     --social-bg: rgba(244, 243, 236, 0.5);
     --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+    /* Chart colors for light mode */
+    --chart-bg-color: #ffffff;
+    --chart-text-color: #1f2937;
+    --chart-secondary-text-color: #6b7280;
+    --chart-border-color: #e5e7eb;
 }
 
 html, body {
