@@ -242,7 +242,8 @@ export interface TradeCalculationRequest {
     maxExposure: number;
     gainLossRatio: number;
     calculationMode: string;
-    stopLossAtInput: number;
+    stopLossAtInputOverride: number;
+    takeProfitAtInputOverride: number;
     comment: string;
 }
 export interface TradeCalculationResponse {

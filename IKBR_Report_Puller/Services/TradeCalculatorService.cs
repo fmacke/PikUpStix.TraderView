@@ -31,7 +31,7 @@ namespace TraderView.Application.Services
             response.LotSizeGbp = request.TradingCapital * riskPerTrade;
 
             // Scenario 1: Stop Loss calculated by percentage (MaxExposure)
-            if (request.StopLossAtInput == null || request.StopLossAtInput == 0)
+            if (request.StopLossAtInputOverride == null || request.StopLossAtInputOverride == 0)
             {
                 response.LotGbp = response.LotSizeGbp;
                 response.LotUsd = response.LotGbp * request.ExchangeRate;
@@ -45,18 +45,12 @@ namespace TraderView.Application.Services
                 response.LossUsd = (request.BuyPrice - response.StopLossAt) * response.Shares;
                 response.LossGbp = response.LossUsd / request.ExchangeRate;
                 response.LossPercentage = response.LossGbp / request.TradingCapital;
-
-                // Take Profit Target based on GainLossRatio and MaxExposure
-                response.TakeProfitAt = gainLossRatio * maxExposure * 100m;
-                response.PriceTarget = request.BuyPrice + (request.BuyPrice * (response.TakeProfitAt / 100m));
-
-                response.OverallProfitUsd = (response.PriceTarget - request.BuyPrice) * response.Shares;
-                response.OverallProfitGbp = response.OverallProfitUsd / request.ExchangeRate;
+                CalculateProfitMetrics(request, response, gainLossRatio, maxExposure);
             }
             else
             {
                 // Scenario 2: Hard Price Stop Loss Override
-                response.StopLossAt = Convert.ToDecimal(request.StopLossAtInput);
+                response.StopLossAt = Convert.ToDecimal(request.StopLossAtInputOverride);
                 var stopLossDistance = request.BuyPrice - response.StopLossAt;
 
                 if (stopLossDistance > 0)
@@ -70,18 +64,35 @@ namespace TraderView.Application.Services
                     response.LossUsd = response.Shares * stopLossDistance;
                     response.LossGbp = response.LossUsd / request.ExchangeRate;
                     response.LossPercentage = response.LossGbp / request.TradingCapital;
-
                     response.LotPercent = request.TradingCapital != 0 ? response.LotGbp / request.TradingCapital : 0m;
-                    response.TakeProfitAt = gainLossRatio * maxExposure * 100m;
 
-                    response.PriceTarget = request.BuyPrice + (stopLossDistance * gainLossRatio);
-
-                    response.OverallProfitUsd = (response.PriceTarget - request.BuyPrice) * response.Shares;
-                    response.OverallProfitGbp = response.OverallProfitUsd / request.ExchangeRate;
+                    CalculateProfitMetrics(request, response, gainLossRatio, maxExposure);
                 }
             }
 
             return response;
+        }
+
+        private static void CalculateProfitMetrics(TradeCalculationRequest request, TradeCalculationResponse response, decimal gainLossRatio, decimal maxExposure)
+        {
+            // Take Profit Target based on GainLossRatio and MaxExposure
+            if (request.TakeProfitAtInputOverride == null || request.TakeProfitAtInputOverride == 0)
+            {
+                response.TakeProfitAt = gainLossRatio * maxExposure * 100m;
+                response.PriceTarget = request.BuyPrice + (request.BuyPrice * (response.TakeProfitAt / 100m));
+                response.OverallProfitUsd = (response.PriceTarget - request.BuyPrice) * response.Shares;
+                response.OverallProfitGbp = response.OverallProfitUsd / request.ExchangeRate;
+            }
+            else
+            {
+                var takeProfitOverride = Convert.ToDecimal(request.TakeProfitAtInputOverride);
+                response.PriceTarget = takeProfitOverride;
+                var priceGainPercent = (response.PriceTarget - request.BuyPrice) / request.BuyPrice;
+                var derivedGainLossRatio = priceGainPercent / maxExposure;
+                response.TakeProfitAt = derivedGainLossRatio * maxExposure * 100m;
+                response.OverallProfitUsd = (response.PriceTarget - request.BuyPrice) * response.Shares;
+                response.OverallProfitGbp = response.OverallProfitUsd / request.ExchangeRate;
+            }
         }
 
         public CompoundPositions CalculateCompoundPositions(TradeCalculationRequest request, TradeCalculationResponse quarterPosition)

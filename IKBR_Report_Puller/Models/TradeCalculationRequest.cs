@@ -18,7 +18,8 @@ namespace TraderView.Application.Models
         public decimal RiskPerTrade { get; set; } = 5m;
         public decimal MaxExposure { get; set; } = 2.5m;
         public decimal GainLossRatio { get; set; } = 200.0m;
-        public decimal? StopLossAtInput { get; set; } = 480.0m; // Used if user wants to specify exact stop loss point (rather thann percentage of positions size)
+        public decimal? StopLossAtInputOverride { get; set; } = 480.0m; // Used if user wants to specify exact stop loss point (rather thann percentage of positions size)
+        public decimal? TakeProfitAtInputOverride { get; set; } = 0.0m;
     }
     public class TradeCalculationResponse
     {

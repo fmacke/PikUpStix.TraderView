@@ -1,6 +1,6 @@
 .compounded-positions-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
     padding: 1rem;
     border: 1px solid var(--border);
@@ -8,6 +8,7 @@
     background-color: var(--code-bg);
     font-size: 0.75rem;
     margin-top: 1rem;
+    min-width: 800px;
 }
 
 .compounded-position-column {

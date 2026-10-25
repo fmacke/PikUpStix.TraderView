@@ -17,7 +17,8 @@ export const TradeCalculatorCard: React.FC = () => {
         maxExposure: 4,
         gainLossRatio: 200,
         calculationMode: 'LotSize',
-        stopLossAtInput: 0,
+        stopLossAtInputOverride: 0,
+        takeProfitAtInputOverride: 0,
         comment: '',
     });
 
@@ -78,7 +79,8 @@ export const TradeCalculatorCard: React.FC = () => {
                 riskPerPosition: request.riskPerTrade,
                 maxExposureOnPosition: request.maxExposure,
                 gainLossRatioPercent: request.gainLossRatio,
-                stopLossAtOverride: request.stopLossAtInput === 0 ? undefined : request.stopLossAtInput,
+                stopLossAtOverride: request.stopLossAtInputOverride === 0 ? undefined : request.stopLossAtInputOverride,
+                takeProfitAtOverride: request.takeProfitAtInputOverride === 0 ? undefined : request.takeProfitAtInputOverride,
                 strategyId: selectedStrategyId ?? 0,
                 lotSizeAccountCurrency: result.lotGbp,
                 lotSizeStockCurrency: result.lotUsd,
@@ -373,6 +375,15 @@ export const TradeCalculatorCard: React.FC = () => {
                         value={request.maxExposure}
                         onChange={handleChange}
                         className="trade-calculator-input"
+                    /> || 
+                    <label className="trade-calculator-label">OR Stop Loss At</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="stopLossAtInputOverride"
+                        value={request.stopLossAtInputOverride}
+                        onChange={handleChange}
+                        className="trade-calculator-input"
                     />
                 </div>
                 <div className="trade-calculator-input-group">
@@ -384,22 +395,17 @@ export const TradeCalculatorCard: React.FC = () => {
                         value={request.gainLossRatio}
                         onChange={handleChange}
                         className="trade-calculator-input"
-                    />
-                </div>            
-                <br />
-                <div><p>STOPLOSS  - SET BY STOPLOSS POINT</p></div>
-                <div className="trade-calculator-input-group">
-                    <label className="trade-calculator-label">Stop Loss At</label>
+                    /> ||
+                    <label className="trade-calculator-label">OR Take Profit At</label>
                     <input
                         type="number"
                         step="0.01"
-                        name="stopLossAtInput"
-                        value={request.stopLossAtInput}
+                        name="takeProfitAtInputOverride"
+                        value={request.takeProfitAtInputOverride}
                         onChange={handleChange}
                         className="trade-calculator-input"
                     />
                 </div>
-
                 <ListItemSelect
                     id="strategy"
                     items={strategies}
