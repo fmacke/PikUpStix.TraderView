@@ -10,6 +10,7 @@ export interface Position {
     quantity: number;
     pnl: number;
     buySell: string;
+    executions: Execution[];
 }
 
 export interface PositionOutcome {

@@ -12,6 +12,7 @@ namespace traderview.Server.DTOs
         public decimal Quantity { get; set; }
         public decimal Pnl { get; set; }
         public string BuySell { get; set; } = string.Empty;
+        public List<TradeExecutionDto> Executions { get; set; } = new();
     }
 
     public class InstrumentDto

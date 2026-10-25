@@ -50,6 +50,7 @@ namespace traderview.Server.Controllers
                     var positionTotalSize = 0m;
                     var postionDirection = p.TradeExecutions.OrderBy(x => x.Id).FirstOrDefault()?.BuySell ?? "BUY";
                     var fifoPnlRealized = 0m;
+                    var executions = new List<TradeExecutionDto>();
                     foreach (var te in p.TradeExecutions.OrderBy(x => x.Id))
                     {
                         _logger.LogInformation("TradeExecution ID: {TradeExecutionId}, Position ID: {PositionId}, Execution Type: {ExecutionType}, Price: {Price}, Quantity: {Quantity}, Date: {Date}",
@@ -66,6 +67,23 @@ namespace traderview.Server.Controllers
                             totalSale += (Convert.ToDecimal(te.TradePrice) * Convert.ToDecimal(te.Quantity)) + Convert.ToDecimal(te.IbCommission);
                         }
                         fifoPnlRealized += (Convert.ToDecimal(te.FifoPnlRealized));
+                        executions.Add(new TradeExecutionDto
+                        {
+                            Id = te.Id,
+                            PositionId = Convert.ToInt32(te.PositionId),
+                            Symbol = te.Symbol,
+                            TradeId = te.TradeId,
+                            TradeDate = te.DateTime,
+                            Quantity = te.Quantity,
+                            TradePrice = te.TradePrice,
+                            BuySell = te.BuySell,
+                            FifoPnlRealized = te.FifoPnlRealized,
+                            IbCommission = te.IbCommission,
+                            IbCommissionCurrency = te.IbCommissionCurrency,
+                            ClosePrice = te.ClosePrice,
+                            Cost = te.Cost,
+                            IbExecId = te.IbExecId
+                        });
                     }
                     averageCostBasis = totalCost / (quantitySum != 0 ? quantitySum : 1);
                     averageSalePrice = totalSale / (quantitySoldSum != 0 ? quantitySoldSum : 1);
@@ -81,7 +99,8 @@ namespace traderview.Server.Controllers
                         ExitPrice = averageSalePrice,
                         Quantity = positionTotalSize,
                         Pnl = fifoPnlRealized,
-                        BuySell = postionDirection
+                        BuySell = postionDirection,
+                        Executions = executions
                     };
                     tradeDtos.Add(tradeDto);
                 }
