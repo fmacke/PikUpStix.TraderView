@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react';
-import type { Trade } from '../../../types/api';
+import type { Position } from '../../../types/api';
 import './TradeList.css';
 
 interface TradeListProps {
-    trades: Trade[];
+    trades: Position[];
     // composite key: `${positionId}-${entryDate}` to uniquely identify trades
     selectedPositionId: string | null;
-    onTradeSelect: (trade: Trade) => void;
+    onTradeSelect: (trade: Position) => void;
 }
 
 function TradeList({ trades, selectedPositionId, onTradeSelect }: TradeListProps) {
@@ -72,20 +72,20 @@ function TradeList({ trades, selectedPositionId, onTradeSelect }: TradeListProps
                 tabIndex={0}
                 onKeyDown={handleKeyDown}
             >
-                {sortedTrades.map((trade) => (
+                {sortedTrades.map((position) => (
                 <div
-                        id={`trade-${trade.positionId}-${trade.entryDate}`}
-                        data-position-id={trade.positionId}
-                        data-unique-id={`${trade.positionId}-${trade.entryDate}`}
-                        key={`${trade.positionId}-${trade.entryDate}`}
-                        ref={selectedPositionId === `${trade.positionId}-${trade.entryDate}` ? selectedItemRef : null}
-                        className={`trade-item ${selectedPositionId === `${trade.positionId}-${trade.entryDate}` ? 'selected' : ''}`}
-                        onClick={() => onTradeSelect(trade)}
+                        id={`trade-${position.positionId}-${position.entryDate}`}
+                        data-position-id={position.positionId}
+                        data-unique-id={`${position.positionId}-${position.entryDate}`}
+                        key={`${position.positionId}-${position.entryDate}`}
+                        ref={selectedPositionId === `${position.positionId}-${position.entryDate}` ? selectedItemRef : null}
+                        className={`trade-item ${selectedPositionId === `${position.positionId}-${position.entryDate}` ? 'selected' : ''}`}
+                        onClick={() => onTradeSelect(position)}
                     >
-                        <div className="trade-symbol">{trade.symbol}</div>
-                        <div className="trade-date">Closed: {new Date(trade.exitDate).toLocaleDateString()}</div>
-                        <div className={`trade-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
-                            ${trade.pnl.toFixed(2)}
+                        <div className="trade-symbol">{position.symbol}</div>
+                        <div className="trade-date">Closed: {new Date(position.exitDate).toLocaleDateString()}</div>
+                        <div className={`trade-pnl ${position.pnl >= 0 ? 'positive' : 'negative'}`}>
+                            ${position.pnl.toFixed(2)}
                         </div>
                     </div>
                 ))}

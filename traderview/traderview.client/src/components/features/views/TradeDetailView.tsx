@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { Trade, CreateNoteRequest, Note } from '../../../types/api';
+import type { Position, CreateNoteRequest, Note } from '../../../types/api';
 import { notesService, tradeService } from '../../../services';
 import './TradeDetailView.css';
 import TradingViewChart from '../charts/TradingViewChart';
@@ -10,8 +10,8 @@ import TradeSummaryCard from '../../cards/TradeSummaryCard';
 import TradeListerCard from '../../cards/TradeListerCard';
 
 function TradeDetailView() {
-    const [trades, setTrades] = useState<Trade[]>([]);
-    const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
+    const [trades, setTrades] = useState<Position[]>([]);
+    const [selectedTrade, setSelectedTrade] = useState<Position | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [useCarousel, setUseCarousel] = useState<boolean>(true);
@@ -25,7 +25,7 @@ function TradeDetailView() {
         populateTradeData();
     }, []);
 
-    const handleTradeSelect = (trade: Trade) => {
+    const handleTradeSelect = (trade: Position) => {
         setSelectedTrade(trade);
     };
 
@@ -137,7 +137,7 @@ function TradeDetailView() {
                 </div>
                 {trades.length > 0 && (
                     <TradeListerCard
-                        trades={trades}
+                        positions={trades}
                         selectedTrade={selectedTrade}
                         onTradeSelect={handleTradeSelect}
                         useCarousel={useCarousel}
@@ -194,7 +194,7 @@ function TradeDetailView() {
                 </div>
             </div>
             <TradeListerCard
-                trades={trades}
+                positions={trades}
                 selectedTrade={selectedTrade}
                 onTradeSelect={handleTradeSelect}
                 useCarousel={useCarousel}

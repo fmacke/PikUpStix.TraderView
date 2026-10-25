@@ -1,12 +1,12 @@
 import './TradeRollerList.css';
-import type { Trade } from '../../../types/api';
+import type { Position } from '../../../types/api';
 import { useEffect, useRef, useState } from 'react';
 
 interface TradeRollerListProps {
-    trades: Trade[];
+    trades: Position[];
     // composite key: `${positionId}-${entryDate}` to uniquely identify trades
     selectedPositionId: string | null;
-    onTradeSelect: (trade: Trade) => void;
+    onTradeSelect: (trade: Position) => void;
 }
 
 export default function TradeRollerList({ trades, selectedPositionId, onTradeSelect }: TradeRollerListProps) {

@@ -1,4 +1,4 @@
-export interface Trade {
+export interface Position {
     id: number;
     positionId: number;
     instrumentId: number;
@@ -72,7 +72,7 @@ export interface TradeCalculationCompoundedPosition {
 }
 
 export interface TradeDetail {
-    trade: Trade;
+    trade: Position;
     instrument: Instrument;
     executions: Execution[];
 }
@@ -95,7 +95,7 @@ export interface Execution {
 }
 
 export interface TradeContext {
-    trade: Trade;
+    trade: Position;
     candlesticks: Candlestick[];
     entryDate: string;
     exitDate: string;
@@ -108,33 +108,6 @@ export interface Candlestick {
     low: number;
     close: number;
     volume: number;
-}
-
-export interface RSIndicatorData {
-    rsData: RSDataPoint[];
-    metrics: RSMetrics;
-}
-
-export interface RSDataPoint {
-    date: string;
-    rsRatio: number;
-    rsma: number;
-    isRS50High: boolean;
-    isRSNewHigh: boolean;
-    isBlueDot: boolean;
-}
-
-export interface RSMetrics {
-    institutionalCount: number | null;
-    institutionalPercent: number | null;
-    institutionalCountDelta: number | null;
-    isInstitutionalGrowing: boolean;
-    isRSNewHigh: boolean;
-    isStage2Trend: boolean;
-    distanceFrom52WeekHigh: number;
-    sma50: number;
-    sma150: number;
-    sma200: number;
 }
 
 export interface OpenPosition {

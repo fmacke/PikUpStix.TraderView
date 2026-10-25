@@ -1,9 +1,9 @@
 import api from './apiClient';
-import type { Trade, TradeContext, TradeExecution } from '../types/api';
+import type { Position, TradeContext, TradeExecution } from '../types/api';
 
 export const tradeService = {
-    async getTrades(): Promise<Trade[]> {
-        return api.get<Trade[]>('/tradeviewer/trades');
+    async getTrades(): Promise<Position[]> {
+        return api.get<Position[]>('/tradeviewer/trades');
     },
 
     async getTradeCandlesticks(positionId: number, daysBefore: number = 150, daysAfter: number = 150): Promise<TradeContext> {

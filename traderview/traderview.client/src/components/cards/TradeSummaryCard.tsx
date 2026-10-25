@@ -1,8 +1,8 @@
-import type { Trade } from '../../types/api';
+import type { Position } from '../../types/api';
 import './TradeSummaryCard.css';
 
 interface TradeSummaryCardProps {
-    trade: Trade;
+    trade: Position;
 }
 
 const TradeSummaryCard: React.FC<TradeSummaryCardProps> = ({ trade }) => {
@@ -32,8 +32,8 @@ const TradeSummaryCard: React.FC<TradeSummaryCardProps> = ({ trade }) => {
                         <td>${trade.exitPrice.toFixed(2)}</td>
                     </tr>
                     <tr>
-                        <td className="label">Instrument ID</td>
-                        <td>{trade.instrumentId}</td>
+                        <td className="label">Direction</td>
+                        <td>{trade.buySell  }</td>
                     </tr>
                     <tr>
                         <td className="label">P&L</td>

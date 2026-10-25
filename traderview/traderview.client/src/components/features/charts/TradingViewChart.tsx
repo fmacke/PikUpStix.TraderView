@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { createChart, CandlestickSeries, LineSeries } from 'lightweight-charts';
 import type { IChartApi } from 'lightweight-charts';
-import type { Trade, RSDataPoint } from '../../../types/api';
+import type { Position } from '../../../types/api';
 import { tradeService } from '../../../services';
 import './TradingViewChart.css';
 
 interface TradingViewChartProps {
-    trade: Trade;
-    rsData?: RSDataPoint[];
+    trade: Position;
 }
 
 function TradingViewChart({ trade }: TradingViewChartProps) {

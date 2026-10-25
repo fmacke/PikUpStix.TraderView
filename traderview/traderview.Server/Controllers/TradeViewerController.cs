@@ -12,14 +12,17 @@ namespace traderview.Server.Controllers
         private readonly ITradeViewerService _tradeViewerService;
         private readonly IReportRunnerService _reportRunnerService;
         private readonly ILogger<TradeViewerController> _logger;
+        private readonly IPositionService _positionService;
 
         public TradeViewerController(
             ITradeViewerService tradeViewerService,
             IReportRunnerService reportRunnerService,
+            IPositionService positionService,
             ILogger<TradeViewerController> logger)
         {
             _tradeViewerService = tradeViewerService;
             _reportRunnerService = reportRunnerService;
+            _positionService = positionService;
             _logger = logger;
         }
 
@@ -34,13 +37,60 @@ namespace traderview.Server.Controllers
         {
             try
             {
-                var trades = await _tradeViewerService.GetAllTradesAsync();
-                foreach (var trade in trades)
+                var positions = await _positionService.GetAllPositionsAsync(true);
+                List<TradeDto> tradeDtos = new List<TradeDto>();
+                foreach (var p in positions)
                 {
-                    _logger.LogInformation("Trade ID: {TradeId}, Symbol: {Symbol}, Entry Date: {EntryDate}, Exit Date: {ExitDate}",
-                        trade.PositionId, trade.Symbol, trade.EntryDate, trade.ExitDate);
+                    var averageCostBasis = 0m;
+                    var averageSalePrice = 0m;
+                    var quantitySum = 0m;
+                    var quantitySoldSum = 0m;
+                    var totalSale = 0m;
+                    var totalCost = 0m;
+                    var positionTotalSize = 0m;
+                    var postionDirection = p.TradeExecutions.OrderBy(x => x.Id).FirstOrDefault()?.BuySell ?? "BUY";
+                    var fifoPnlRealized = 0m;
+                    foreach (var te in p.TradeExecutions.OrderBy(x => x.Id))
+                    {
+                        _logger.LogInformation("TradeExecution ID: {TradeExecutionId}, Position ID: {PositionId}, Execution Type: {ExecutionType}, Price: {Price}, Quantity: {Quantity}, Date: {Date}",
+                            te.Id, p.Id, te.BuySell, te.ClosePrice, te.Quantity, te.DateTime);
+                        if (postionDirection == "BUY" && te.BuySell == "BUY" || postionDirection == "SELL" && te.BuySell == "SELL") 
+                        {
+                            quantitySum += Convert.ToDecimal(te.Quantity);
+                            totalCost += (Convert.ToDecimal(te.TradePrice) * Convert.ToDecimal(te.Quantity)) + Convert.ToDecimal(te.IbCommission);
+                            positionTotalSize += Convert.ToDecimal(te.Quantity);
+                        }
+                        if(postionDirection == "BUY" && te.BuySell == "SELL" || postionDirection == "SELL" && te.BuySell == "BUY") 
+                        {
+                            quantitySoldSum += Convert.ToDecimal(te.Quantity);
+                            totalSale += (Convert.ToDecimal(te.TradePrice) * Convert.ToDecimal(te.Quantity)) + Convert.ToDecimal(te.IbCommission);
+                        }
+                        fifoPnlRealized += (Convert.ToDecimal(te.FifoPnlRealized));
+                    }
+                    averageCostBasis = totalCost / (quantitySum != 0 ? quantitySum : 1);
+                    averageSalePrice = totalSale / (quantitySoldSum != 0 ? quantitySoldSum : 1);
+
+                    var tradeDto = new TradeDto
+                    {
+                        PositionId = p.Id,
+                        InstrumentId = p.InstrumentId,
+                        Symbol = p.Instrument.DataName,
+                        EntryDate = p.OpenDate,
+                        ExitDate = p.CloseDate ?? DateTime.MinValue,
+                        EntryPrice = averageCostBasis,
+                        ExitPrice = averageSalePrice,
+                        Quantity = positionTotalSize,
+                        Pnl = fifoPnlRealized,
+                        BuySell = postionDirection
+                    };
+                    tradeDtos.Add(tradeDto);
                 }
-                return Ok(trades);
+                foreach (var position in positions)
+                {
+                    _logger.LogInformation("Position ID: {PositionId}, Symbol: {Symbol}, Entry Date: {EntryDate}, Exit Date: {ExitDate}",
+                        position.Id, position.Instrument.DataName, position.OpenDate, position.CloseDate);
+                }
+                return Ok(tradeDtos);
             }
             catch (Exception ex)
             {
