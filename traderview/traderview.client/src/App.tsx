@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import './App.css';
-import { tradeService, syncService } from './services';
-import type { Trade } from './types/api';
+import { syncService } from './services';
 import TradeDetailView from './components/features/views/TradeDetailView';
 import OpenPositionsView from './components/features/views/OpenPositionsView';
 import RiskCalculatorView from './components/features/views/RiskCalculatorView';
@@ -10,60 +9,13 @@ import JournalView from './components/features/views/JournalView';
 import ReportsView from './components/features/views/ReportsView';
 import SyncButton from './components/common/SyncButton';
 import ThemeToggle from './components/common/ThemeToggle';
-import TradeListerCard from './components/cards/TradeListerCard';
 import { useTheme } from './hooks/useTheme';
 
 type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener' | 'journal' | 'reports';
 
-function App() {
-    const [trades, setTrades] = useState<Trade[]>([]);
-    const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string | null>(null);
-    const [viewMode, setViewMode] = useState<ViewMode>('trades');
-    const [useCarousel, setUseCarousel] = useState<boolean>(true);
+function App() {    
+    const [viewMode, setViewMode] = useState<ViewMode>('trades');    
     const { theme } = useTheme();
-
-    useEffect(() => {
-        populateTradeData();
-    }, []);
-
-    const handleTradeSelect = (trade: Trade) => {
-        setSelectedTrade(trade);
-    };
-
-    if (loading) {
-        return (
-            <div className="app-container">
-                <div className="loading-container">
-                    <p><em>Loading trades... Please ensure the ASP.NET backend has started.</em></p>
-                </div>
-                
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div className="app-container">
-                <div className="error-container">
-                    <h2>Error Loading Trades</h2>
-                    <p className="error">{error}</p>
-                    <button onClick={populateTradeData}>Retry</button>
-                </div>
-            </div>
-        );
-    }
-
-    if (trades.length === 0) {
-        return (
-            <div className="app-container">
-                <div className="empty-container">
-                    <p><em>No trades found.</em></p>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className="app-container">
@@ -120,7 +72,7 @@ function App() {
                         syncingLabel="Syncing IBKR..."
                         title="Sync data from Interactive Brokers"
                         onSync={() => syncService.syncIBKRData()}
-                        onSuccess={populateTradeData}
+                        onSuccess={() => window.location.reload()}
                     />
 
                     {/* Secondary Custom Sync Button */}
@@ -129,25 +81,12 @@ function App() {
                         syncingLabel="Syncing Screener..."
                         title="Sync screener data from FMP"
                         onSync={() => syncService.syncFMPData()}
-                        onSuccess={populateTradeData}
+                        onSuccess={() => window.location.reload()}
                     />
                 </div>
             </div>
 
-            {viewMode === 'trades' && (
-                <div className="master-detail-layout">
-                    <div className="detail-pane">
-                        <TradeDetailView trade={selectedTrade} />
-                    </div>
-                    <TradeListerCard
-                        trades={trades}
-                        selectedTrade={selectedTrade}
-                        onTradeSelect={handleTradeSelect}
-                        useCarousel={useCarousel}
-                        onToggleCarousel={setUseCarousel}
-                    />
-                </div>
-            )}
+            {viewMode === 'trades' && <TradeDetailView />}
             {viewMode === 'positions' && <OpenPositionsView />}
             {viewMode === 'riskcalculator' && <RiskCalculatorView />}
             {viewMode === 'stockscreener' && <StockScreenerView />}
@@ -157,27 +96,7 @@ function App() {
         
     );
 
-    async function populateTradeData() {
-        try {
-            setLoading(true);
-            setError(null);
-            console.log('[App] populateTradeData - calling tradeService.getTrades');
-            const data = await tradeService.getTrades();
-            console.log('[App] populateTradeData - received data', data?.length);
-            setTrades(data);
-            if (data.length > 0) {
-                const sortedData = [...data].sort((a, b) => {
-                    return new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime();
-                });
-                setSelectedTrade(sortedData[0]);
-            }
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Failed to load trades. Make sure the API is running.');
-            console.error('Error fetching trades:', err);
-        } finally {
-            setLoading(false);
-        }
-    }
+    
 }
 
 export default App;
