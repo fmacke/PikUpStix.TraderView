@@ -12,6 +12,10 @@ const TradeSummaryCard: React.FC<TradeSummaryCardProps> = ({ trade }) => {
             <table className="detail-table">
                 <tbody>
                     <tr>
+                        <td className="label">Position ID</td>
+                        <td>{trade.positionId}</td>
+                    </tr>
+                    <tr>
                         <td className="label">Entry Date</td>
                         <td>{new Date(trade.entryDate).toLocaleDateString()}</td>
                     </tr>

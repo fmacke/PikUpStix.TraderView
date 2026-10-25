@@ -36,6 +36,9 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                 const tradeContext = await tradeService.getTradeCandlesticks(trade.positionId, 150, 150);
 
                 console.log('Received candlestick data:', tradeContext);
+                console.log('Trade object from context:', tradeContext.trade);
+                console.log('Executions from context:', tradeContext.trade?.executions);
+                console.log('Executions count:', tradeContext.trade?.executions?.length);
 
                 if (!isMounted || !chartContainerRef.current) return;
 
@@ -100,15 +103,13 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
 
                 candlestickSeries.setData(candlestickData);
 
-                // Add a line series connecting entry and exit points in blue
-                // Only add the line if entry and exit are on different days
-                // Parse dates as date strings to avoid timezone shifts
+                // Add the overall trade line from entry to exit (blue line)
                 const entryDateStr = trade.entryDate.split('T')[0];
                 const exitDateStr = trade.exitDate.split('T')[0];
 
                 if (entryDateStr !== exitDateStr) {
                     const tradeLine = chart.addSeries(LineSeries, {
-                        color: '#2196F3', // blue color for all trades
+                        color: '#2196F3', // blue color for overall trade line
                         lineWidth: 3,
                         lineStyle: 0, // solid line
                         crosshairMarkerVisible: true,
@@ -122,6 +123,111 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                         { time: entryDateStr as any, value: trade.entryPrice },
                         { time: exitDateStr as any, value: trade.exitPrice },
                     ]);
+                }
+
+                // Add individual execution lines for each buy/sell execution
+                const tradeFromContext = tradeContext.trade;
+                console.log('Trade data from context:', tradeFromContext);
+                console.log('Trade executions from context:', tradeFromContext.executions);
+                console.log('Trade executions length:', tradeFromContext.executions?.length);
+
+                if (tradeFromContext.executions && tradeFromContext.executions.length > 0) {
+                    console.log('Adding execution markers...');
+
+                    // Helper function to remove duplicate times (keep first occurrence)
+                    const removeDuplicateTimes = (executions: any[]) => {
+                        const seen = new Set<string>();
+                        return executions.filter(exec => {
+                            const dateStr = exec.date.split('T')[0];
+                            if (seen.has(dateStr)) {
+                                return false;
+                            }
+                            seen.add(dateStr);
+                            return true;
+                        });
+                    };
+
+                    // Create line series for BUY executions (green)
+                    const buyExecutions = tradeFromContext.executions.filter(e => e.side === 'BUY');
+                    if (buyExecutions.length > 0) {
+                        const uniqueBuyExecutions = removeDuplicateTimes(buyExecutions);
+                        const buyLineData = uniqueBuyExecutions.map(exec => ({
+                            time: exec.date.split('T')[0] as any,
+                            value: exec.price,
+                        }));
+
+                        console.log('BUY executions (filtered):', buyLineData);
+
+                        if (buyLineData.length > 0) {
+                            const buyLine = chart.addSeries(LineSeries, {
+                                color: '#A52A2A', // bright green for BUY executions
+                                lineWidth: 4, // thicker line
+                                lineStyle: 1, // dotted line
+                                crosshairMarkerVisible: true,
+                                crosshairMarkerRadius: 8,
+                                lastValueVisible: false,
+                                priceLineVisible: true, // show horizontal price line
+                                priceLineSource: 'LastBar' as any,
+                            });
+
+                            buyLine.setData(buyLineData);
+                            console.log('Added BUY execution markers:', buyLineData);
+
+                            // Add price lines with labels for each BUY execution
+                            for (const exec of uniqueBuyExecutions) {
+                                candlestickSeries.createPriceLine({
+                                    price: exec.price,
+                                    color: '#B8860B',
+                                    lineWidth: 1,
+                                    lineStyle: 1, // dotted
+                                    axisLabelVisible: true,
+                                    title: `BUY: ${exec.price.toFixed(2)}`,
+                                });
+                            }
+                        }
+                    }
+
+                    // Create line series for SELL executions (red)
+                    const sellExecutions = tradeFromContext.executions.filter(e => e.side === 'SELL');
+                    if (sellExecutions.length > 0) {
+                        const uniqueSellExecutions = removeDuplicateTimes(sellExecutions);
+                        const sellLineData = uniqueSellExecutions.map(exec => ({
+                            time: exec.date.split('T')[0] as any,
+                            value: exec.price,
+                        }));
+
+                        console.log('SELL executions (filtered):', sellLineData);
+
+                        if (sellLineData.length > 0) {
+                            const sellLine = chart.addSeries(LineSeries, {
+                                color: '#ff0000', // bright red for SELL executions
+                                lineWidth: 4, // thicker line
+                                lineStyle: 1, // dotted line
+                                crosshairMarkerVisible: true,
+                                crosshairMarkerRadius: 8,
+                                lastValueVisible: false,
+                                priceLineVisible: true, // show horizontal price line
+                                priceLineSource: 'LastBar' as any,
+                            });
+
+                            sellLine.setData(sellLineData);
+                            console.log('Added SELL execution markers:', sellLineData);
+
+                            // Add price lines with labels for each SELL execution
+                            for (const exec of uniqueSellExecutions) {
+                                candlestickSeries.createPriceLine({
+                                    price: exec.price,
+                                    color: '#ff0000',
+                                    lineWidth: 1,
+                                    lineStyle: 1, // dotted
+                                    axisLabelVisible: true,
+                                    title: `SELL: ${exec.price.toFixed(2)}`,
+                                });
+                            }
+                        }
+                    }
+                } else {
+                    console.log('No executions available');
                 }
 
                 // Add price lines for entry and exit points (without titles on the lines)

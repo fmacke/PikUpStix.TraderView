@@ -43,6 +43,11 @@ namespace traderview.Server.DTOs
         public decimal? ClosePrice { get; set; }
         public decimal? Cost { get; set; }
         public string? IbExecId { get; set; }
+        // Additional properties for execution pairing in chart (maps to Execution interface)
+        public string? Date { get; set; }
+        public decimal? Price { get; set; }
+        public string? Side { get; set; }
+        public decimal? Commission { get; set; }
     }
 
     public class CandlestickDto

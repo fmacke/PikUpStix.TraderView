@@ -127,6 +127,34 @@ namespace traderview.Server.Services
 
                 var trade = MapToTradeDto(tradeSummary);
 
+                // Get executions sorted by date (FIFO basis) for visualization
+                var executionsDomain = await _tradeExecutionRepository.GetTradeExecutionsByPositionIdAsync(positionId);
+                trade.Executions = executionsDomain
+                    .OrderBy(e => e.DateTime)
+                    .Select(e => new TradeExecutionDto
+                    {
+                        Id = e.Id,
+                        PositionId = positionId,
+                        InstrumentId = trade.InstrumentId,
+                        Symbol = e.Symbol,
+                        TradeId = e.TradeId,
+                        DateTime = e.DateTime.ToString("yyyy-MM-dd"),
+                        Date = e.DateTime.ToString("yyyy-MM-dd"),
+                        TradeDate = e.TradeDate,
+                        Quantity = e.Quantity,
+                        TradePrice = e.TradePrice,
+                        Price = e.TradePrice,
+                        BuySell = e.BuySell,
+                        Side = e.BuySell,
+                        FifoPnlRealized = e.FifoPnlRealized,
+                        IbCommission = e.IbCommission,
+                        Commission = e.IbCommission,
+                        IbCommissionCurrency = e.IbCommissionCurrency,
+                        ClosePrice = e.ClosePrice,
+                        Cost = e.Cost,
+                        IbExecId = e.IbExecId
+                    }).ToList();
+
                 // Get candlestick data around the trade dates using repository
                 var candlesticksDomain = await _historicalDataRepository.GetCandlesticksAsync(
                     trade.InstrumentId,
