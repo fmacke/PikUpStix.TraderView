@@ -45,6 +45,38 @@
     }
 }
 
+/* Force dark mode when data-theme="dark" is set */
+:root[data-theme="dark"] {
+    --text: #9ca3af;
+    --text-h: #f3f4f6;
+    --bg: #16171d;
+    --border: #2e303a;
+    --code-bg: #1f2028;
+    --accent: #c084fc;
+    --accent-bg: rgba(192, 132, 252, 0.15);
+    --accent-border: rgba(192, 132, 252, 0.5);
+    --social-bg: rgba(47, 48, 58, 0.5);
+    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
+}
+
+:root[data-theme="dark"] #social .button-icon {
+    filter: invert(1) brightness(2);
+}
+
+/* Force light mode when data-theme="light" is set */
+:root[data-theme="light"] {
+    --text: #6b6375;
+    --text-h: #08060d;
+    --bg: #fff;
+    --border: #e5e4e7;
+    --code-bg: #f4f3ec;
+    --accent: #aa3bff;
+    --accent-bg: rgba(170, 59, 255, 0.1);
+    --accent-border: rgba(170, 59, 255, 0.5);
+    --social-bg: rgba(244, 243, 236, 0.5);
+    --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+}
+
 html, body {
     height: 100%;
     margin: 0;
@@ -111,9 +143,9 @@ code {
 .table-container, .screener-table-container, .open-positions-container {
     width: 100%;
     overflow-x: auto;
-    background: #1e1e1e;
+    background: var(--bg);
     border-radius: 6px;
-    border: 1px solid #333333;
+    border: 1px solid var(--border);
     margin-top: 12px;
 }
 
@@ -121,20 +153,20 @@ code {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.9rem;
-    color: #e0e0e0;
+    color: var(--text);
     text-align: left;
 }
 
     .data-table th,
     .data-table td {
         padding: 10px 14px;
-        border-bottom: 1px solid #2a2a2a;
+        border-bottom: 1px solid var(--border);
         white-space: nowrap;
     }
 
     .data-table thead th {
-        background-color: #252525;
-        color: #9e9e9e;
+        background-color: var(--code-bg);
+        color: var(--text);
         font-weight: 600;
         text-transform: uppercase;
         font-size: 0.75rem;
@@ -145,7 +177,7 @@ code {
     }
 
     .data-table tbody tr:hover {
-        background-color: #2a2d32;
+        background-color: var(--code-bg);
     }
 
     /* Sortable Headers */
@@ -156,14 +188,146 @@ code {
     }
 
         .data-table th.sortable-header:hover {
-            color: #ffffff;
+            color: var(--accent);
         }
 
 .sort-arrow {
     display: inline-block;
     font-size: 0.7rem;
     margin-left: 4px;
-    color: #4da3ff;
+    color: var(--accent);
+}
+
+/* ==========================================================================
+   Unified Positions Table Styles (Used by OpenPositions, Journal, Screener)
+   ========================================================================== */
+.positions-table-container {
+    overflow-x: auto;
+    background: var(--bg);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.positions-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.positions-table thead {
+    background-color: var(--code-bg);
+    border-bottom: 2px solid var(--border);
+}
+
+.positions-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text);
+}
+
+.positions-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background-color 0.2s;
+}
+
+.positions-table tbody tr:hover {
+    background-color: var(--code-bg);
+}
+
+.positions-table tbody tr.selected-row {
+    background-color: var(--accent-bg);
+    border-left: 4px solid var(--accent);
+}
+
+.positions-table tbody tr.selected-row:hover {
+    background-color: var(--accent-bg);
+    opacity: 0.8;
+}
+
+.positions-table td {
+    padding: 12px 16px;
+    font-size: 14px;
+    text-align: left;
+    color: var(--text);
+}
+
+/* Table cell utilities */
+.symbol-cell {
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.description-cell {
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.number-cell {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+}
+
+.note-date {
+    width: 120px;
+    color: var(--text);
+}
+
+.note-time {
+    width: 120px;
+    color: var(--text);
+}
+
+.note-comment {
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.note-task {
+    width: 150px;
+    color: var(--text);
+}
+
+.note-subtask {
+    width: 150px;
+    color: var(--text);
+}
+
+.note-actions {
+    width: 150px;
+    display: flex;
+    gap: 8px;
+}
+
+.positions-table td.text-center,
+.positions-table th.text-center {
+    text-align: center;
+}
+
+/* Status badges */
+.status-pill {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.status-pill.positive {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
+}
+
+.status-pill.negative {
+    background-color: rgba(231, 76, 60, 0.15);
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.3);
 }
 
 /* Typography & Cell Alignment Utilities */
@@ -189,19 +353,11 @@ code {
 }
 
 /* Status Badges / Pills */
-.status-pill {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
+.status-pill.success {
+    background-color: rgba(46, 204, 113, 0.15);
+    color: #2ecc71;
+    border: 1px solid rgba(46, 204, 113, 0.3);
 }
-
-    .status-pill.success {
-        background-color: rgba(46, 204, 113, 0.15);
-        color: #2ecc71;
-        border: 1px solid rgba(46, 204, 113, 0.3);
-    }
 
     .status-pill.neutral {
         background-color: rgba(149, 165, 166, 0.15);
@@ -243,20 +399,6 @@ code {
     color: #374151;
     border-bottom: 2px solid #007bff;
     padding-bottom: 10px;
-}
-
-.rs-indicator-chart h3 {
-    margin: 0 0 15px 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #333;
-}
-
-.rs-metrics-dashboard h3 {
-    margin: 0 0 15px 0;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #333;
 }
 
 .no-selection h2 {
@@ -306,11 +448,12 @@ code {
 }
 
 .dashboard-card {
-    background-color: #ffffff;
-    border: 1px solid #e5e7eb;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 0.75rem;
     padding: 1rem;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow);
+    color: var(--text);
 }
 .form-group {
     display: flex;

@@ -1,8 +1,8 @@
 .trade-executions-container {
     margin-top: 30px;
     padding: 16px;
-    background-color: #ffffff;
-    border: 1px solid #dee2e6;
+    background-color: var(--bg);
+    border: 1px solid var(--border);
     border-radius: 4px;
 }
 
@@ -10,8 +10,8 @@
     margin: 0 0 16px 0;
     font-size: 18px;
     font-weight: 600;
-    color: #212529;
-    border-bottom: 2px solid #007bff;
+    color: var(--text);
+    border-bottom: 2px solid var(--accent);
     padding-bottom: 8px;
 }
 
@@ -22,17 +22,17 @@
 }
 
 .trade-executions-table thead {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
+    background-color: var(--code-bg);
+    border-bottom: 2px solid var(--border);
 }
 
 .trade-executions-table th {
     padding: 12px 8px;
     text-align: left;
     font-weight: 600;
-    color: #495057;
+    color: var(--text);
     white-space: nowrap;
-    border-right: 1px solid #dee2e6;
+    border-right: 1px solid var(--border);
 }
 
 .trade-executions-table th:last-child {
@@ -40,12 +40,12 @@
 }
 
 .trade-executions-table tbody tr {
-    border-bottom: 1px solid #dee2e6;
+    border-bottom: 1px solid var(--border);
     transition: background-color 0.15s ease;
 }
 
 .trade-executions-table tbody tr:hover {
-    background-color: #f8f9fa;
+    background-color: var(--code-bg);
 }
 
 .trade-executions-table tbody tr:last-child {
@@ -54,8 +54,8 @@
 
 .trade-executions-table td {
     padding: 10px 8px;
-    color: #212529;
-    border-right: 1px solid #f0f0f0;
+    color: var(--text);
+    border-right: 1px solid var(--border);
 }
 
 .trade-executions-table td:last-child {
@@ -66,7 +66,7 @@
 .number-cell {
     text-align: right;
     font-family: 'Courier New', monospace;
-    color: #495057;
+    color: var(--text);
 }
 
 /* Currency cells - center aligned */
@@ -78,19 +78,19 @@
 /* ID cells */
 .execution-id {
     text-align: center;
-    color: #6c757d;
+    color: var(--text);
     font-family: 'Courier New', monospace;
 }
 
 /* Date and time cells */
 .execution-date {
     text-align: center;
-    color: #495057;
+    color: var(--text);
 }
 
 .execution-time {
     text-align: center;
-    color: #6c757d;
+    color: var(--text);
     font-family: 'Courier New', monospace;
 }
 
@@ -99,13 +99,13 @@
 .trade-executions-empty {
     padding: 20px;
     text-align: center;
-    color: #6c757d;
+    color: var(--text);
     font-size: 14px;
     font-style: italic;
 }
 
 .trade-executions-loading {
-    color: #495057;
+    color: var(--text);
 }
 
 /* Responsive design */

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { marketDataService } from '../../services';
+import { marketDataService } from '../../../services';
 
 type Regime = 'Choppy/Pressure' | 'Bull' | 'Correction' | 'Unknown';
 

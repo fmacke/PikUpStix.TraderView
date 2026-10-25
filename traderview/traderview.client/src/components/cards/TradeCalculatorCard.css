@@ -1,0 +1,222 @@
+/* Trade Calculator Card - Theme-aware styling */
+
+.trade-calculator-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.trade-calculator-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.trade-calculator-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.trade-calculator-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.trade-calculator-status {
+    font-size: 0.875rem;
+    color: var(--accent);
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.trade-calculator-save-btn {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    background-color: var(--accent);
+    color: white;
+    font-size: 0.875rem;
+    border: none;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.trade-calculator-save-btn:hover:not(:disabled) {
+    opacity: 0.8;
+}
+
+.trade-calculator-save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Error and message alerts */
+.trade-calculator-error {
+    padding: 0.75rem;
+    background-color: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.3);
+    color: #dc2626;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.trade-calculator-success {
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    background-color: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #22c55e;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+/* Input Section */
+.trade-calculator-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.trade-calculator-input-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.trade-calculator-label {
+    width: 12rem;
+    flex-shrink: 0;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.trade-calculator-input,
+.trade-calculator-select {
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    border: 1px solid var(--border);
+    background-color: var(--code-bg);
+    color: var(--text);
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.trade-calculator-input:focus,
+.trade-calculator-select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(170, 59, 255, 0.1);
+}
+
+.trade-calculator-input::placeholder {
+    color: var(--text);
+    opacity: 0.6;
+}
+
+/* Small inputs (exchange rate) */
+.trade-calculator-input-small {
+    width: 7rem;
+    flex-shrink: 0;
+}
+
+.trade-calculator-select-small {
+    width: 10rem;
+    flex-shrink: 0;
+}
+
+/* Results section */
+.trade-calculator-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.trade-calculator-result-item {
+    padding: 1rem;
+    background-color: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 0.375rem;
+}
+
+.trade-calculator-result-label {
+    font-size: 0.875rem;
+    color: var(--text);
+    opacity: 0.7;
+    margin-bottom: 0.25rem;
+}
+
+.trade-calculator-result-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text);
+    font-family: 'Courier New', monospace;
+}
+
+.trade-calculator-result-value.positive {
+    color: #22c55e;
+}
+
+.trade-calculator-result-value.negative {
+    color: #dc2626;
+}
+
+/* Compound positions section */
+.trade-calculator-compound {
+    margin-top: 1.5rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--border);
+}
+
+.trade-calculator-compound h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* Strategy selection */
+.trade-calculator-strategy-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.trade-calculator-strategy-label {
+    width: 12rem;
+    flex-shrink: 0;
+    font-weight: 500;
+    color: var(--text);
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+    .trade-calculator-input-group {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .trade-calculator-label,
+    .trade-calculator-strategy-label {
+        width: 100%;
+    }
+
+    .trade-calculator-input,
+    .trade-calculator-select {
+        width: 100%;
+    }
+
+    .trade-calculator-results {
+        grid-template-columns: 1fr;
+    }
+}

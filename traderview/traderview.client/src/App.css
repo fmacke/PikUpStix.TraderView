@@ -27,6 +27,12 @@
     padding: 1rem 1.5rem;
     background-color: #f9fafb;
     border-bottom: 1px solid #e5e7eb;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+:root[data-theme="dark"] .nav-header {
+    background-color: #1f2028;
+    border-bottom-color: #2e303a;
 }
 
 .nav-buttons {
@@ -46,9 +52,20 @@
     transition: all 0.2s;
 }
 
+:root[data-theme="dark"] .nav-button {
+    background-color: #2e303a;
+    color: #9ca3af;
+    border-color: #3f4451;
+}
+
 .nav-button:hover {
     background-color: #f3f4f6;
     border-color: #9ca3af;
+}
+
+:root[data-theme="dark"] .nav-button:hover {
+    background-color: #3f4451;
+    border-color: #4b5563;
 }
 
 .nav-button.active {
@@ -58,6 +75,17 @@
 }
 
 .nav-button.active:hover {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+:root[data-theme="dark"] .nav-button.active {
+    background-color: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+}
+
+:root[data-theme="dark"] .nav-button.active:hover {
     background-color: #2563eb;
     border-color: #2563eb;
 }

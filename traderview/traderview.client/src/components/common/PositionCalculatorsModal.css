@@ -11,13 +11,15 @@
   z-index: 1000;
 }
 .pc-modal-content {
-  background: #fff;
+  background: var(--bg);
+  color: var(--text);
   padding: 16px;
   border-radius: 6px;
   width: 900px;
   max-width: 95%;
   max-height: 85%;
   overflow: auto;
+  border: 1px solid var(--border);
 }
 .pc-modal-header {
   display: flex;
@@ -26,5 +28,6 @@
 }
 .pc-modal-body { margin-top: 12px; }
 .pc-table { width: 100%; border-collapse: collapse; }
-.pc-table th, .pc-table td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
+.pc-table th, .pc-table td { border-bottom: 1px solid var(--border); padding: 8px; text-align: left; color: var(--text); }
+.pc-table th { background-color: var(--code-bg); font-weight: 600; }
 .pc-modal-footer { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }

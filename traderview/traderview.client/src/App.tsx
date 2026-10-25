@@ -2,15 +2,16 @@ import { useEffect, useState } from 'react';
 import './App.css';
 import { tradeService, syncService } from './services';
 import type { Trade } from './types/api';
-import TradeList from './components/features/trade/TradeList';
-import TradeRollerList from './components/features/trade/TradeRollerList';
-import TradeDetail from './components/features/trade/TradeDetail';
+import TradeDetailView from './components/features/views/TradeDetailView';
 import OpenPositionsView from './components/features/views/OpenPositionsView';
 import RiskCalculatorView from './components/features/views/RiskCalculatorView';
 import StockScreenerView from './components/features/views/StockScreenerView';
 import JournalView from './components/features/views/JournalView';
 import ReportsView from './components/features/views/ReportsView';
 import SyncButton from './components/common/SyncButton';
+import ThemeToggle from './components/common/ThemeToggle';
+import TradeListerCard from './components/cards/TradeListerCard';
+import { useTheme } from './hooks/useTheme';
 
 type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener' | 'journal' | 'reports';
 
@@ -21,6 +22,7 @@ function App() {
     const [error, setError] = useState<string | null>(null);
     const [viewMode, setViewMode] = useState<ViewMode>('trades');
     const [useCarousel, setUseCarousel] = useState<boolean>(true);
+    const { theme } = useTheme();
 
     useEffect(() => {
         populateTradeData();
@@ -66,6 +68,9 @@ function App() {
     return (
         <div className="app-container">
             <div className="nav-header">
+                <div className="logo-container" style={{ display: 'flex', alignItems: 'center' }}>
+                    <img src={theme === 'dark' ? '/logo-dark.png' : '/logo.png'} alt="PikUpStix Logo" style={{ height: '200px', marginRight: '20px' }} />
+                </div>
                 <div className="nav-buttons">
                     <button
                         onClick={() => setViewMode('trades')}
@@ -106,6 +111,9 @@ function App() {
                 </div>
 
                 <div className="nav-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    {/* Theme Toggle Button */}
+                    <ThemeToggle />
+
                     {/* Primary IBKR Sync Button */}
                     <SyncButton
                         label="Sync IBKR Data"
@@ -129,32 +137,15 @@ function App() {
             {viewMode === 'trades' && (
                 <div className="master-detail-layout">
                     <div className="detail-pane">
-                        <TradeDetail trade={selectedTrade} />
+                        <TradeDetailView trade={selectedTrade} />
                     </div>
-                    <div className="list-pane">
-
-                    <button
-                            onClick={() => setUseCarousel(c => !c)}
-                            className={`nav-button ${useCarousel ? 'active' : ''}`}
-                            title="Toggle carousel trade view"
-                        >
-                            Full List
-                        </button>
-                        {useCarousel ? (
-                            <TradeRollerList
-                                trades={trades}
-                                // use a composite key of positionId and entryDate so items are uniquely identified
-                                selectedPositionId={selectedTrade ? `${selectedTrade.positionId}-${selectedTrade.entryDate}` : null}
-                                onTradeSelect={handleTradeSelect}
-                            />
-                        ) : (
-                            <TradeList
-                                trades={trades}
-                                selectedPositionId={selectedTrade ? `${selectedTrade.positionId}-${selectedTrade.entryDate}` : null}
-                                onTradeSelect={handleTradeSelect}
-                            />
-                        )}
-                    </div>
+                    <TradeListerCard
+                        trades={trades}
+                        selectedTrade={selectedTrade}
+                        onTradeSelect={handleTradeSelect}
+                        useCarousel={useCarousel}
+                        onToggleCarousel={setUseCarousel}
+                    />
                 </div>
             )}
             {viewMode === 'positions' && <OpenPositionsView />}

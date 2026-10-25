@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { riskService } from '../../services';
 import type { TradeCalculationRequest, TradeCalculationResponse, CompoundPositions, TradeCalculationCompoundedPosition } from '../../types/api';
+import './CompoundedPositionsCalculator.css';
 
 interface Props {
     request: TradeCalculationRequest;
@@ -8,18 +9,32 @@ interface Props {
 }
 
 const SmallStat: React.FC<{ label: string; value: string | number; highlight?: 'green' | 'yellow' }> = ({ label, value, highlight = 'green' }) => {
-    const bg = highlight === 'yellow' ? 'bg-yellow-200' : 'bg-green-200';
+    const highlightClass = highlight === 'yellow' ? 'highlight-yellow' : 'highlight-green';
     return (
-        <div className="mb-2">
-            <div className="text-xs text-gray-600">{label}</div>
-            <div className={`mt-1 p-2 ${bg} rounded-md font-semibold text-gray-800`}>{value}</div>
+        <div className="compounded-stat">
+            <div className="compounded-stat-label">{label}</div>
+            <div className={`compounded-stat-value ${highlightClass}`}>{value}</div>
         </div>
     );
 };
 
 const ColumnBox: React.FC<{ title: string; pos: TradeCalculationCompoundedPosition }> = ({ title, pos }) => (
-    <div className="p-3 border rounded bg-white shadow-sm">
-        <div className="font-bold mb-2 text-sm">{title}</div>
+    <div className="compounded-position-column">
+        <div className="compounded-position-title">{title}</div>
+
+        <SmallStat label="Buy Price (USD)" value={`$${(pos.buyPriceUsd ?? 0).toFixed(2)}`} highlight="yellow" />
+        <SmallStat label="Shares" value={(pos.shares ?? 0).toFixed(2)} highlight="yellow" />
+        <SmallStat label="Stop Loss At (USD)" value={`$${(pos.stopLossAtUsd ?? 0).toFixed(2)}`} highlight="yellow" />
+        <div className="compounded-stat-row">
+            <div className="compounded-stat-row-flex">
+                <SmallStat label="Target Share Price (USD)" value={`$${(pos.targetSharePriceUsd ?? 0).toFixed(2)}`} highlight="yellow" />
+            </div>
+            <div className="compounded-stat-row-small">
+                <SmallStat label="%" value={`${(pos.targetSharePricePercentage ?? 0).toFixed(2)}%`} highlight="yellow" />
+            </div>
+        </div>
+        <SmallStat label="Total Shares" value={(pos.totalShares ?? 0).toFixed(2)} />
+        <SmallStat label="Avg Share Price (USD)" value={`$${(pos.averageSharePriceUsd ?? 0).toFixed(2)}`} />
 
         {/* Header block */}
         <SmallStat label="Risk Per Position" value={`${(pos.riskPerPositionPercentage ?? 0).toFixed(2)}%`} />
@@ -30,29 +45,18 @@ const ColumnBox: React.FC<{ title: string; pos: TradeCalculationCompoundedPositi
         <SmallStat label="Account Risk" value={`${(pos.accountRiskPercentage ?? 0).toFixed(2)}%`} />
 
         {/* Price and shares */}
-        <SmallStat label="Buy Price (USD)" value={`$${(pos.buyPriceUsd ?? 0).toFixed(2)}`} highlight="yellow" />
-        <SmallStat label="Shares" value={(pos.shares ?? 0).toFixed(2)} highlight="yellow" />
-        <SmallStat label="Total Shares" value={(pos.totalShares ?? 0).toFixed(2)} />
-        <SmallStat label="Avg Share Price (USD)" value={`$${(pos.averageSharePriceUsd ?? 0).toFixed(2)}`} />
+        
+        
 
         {/* Stop / targets */}
-        <SmallStat label="Stop Loss At (USD)" value={`$${(pos.stopLossAtUsd ?? 0).toFixed(2)}`}  highlight="yellow"  />
+        
         <SmallStat label="Profit Target (USD)" value={`$${(pos.profitTargetUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <SmallStat label="Take Profit / Pyramid At (USD)" value={`$${(pos.takeProfitOrPyramidAtUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <div className="flex items-center gap-2">
-            <div className="flex-1">
-                <div className="text-xs text-gray-600">Target Share Price (USD)</div>
-                <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">${(pos.targetSharePriceUsd ?? 0).toFixed(2)}</div>
-            </div>
-            <div className="w-24">
-                <div className="text-xs text-gray-600">%</div>
-                <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">{(pos.targetSharePricePercentage ?? 0).toFixed(2)}%</div>
-            </div>
-        </div>
+        {/*<SmallStat label="Take Profit / Pyramid At (USD)" value={`$${(pos.takeProfitOrPyramidAtUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} /> */}
+        
 
         {/* Outcomes */}
-        <SmallStat label="Win (USD)" value={`$${(pos.winUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
-        <SmallStat label="Loss (USD)" value={`$${(pos.lossUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} />
+        <SmallStat label="Win (USD)" value={`$${(pos.winUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / £${(pos.winGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }`} />
+      <SmallStat label="Loss (USD)" value={`$${(pos.lossUsd ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / £${(pos.lossGbp ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }`} />
         <SmallStat label="Win/Loss Ratio (%)" value={`${(pos.winLossRatioPercentage ?? 0).toFixed(2)}%`} />
     </div>
 );
@@ -81,11 +85,11 @@ const CompoundedPositionsCalculator: React.FC<Props> = ({ request, trigger }) =>
         run();
     }, [trigger]);
 
-    if (loading) return <div className="p-4 text-sm">Updating compounded positions...</div>;
+    if (loading) return <div className="compounded-loading">Updating compounded positions...</div>;
     if (!compound) return null;
 
     return (
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-gray-50 text-xs">
+        <div className="compounded-positions-container">
             <ColumnBox title="TRADE 1 - 1/4 Position" pos={compound.quarterPosition} />
             <ColumnBox title="TRADE 2 - 1/2 Position" pos={compound.halfPosition} />
             <ColumnBox title="TRADE 3 - FULL Position" pos={compound.fullPosition} />

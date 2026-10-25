@@ -2,8 +2,14 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    background-color: #f9fafb;
-    border-left: 1px solid #e5e7eb;
+    background-color: var(--bg);
+    border-left: 1px solid var(--border);
+}
+
+.trade-roller h2 {
+    margin: 1rem;
+    color: var(--text);
+    font-size: 1.1rem;
 }
 
 .trade-roller-window {
@@ -29,17 +35,18 @@
 .trade-roller-item {
     min-height: 72px;
     padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    background: white;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
     cursor: pointer;
     display: block;
     box-shadow: 0 0 0 rgba(0,0,0,0);
     scroll-snap-align: start;
+    color: var(--text);
 }
 
 .trade-roller-item.selected {
-    background-color: #dbeafe;
-    border-left: 3px solid #3b82f6;
+    background-color: var(--accent-bg);
+    border-left: 3px solid var(--accent);
 }
 
 .trade-roller-item .trade-symbol {
@@ -50,7 +57,8 @@
 
 .trade-roller-item .trade-date {
     font-size: 0.75rem;
-    color: #6b7280;
+    color: var(--text);
+    opacity: 0.7;
     margin-bottom: 0.25rem;
 }
 
@@ -77,9 +85,16 @@
     margin-left: 6px;
     padding: 6px 10px;
     border-radius: 4px;
-    border: 1px solid #d1d5db;
-    background: #fff;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
     cursor: pointer;
+    transition: all 0.2s;
+}
+
+.roller-controls button:hover {
+    background-color: var(--accent-bg);
+    border-color: var(--accent);
 }
 
 .roller-controls button:disabled {

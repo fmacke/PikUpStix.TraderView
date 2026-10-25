@@ -140,18 +140,24 @@ namespace TraderView.Application.Services
             quarter.TakeProfitOrPyramidAtUsd = quarter.TargetSharePriceUsd * quarter.TotalShares;
             quarter.WinUsd = (quarter.TargetSharePriceUsd - quarter.AverageSharePriceUsd) * quarter.TotalShares;
             quarter.LossUsd = (quarter.AverageSharePriceUsd - quarter.StopLossAtUsd) * quarter.TotalShares;
+            quarter.WinGbp = quarter.WinUsd / request.ExchangeRate;
+            quarter.LossGbp = quarter.LossUsd / request.ExchangeRate;
             quarter.WinLossRatioPercentage = quarter.LossUsd != 0 ? 100 * (quarter.WinUsd / quarter.LossUsd) : 0m;
 
             half.ProfitTargetUsd = (half.TargetSharePriceUsd - half.BuyPriceUsd) * half.TotalShares;
             half.TakeProfitOrPyramidAtUsd = half.TargetSharePriceUsd * half.TotalShares;
             half.WinUsd = (half.TargetSharePriceUsd - half.AverageSharePriceUsd) * half.TotalShares;
+            half.WinGbp = half.WinUsd / request.ExchangeRate;
             half.LossUsd = (half.AverageSharePriceUsd - half.StopLossAtUsd) * half.TotalShares;
+            half.LossGbp = half.LossUsd / request.ExchangeRate;
             half.WinLossRatioPercentage = half.LossUsd != 0 ? 100 * (half.WinUsd / half.LossUsd) : 0m;
 
             full.ProfitTargetUsd = (full.TargetSharePriceUsd - full.BuyPriceUsd) * full.TotalShares;
             full.TakeProfitOrPyramidAtUsd = full.TargetSharePriceUsd * full.TotalShares;
             full.WinUsd = (full.TargetSharePriceUsd - full.AverageSharePriceUsd) * full.TotalShares;
             full.LossUsd = (full.AverageSharePriceUsd - full.StopLossAtUsd) * full.TotalShares;
+            full.WinGbp = full.WinUsd / request.ExchangeRate;
+            full.LossGbp = full.LossUsd / request.ExchangeRate;
             full.WinLossRatioPercentage = full.LossUsd != 0 ? 100 * (full.WinUsd / full.LossUsd) : 0m;
 
             return new CompoundPositions
@@ -262,7 +268,7 @@ namespace TraderView.Application.Services
             var accountRiskPercentage = request.TradingCapital != 0 ? (positionRiskGbp / request.TradingCapital) * 100m : 0m;
 
             var targetSharePriceUsd = buyPriceUsd * (1m + takeProfitPercent / 100m);
-            var profitLossTargetPercentage = request.GainLossRatio;
+            var profitLossTargetPercentage = targetSharePriceUsd / request.BuyPrice;
 
             var pos = new TradeCalculationCompoundedPosition
             {

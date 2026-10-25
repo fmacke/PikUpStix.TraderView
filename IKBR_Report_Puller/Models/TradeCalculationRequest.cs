@@ -73,7 +73,9 @@ namespace TraderView.Application.Models
 
         // Outcomes & Ratios
         public decimal WinUsd { get; set; }
+        public decimal WinGbp { get; set; }
         public decimal LossUsd { get; set; }
+        public decimal LossGbp { get; set; }
         public decimal WinLossRatioPercentage { get; set; }
     }
     public class CompoundPositions

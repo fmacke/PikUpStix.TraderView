@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { notesService, tradeService, positionsService, syncService } from '../../../services';
-import MarketRegime from '../../trade/MarketRegime';
+import MarketRegime from '../trade/MarketRegime';
 import type { OpenPosition, CreateNoteRequest, Note, TradeExecution } from '../../../types/api';
 import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';

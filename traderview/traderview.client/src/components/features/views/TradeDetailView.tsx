@@ -1,51 +1,24 @@
 import { useState, useEffect } from 'react';
-import type { Trade, RSIndicatorData, CreateNoteRequest, Note } from '../../../types/api';
-import { tradeService, notesService } from '../../../services';
-import './TradeDetail.css';
+import type { Trade, CreateNoteRequest, Note } from '../../../types/api';
+import { notesService } from '../../../services';
+import './TradeDetailView.css';
 import TradingViewChart from '../charts/TradingViewChart';
-import RSMetricsDashboard from '../metrics/RSMetricsDashboard';
 import AddNoteModal from '../modals/AddNoteModal';
 import EditNoteModal from '../modals/EditNoteModal';
 import NotesList from '../../common/NotesList';
+import TradeSummaryCard from '../../cards/TradeSummaryCard';
 
 interface TradeDetailProps {
     trade: Trade | null;
 }
 
-function TradeDetail({ trade }: TradeDetailProps) {
-    const [rsData, setRsData] = useState<RSIndicatorData | null>(null);
-    const [rsLoading, setRsLoading] = useState<boolean>(false);
-    const [rsError, setRsError] = useState<string | null>(null);
+function TradeDetailView({ trade }: TradeDetailProps) {
     const [isNoteModalOpen, setIsNoteModalOpen] = useState<boolean>(false);
     const [isEditNoteModalOpen, setIsEditNoteModalOpen] = useState<boolean>(false);
     const [selectedNoteForEdit, setSelectedNoteForEdit] = useState<Note | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
     const [notesLoading, setNotesLoading] = useState<boolean>(false);
 
-    // Fetch RS indicator data when trade changes
-    useEffect(() => {
-        if (!trade) {
-            setRsData(null);
-            return;
-        }
-
-        const fetchRSData = async () => {
-            try {
-                setRsLoading(true);
-                setRsError(null);
-                const data = await tradeService.getRSIndicator(trade.id);
-                setRsData(data);
-            } catch (error) {
-                console.error('Error fetching RS indicator data:', error);
-                setRsError('RS indicator data not available. Ensure benchmark data (SPX) exists in the database.');
-                setRsData(null);
-            } finally {
-                setRsLoading(false);
-            }
-        };
-
-        fetchRSData();
-    }, [trade?.id]);
 
     // Fetch notes when trade changes
     useEffect(() => {
@@ -149,56 +122,12 @@ function TradeDetail({ trade }: TradeDetailProps) {
             </div>
 
             <div className="chart-container">
-                <TradingViewChart trade={trade} rsData={rsData?.rsData} />
+                <TradingViewChart trade={trade} />
             </div>
 
             <div className="detail-sections">
                 <div className="detail-section compact">
-                    <h3>Trade Summary & Performance</h3>
-                    <table className="detail-table">
-                        <tbody>
-                            <tr>
-                                <td className="label">Entry Date</td>
-                                <td>{new Date(trade.entryDate).toLocaleDateString()}</td>
-                            </tr>
-                            <tr>
-                                <td className="label">Exit Date</td>
-                                <td>{new Date(trade.exitDate).toLocaleDateString()}</td>
-                            </tr>
-                            <tr>
-                                <td className="label">Quantity</td>
-                                <td>{trade.quantity.toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td className="label">Entry Price</td>
-                                <td>${trade.entryPrice.toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td className="label">Exit Price</td>
-                                <td>${trade.exitPrice.toFixed(2)}</td>
-                            </tr>
-                            <tr>
-                                <td className="label">Instrument ID</td>
-                                <td>{trade.instrumentId}</td>
-                            </tr>
-                            <tr>
-                                <td className="label">P&L</td>
-                                <td className={trade.pnl >= 0 ? 'positive' : 'negative'}>
-                                    ${trade.pnl.toFixed(2)}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="label">Price Change</td>
-                                <td className={trade.exitPrice - trade.entryPrice >= 0 ? 'positive' : 'negative'}>
-                                    ${(trade.exitPrice - trade.entryPrice).toFixed(2)} ({((trade.exitPrice - trade.entryPrice) / trade.entryPrice * 100).toFixed(2)}%)
-                                </td>
-                            </tr>
-                            <tr>
-                                <td className="label">Total Value</td>
-                                <td>${(trade.quantity * trade.exitPrice).toFixed(2)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <TradeSummaryCard trade={trade} />
                 </div>
                 <div id="notesHolder" className="detail-section compact">
                     <h3>Notes</h3>
@@ -206,27 +135,7 @@ function TradeDetail({ trade }: TradeDetailProps) {
                 </div>
             </div>
 
-            {/* RS Indicator Section */}
-            <div className="rs-indicator-section">
-                {rsLoading && (
-                    <div className="rs-loading">
-                        <p>Loading RS indicator data...</p>
-                    </div>
-                )}
-
-                {rsError && (
-                    <div className="rs-error">
-                        <p>{rsError}</p>
-                    </div>
-                )}
-
-                {!rsLoading && !rsError && rsData && (
-                    <>
-                        {/* RS Chart is now integrated in TradingViewChart above */}
-                        <RSMetricsDashboard metrics={rsData.metrics} />
-                    </>
-                )}
-            </div>
+           
 
             {/* Add Note Modal */}
             <AddNoteModal
@@ -247,4 +156,4 @@ function TradeDetail({ trade }: TradeDetailProps) {
     );
 }
 
-export default TradeDetail;
+export default TradeDetailView;

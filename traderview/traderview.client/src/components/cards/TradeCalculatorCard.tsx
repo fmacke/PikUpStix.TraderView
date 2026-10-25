@@ -4,6 +4,7 @@ import type { TradeCalculationRequest, TradeCalculationResponse, PositionCalcula
 import CompoundedPositionsCalculator from './CompoundedPositionsCalculator';
 import type { ListItem } from '../../types/api';
 import ListItemSelect from '../common/ListItemSelect';
+import './TradeCalculatorCard.css';
 
 export const TradeCalculatorCard: React.FC = () => {
     const [request, setRequest] = useState<TradeCalculationRequest>({
@@ -259,15 +260,15 @@ export const TradeCalculatorCard: React.FC = () => {
 
     return (
         <div className="dashboard-card">
-            <div className="flex justify-between items-center">
+            <div className="trade-calculator-header">
                 <h3>Trading Position Calculator</h3>
-                <div className="flex items-center gap-3">
-                    {loading && <span className="text-sm text-blue-600 animate-pulse">Calculating...</span>}
+                <div className="trade-calculator-actions">
+                    {loading && <span className="trade-calculator-status">Calculating...</span>}
                     <button
                         type="button"
                         onClick={handleSave}
                         disabled={!result || saving}
-                        className={`px-3 py-1 rounded bg-blue-600 text-white text-sm ${(!result || saving) ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'}`}
+                        className="trade-calculator-save-btn"
                     >
                         {saving ? 'Saving...' : 'Save'}
                     </button>
@@ -275,127 +276,127 @@ export const TradeCalculatorCard: React.FC = () => {
             </div>
 
             {error && (
-                <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded-md text-sm">
+                <div className="trade-calculator-error">
                     {error}
                 </div>
             )}
 
             {saveMessage && (
-                <div className="p-3 mt-2 bg-blue-50 border border-blue-200 text-blue-800 rounded-md text-sm">
+                <div className="trade-calculator-success">
                     {saveMessage}
                 </div>
             )}
 
             {/* Input Section */}
-            <div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Trade Date</label>
+            <div className="trade-calculator-inputs">
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Trade Date</label>
                     <input
                         type="date"
                         name="tradeDate"
                         value={request.tradeDate}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Instrument</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Instrument</label>
                     <input
                         type="text"
                         name="instrument"
                         value={request.instrument}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Currency Pair</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Currency Pair</label>
                     <select
                         name="currencyPair"
                         value={currencyPair}
                         onChange={handlePairChange}
-                        className="w-40 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-select trade-calculator-select-small"
                     >
                         <option>GBP/USD</option>
                         <option>GBP/GBP</option>
                         <option>GBP/EUR</option>
                     </select>
 
-                    <label className="w-28 text-right">Exchange Rate</label>
+                    <label style={{ width: '7rem', flexShrink: 0 }}>Exchange Rate</label>
                     <input
                         type="number"
                         step="0.0001"
                         name="exchangeRate"
                         value={request.exchangeRate}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input trade-calculator-input-small"
                     />
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Buy Price (in stock Currency)</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Buy Price (in stock Currency)</label>
                     <input
                         type="number"
                         step="0.01"
                         name="buyPrice"
                         value={request.buyPrice}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Trading Capital (£)</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Trading Capital (£)</label>
                     <input
                         type="number"
                         name="tradingCapital"
                         value={request.tradingCapital}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Risk Per Position(%)</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Risk Per Position(%)</label>
                     <input
                         type="number"
                         step="0.5"
                         name="riskPerTrade"
                         value={request.riskPerTrade}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Max Exposure On Position</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Max Exposure On Position</label>
                     <input
                         type="number"
                         step="0.5"
                         name="maxExposure"
                         value={request.maxExposure}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Gain / Loss Ratio (% Winning)</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Gain / Loss Ratio (% Winning)</label>
                     <input
                         type="number"
                         step="0.5"
                         name="gainLossRatio"
                         value={request.gainLossRatio}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>            
                 <br />
                 <div><p>STOPLOSS  - SET BY STOPLOSS POINT</p></div>
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Stop Loss At</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Stop Loss At</label>
                     <input
                         type="number"
                         step="0.01"
                         name="stopLossAtInput"
                         value={request.stopLossAtInput}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>
 
@@ -409,18 +410,18 @@ export const TradeCalculatorCard: React.FC = () => {
                     isDisabled={isSubmitting}
                     placeholder="-- Select Strategy (Optional) --"
                     inline={true}
-                    wrapperClassName="mb-4"
-                    labelClassName="w-48 flex-shrink-0"
-                    className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                    wrapperClassName="trade-calculator-input-group"
+                    labelClassName="trade-calculator-label"
+                    className="trade-calculator-input"
                 />
-                <div className="flex items-center gap-4 mb-4">
-                    <label className="w-48 flex-shrink-0">Comment</label>
+                <div className="trade-calculator-input-group">
+                    <label className="trade-calculator-label">Comment</label>
                     <input
                         type="text"
                         name="comment"
                         value={request.comment}
                         onChange={handleChange}
-                        className="flex-1 rounded-md border-gray-300 shadow-sm p-2 bg-yellow-100 font-semibold text-xs focus:ring-yellow-500 focus:border-yellow-500"
+                        className="trade-calculator-input"
                     />
                 </div>
             </div>
@@ -430,64 +431,64 @@ export const TradeCalculatorCard: React.FC = () => {
                 <>
                     {/* Compounded positions component - updates whenever main result updates */}
                     <CompoundedPositionsCalculator request={request} trigger={result} />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg bg-green-50 text-xs">
-                    <div className="md:col-span-3">
+                    <div className="trade-calculator-results" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', padding: '1rem', border: '1px solid var(--border)', borderRadius: '0.5rem', backgroundColor: 'var(--code-bg)' }}>
+                    <div style={{ gridColumn: '1 / -1' }}>
                         <p>STOP LOSS DETAILS</p>
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700">Lot Size (£) / ($)</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item">
+                        <label className="trade-calculator-result-label">Lot Size (£) / ($)</label>
+                        <div className="trade-calculator-result-value">
                             £{result.lotGbp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${result.lotUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </div>
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700">Lot Size (%)</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item">
+                        <label className="trade-calculator-result-label">Lot Size (%)</label>
+                        <div className="trade-calculator-result-value">
                             {(result.lotPercent * 100).toFixed(1)}%
                         </div>
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700">Shares</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item">
+                        <label className="trade-calculator-result-label">Shares</label>
+                        <div className="trade-calculator-result-value">
                             {result.shares.toFixed(2)}
                         </div>
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700">Stop Loss At</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item">
+                        <label className="trade-calculator-result-label">Stop Loss At</label>
+                        <div className="trade-calculator-result-value">
                             {result.stopLossAt.toFixed(2)}
                         </div>
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700">Loss (£ / USD)</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item">
+                        <label className="trade-calculator-result-label">Loss (£ / USD)</label>
+                        <div className="trade-calculator-result-value">
                             £{result.lossGbp.toFixed(2)} / ${result.lossUsd.toFixed(2)}
                         </div>
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700">Loss %</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item">
+                        <label className="trade-calculator-result-label">Loss %</label>
+                        <div className="trade-calculator-result-value">
                             {(result.lossPercentage * 100).toFixed(3)}%
                         </div>
                     </div>
-                    <div className="md:col-span-3">
+                    <div style={{ gridColumn: '1 / -1' }}>
                         <p>TAKE PROFIT DETAILS</p>
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700">Price Target</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item">
+                        <label className="trade-calculator-result-label">Price Target</label>
+                        <div className="trade-calculator-result-value">
                             ${result.priceTarget.toFixed(2)}
                         </div>
                     </div>
-                    <div>
-                        <label className="block font-medium text-gray-700">Take Profit At</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item">
+                        <label className="trade-calculator-result-label">Take Profit At</label>
+                        <div className="trade-calculator-result-value">
                             {result.takeProfitAt.toFixed(1)}%
                         </div>
                     </div>
-                    <div className="md:col-span-3">
-                        <label className="block font-medium text-gray-700">Overall Profit (£ / USD)</label>
-                        <div className="mt-1 p-2 bg-green-200 rounded-md font-semibold text-gray-800">
+                    <div className="trade-calculator-result-item" style={{ gridColumn: '1 / -1' }}>
+                        <label className="trade-calculator-result-label">Overall Profit (£ / USD)</label>
+                        <div className="trade-calculator-result-value">
                             £{result.overallProfitGbp.toFixed(2)} / ${result.overallProfitUsd.toFixed(2)}
                         </div>
                     </div>

@@ -66,6 +66,8 @@ export interface TradeCalculationCompoundedPosition {
 
     winUsd: number;
     lossUsd: number;
+    winGbp: number;
+    lossGbp: number;
     winLossRatioPercentage: number;
 }
 

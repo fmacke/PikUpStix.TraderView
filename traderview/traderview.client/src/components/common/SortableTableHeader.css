@@ -4,19 +4,19 @@
     padding: 12px 16px;
     font-size: 14px;
     font-weight: 600;
-    color: #495057;
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
+    color: var(--text);
+    background-color: var(--code-bg);
+    border-bottom: 2px solid var(--border);
     transition: color 0.15s ease, background-color 0.15s ease;
 }
 
     .sortable-th:hover {
-        color: #007bff;
-        background-color: #e9ecef;
+        color: var(--accent);
+        background-color: var(--accent-bg);
     }
 
     .sortable-th.active {
-        color: #007bff;
+        color: var(--accent);
     }
 
     .sortable-th .th-content {
@@ -42,19 +42,23 @@
 
 .sort-icon .arrow-up,
 .sort-icon .arrow-down {
-    fill: #adb5bd;
-    transition: fill 0.15s ease;
+    fill: var(--text);
+    opacity: 0.5;
+    transition: fill 0.15s ease, opacity 0.15s ease;
 }
 
 .sort-icon.asc .arrow-up {
-    fill: #007bff;
+    fill: var(--accent);
+    opacity: 1;
 }
 
 .sort-icon.desc .arrow-down {
-    fill: #007bff;
+    fill: var(--accent);
+    opacity: 1;
 }
 
 .sortable-th:hover .sort-icon.inactive .arrow-up,
 .sortable-th:hover .sort-icon.inactive .arrow-down {
-    fill: #6c757d;
+    fill: var(--text);
+    opacity: 0.7;
 }

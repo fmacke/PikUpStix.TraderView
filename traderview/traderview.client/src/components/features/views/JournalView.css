@@ -1,73 +1,10 @@
-/* Reuse table container and table styling from OpenPositionsView */
+/* Reuse table container and table styling from index.css */
+
 .open-positions-container {
     padding: 20px;
     max-width: 100%;
     overflow-x: auto;
-}
-
-.positions-table-container {
-    overflow-x: auto;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.positions-table {
-    width: 100%;
-    border-collapse: collapse;
-    min-width: 900px;
-}
-
-.positions-table thead {
-    background-color: #f8f9fa;
-    border-bottom: 2px solid #dee2e6;
-}
-
-.positions-table th {
-    padding: 12px 16px;
-    text-align: left;
-    font-weight: 600;
-    font-size: 14px;
-    color: #495057;
-}
-
-.positions-table tbody tr {
-    border-bottom: 1px solid #dee2e6;
-    transition: background-color 0.2s;
-}
-
-.positions-table tbody tr:hover {
-    background-color: #f8f9fa;
-}
-
-.positions-table td {
-    padding: 12px 16px;
-    font-size: 14px;
-    text-align: left;
-}
-
-.note-date {
-    width: 120px;
-    color: #6c757d;
-}
-
-.note-comment {
-    max-width: 400px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.number-cell {
-    text-align: right;
-    font-family: 'Courier New', monospace;
-    width: 120px;
-}
-
-.note-actions {
-    width: 150px;
-    display: flex;
-    gap: 8px;
+    background: var(--bg);
 }
 
 .loading-container,
@@ -79,6 +16,8 @@
     justify-content: center;
     min-height: 300px;
     padding: 20px;
+    background: var(--bg);
+    color: var(--text);
 }
 
 .error-container {
@@ -91,37 +30,39 @@
 
 button {
     padding: 10px 20px;
-    background-color: #007bff;
+    background-color: var(--accent);
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
     margin-top: 10px;
+    transition: all 0.2s;
 }
 
 button:hover {
-    background-color: #0056b3;
+    opacity: 0.8;
 }
 
 button:disabled {
-    background-color: #6c757d;
+    background-color: var(--border);
     cursor: not-allowed;
 }
 
 .edit-note-button {
     padding: 6px 12px;
-    background-color: #17a2b8;
+    background-color: var(--accent);
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     font-size: 13px;
     margin: 0;
+    transition: all 0.2s;
 }
 
 .edit-note-button:hover {
-    background-color: #138496;
+    opacity: 0.8;
 }
 
 .delete-note-button {
@@ -133,10 +74,11 @@ button:disabled {
     cursor: pointer;
     font-size: 13px;
     margin: 0;
+    transition: all 0.2s;
 }
 
 .delete-note-button:hover {
-    background-color: #c82333;
+    opacity: 0.8;
 }
 
 h1 {

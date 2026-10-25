@@ -96,52 +96,6 @@ namespace traderview.Server.Controllers
         }
 
         /// <summary>
-        /// Get RS (Relative Strength) indicator data for a specific trade
-        /// </summary>
-        /// <param name="positionId">The trade ID</param>
-        /// <param name="benchmarkSymbol">Benchmark symbol (default: ^GSPC)</param>
-        /// <param name="daysBefore">Number of calendar days before trade entry to include (default: 150)</param>
-        /// <param name="daysAfter">Number of calendar days after trade exit to include (default: 150)</param>
-        /// <returns>RS indicator data with metrics</returns>
-        [HttpGet("trades/{positionId}/rs-indicator")]
-        [ProducesResponseType(typeof(RSIndicatorDataDto), StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RSIndicatorDataDto>> GetRSIndicatorAsync(
-            int positionId,
-            [FromQuery] string benchmarkSymbol = "^GSPC",
-            [FromQuery] int daysBefore = 150,
-            [FromQuery] int daysAfter = 150)
-        {
-            try
-            {
-                _logger.LogInformation("Fetching RS indicator for trade {TradeId} with benchmark {BenchmarkSymbol}", 
-                    positionId, benchmarkSymbol);
-
-                var rsData = await _tradeViewerService.GetRSIndicatorDataAsync(positionId, benchmarkSymbol, daysBefore, daysAfter);
-
-                if (rsData == null)
-                {
-                    _logger.LogWarning("RS indicator data not available for trade {TradeId}", positionId);
-                    return NotFound(new { message = $"RS indicator data not available for trade {positionId}. Ensure both stock and benchmark data exist." });
-                }
-
-                _logger.LogInformation("Found {Count} RS data points for trade {TradeId}",
-                    rsData.RSData.Count, positionId);
-
-                return Ok(rsData);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching RS indicator for trade {TradeId}", positionId);
-                return StatusCode(
-                    StatusCodes.Status500InternalServerError,
-                    new { message = "Error fetching RS indicator data", detail = ex.Message }
-                );
-            }
-        }
-
-        /// <summary>
         /// Sync IBKR data - fetches reports from Interactive Brokers and updates database
         /// </summary>
         /// <returns>Success message if sync completes successfully</returns>
