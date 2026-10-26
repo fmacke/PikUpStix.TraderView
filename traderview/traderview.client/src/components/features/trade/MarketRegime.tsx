@@ -56,14 +56,14 @@ export default function MarketRegime() {
                 aria-label={`market-regime-${regime}`}
                 title={loading ? 'Loading market regime...' : error ?? regime}
                 style={{
-                    width: 14,
-                    height: 14,
+                    width: 25,
+                    height: 25,
                     borderRadius: '50%',
                     background: statusColor(regime),
                     boxShadow: '0 0 6px rgba(0,0,0,0.15)'
                 }}
             />
-            <div style={{ fontSize: 14, color: '#333' }}>
+            <div style={{ fontSize: 25, color: 'var(--text-h)' }}>
                 {loading ? 'Loading...' : (error ? 'Error' : regime)}
             </div>
         </div>

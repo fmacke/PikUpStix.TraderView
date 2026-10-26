@@ -95,38 +95,17 @@ namespace TraderView.Infrastructure.Repositories
         /// </summary>
         async Task<List<Position>> IPositionRepository.GetAllPositionsAsync(bool loadTradeExecutions)
         {
-            var positions = await _context.Set<Position>()
+            IQueryable<Position> query = _context.Set<Position>()
                 .AsNoTracking()
-                .Include(x => x.Instrument)
-                .ToListAsync();
+                .Include(x => x.Instrument);
 
-            if (!positions.Any() || !loadTradeExecutions)
-                return positions;
-
-            await LoadExecutions(positions);
-            return positions;
-        }
-
-        private async Task LoadExecutions(List<Position> positions)
-        {
-            var positionIds = positions.Select(p => p.Id).ToList();
-            var tradeExecutions = await _context.Set<TradeExecution>()
-                .AsNoTracking()
-                .Where(te => te.PositionId.HasValue && positionIds.Contains(te.PositionId.Value))
-                .ToListAsync();
-
-            // Group and assign TradeExecutions to their parent Position
-            var executionLookup = tradeExecutions.ToLookup(te => te.PositionId ?? 0);
-            foreach (var position in positions)
+            if (loadTradeExecutions)
             {
-                if (executionLookup.Contains(position.Id))
-                {
-                    foreach (var execution in executionLookup[position.Id])
-                    {
-                        position.TradeExecutions.Add(execution);
-                    }
-                }
+                query = query
+                    .AsSplitQuery()
+                    .Include(x => x.TradeExecutions);
             }
+            return await query.ToListAsync();
         }
 
         /// <summary>
@@ -134,37 +113,14 @@ namespace TraderView.Infrastructure.Repositories
         /// </summary>
         async Task<List<Position>> IPositionRepository.GetOpenPositionsAsync()
         {
-            var positions = await _context.Set<Position>()
+            return await _context.Set<Position>()
                 .AsNoTracking()
-                .Where(x => x.Status == "Open" && x.Instrument != null && x.Instrument.ContractUnitType != "CASH")
+                .AsSplitQuery()
                 .Include(x => x.Instrument)
+                .Include(x => x.TradeExecutions)
+                .Where(x => x.Status == "Open" && x.Instrument.ContractUnitType != "CASH")
                 .OrderByDescending(x => x.OpenDate)
                 .ToListAsync();
-
-            if (!positions.Any())
-                return positions;
-
-            // Fetch TradeExecutions for all retrieved Positions
-            var positionIds = positions.Select(p => p.Id).ToList();
-            var tradeExecutions = await _context.Set<TradeExecution>()
-                .AsNoTracking()
-                .Where(te => te.PositionId.HasValue && positionIds.Contains(te.PositionId.Value))
-                .ToListAsync();
-
-            // Group and assign TradeExecutions to their parent Position
-            var executionLookup = tradeExecutions.ToLookup(te => te.PositionId ?? 0);
-            foreach (var position in positions)
-            {
-                if (executionLookup.Contains(position.Id))
-                {
-                    foreach (var execution in executionLookup[position.Id])
-                    {
-                        position.TradeExecutions.Add(execution);
-                    }
-                }
-            }
-
-            return positions;
         }        
     }
 }

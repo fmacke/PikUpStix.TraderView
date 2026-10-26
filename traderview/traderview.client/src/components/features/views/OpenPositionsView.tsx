@@ -2,13 +2,13 @@ import { useEffect, useState, useMemo } from 'react';
 import { notesService, tradeService, positionsService, syncService } from '../../../services';
 import MarketRegime from '../trade/MarketRegime';
 import type { OpenPosition, CreateNoteRequest, Note, TradeExecution } from '../../../types/api';
-import { SortableTableHeader } from '../../common/SortableTableHeader';
 import type { SortConfig } from '../../common/SortableTableHeader';
 import AddNoteModal from '../modals/AddNoteModal';
 import EditNoteModal from '../modals/EditNoteModal';
 import NotesList from '../../common/NotesList';
 import TradeExecutionsList from '../../common/TradeExecutionsList';
 import PositionCalculatorsModal from '../../common/PositionCalculatorsModal';
+import OpenPositionsTableCard from '../../cards/OpenPositionsTableCard';
 import './OpenPositionsView.css';
 
 function OpenPositionsView() {
@@ -177,32 +177,6 @@ function OpenPositionsView() {
         }
     };
 
-    const formatCurrency = (value: number | null, decimals: number = 2) => {
-        if (value === null || value === undefined) return '-';
-        return value.toLocaleString('en-US', {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals,
-        });
-    };
-
-    const formatNumber = (value: number | null, decimals: number = 2) => {
-        if (value === null || value === undefined) return '-';
-        return value.toLocaleString('en-US', {
-            minimumFractionDigits: decimals,
-            maximumFractionDigits: decimals,
-        });
-    };
-
-    const formatPercent = (value: number | null, decimals: number = 2) => {
-        if (value === null || value === undefined) return '-';
-        return (value * 100).toFixed(decimals) + '%';
-    };
-
-    const formatDate = (date: string | null) => {
-        if (!date) return '-';
-        return new Date(date).toLocaleDateString();
-    };
-
     const [sortConfig, setSortConfig] = useState<SortConfig<OpenPosition>>({
         key: 'symbol',
         direction: 'asc'
@@ -315,99 +289,20 @@ function OpenPositionsView() {
                     </button>
                 </div>
             </div>
-            <div className="positions-table-container">
-                <table className="positions-table">
-                    <thead>
-                        <tr>
-                            <SortableTableHeader columnKey="symbol" title="Symbol" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="dateOpened" title="Date Opened" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="daysOpened" title="Days Opened" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="quantity" title="Quantity" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="costPrice" title="Cost Price" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="averagePrice" title="Average Price" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="value" title="Value" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="unrealizedPnL" title="Unrealized P/L" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="percentChange" title="% Change" sortConfig={sortConfig} onSort={handleSort} />
-                            <SortableTableHeader columnKey="currentMargin" title="Current Margin" sortConfig={sortConfig} onSort={handleSort} />
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {sortedPositions.map((position, index) => (
-                            <tr
-                                key={`${position.symbol}-${position.accountId}-${index}`}
-                                className={selectedPosition?.positionId === position.positionId ? 'selected-row' : ''}
-                                onClick={() => handleRowClick(position)}
-                                style={{ cursor: 'pointer' }}
-                            >
-                                <td className="symbol-cell">{position.symbol}</td>
-                                <td>{formatDate(position.dateOpened)}</td>
-                                <td className="number-cell">{position.daysOpened ?? '-'}</td>
-                                <td className="number-cell">{formatNumber(position.quantity, 4)}</td>
-                                <td className="number-cell">{formatCurrency(position.costPrice)}</td>
-                                <td className="number-cell">{formatCurrency(position.averagePrice)}</td>
-                                <td className="number-cell">{formatCurrency(position.value)}</td>
-                                <td className={`number-cell ${(position.unrealizedPnL ?? 0) >= 0 ? 'positive' : 'negative'}`}>
-                                    {formatCurrency(position.unrealizedPnL)}
-                                </td>
-                                <td className={`number-cell ${(position.percentChange ?? 0) >= 0 ? 'positive' : 'negative'}`}>
-                                    {formatPercent(position.percentChange)}
-                                </td>
-                                <td className={`number-cell ${(position.currentMargin ?? 0) >= 0 ? 'positive' : 'negative'}`}>
-                                    {formatCurrency(position.currentMargin)}
-                                </td>
-                                <td>
-                                    <button
-                                        className="add-note-button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleAddNoteClick(position.positionId);
-                                        }}
-                                    >
-                                        Add Note
-                                    </button>
-                                    <button
-                                        className="add-note-button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            setSelectedPosition(position);
-                                            setIsCalcModalOpen(true);
-                                        }}
-                                    >
-                                        Link Calculations
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                    <tfoot>
-                        <tr className="summary-row">
-                            <td colSpan={6} className="summary-label" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                Total Value:
-                            </td>
-                            <td
-                                className="number-cell summary-value"
-                                style={{ fontWeight: 'bold' }}
-                            >
-                                {formatCurrency(totalValue)}
-                            </td>
-                            <td colSpan={2}></td>
-                        </tr>
-                        <tr className="summary-row">
-                            <td colSpan={9} className="summary-label" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                Total Margin:
-                            </td>
-                            <td
-                                className={`number-cell summary-value ${totalCurrentMargin >= 0 ? 'positive' : 'negative'}`}
-                                style={{ fontWeight: 'bold' }}
-                            >
-                                {formatCurrency(totalCurrentMargin)}
-                            </td>
-                            <td></td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+            <OpenPositionsTableCard
+                positions={sortedPositions}
+                selectedPositionId={selectedPosition?.positionId ?? null}
+                sortConfig={sortConfig}
+                onSort={handleSort}
+                onRowClick={handleRowClick}
+                onAddNoteClick={handleAddNoteClick}
+                onLinkCalculationsClick={(position) => {
+                    setSelectedPosition(position);
+                    setIsCalcModalOpen(true);
+                }}
+                totalValue={totalValue}
+                totalCurrentMargin={totalCurrentMargin}
+            />
 
             {selectedPosition && (
                 <div className="notes-section">

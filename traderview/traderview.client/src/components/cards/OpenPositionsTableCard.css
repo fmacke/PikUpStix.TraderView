@@ -1,0 +1,12 @@
+.open-positions-table-card {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.open-positions-table-card .add-note-button {
+    margin-right: 8px;
+}

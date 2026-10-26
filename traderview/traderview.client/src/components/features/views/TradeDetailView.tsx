@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import type { Position, CreateNoteRequest, Note } from '../../../types/api';
+import type { Position, CreateNoteRequest, Note, TradeExecution } from '../../../types/api';
 import { notesService, tradeService } from '../../../services';
 import './TradeDetailView.css';
 import TradingViewChart from '../charts/TradingViewChart';
 import AddNoteModal from '../modals/AddNoteModal';
 import EditNoteModal from '../modals/EditNoteModal';
 import NotesList from '../../common/NotesList';
+import TradeExecutionsList from '../../common/TradeExecutionsList';
 import TradeSummaryCard from '../../cards/TradeSummaryCard';
 import TradeListerCard from '../../cards/TradeListerCard';
 
@@ -20,6 +21,8 @@ function TradeDetailView() {
     const [selectedNoteForEdit, setSelectedNoteForEdit] = useState<Note | null>(null);
     const [notes, setNotes] = useState<Note[]>([]);
     const [notesLoading, setNotesLoading] = useState<boolean>(false);
+    const [tradeExecutions, setTradeExecutions] = useState<TradeExecution[]>([]);
+    const [tradeExecutionsLoading, setTradeExecutionsLoading] = useState<boolean>(false);
 
     useEffect(() => {
         populateTradeData();
@@ -32,7 +35,6 @@ function TradeDetailView() {
     // Fetch notes when trade changes
     useEffect(() => {
         if (!selectedTrade) {
-            setNotes([]);
             return;
         }
 
@@ -50,6 +52,27 @@ function TradeDetailView() {
         };
 
         fetchNotes();
+    }, [selectedTrade?.positionId]);
+
+    useEffect(() => {
+        if (!selectedTrade) {
+            return;
+        }
+
+        const fetchTradeExecutions = async () => {
+            try {
+                setTradeExecutionsLoading(true);
+                const executionsData = await tradeService.getTradeExecutionsByPositionId(selectedTrade.positionId);
+                setTradeExecutions(executionsData);
+            } catch (error) {
+                console.error('Error fetching trade executions:', error);
+                setTradeExecutions([]);
+            } finally {
+                setTradeExecutionsLoading(false);
+            }
+        };
+
+        fetchTradeExecutions();
     }, [selectedTrade?.positionId]);
 
     const handleAddNoteClick = () => {
@@ -174,6 +197,10 @@ function TradeDetailView() {
                             <h3>Notes</h3>
                             <NotesList notes={notes} loading={notesLoading} variant="detailed" onEditNote={handleEditNoteClick} />
                         </div>
+                    </div>
+
+                    <div className="trade-executions-section">
+                        <TradeExecutionsList tradeExecutions={tradeExecutions} loading={tradeExecutionsLoading} />
                     </div>
 
                     {/* Add Note Modal */}
