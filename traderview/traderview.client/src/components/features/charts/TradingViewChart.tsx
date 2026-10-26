@@ -15,7 +15,22 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
     const chartRef = useRef<IChartApi | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [isExpanded, setIsExpanded] = useState<boolean>(false);
     const { theme } = useTheme();
+
+    const handleToggleExpand = () => {
+        setIsExpanded(prev => !prev);
+    };
+
+    // Handle chart resize when expanded state changes
+    useEffect(() => {
+        if (chartRef.current && chartContainerRef.current) {
+            const newHeight = isExpanded ? 850 : 400;
+            chartRef.current.applyOptions({
+                height: newHeight,
+            });
+        }
+    }, [isExpanded]);
 
     useEffect(() => {
         let isMounted = true;
@@ -475,12 +490,20 @@ function TradingViewChart({ trade }: TradingViewChartProps) {
                         <span className={`chart-pnl ${trade.pnl >= 0 ? 'positive' : 'negative'}`}>
                             P&L: ${trade.pnl.toFixed(2)}
                         </span>
+                        <button 
+                            className="chart-expand-button" 
+                            onClick={handleToggleExpand}
+                            title={isExpanded ? "Collapse chart" : "Expand chart"}
+                            aria-label={isExpanded ? "Collapse chart" : "Expand chart"}
+                        >
+                            {isExpanded ? '▼' : '▲'}
+                        </button>
                     </div>
                 )}
             </div>
             {loading && <div className="chart-loading">Loading chart data...</div>}
             {error && <div className="chart-error">Error: {error}</div>}
-            <div ref={chartContainerRef} className="chart-wrapper" style={{ opacity: loading || error ? 0 : 1, visibility: loading || error ? 'hidden' : 'visible' }} />
+            <div ref={chartContainerRef} className={`chart-wrapper ${isExpanded ? 'expanded' : ''}`} style={{ opacity: loading || error ? 0 : 1, visibility: loading || error ? 'hidden' : 'visible' }} />
         </div>
     );
 }
