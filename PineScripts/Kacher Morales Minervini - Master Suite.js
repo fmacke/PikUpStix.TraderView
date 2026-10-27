@@ -1,5 +1,5 @@
 //@version=6
-indicator("MKM Master Suite", overlay = true, max_lines_count = 100, max_labels_count = 100, max_boxes_count = 100)
+indicator("Minervini & Kacher-Morales Master Suite", overlay = true, max_lines_count = 100, max_labels_count = 100, max_boxes_count = 100)
 
 // -------------------------------------------------------------------------
 // 0. TIME-FRAME & COMMON INPUTS
@@ -40,7 +40,12 @@ float sma_dist         = input.float(2.0, "Max Distance from SMA (%)", group = g
 bool enable_pp10       = input.bool(true, "Enable 10-SMA Pocket Pivot", group = grp_pp)
 bool enable_pp50       = input.bool(true, "Enable 50-SMA Pocket Pivot", group = grp_pp)
 
-grp_vis = "5. Moving Average Display Options & Timeframe"
+grp_bgu = "5. Buyable Gap-Up (BGU) Parameters"
+bool show_bgu_render   = input.bool(true, "Enable BGU Rendering & Signals", group = grp_bgu)
+float bgu_min_gap      = input.float(3.0, "Min Gap-Up % from Prior High", minval = 1.0, maxval = 10.0, step = 0.5, group = grp_bgu)
+float bgu_vol_mult     = input.float(1.5, "Min Volume Multiplier over 50 SMA Vol", minval = 1.0, maxval = 4.0, step = 0.1, group = grp_bgu)
+
+grp_vis = "6. Moving Average Display Options & Timeframe"
 bool show_smas         = input.bool(true, "Show Moving Average Ribbons", group = grp_vis)
 bool use_chart_tf      = input.bool(false, "Use Chart Timeframe Instead of Daily", group = grp_vis, tooltip = "If false, SMAs are calculated strictly on daily bars regardless of chart timeframe.")
 
@@ -124,7 +129,7 @@ float atr50 = ta.atr(20)
 bool vcp_setup = show_vcp_render and trend_passed and is_contracting and (atr10 < (atr50 * 0.75))
 
 // -------------------------------------------------------------------------
-// 3. 3-C & LOW CHEAT ENGINE (Calculated unconditionally for series consistency)
+// 3. 3-C & LOW CHEAT ENGINE
 // -------------------------------------------------------------------------
 float base_high   = ta.highest(high, cup_lookback)
 float base_low    = ta.lowest(low, cup_lookback)
@@ -165,15 +170,38 @@ bool pp50_signal    = enable_pp50 and is_up_day and pp_vol_valid and pp_close_st
 bool is_pocket_pivot= pp10_signal or pp50_signal
 
 // -------------------------------------------------------------------------
-// 5. BREAKOUT TRIGGERS
+// 5. BUYABLE GAP-UP (BGU) ENGINE
+// -------------------------------------------------------------------------
+bool is_bgu_raw     = (open >= high[1] * (1.0 + (bgu_min_gap / 100.0))) and (close > open) and (volume > vol_ma50 * bgu_vol_mult) and trend_passed
+bool trigger_bgu    = show_bgu_render and is_bgu_raw
+
+// -------------------------------------------------------------------------
+// 6. BREAKOUT TRIGGERS & COMBINED RENDERING LOGIC
 // -------------------------------------------------------------------------
 bool vol_breakout   = volume > (vol_ma50 * vol_spike)
 bool trigger_c3     = is_valid_tf and show_cheat_render and is_classic_3c and ta.crossover(close, shelf_high) and vol_breakout
 bool trigger_low    = is_valid_tf and show_cheat_render and is_low_cheat and ta.crossover(close, shelf_high) and vol_breakout
 bool vcp_breakout   = show_vcp_render and not na(last_ph) and ta.crossover(close, last_ph) and (volume > vol_ma50 * 1.40) and trend_passed
 
+bool any_major_trigger = vcp_breakout or trigger_bgu or trigger_c3 or trigger_low or pp10_signal or pp50_signal
+
+string combined_text = ""
+if any_major_trigger
+    if vcp_breakout
+        combined_text := combined_text + (combined_text != "" ? " / " : "") + "PVI"
+    if trigger_bgu
+        combined_text := combined_text + (combined_text != "" ? " / " : "") + "BGU"
+    if trigger_c3
+        combined_text := combined_text + (combined_text != "" ? " / " : "") + "3-C"
+    if trigger_low
+        combined_text := combined_text + (combined_text != "" ? " / " : "") + "LOW-C"
+    if pp10_signal
+        combined_text := combined_text + (combined_text != "" ? " / " : "") + "PP10"
+    if pp50_signal
+        combined_text := combined_text + (combined_text != "" ? " / " : "") + "PP50"
+
 // -------------------------------------------------------------------------
-// 6. VISUALIZATION & CONFLICT-FREE RENDERING HIERARCHY
+// 7. VISUALIZATION & CONFLICT-FREE RENDERING HIERARCHY
 // -------------------------------------------------------------------------
 plot(show_smas ? sma10 : na, "SMA 10", color = color.new(#248de2, 0), linewidth = 1)
 plot(show_smas ? sma21 : na, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
@@ -181,22 +209,20 @@ plot(show_smas ? sma50 : na, "SMA 50", color = color.new(#f31ac8, 0), linewidth 
 plot(show_smas ? sma150 : na, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
 plot(show_smas ? sma200 : na, "SMA 200", color = color.new(#3f0202, 0), linewidth = 2)
 
-plotshape(show_vcp_render and show_dots and not na(ph), "Swing High", shape.triangledown, location = location.abovebar, color = color.red, size = size.tiny, offset = -sw_right)
-plotshape(show_vcp_render and show_dots and not na(pl), "Swing Low", shape.triangleup, location = location.belowbar, color = color.green, size = size.tiny, offset = -sw_right)
+plotshape(show_vcp_render and show_dots and not na(ph), "Swing High", style = shape.triangledown, location = location.abovebar, color = color.red, size = size.tiny, offset = -sw_right)
+plotshape(show_vcp_render and show_dots and not na(pl), "Swing Low", style = shape.triangleup, location = location.belowbar, color = color.green, size = size.tiny, offset = -sw_right)
 
 color bg_color = (show_cheat_render and is_classic_3c) ? color.new(color.blue, 90) : (show_cheat_render and is_low_cheat) ? color.new(color.purple, 90) : vcp_setup ? color.new(#47ef47, 92) : is_pocket_pivot ? color.new(color.green, 90) : na
 bgcolor(bg_color, title = "Master Setup Zone")
 
 barcolor(is_pocket_pivot ? color.lime : na, title = "Pocket Pivot Bar Color")
 
-plotshape(vcp_breakout, title = "VCP Breakout (PVI)", style = shape.triangleup, location = location.belowbar, color = color.green, size = size.small, text = "PVI")
-plotshape(pp10_signal and not pp50_signal, title = "PP 10-SMA", style = shape.triangleup, location = location.belowbar, color = color.blue, size = size.tiny, text = "PP10")
-plotshape(pp50_signal, title = "PP 50-SMA", style = shape.triangleup, location = location.belowbar, color = color.purple, size = size.tiny, text = "PP50")
-plotshape(show_vcp_render and is_vdu and trend_passed, title = "Volume Dry Up", style = shape.circle, location = location.belowbar, color = color.rgb(116, 154, 249), size = size.tiny)
+// Render Combined Breakout & Pocket Pivot Labels dynamically via label.new
+if any_major_trigger
+    label.new(bar_index, low - (ta.atr(14) * 0.8), text = combined_text, color = color.green, textcolor = color.white, style = label.style_label_up, size = size.small)
 
-// Reliable Native Plotshape Execution for Breakouts
-plotshape(trigger_c3, title = "3-C Breakout", style = shape.triangleup, location = location.belowbar, color = color.aqua, size = size.small, text = "3-C")
-plotshape(trigger_low, title = "Low Cheat Breakout", style = shape.triangleup, location = location.belowbar, color = color.fuchsia, size = size.small, text = "LOW-C")
+// Secondary Volume Dry Up Marker
+plotshape(show_vcp_render and is_vdu and trend_passed, title = "Volume Dry Up", style = shape.circle, location = location.belowbar, color = color.rgb(116, 154, 249), size = size.tiny)
 
 var line cheat_line = na
 if show_cheat_render and (is_classic_3c or is_low_cheat)
@@ -204,14 +230,15 @@ if show_cheat_render and (is_classic_3c or is_low_cheat)
     cheat_line := line.new(bar_index - shelf_len, shelf_high, bar_index + 2, shelf_high, color = is_classic_3c ? color.yellow : color.fuchsia, width = 2, style = line.style_solid)
 
 var line vcp_line = na
-if show_vcp_render and not na(last_ph) and vcp_setup 
+if show_vcp_render and not na(last_ph) and vcp_setup
     line.delete(vcp_line)
     vcp_line := line.new(last_ph_bar, last_ph, bar_index + 5, last_ph, color = color.yellow, width = 2, style = line.style_dashed)
 
 // -------------------------------------------------------------------------
-// 7. TRADINGVIEW ALERTS
+// 8. TRADINGVIEW ALERTS
 // -------------------------------------------------------------------------
 alertcondition(trigger_c3, title = "3-C Breakout Alert", message = "3-C Breakout triggered on {{ticker}}!")
 alertcondition(trigger_low, title = "Low Cheat Breakout Alert", message = "Low Cheat Breakout triggered on {{ticker}}!")
 alertcondition(vcp_breakout, title = "VCP Breakout Alert", message = "VCP Pivot Breakout triggered on {{ticker}}!")
+alertcondition(trigger_bgu, title = "Buyable Gap-Up Alert", message = "Buyable Gap-Up triggered on {{ticker}}!")
 alertcondition(is_pocket_pivot, title = "Pocket Pivot Alert", message = "Pocket Pivot detected on {{ticker}}!")

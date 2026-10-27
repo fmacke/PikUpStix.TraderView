@@ -226,6 +226,10 @@ function OpenPositionsView() {
         return openPositions?.reduce((sum, pos) => sum + (Number(pos.value) || 0), 0) ?? 0;
     }, [openPositions]);
 
+    const totalValueGBP = useMemo(() => {
+        return openPositions?.reduce((sum, pos) => sum + (Number(pos.valueInGBP) || 0), 0) ?? 0;
+    }, [openPositions]);
+
     if (loading) {
         return (
             <div className="open-positions-container">
@@ -302,6 +306,7 @@ function OpenPositionsView() {
                 }}
                 totalValue={totalValue}
                 totalCurrentMargin={totalCurrentMargin}
+                totalValueGBP={totalValueGBP}
             />
 
             {selectedPosition && (

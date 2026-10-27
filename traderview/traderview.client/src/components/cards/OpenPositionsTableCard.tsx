@@ -12,6 +12,7 @@ interface OpenPositionsTableCardProps {
     onAddNoteClick: (positionId: number) => void;
     onLinkCalculationsClick: (position: OpenPosition) => void;
     totalValue: number;
+    totalValueGBP: number;
     totalCurrentMargin: number;
 }
 
@@ -25,6 +26,7 @@ function OpenPositionsTableCard({
     onLinkCalculationsClick,
     totalValue,
     totalCurrentMargin,
+    totalValueGBP
 }: OpenPositionsTableCardProps) {
     const formatCurrency = (value: number | null, decimals: number = 2) => {
         if (value === null || value === undefined) return '-';
@@ -66,7 +68,7 @@ function OpenPositionsTableCard({
                             <SortableTableHeader columnKey="averagePrice" title="Average Price" sortConfig={sortConfig} onSort={onSort} />
                             <SortableTableHeader columnKey="currency" title="Currency" sortConfig={sortConfig} onSort={onSort} />
                             <SortableTableHeader columnKey="value" title="Value" sortConfig={sortConfig} onSort={onSort} />
-                            <th>Value GBP</th>
+                            <SortableTableHeader columnKey="valueInGBP" title="Value GBP" sortConfig={sortConfig} onSort={onSort} />
                             <SortableTableHeader columnKey="unrealizedPnL" title="Unrealized P/L" sortConfig={sortConfig} onSort={onSort} />
                             <SortableTableHeader columnKey="percentChange" title="% Change" sortConfig={sortConfig} onSort={onSort} />
                             <SortableTableHeader columnKey="currentMargin" title="Current Margin" sortConfig={sortConfig} onSort={onSort} />
@@ -87,9 +89,9 @@ function OpenPositionsTableCard({
                                 <td className="number-cell">{formatNumber(position.quantity, 4)}</td>
                                 <td className="number-cell">{formatCurrency(position.costPrice)}</td>
                                 <td className="number-cell">{formatCurrency(position.averagePrice)}</td>
-                                <td>{position.currency || '-'}</td>
+                                <td className="number-cell">{position.currency ?? '-'}</td>
                                 <td className="number-cell">{formatCurrency(position.value)}</td>
-                                <td className="number-cell">{formatCurrency(position.value)}</td>
+                                <td className="number-cell">{formatCurrency(position.valueInGBP)}</td>
                                 <td className={`number-cell ${(position.unrealizedPnL ?? 0) >= 0 ? 'positive' : 'negative'}`}>
                                     {formatCurrency(position.unrealizedPnL)}
                                 </td>
@@ -127,25 +129,18 @@ function OpenPositionsTableCard({
                             <td colSpan={7} className="summary-label" style={{ textAlign: 'right', fontWeight: 'bold' }}>
                                 Total Value:
                             </td>
-                            <td
-                                className="number-cell summary-value"
-                                style={{ fontWeight: 'bold' }}
-                            >
+                            <td className="number-cell summary-value" style={{ fontWeight: 'bold' }}>
                                 {formatCurrency(totalValue)}
                             </td>
-                            <td colSpan={3}></td>
-                        </tr>
-                        <tr className="summary-row">
-                            <td colSpan={11} className="summary-label" style={{ textAlign: 'right', fontWeight: 'bold' }}>
-                                Total Margin:
+                            <td className="number-cell summary-value" style={{ fontWeight: 'bold' }}>
+                                £{formatCurrency(totalValueGBP)}
                             </td>
-                            <td
-                                className={`number-cell summary-value ${totalCurrentMargin >= 0 ? 'positive' : 'negative'}`}
-                                style={{ fontWeight: 'bold' }}
-                            >
+                            <td />
+                            <td />
+                            <td className={`number-cell summary-value ${totalCurrentMargin >= 0 ? 'positive' : 'negative'}`} style={{ fontWeight: 'bold' }}>
                                 {formatCurrency(totalCurrentMargin)}
                             </td>
-                            <td></td>
+                            <td />
                         </tr>
                     </tfoot>
                 </table>

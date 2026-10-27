@@ -97,10 +97,12 @@ namespace TraderView.Application.Services
                     string accountId = position.TradeExecutions.First().AccountId;
                     string symbol = position.TradeExecutions.First().Symbol;
                     string currency = position.TradeExecutions.First().Currency;
+                    
                     long? conid = TypeConverters.ConvertToLong(position.Instrument.ConId);
                     decimal? currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
                     decimal? costBasisPrice = CalculateAverageCost(position.TradeExecutions);
                     decimal? positionValue = position.LastReportedPrice * currentPositionQuantity;
+                    decimal? valueInGBP = position.TradeExecutions.Last().FxRateToBase * positionValue;
                     decimal? unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
                     DateTime? dateOpened = position.OpenDate;
                     int? daysOpened = dateOpened.HasValue
@@ -128,6 +130,7 @@ namespace TraderView.Application.Services
                         CostPrice = costBasisPrice,
                         AveragePrice = averagePrice,
                         Value = positionValue,
+                        ValueInGBP = valueInGBP,
                         UnrealizedPnL = unrealizedPnL,
                         PercentChange = percentChange,
                         CurrentMargin = currentMargin,

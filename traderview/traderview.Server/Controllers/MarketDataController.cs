@@ -34,7 +34,7 @@ namespace traderview.Server.Controllers
                     return Ok(1m);
                 }
 
-                var rate = await _marketDataService.GetExchangeRate(baseCurrency.Trim(), quote.Trim());
+                var rate = await _marketDataService.GetExchangeRateAsync(baseCurrency.Trim(), quote.Trim());
                 return Ok(rate);
             }
             catch (Exception ex)

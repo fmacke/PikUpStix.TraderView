@@ -129,6 +129,7 @@ namespace traderview.Server.DTOs
         public decimal? CostPrice { get; set; }
         public decimal? AveragePrice { get; set; }
         public decimal? Value { get; set; }
+        public decimal? ValueInGBP { get; set; }
         public decimal? UnrealizedPnL { get; set; }
         public decimal? PercentChange { get; set; }
         public decimal? CurrentMargin { get; set; }

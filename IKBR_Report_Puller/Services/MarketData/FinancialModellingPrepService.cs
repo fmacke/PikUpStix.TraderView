@@ -186,7 +186,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             }
         }
 
-        async Task<decimal> IMarketDataService.GetExchangeRate(string baseCurrency, string quoteCurrency)
+        async Task<decimal> IMarketDataService.GetExchangeRateAsync(string baseCurrency, string quoteCurrency)
         {
             try
             {

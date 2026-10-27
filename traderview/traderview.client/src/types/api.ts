@@ -129,6 +129,7 @@ export interface OpenPosition {
     description: string;
     assetCategory: string;
     currency: string;
+    valueInGBP: number | null;
     position: number | null;
     markPrice: number | null;
     positionValue: number | null;

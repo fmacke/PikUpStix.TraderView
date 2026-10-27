@@ -17,7 +17,8 @@ namespace traderview.Server.Controllers
             ILogger<OpenPositionController> logger,
             IPositionService openPositionsService,
             ITradingReportService tradingReportService,
-            IReportRunnerService reportRunnerService)
+            IReportRunnerService reportRunnerService,
+            IMarketDataService marketDataService)
         {
             _logger = logger;
             _openPositionService = openPositionsService;
@@ -40,7 +41,6 @@ namespace traderview.Server.Controllers
                 var openPositions = await _openPositionService.GetOpenPositionsAsync();
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
 
-                // Use the shared report data preparation method
                 var reportData = await _tradingReportService.PrepareOpenPositionReportData(openPositions);
 
                 // Convert to DTOs
@@ -55,6 +55,7 @@ namespace traderview.Server.Controllers
                     CostPrice = data.CostPrice,
                     AveragePrice = data.AveragePrice,
                     Value = data.Value,
+                    ValueInGBP = data.ValueInGBP,
                     UnrealizedPnL = data.UnrealizedPnL,
                     PercentChange = data.PercentChange,
                     CurrentMargin = data.CurrentMargin,
