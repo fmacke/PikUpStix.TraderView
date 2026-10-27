@@ -367,3 +367,4 @@ FodyWeavers.xsd
 *.bak
 /.env
 /.env.example
+/PineScripts/FM - Compound Position Calculator.js
