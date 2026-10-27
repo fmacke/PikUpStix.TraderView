@@ -1,7 +1,7 @@
 //@version=6
 indicator(title = "4x Simple Moving Average Suite", shorttitle = "4x SMA", overlay = true, timeframe = "1D", timeframe_gaps = true)
 
-// ==========================================
+// ========================================== 
 // 1. GLOBAL SETTINGS
 // ==========================================
 src = input.source(close, title = "Source")
