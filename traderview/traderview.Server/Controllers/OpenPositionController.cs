@@ -10,18 +10,18 @@ namespace traderview.Server.Controllers
     {
         private readonly ILogger<OpenPositionController> _logger;
         private readonly IPositionService _openPositionService;
-        private readonly IExcelReportService _excelReportService;
+        private readonly ITradingReportService _tradingReportService;
         private readonly IReportRunnerService _reportRunnerService;
 
         public OpenPositionController(
             ILogger<OpenPositionController> logger,
             IPositionService openPositionsService,
-            IExcelReportService excelReportService,
+            ITradingReportService tradingReportService,
             IReportRunnerService reportRunnerService)
         {
             _logger = logger;
             _openPositionService = openPositionsService;
-            _excelReportService = excelReportService;
+            _tradingReportService = tradingReportService;
             _reportRunnerService = reportRunnerService;
         }
 
@@ -41,7 +41,7 @@ namespace traderview.Server.Controllers
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
 
                 // Use the shared report data preparation method
-                var reportData = await _excelReportService.PrepareOpenPositionReportData(openPositions);
+                var reportData = await _tradingReportService.PrepareOpenPositionReportData(openPositions);
 
                 // Convert to DTOs
                 var openPositionDtos = reportData.Select(data => new OpenPositionDto
@@ -62,7 +62,7 @@ namespace traderview.Server.Controllers
                     // Keep existing fields for backward compatibility
                     Description = string.Empty,
                     AssetCategory = string.Empty,
-                    Currency = string.Empty,
+                    Currency = data.Currency,
                     Position = data.Quantity,
                     MarkPrice = data.AveragePrice,
                     PositionValue = data.Value,

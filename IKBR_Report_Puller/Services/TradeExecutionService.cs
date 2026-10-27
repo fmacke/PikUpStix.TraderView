@@ -30,6 +30,12 @@ namespace TraderView.Application.Services
         {
             return await _repository.GetTradeExecutionsByPositionIdAsync(positionId);
         }
+
+        async Task<List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>> ITradeExecutionService.GetTradeExecutionsByConIdAndAccountAsync(long? conid, string accountId)
+        {
+            return await _repository.GetTradeExecutionsByConIdAndAccountAsync(conid, accountId);
+        }
+
         async Task<TradeSummary?> ITradeExecutionService.GetTradeSummaryByPositionIdAsync(int positionId)
         {
             return await _repository.GetTradeSummaryByPositionIdAsync(positionId);

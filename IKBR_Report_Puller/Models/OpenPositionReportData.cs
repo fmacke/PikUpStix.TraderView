@@ -17,6 +17,7 @@ namespace TraderView.Application.Models
         public decimal? Quantity { get; set; }
         public decimal? CostPrice { get; set; }
         public decimal? AveragePrice { get; set; }
+        public string Currency { get; set; }
         public decimal? Value { get; set; }
         public decimal? UnrealizedPnL { get; set; }
         public decimal? PercentChange { get; set; }

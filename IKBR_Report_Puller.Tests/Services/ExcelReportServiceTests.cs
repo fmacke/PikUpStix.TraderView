@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Moq;
 using PikUpStix.TraderView.Services;
-using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 
 namespace IKBR_Report_Puller.Tests.Services
@@ -9,7 +8,7 @@ namespace IKBR_Report_Puller.Tests.Services
     [TestClass]
     public class ExcelReportServiceTests
     {
-        private Mock<ITradeExecutionRepository> _mockTradeExecutionRepository;
+        private Mock<ITradingReportService> _mockTradingReportService;
         private Mock<ITradeHistoryReportService> _mockTradeHistoryReportService;
         private Mock<IConfiguration> _mockConfiguration;
         private ExcelReportService _service;
@@ -17,7 +16,7 @@ namespace IKBR_Report_Puller.Tests.Services
         [TestInitialize]
         public void Setup()
         {
-            _mockTradeExecutionRepository = new Mock<ITradeExecutionRepository>();
+            _mockTradingReportService = new Mock<ITradingReportService>();
             _mockTradeHistoryReportService = new Mock<ITradeHistoryReportService>();
             _mockConfiguration = new Mock<IConfiguration>();
 
@@ -28,7 +27,7 @@ namespace IKBR_Report_Puller.Tests.Services
             _mockConfiguration.Setup(c => c["Database:DbName"]).Returns("testdb");
 
             _service = new ExcelReportService(
-                _mockTradeExecutionRepository.Object, 
+                _mockTradingReportService.Object,
                 _mockTradeHistoryReportService.Object);
         }
     }

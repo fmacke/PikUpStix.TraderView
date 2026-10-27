@@ -26,8 +26,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PineScripts", "PineScripts"
 		PineScripts\CS Relative Strength.js = PineScripts\CS Relative Strength.js
 		PineScripts\CS SMAs.js = PineScripts\CS SMAs.js
 		FM - Compound Position Calculator.js = FM - Compound Position Calculator.js
-		Minervini - 3-C and Low-C.js = Minervini - 3-C and Low-C.js
-		Minervini - VCP.js = Minervini - VCP.js
+		Kacher Morales - Pocket Pivots.js = Kacher Morales - Pocket Pivots.js
+		PineScripts\Minervini - 3-C and Low-C.js = PineScripts\Minervini - 3-C and Low-C.js
+		PineScripts\Minervini - VCP.js = PineScripts\Minervini - VCP.js
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TraderView.Domain", "TraderView.Domain\TraderView.Domain.csproj", "{E166AB52-30B2-4B99-AD69-577892A3ACFF}"

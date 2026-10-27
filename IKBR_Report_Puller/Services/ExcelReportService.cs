@@ -2,10 +2,8 @@ using OfficeOpenXml;
 using OfficeOpenXml.Drawing.Chart;
 using TraderView.Domain.Entities;
 using System.Text;
-using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Models;
-using TraderView.Application.Utils;
 
 namespace PikUpStix.TraderView.Services
 {
@@ -15,14 +13,14 @@ namespace PikUpStix.TraderView.Services
     /// </summary>
     public class ExcelReportService : IExcelReportService
     {
-        private readonly ITradeExecutionRepository _tradeExecutionRepository;
+        private readonly ITradingReportService _tradingReportService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
         public ExcelReportService(
-            ITradeExecutionRepository tradeExecutionRepository,
+            ITradingReportService tradingReportService,
             ITradeHistoryReportService tradeHistoryReportService)
         {
-            _tradeExecutionRepository = tradeExecutionRepository;
+            _tradingReportService = tradingReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
         }
 
@@ -65,135 +63,10 @@ namespace PikUpStix.TraderView.Services
         private async Task CreateOpenPositionsWorkSheet(ExcelPackage package, IReadOnlyList<Position> openPositions)
         {
             // Prepare the report data
-            var reportData = await PrepareOpenPositionReportData(openPositions);
+            var reportData = await _tradingReportService.PrepareOpenPositionReportData(openPositions);
 
             // Write data to worksheet
             WriteOpenPositionsToWorksheet(package, reportData);
-        }
-
-        /// <summary>
-        /// Prepares the open position report data by calculating all necessary values.
-        /// This method can be reused for different report formats (Excel, Web, etc.)
-        /// </summary>
-        /// <param name="openPositions">List of open positions to process</param>
-        /// <returns>List of calculated open position report data</returns>
-        public async Task<List<OpenPositionReportData>> PrepareOpenPositionReportData(IReadOnlyList<Position> openPositions)
-        {
-            var reportDataList = new List<OpenPositionReportData>();
-
-            foreach (var position in openPositions)
-            {
-                try
-                {
-                    string accountId = position.TradeExecutions.First().AccountId;
-                    string symbol = position.TradeExecutions.First().Symbol;
-                    long? conid = TypeConverters.ConvertToLong(position.Instrument.ConId);
-                    decimal? currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
-                    decimal? costBasisPrice = CalculateAverageCost(position.TradeExecutions);
-                    decimal? positionValue = position.LastReportedPrice * currentPositionQuantity;
-                    decimal? unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
-                    DateTime? dateOpened = position.OpenDate;
-                    var trades = await _tradeExecutionRepository.GetTradeExecutionsByConIdAndAccountAsync(conid, accountId);
-
-                    var openTrades = new Queue<(DateTime tradeDate, decimal quantity)>();
-                    foreach (var trade in trades)
-                    {
-                        if (trade.OpenCloseIndicator.Contains("O")) // Opening trade
-                        {
-                            openTrades.Enqueue((trade.TradeDate, trade.Quantity));
-                        }
-                        else if (trade.OpenCloseIndicator.Contains("C")) // Closing trade
-                        {
-                            decimal closingQuantity = Math.Abs(trade.Quantity);
-                            while (closingQuantity > 0 && openTrades.Any())
-                            {
-                                var (openDate, openQuantity) = openTrades.Dequeue();
-                                if (openQuantity > closingQuantity)
-                                {
-                                    // Partial close, put the remainder back
-                                    openTrades.Enqueue((openDate, openQuantity - closingQuantity));
-                                    closingQuantity = 0;
-                                }
-                                else
-                                {
-                                    // Full close of this opening trade
-                                    closingQuantity -= openQuantity;
-                                }
-                            }
-                        }
-                    }
-
-                    // The remaining trades in openTrades are the ones making up the current position
-                    // The last one is the most recent opening date based on FIFO
-                    //if (openTrades.Any())
-                    //{
-                    //    var (mostRecentOpenDate, _) = openTrades.Last();
-                    //    dateOpened = mostRecentOpenDate;
-                    //}
-
-                    // Calculate Days Opened
-                    int? daysOpened = dateOpened.HasValue
-                        ? (int)(DateTime.Today - dateOpened.Value.Date).TotalDays
-                        : null;
-
-                    // Calculate Average Price
-                    decimal? averagePrice = currentPositionQuantity != 0
-                        ? positionValue / currentPositionQuantity
-                        : 0;
-
-                    // Calculate % Change
-                    decimal? percentChange = costBasisPrice != 0
-                        ? (averagePrice - costBasisPrice) / costBasisPrice
-                        : 0;
-
-                    // Calculate Current Margin
-                    decimal? currentMargin = positionValue - (currentPositionQuantity * costBasisPrice);
-                   
-                    reportDataList.Add(new OpenPositionReportData
-                    {
-                        PositionId = position.Id,
-                        AccountId = accountId,
-                        Symbol = symbol,
-                        DateOpened = dateOpened,
-                        DaysOpened = daysOpened,
-                        Quantity = currentPositionQuantity,
-                        CostPrice = costBasisPrice,
-                        AveragePrice = averagePrice,
-                        Value = positionValue,
-                        UnrealizedPnL = unrealizedPnL,
-                        PercentChange = percentChange,
-                        CurrentMargin = currentMargin
-                    });
-                }
-                catch(Exception ex)
-                {
-                    Console.WriteLine("Error in PrepareOpenPositionReportData processing position (id: " + position.Id + ") with error: ", ex.Message);
-                }
-            }
-
-            return reportDataList;
-        }
-
-        private decimal? CalculateAverageCost(ICollection<TradeExecution> tradeExecutions)
-        {
-            if (tradeExecutions == null || !tradeExecutions.Any())
-            {
-                return 0;
-            }
-
-            // this is an approximation of the average cost basis for the current open position
-            decimal? totalCost = 0;
-            decimal? totalQuantity = tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Sum(x => x.Quantity);
-            foreach (var tre in tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")))
-            {
-                if(tre.TradePrice == null || tre.Quantity == null)
-                {
-                    totalCost += 0;
-                    continue;
-                }
-                totalCost += tre.TradePrice * tre.Quantity;
-            }
-            return totalQuantity != 0 ? totalCost / totalQuantity : 0;
         }
 
         /// <summary>

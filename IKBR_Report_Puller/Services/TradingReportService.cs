@@ -4,6 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Models;
+using TraderView.Application.Utils;
 using TraderView.Domain.Entities;
 using System.Diagnostics;
 
@@ -82,6 +84,86 @@ namespace TraderView.Application.Services
             _logger.LogInformation("CalculatePositionOutcomesAsync completed in {Elapsed}ms, processed {Count} positions", sw.ElapsedMilliseconds, results.Count);
 
             return results;
+        }
+
+        public async Task<List<OpenPositionReportData>> PrepareOpenPositionReportData(IReadOnlyList<Position> openPositions)
+        {
+            var reportDataList = new List<OpenPositionReportData>();
+
+            foreach (var position in openPositions)
+            {
+                try
+                {
+                    string accountId = position.TradeExecutions.First().AccountId;
+                    string symbol = position.TradeExecutions.First().Symbol;
+                    string currency = position.TradeExecutions.First().Currency;
+                    long? conid = TypeConverters.ConvertToLong(position.Instrument.ConId);
+                    decimal? currentPositionQuantity = position.TradeExecutions.Sum(x => x.Quantity);
+                    decimal? costBasisPrice = CalculateAverageCost(position.TradeExecutions);
+                    decimal? positionValue = position.LastReportedPrice * currentPositionQuantity;
+                    decimal? unrealizedPnL = (position.LastReportedPrice - costBasisPrice) * currentPositionQuantity;
+                    DateTime? dateOpened = position.OpenDate;
+                    int? daysOpened = dateOpened.HasValue
+                        ? (int)(DateTime.Today - dateOpened.Value.Date).TotalDays
+                        : null;
+
+                    decimal? averagePrice = currentPositionQuantity != 0
+                        ? positionValue / currentPositionQuantity
+                        : 0;
+
+                    decimal? percentChange = costBasisPrice != 0
+                        ? (averagePrice - costBasisPrice) / costBasisPrice
+                        : 0;
+
+                    decimal? currentMargin = positionValue - (currentPositionQuantity * costBasisPrice);
+
+                    reportDataList.Add(new OpenPositionReportData
+                    {
+                        PositionId = position.Id,
+                        AccountId = accountId,
+                        Symbol = symbol,
+                        DateOpened = dateOpened,
+                        DaysOpened = daysOpened,
+                        Quantity = currentPositionQuantity,
+                        CostPrice = costBasisPrice,
+                        AveragePrice = averagePrice,
+                        Value = positionValue,
+                        UnrealizedPnL = unrealizedPnL,
+                        PercentChange = percentChange,
+                        CurrentMargin = currentMargin,
+                        Currency = currency
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error in PrepareOpenPositionReportData processing position {PositionId}", position?.Id);
+                }
+            }
+
+            return reportDataList;
+        }
+
+        private static decimal? CalculateAverageCost(ICollection<TradeExecution> tradeExecutions)
+        {
+            if (tradeExecutions == null || !tradeExecutions.Any())
+            {
+                return 0;
+            }
+
+            decimal? totalCost = 0;
+            decimal? totalQuantity = tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")).Sum(x => x.Quantity);
+            foreach (var tradeExecution in tradeExecutions.Where(x => x.OpenCloseIndicator.Contains("O")))
+            {
+                if (tradeExecution.TradePrice == null || tradeExecution.Quantity == null)
+                {
+                    totalCost += 0;
+                    continue;
+                }
+
+                totalCost += tradeExecution.TradePrice * tradeExecution.Quantity;
+            }
+
+            return totalQuantity != 0 ? totalCost / totalQuantity : 0;
         }
 
         async Task<PositionOutcome?> ITradingReportService.GetPositionReport(Position pos)
