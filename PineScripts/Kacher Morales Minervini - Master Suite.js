@@ -48,6 +48,11 @@ float bgu_vol_mult     = input.float(1.5, "Min Volume Multiplier over 50 SMA Vol
 grp_vis = "6. Moving Average Display Options & Timeframe"
 bool show_smas         = input.bool(true, "Show Moving Average Ribbons", group = grp_vis)
 bool use_chart_tf      = input.bool(false, "Use Chart Timeframe Instead of Daily", group = grp_vis, tooltip = "If false, SMAs are calculated strictly on daily bars regardless of chart timeframe.")
+bool show_10           = input.bool(true, "Show SMA10", group = grp_vis)
+bool show_21           = input.bool(true, "Show SMA21", group = grp_vis)
+bool show_50           = input.bool(true, "Show SMA50", group = grp_vis)
+bool show_150          = input.bool(true, "Show SMA150", group = grp_vis)
+bool show_200           = input.bool(true, "Show SMA200", group = grp_vis)
 
 // -------------------------------------------------------------------------
 // 1. SHARED CALCULATIONS & TIME-FRAME MULTI-RES MAs
@@ -119,7 +124,7 @@ if show_vcp_render and not na(pl)
             f_prune_objects()
         if show_labels
             float label_y = pl - (ta.atr(14) * 0.4)
-            array.push(wave_labels, label.new(pl_bar, label_y, text = "-" + str.tostring(depth, "#.#") + "%", color = color.new(#1a237e, 10), textcolor = color.white, style = label.style_label_up, size = size.small))
+            array.push(wave_labels, label.new(pl_bar, label_y, text = "-" + str.tostring(depth, "#.#") + "%", color = color.new(#1a237e, 70), textcolor = color.white, style = label.style_label_up, size = size.small))
             f_prune_objects()
 
 bool is_contracting = not na(c1_depth) and not na(c2_depth) and (c1_depth < c2_depth) and (c2_depth <= max_vcp_depth) and (c1_depth < 15.0)
@@ -203,16 +208,16 @@ if any_major_trigger
 // -------------------------------------------------------------------------
 // 7. VISUALIZATION & CONFLICT-FREE RENDERING HIERARCHY
 // -------------------------------------------------------------------------
-plot(show_smas ? sma10 : na, "SMA 10", color = color.new(#248de2, 0), linewidth = 1)
-plot(show_smas ? sma21 : na, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
-plot(show_smas ? sma50 : na, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
-plot(show_smas ? sma150 : na, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
-plot(show_smas ? sma200 : na, "SMA 200", color = color.new(#3f0202, 0), linewidth = 2)
+plot(show_10 and show_smas ? sma10 : na, "SMA 10", color = color.new(#3de224, 0), linewidth = 1)
+plot(show_21 and show_smas ? sma21 : na, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
+plot(show_50 and show_smas ? sma50 : na, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
+plot(show_150 and show_smas ? sma150 : na, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
+plot(show_200 and show_smas ? sma200 : na, "SMA 200", color = color.new(#3f0202, 0), linewidth = 2)
 
 plotshape(show_vcp_render and show_dots and not na(ph), "Swing High", style = shape.triangledown, location = location.abovebar, color = color.red, size = size.tiny, offset = -sw_right)
 plotshape(show_vcp_render and show_dots and not na(pl), "Swing Low", style = shape.triangleup, location = location.belowbar, color = color.green, size = size.tiny, offset = -sw_right)
 
-color bg_color = (show_cheat_render and is_classic_3c) ? color.new(color.blue, 90) : (show_cheat_render and is_low_cheat) ? color.new(color.purple, 90) : vcp_setup ? color.new(#47ef47, 92) : is_pocket_pivot ? color.new(color.green, 90) : na
+color bg_color = (show_cheat_render and is_classic_3c) ? color.new(color.blue, 75) : (show_cheat_render and is_low_cheat) ? color.new(color.purple, 75) : vcp_setup ? color.new(#47ef47, 75) : is_pocket_pivot ? color.new(color.green, 75) : na
 bgcolor(bg_color, title = "Master Setup Zone")
 
 barcolor(is_pocket_pivot ? color.lime : na, title = "Pocket Pivot Bar Color")
