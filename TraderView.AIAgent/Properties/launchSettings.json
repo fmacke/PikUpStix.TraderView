@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "TraderView.AIAgent": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

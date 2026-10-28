@@ -92,6 +92,11 @@ public partial class Program
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
             return new ListRepository(db);
         });
+        builder.Services.AddScoped<IAIReportRepository>(provider =>
+        {
+            AppDbContext db = provider.GetRequiredService<AppDbContext>();
+            return new AiReportRepository(db);
+        });
 
         builder.Services.AddScoped<IEquitySummaryRepository>(provider =>
         {

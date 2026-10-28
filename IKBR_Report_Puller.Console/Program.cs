@@ -111,6 +111,11 @@ namespace TraderView.Console
                         var db = provider.GetRequiredService<AppDbContext>();
                         return new EquitySummaryRepository(db);
                     });
+                    services.AddScoped<IAIReportRepository>(provider =>
+                    {
+                        var db = provider.GetRequiredService<AppDbContext>();
+                        return new AiReportRepository(db);
+                    });
 
                     // Register Services
                     services.AddScoped<IHistoricalDataService, HistoricalDataService>(provider =>
@@ -130,6 +135,7 @@ namespace TraderView.Console
                         var instrumentService = provider.GetRequiredService<IInstrumentService>();
                         return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService);
                     });
+                    services.AddScoped<IAIReportService, AIReportService>();
                     services.AddScoped<ITradingReportService, TradingReportService>(provider =>
                     {
                         var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();

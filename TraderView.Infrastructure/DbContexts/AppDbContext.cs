@@ -19,6 +19,10 @@ namespace TraderView.Infrastructure.DbContexts
 
         public virtual DbSet<CanSlimCandidate> CanSlimCandidates { get; set; }
 
+        public virtual DbSet<AIReport> AIReports { get; set; }
+
+        public virtual DbSet<AIReportInstruction> AIReportInstructions { get; set; }
+
         //public virtual DbSet<CanSlimCandidateAnnualHistory> CanSlimCandidateAnnualHistories { get; set; }
 
         public virtual DbSet<CanSlimScreenerSnapshot> CanSlimScreenerSnapshots { get; set; }
@@ -149,6 +153,55 @@ namespace TraderView.Infrastructure.DbContexts
                     .HasForeignKey(d => d.CanSlimScreenerSnapshotId)
                     .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK_CanSlimCandidates_CanSlimScreenerSnapshot");
+            });
+
+            modelBuilder.Entity<AIReport>(entity =>
+            {
+                entity.ToTable("AIReports", "dbo");
+
+                entity.HasKey(e => e.Id).HasName("PK_AIReports");
+
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd()
+                    .UseIdentityColumn();
+
+                entity.Property(e => e.ReportInstructionId)
+                    .IsRequired();
+
+                entity.Property(e => e.ReportDetail)
+                    .IsRequired()
+                    .HasColumnType("varchar(max)");
+
+                entity.HasOne(d => d.ReportInstruction)
+                    .WithMany(p => p.AIReports)
+                    .HasForeignKey(d => d.ReportInstructionId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
+                    .HasConstraintName("FK_AIReports_AIReportInstructions");
+            });
+
+            modelBuilder.Entity<AIReportInstruction>(entity =>
+            {
+                entity.ToTable("AIReportInstructions", "dbo");
+
+                entity.HasKey(e => e.Id).HasName("PK_AIReportInstructions");
+
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd()
+                    .UseIdentityColumn();
+
+                entity.Property(e => e.Name)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Type)
+                    .IsRequired()
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.Instruction)
+                    .IsRequired()
+                    .HasColumnType("varchar(max)");
             });
 
             modelBuilder.Entity<Note>(entity =>

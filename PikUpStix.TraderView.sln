@@ -35,6 +35,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TraderView.Domain", "Trader
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TraderView.Infrastructure", "TraderView.Infrastructure\TraderView.Infrastructure.csproj", "{1853B7C0-E4BD-4596-839C-BEA8BD059CA6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TraderView.AIAgent", "TraderView.AIAgent\TraderView.AIAgent.csproj", "{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -135,6 +137,18 @@ Global
 		{1853B7C0-E4BD-4596-839C-BEA8BD059CA6}.Release|x64.Build.0 = Release|Any CPU
 		{1853B7C0-E4BD-4596-839C-BEA8BD059CA6}.Release|x86.ActiveCfg = Release|Any CPU
 		{1853B7C0-E4BD-4596-839C-BEA8BD059CA6}.Release|x86.Build.0 = Release|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Debug|x64.Build.0 = Debug|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Debug|x86.Build.0 = Debug|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Release|x64.ActiveCfg = Release|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Release|x64.Build.0 = Release|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Release|x86.ActiveCfg = Release|Any CPU
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -147,6 +161,7 @@ Global
 		{F8635584-BF3F-1757-807E-BCCB2BA849C1} = {1640123E-8739-4B63-9A82-29CD0309C868}
 		{E166AB52-30B2-4B99-AD69-577892A3ACFF} = {EEE00A96-C42A-4211-87EB-8F0D6F44E7DC}
 		{1853B7C0-E4BD-4596-839C-BEA8BD059CA6} = {EEE00A96-C42A-4211-87EB-8F0D6F44E7DC}
+		{EAECD13E-6942-4986-AF4B-1AB3B4C9B544} = {1640123E-8739-4B63-9A82-29CD0309C868}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {53075232-3EF4-48A1-9E21-22875221684D}

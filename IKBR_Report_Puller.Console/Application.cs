@@ -31,7 +31,7 @@ namespace TraderView.Console
         {
             await _reportRunnerService.RunReportAsync(true, true);
 
-            var roiResult = new DesiredPerformanceInputs(100000m, 0.1m, 0.4m, 0.0054m, 0.0029m, 0.36m);
+            //var roiResult = new DesiredPerformanceInputs(100000m, 0.1m, 0.4m, 0.0054m, 0.0029m, 0.36m);
             //var servoce = new DesiredPerformanceForecastService();
             //var forecastResult = servoce.CalculateForecast(roiResult);
 
@@ -48,7 +48,7 @@ namespace TraderView.Console
             //System.Console.WriteLine($"Adjusted Gain/Loss Ratio: {forecastResult.AdjustedGainLossRatio}");
             //System.Console.WriteLine($"Optimal F: {forecastResult.OtpimalF}");
 
-            await Task.CompletedTask;
+            //await Task.CompletedTask;
 
             
         }
