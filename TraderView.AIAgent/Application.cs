@@ -28,28 +28,13 @@ namespace TraderView.AIAgent
         public async Task RunAsync()
         {
             var instruction = await instructionService.GetByIdAsync(2);// Assuming the instruction with Id = 2 is the one we want to use
-
-            if (instruction == null)
-            {
-                Console.WriteLine("Error: AIReportInstruction with Id = 2 not found in database.");
-                return;
-            }
-
             var positions = await GetOpenPositionsString();
             var prompt = instruction.Instruction.Replace("[INSERT_POSITION_LIST]", positions);
-
-            // Pull API key from configuration
             var apiKey = config["GoogleAIStudio:ApiKey"];
-            if (string.IsNullOrEmpty(apiKey))
-            {
-                Console.WriteLine("Error: GoogleAIStudio:ApiKey not found in configuration.");
-                return;
-            }
-
             var googleAI = new GoogleAI(apiKey);
 
             // Using the cost-effective and fast Flash model for daily queries
-            var model = googleAI.GenerativeModel(model: "gemini-3.5-flash-lite");
+            var model = googleAI.GenerativeModel(model: config["GoogleAIStudio:Model"]);
             Console.WriteLine("Fetching morning market data from Gemini...");
 
             var response = await model.GenerateContent(prompt);

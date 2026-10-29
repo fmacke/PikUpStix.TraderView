@@ -7,50 +7,16 @@ namespace TraderView.Console
     public class Application
     {
         private readonly IReportRunnerService _reportRunnerService;
-        private readonly IMarketDataService _financialDataService;
-        private readonly ICurrentPerformanceService _riskMatrixService;
-        private readonly ICanSlimScreenerService _canSlimScreenerService;
-        private readonly IEquitySummaryService _equitySummaryService;
-
         public Application(
-            IReportRunnerService reportRunnerService,
-            IMarketDataService financialDataService,
-            ICurrentPerformanceService riskMatrixService,
-            ICanSlimScreenerService canSlimScreenerService,
-            IEquitySummaryService equitySummaryService)
+            IReportRunnerService reportRunnerService)
         {
             _reportRunnerService = reportRunnerService;
-            _financialDataService = financialDataService;
-            _riskMatrixService = riskMatrixService;
-            _canSlimScreenerService = canSlimScreenerService;
-            _equitySummaryService = equitySummaryService;
         }
 
 
         public async Task RunAsync()
         {
-            await _reportRunnerService.RunReportAsync(true, true);
-
-            //var roiResult = new DesiredPerformanceInputs(100000m, 0.1m, 0.4m, 0.0054m, 0.0029m, 0.36m);
-            //var servoce = new DesiredPerformanceForecastService();
-            //var forecastResult = servoce.CalculateForecast(roiResult);
-
-            //System.Console.WriteLine($"Average Currency Gain on Winning Trade: {forecastResult.AverageCurrencyGainOnWinningTrade}");
-            //System.Console.WriteLine($"Number of Winning Trades: {forecastResult.NumberOfWinningTrades}");
-            //System.Console.WriteLine($"Average Currency Loss on Losing Trade: {forecastResult.AverageCurrencyLossOnLosingTrade}");
-            //System.Console.WriteLine($"Number of Losing Trades: {forecastResult.NumberOfLosingTrades}");
-            //System.Console.WriteLine($"Gain/Loss Ratio: {forecastResult.GainLossRatio}");
-            //System.Console.WriteLine($"Position Size: {forecastResult.PositionSize}");
-            //System.Console.WriteLine($"Expected Net Return (%): {forecastResult.ExpectedNetReturnPercent}");
-            //System.Console.WriteLine($"Expected Net Return (Currency): {forecastResult.ExpectedNetReturnCurrency}");
-            //System.Console.WriteLine($"Goal (Currency): {forecastResult.GoalCurrency}");
-            //System.Console.WriteLine($"Number of Trades Needed to Reach Goal: {forecastResult.NumberOfTradesNeededToReachGoal}");
-            //System.Console.WriteLine($"Adjusted Gain/Loss Ratio: {forecastResult.AdjustedGainLossRatio}");
-            //System.Console.WriteLine($"Optimal F: {forecastResult.OtpimalF}");
-
-            //await Task.CompletedTask;
-
-            
+            await _reportRunnerService.RunReportAsync(true, true, true);           
         }
 
         private async Task RunRiskMatrixTest()
