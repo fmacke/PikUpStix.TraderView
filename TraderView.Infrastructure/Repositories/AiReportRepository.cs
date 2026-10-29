@@ -10,14 +10,14 @@ namespace TraderView.Infrastructure.Repositories
         {
         }
 
-        public async Task<int> CreateAsync(int reportInstructionId, string reportDetail)
+        public async Task<int> CreateAsync(int reportInstructionId, string reportDetail,DateTime createdAt)
         {
             var entity = new AIReport
             {
                 ReportInstructionId = reportInstructionId,
-                ReportDetail = reportDetail
+                ReportDetail = reportDetail,
+                CreatedAt = createdAt
             };
-
             var created = await AddAsync(entity);
             return created.Id;
         }

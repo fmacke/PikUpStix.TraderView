@@ -14,7 +14,7 @@ namespace TraderView.Console
 
         public async Task RunAsync()
         {
-            await _reportRunnerService.RunReportAsync(true, true, true);           
+            await _reportRunnerService.RunReportAsync(false, false, true);           
         }
     }
 }

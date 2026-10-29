@@ -25,7 +25,7 @@ namespace PikUpStix.TraderView.Services
 
         public async Task<int> CreateAsync(int reportInstructionId, string reportDetail)
         {
-            return await _aiReportRepository.CreateAsync(reportInstructionId, reportDetail);
+            return await _aiReportRepository.CreateAsync(reportInstructionId, reportDetail, DateTime.Now);
         }
 
         public async Task<bool> UpdateAsync(int id, int reportInstructionId, string reportDetail)
