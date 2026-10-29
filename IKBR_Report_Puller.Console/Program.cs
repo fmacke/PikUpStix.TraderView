@@ -8,7 +8,9 @@ using PikUpStix.TraderView.Services.MarketData;
 using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Interfaces.Services.AI;
 using TraderView.Application.Services;
+using TraderView.Application.Services.AI;
 using TraderView.Infrastructure.Data;
 using TraderView.Infrastructure.DbContexts;
 using TraderView.Infrastructure.Repositories;
@@ -116,6 +118,11 @@ namespace TraderView.Console
                         var db = provider.GetRequiredService<AppDbContext>();
                         return new AiReportRepository(db);
                     });
+                    services.AddScoped<IAIReportInstructionRepository>(provider =>
+                    {
+                        var db = provider.GetRequiredService<AppDbContext>();
+                        return new AIReportInstructionRepository(db);
+                    });
 
                     // Register Services
                     services.AddScoped<IHistoricalDataService, HistoricalDataService>(provider =>
@@ -136,6 +143,14 @@ namespace TraderView.Console
                         return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService);
                     });
                     services.AddScoped<IAIReportService, AIReportService>();
+                    services.AddScoped<IAIReportInstructionService, AIReportInstructionService>();
+                    services.AddScoped<IGoogleAIStudioService, GoogleAIStudioService>(provider =>
+                    {
+                        var aiReportService = provider.GetRequiredService<IAIReportService>();
+                        var aiReportInstructionService = provider.GetRequiredService<IAIReportInstructionService>();
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        return new GoogleAIStudioService(aiReportService, aiReportInstructionService, config["GoogleAIStudio:ApiKey"], config["GoogleAIStudio:Model"]);
+                    });
                     services.AddScoped<ITradingReportService, TradingReportService>(provider =>
                     {
                         var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();

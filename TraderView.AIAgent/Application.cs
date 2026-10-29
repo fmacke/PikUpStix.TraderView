@@ -27,34 +27,26 @@ namespace TraderView.AIAgent
         }
         public async Task RunAsync()
         {
-            var instruction = await instructionService.GetByIdAsync(2);// Assuming the instruction with Id = 2 is the one we want to use
-            var positions = await GetOpenPositionsString();
-            var prompt = instruction.Instruction.Replace("[INSERT_POSITION_LIST]", positions);
-            var apiKey = config["GoogleAIStudio:ApiKey"];
-            var googleAI = new GoogleAI(apiKey);
+            //var instruction = await instructionService.GetByIdAsync(2);// Assuming the instruction with Id = 2 is the one we want to use
+            //var positions = await GetOpenPositionsString();
+            //var prompt = instruction.Instruction.Replace("[INSERT_POSITION_LIST]", positions);
+            //var apiKey = config["GoogleAIStudio:ApiKey"];
+            //var googleAI = new GoogleAI(apiKey);
 
-            // Using the cost-effective and fast Flash model for daily queries
-            var model = googleAI.GenerativeModel(model: config["GoogleAIStudio:Model"]);
-            Console.WriteLine("Fetching morning market data from Gemini...");
+            //// Using the cost-effective and fast Flash model for daily queries
+            //var model = googleAI.GenerativeModel(model: config["GoogleAIStudio:Model"]);
+            //Console.WriteLine("Fetching morning market data from Gemini...");
 
-            var response = await model.GenerateContent(prompt);
+            //var response = await model.GenerateContent(prompt);
 
-            Console.WriteLine("\n--- MORNING REPORT ---");
-            Console.WriteLine(response.Text);
+            //Console.WriteLine("\n--- MORNING REPORT ---");
+            //Console.WriteLine(response.Text);
 
-            // Save the response to database using IAIReportService
-            var reportId = await aiReportService.CreateAsync(instruction.Id, response.Text);
-            Console.WriteLine($"\nReport saved to database with ID: {reportId}");
+            //// Save the response to database using IAIReportService
+            //var reportId = await aiReportService.CreateAsync(instruction.Id, response.Text);
+            //Console.WriteLine($"\nReport saved to database with ID: {reportId}");
         }
 
-        private async Task<string> GetOpenPositionsString()
-        {
-            var positions = await positionService.GetOpenPositionsAsync(); // Assuming this method returns a list of positions
-            if(positions.Any())
-            {
-               return string.Join("; ", positions.Select(p => $"{p.Instrument.ListingExchange}:{p.Instrument.DataName}"));
-            }
-            return "NO OPEN POSITIONS";
-        }
+        
     }
 }

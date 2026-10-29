@@ -8,6 +8,7 @@ using System.Linq;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
+using TraderView.Application.Interfaces.Services.AI;
 
 namespace PikUpStix.TraderView.Services
 {
@@ -22,11 +23,14 @@ namespace PikUpStix.TraderView.Services
         private readonly IConfiguration _config;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly IMarketDataService _marketDataService;
+        private readonly IGoogleAIStudioService _googleAiStudioService;
         private readonly IHistoricalDataService _historicalDataService;
         const int maxRetries = 3;
         const int delayInSeconds = 5;
         string outputFilePath = @"C:\IBKR_Reports\[FILE_NAME]";
-        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionService tradeExecutionService, IPositionService positionService,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IHistoricalDataService historicalDataService, IAIReportService aiReportService, IAIReportInstructionService instructionService, IConfiguration config)
+        private object ex;
+
+        public ReportRunnerService(IReportFetchingService reportFetchingService, ITradeExecutionService tradeExecutionService, IPositionService positionService,IInstrumentService instrumentService, IExcelReportService excelReportService, ITradeHistoryReportService tradeHistoryReportService, IMarketDataService marketDataService, IEquitySummaryService equitySummaryService, IHistoricalDataService historicalDataService, IGoogleAIStudioService googleAiStudioService, IConfiguration config)
         {
             _reportFetchingService = reportFetchingService;
             _tradeExecutionService = tradeExecutionService;
@@ -37,6 +41,7 @@ namespace PikUpStix.TraderView.Services
             _tradeHistoryReportService = tradeHistoryReportService;
             _historicalDataService = historicalDataService;
             _marketDataService = marketDataService;
+            _googleAiStudioService = googleAiStudioService;
             _config = config;
             outputFilePath = _config["FinancialModelingPrep:OutputFilePath"];
         }
@@ -69,7 +74,8 @@ namespace PikUpStix.TraderView.Services
                     var openPositions = await _positionService.GetOpenPositionsAsync();
                     if (runAIAgentReport)
                     {
-                        RunAIGeneratedMorningReport(openPositions);
+                        var morningReport = await _googleAiStudioService.GenerateReportAsync(2, openPositions);
+                        Console.WriteLine($"\nMORNING REPORT FROM GOOGLE AI\n: {morningReport}");
                     }
                     if (writeOutputtoExcel)
                     {
@@ -99,28 +105,6 @@ namespace PikUpStix.TraderView.Services
             {
                 System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
             }
-        }
-
-        private void RunAIGeneratedMorningReport(IReadOnlyList<Position> openPositions)
-        {
-            var instruction = await instructionService.GetByIdAsync(2);// Assuming the instruction with Id = 2 is the one we want to use
-            var positions = await GetOpenPositionsString();
-            var prompt = instruction.Instruction.Replace("[INSERT_POSITION_LIST]", positions);
-            var apiKey = config["GoogleAIStudio:ApiKey"];
-            var googleAI = new GoogleAI(apiKey);
-
-            // Using the cost-effective and fast Flash model for daily queries
-            var model = googleAI.GenerativeModel(model: config["GoogleAIStudio:Model"]);
-            Console.WriteLine("Fetching morning market data from Gemini...");
-
-            var response = await model.GenerateContent(prompt);
-
-            Console.WriteLine("\n--- MORNING REPORT ---");
-            Console.WriteLine(response.Text);
-
-            // Save the response to database using IAIReportService
-            var reportId = await aiReportService.CreateAsync(instruction.Id, response.Text);
-            Console.WriteLine($"\nReport saved to database with ID: {reportId}");
         }
 
         private async Task SaveTradeConfirms(XDocument todayReportXml, string currentMarketRegime)
