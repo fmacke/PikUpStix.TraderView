@@ -172,8 +172,8 @@ namespace TraderView.Infrastructure.DbContexts
                     .IsRequired()
                     .HasColumnType("varchar(max)");
                 entity.Property(e => e.CreatedAt)
-                    .IsRequired()
-                    .HasColumnType("datetime2(7)");
+                    .HasColumnType("datetime")
+                    .HasColumnName("CreatedAt");
 
                 entity.HasOne(d => d.ReportInstruction)
                     .WithMany(p => p.AIReports)

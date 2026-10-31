@@ -7,7 +7,9 @@ using traderview.Server.Services;
 using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Interfaces.Services.AI;
 using TraderView.Application.Services;
+using TraderView.Application.Services.AI;
 using TraderView.Infrastructure.DbContexts;
 using TraderView.Infrastructure.Repositories;
 
@@ -118,6 +120,16 @@ public partial class Program
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
             return new CompoundPositionRepository(db);
         });
+        builder.Services.AddScoped<IAIReportRepository>(provider =>
+        {
+            var db = provider.GetRequiredService<AppDbContext>();
+            return new AiReportRepository(db);
+        });
+        builder.Services.AddScoped<IAIReportInstructionRepository>(provider =>
+        {
+            var db = provider.GetRequiredService<AppDbContext>();
+            return new AIReportInstructionRepository(db);
+        });
 
         // Register custom services        
         builder.Services.AddScoped<IHistoricalDataService, HistoricalDataService>(provider =>
@@ -189,8 +201,15 @@ public partial class Program
         builder.Services.AddScoped<IEquitySummaryService, EquitySummaryService>();
         builder.Services.AddScoped<IStrategyService, StrategyService>();
         builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
-
-
+        builder.Services.AddScoped<IAIReportService, AIReportService>();
+        builder.Services.AddScoped<IAIReportInstructionService, AIReportInstructionService>();
+        builder.Services.AddScoped<IGoogleAIStudioService, GoogleAIStudioService>(provider =>
+        {
+            var aiReportService = provider.GetRequiredService<IAIReportService>();
+            var aiReportInstructionService = provider.GetRequiredService<IAIReportInstructionService>();
+            var config = provider.GetRequiredService<IConfiguration>();
+            return new GoogleAIStudioService(aiReportService, aiReportInstructionService, config["GoogleAIStudio:ApiKey"], config["GoogleAIStudio:Model"]);
+        });
         builder.Services.AddControllers()
             .AddJsonOptions(options =>
             {

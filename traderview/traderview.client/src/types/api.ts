@@ -155,6 +155,13 @@ export interface Note {
     name: string;
 }
 
+export interface AIReport {
+    id: number;
+    reportInstructionId: number;
+    reportDetail: string;
+    createdAt: string;
+}
+
 export interface TradeExecution {
     id: number;
     positionId: number;
