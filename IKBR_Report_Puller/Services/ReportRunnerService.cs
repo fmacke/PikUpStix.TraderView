@@ -54,57 +54,57 @@ namespace PikUpStix.TraderView.Services
         }
         public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData, bool runAIAgentReport)
         {
-            try
-            {
-                IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
-                await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
-                await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades);
-                string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
-                await UpdateOpenPositionPrices(currentMarketRegime);
-                await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
-                var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
+            //try
+            //{
+            //    IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
+            //    await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
+            //    await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades);
+            //    string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
+            //    await UpdateOpenPositionPrices(currentMarketRegime);
+            //    await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
+            //    var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
 
-                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                await SaveTradeConfirms(todayReportXml, currentMarketRegime);
-                await SaveEquitySummaries(todayReportXml);
+            //    XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+            //    //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
+            //    await SaveTradeConfirms(todayReportXml, currentMarketRegime);
+            //    await SaveEquitySummaries(todayReportXml);
 
-                if (writeOutputtoExcel  || runAIAgentReport)
-                {
+            //    if (writeOutputtoExcel  || runAIAgentReport)
+            //    {
                     var openPositions = await _positionService.GetOpenPositionsAsync();
-                    if (runAIAgentReport)
-                    {
+                    //if (runAIAgentReport)
+                    //{
                         var morningReport = await _googleAiStudioService.GenerateReportAsync(2, openPositions);
                         Console.WriteLine($"\nMORNING REPORT FROM GOOGLE AI\n: {morningReport}");
-                    }
-                    if (writeOutputtoExcel)
-                    {
-                        await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
-                        await WriteTodayReportToExcel(todayReportXml);
-                    }
-                }
-                if (updateMarketData)
-                {
-                    _tradeHistoryReportService.CreateTradeHistoryReport(executions);
-                    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30), writeOutputtoExcel);
-                    await _marketDataService.FetchAndSaveChartData(new List<string>()
-                    {
-                        "^GSPC",//spx
-                        "^RUT",//iwm
-                        //"CLUSD",//wti crude oil
-                        "BTCUSD",//bitcoin
-                        "GCUSD",//gold
-                        "XAGUSD",//silver
-                        "QQQ",//nasdaq
-                        "^VIX"
-                     }, 300);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
-            }
+                    //}
+                    //if (writeOutputtoExcel)
+                    //{
+                    //    await _excelReportService.CreateExcelFileReport(openPositions, executions, outputFilePath);
+                    //    await WriteTodayReportToExcel(todayReportXml);
+                    //}
+            //    }
+            //    if (updateMarketData)
+            //    {
+            //        _tradeHistoryReportService.CreateTradeHistoryReport(executions);
+            //        await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+            //        await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30), writeOutputtoExcel);
+            //        await _marketDataService.FetchAndSaveChartData(new List<string>()
+            //        {
+            //            "^GSPC",//spx
+            //            "^RUT",//iwm
+            //            //"CLUSD",//wti crude oil
+            //            "BTCUSD",//bitcoin
+            //            "GCUSD",//gold
+            //            "XAGUSD",//silver
+            //            "QQQ",//nasdaq
+            //            "^VIX"
+            //         }, 300);
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
+            //}
         }
 
         private async Task SaveTradeConfirms(XDocument todayReportXml, string currentMarketRegime)

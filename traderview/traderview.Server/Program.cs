@@ -207,8 +207,9 @@ public partial class Program
         {
             var aiReportService = provider.GetRequiredService<IAIReportService>();
             var aiReportInstructionService = provider.GetRequiredService<IAIReportInstructionService>();
+            var marketDataService = provider.GetRequiredService<IMarketDataService>();
             var config = provider.GetRequiredService<IConfiguration>();
-            return new GoogleAIStudioService(aiReportService, aiReportInstructionService, config["GoogleAIStudio:ApiKey"], config["GoogleAIStudio:Model"]);
+            return new GoogleAIStudioService(aiReportService, aiReportInstructionService, marketDataService, config["GoogleAIStudio:ApiKey"], config["GoogleAIStudio:Model"]);
         });
         builder.Services.AddControllers()
             .AddJsonOptions(options =>

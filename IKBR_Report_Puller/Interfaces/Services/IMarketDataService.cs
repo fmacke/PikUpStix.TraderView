@@ -16,6 +16,7 @@ namespace TraderView.Application.Interfaces.Services
         Task FetchLatestPrices(IReadOnlyList<Position> positions);
         Task<string> GetMarketQuotesAsync(string tickers);
         Task<string> GetStockNewsAsync(string tickers, int limit = 5);
+        Task<string> GetGeneralMarketNewsAsync(DateTime fromDate, DateTime toDate, int limit = 25);
         Task<string> GetEconomicCalendarAsync();
     }
 }

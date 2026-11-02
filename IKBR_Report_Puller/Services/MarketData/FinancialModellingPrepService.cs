@@ -242,6 +242,141 @@ namespace PikUpStix.TraderView.Services.MarketData
             }
         }
 
+        async Task<string> IMarketDataService.GetMarketQuotesAsync(string tickers)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tickers))
+                {
+                    throw new ArgumentException("Tickers parameter cannot be null or empty.", nameof(tickers));
+                }
+
+                var url = $"{_baseUrl}/batch-quote?symbols={tickers}&apikey={_apiKey}";
+                Console.WriteLine($"Fetching market quotes for tickers: {tickers}");
+
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"Successfully retrieved market quotes for {tickers}.");
+                return content;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching market quotes for {tickers}: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching market quotes for {tickers}: {ex.Message}");
+                throw;
+            }
+        }
+
+        async Task<string> IMarketDataService.GetStockNewsAsync(string tickers, int limit = 15)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(tickers))
+                {
+                    throw new ArgumentException("Tickers parameter cannot be null or empty.", nameof(tickers));
+                }
+
+                if (limit < 1)
+                {
+                    throw new ArgumentException("Limit must be greater than 0.", nameof(limit));
+                }
+
+                var url = $"{_baseUrl}/news/stock?symbols={tickers.Replace(",", "%2C")}&limit={limit}&apikey={_apiKey}";
+                Console.WriteLine($"Fetching stock news for tickers: {tickers} with limit: {limit}");
+
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine($"Successfully retrieved stock news for {tickers}.");
+                return content;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching stock news for {tickers}: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching stock news for {tickers}: {ex.Message}");
+                throw;
+            }
+        }
+
+        async Task<string> IMarketDataService.GetGeneralMarketNewsAsync(DateTime fromDate, DateTime toDate, int limit)
+        {
+            try
+            {
+                if (limit < 1)
+                {
+                    throw new ArgumentException("Limit must be greater than 0.", nameof(limit));
+                }
+
+                if (toDate < fromDate)
+                {
+                    throw new ArgumentException("toDate must be greater than or equal to fromDate.");
+                }
+
+                var fromDateStr = fromDate.ToString("yyyy-MM-dd");
+                var toDateStr = toDate.ToString("yyyy-MM-dd");
+                var url = $"{_baseUrl}/news/general-latest?from={fromDateStr}&to={toDateStr}&limit={limit}&apikey={_apiKey}";
+                Console.WriteLine($"Fetching general market news from {fromDateStr} to {toDateStr} with limit: {limit}");
+
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine("Successfully retrieved general market news.");
+                return content;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching general market news: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching general market news: {ex.Message}");
+                throw;
+            }
+        }
+
+        async Task<string> IMarketDataService.GetEconomicCalendarAsync()
+        {
+            try
+            {
+                var url = $"{_baseUrl}/economic_calendar?apikey={_apiKey}";
+                Console.WriteLine("Fetching economic calendar data");
+
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                Console.WriteLine("Successfully retrieved economic calendar data.");
+                return content;
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching economic calendar: {ex.Message}");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching economic calendar: {ex.Message}");
+                throw;
+            }
+        }
+
         private static async Task ExecuteWithErrorHandlingAsync(Func<Task> operation, string context = null)
         {
             try

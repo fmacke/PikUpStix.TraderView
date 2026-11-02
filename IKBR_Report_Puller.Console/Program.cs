@@ -142,14 +142,24 @@ namespace TraderView.Console
                         var instrumentService = provider.GetRequiredService<IInstrumentService>();
                         return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService);
                     });
+                    services.AddScoped<IMarketDataService, FinancialModellingPrepService>(provider =>
+                    {
+                        var httpClient = provider.GetRequiredService<HttpClient>();
+                        var economicCalendarRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
+                        var historicalDataRepo = provider.GetRequiredService<IHistoricalDataRepository>();
+                        var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
+                        var config = provider.GetRequiredService<IConfiguration>();
+                        return new FinancialModellingPrepService(httpClient, economicCalendarRepo, historicalDataRepo, instrumentRepo, config["FMP:ApiKey"], config["FMP:BaseUrl"], config["Output:FilePath"]);
+                    });
                     services.AddScoped<IAIReportService, AIReportService>();
                     services.AddScoped<IAIReportInstructionService, AIReportInstructionService>();
                     services.AddScoped<IGoogleAIStudioService, GoogleAIStudioService>(provider =>
                     {
                         var aiReportService = provider.GetRequiredService<IAIReportService>();
                         var aiReportInstructionService = provider.GetRequiredService<IAIReportInstructionService>();
+                        var marketDataService = provider.GetRequiredService<IMarketDataService>();
                         var config = provider.GetRequiredService<IConfiguration>();
-                        return new GoogleAIStudioService(aiReportService, aiReportInstructionService, config["GoogleAIStudio:ApiKey"], config["GoogleAIStudio:Model"]);
+                        return new GoogleAIStudioService(aiReportService, aiReportInstructionService, marketDataService, config["GoogleAIStudio:ApiKey"], config["GoogleAIStudio:Model"]);
                     });
                     services.AddScoped<ITradingReportService, TradingReportService>(provider =>
                     {

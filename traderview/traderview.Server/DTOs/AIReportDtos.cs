@@ -1,3 +1,5 @@
+using TraderView.Domain.Entities;
+
 namespace traderview.Server.DTOs
 {
     public class AIReportDto
@@ -20,4 +22,17 @@ namespace traderview.Server.DTOs
         public int ReportInstructionId { get; set; }
         public string ReportDetail { get; set; } = null!;
     }
+
+    public class GenerateAIReportDto
+    {
+        public int InstructionId { get; set; }
+        public IReadOnlyList<Position>? OpenPositions { get; set; }
+    }
+
+    public class GenerateAIReportResponseDto
+    {
+        public string Report { get; set; } = null!;
+        public DateTime GeneratedAt { get; set; }
+    }
 }
+
