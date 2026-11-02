@@ -1,6 +1,7 @@
 using TraderView.Domain.Entities;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Models;
 
 namespace PikUpStix.TraderView.Services
 {
@@ -12,7 +13,7 @@ namespace PikUpStix.TraderView.Services
         {
             _positionRepository = positionRepository ?? throw new ArgumentNullException(nameof(positionRepository));
         }
-        async Task IPositionService.ClosePositionAsync(int positionId, DateTime closeDate)
+        async Task IPositionService.ClosePositionAsync(int positionId, DateTime closeDate, CloseOutPositionReportData closeOutPositionReportData)
         {
             var position = await _positionRepository.GetByIdAsync(positionId);
             if (position == null)
@@ -21,6 +22,12 @@ namespace PikUpStix.TraderView.Services
             }
             position.CloseDate = closeDate;
             position.Status = "Closed";
+            position.GrossProfit = closeOutPositionReportData.GrossProfit;
+            position.Commission = closeOutPositionReportData.Commission;
+            position.NetProfit = closeOutPositionReportData.NetProfit;
+            position.MaximumFavourableExcursion = closeOutPositionReportData.MaximumFavourableExcursion;
+            position.MaximumAdverseExcursion = closeOutPositionReportData.MaximumAdverseExcursion;
+            position.Direction = closeOutPositionReportData.Direction;
             await _positionRepository.UpdateAsync(position);
         }
         async Task<int> IPositionService.CreatePositionAsync(int instrumentId, DateTime openDate, decimal openPrice, string marketRegime)

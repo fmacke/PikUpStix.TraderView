@@ -2,11 +2,12 @@
 using PikUpStix.TraderView.Services;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Models;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Services
@@ -30,17 +31,14 @@ namespace TraderView.Application.Services
         {
             return await _repository.GetTradeExecutionsByPositionIdAsync(positionId);
         }
-
         async Task<List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>> ITradeExecutionService.GetTradeExecutionsByConIdAndAccountAsync(long? conid, string accountId)
         {
             return await _repository.GetTradeExecutionsByConIdAndAccountAsync(conid, accountId);
         }
-
         async Task<TradeSummary?> ITradeExecutionService.GetTradeSummaryByPositionIdAsync(int positionId)
         {
             return await _repository.GetTradeSummaryByPositionIdAsync(positionId);
         }
-
         async Task ITradeExecutionService.UpsertTradeExecutionsAsync(IReadOnlyList<TradeExecution> trades)
         {
             if (trades == null || !trades.Any())
@@ -94,7 +92,9 @@ namespace TraderView.Application.Services
                         trade.Id = insertTrade.Id;
                         var totalQuantity = await _repository.GetTotalQuantityForPositionAsync(trade.PositionId ?? 0);
                         if (totalQuantity == 0)
+                        {
                             await _positionService.ClosePositionAsync(trade.PositionId ?? 0, trade.DateTime);
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -143,6 +143,24 @@ namespace TraderView.Application.Services
                     }
                 }
             }
+        }
+        private async Task<CloseOutPositionReportData> CalculatePositionMetrics(IReadOnlyList<TradeExecution> trades)
+        {
+            var grossProfit = trades.Sum(t => t.FifoPnlRealized);
+            var commission = trades.Sum(t => t.IbCommission);
+            var netProfit = grossProfit - commission;
+            var maxFavorableExcursion = trades.Max(t => t.MaximumFavorableExcursion) ?? 0;
+            var maxAdverseExcursion = trades.Min(t => t.MaximumAdverseExcursion) ?? 0;
+            var direction = trades.FirstOrDefault()?.BuySell ?? "BUY";
+            return new CloseOutPositionReportData
+            {
+                GrossProfit = grossProfit,
+                Commission = commission,
+                NetProfit = netProfit,
+                MaximumFavourableExcursion = maxFavorableExcursion,
+                MaximumAdverseExcursion = maxAdverseExcursion,
+                Direction = direction
+            };
         }
         async Task ITradeExecutionService.UpsertTradeConfirmationsAsync(IReadOnlyList<TradeConfirm> tradeConfirms, string currentMarketRegime)
         {
