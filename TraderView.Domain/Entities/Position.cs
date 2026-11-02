@@ -16,7 +16,7 @@ namespace TraderView.Domain.Entities
         public decimal? NetProfit { get; set; }
         public decimal? MaximumFavourableExcursion { get; set; }
         public decimal? MaximumAdverseExcursion { get; set; }
-        public string Direction { get; set; } = "BUY";
+        public string? Direction { get; set; }
         public string? MarketRegime { get; set; }
         public virtual Instrument Instrument { get; set; } = null!;
         public virtual ICollection<Note> Notes { get; set; } = new List<Note>();

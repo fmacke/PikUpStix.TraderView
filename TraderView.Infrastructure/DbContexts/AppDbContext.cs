@@ -173,7 +173,7 @@ namespace TraderView.Infrastructure.DbContexts
                     .HasColumnType("varchar(max)");
                 entity.Property(e => e.CreatedAt)
                     .HasColumnType("datetime")
-                    .HasColumnName("CreatedAt");
+                    .IsRequired();
 
                 entity.HasOne(d => d.ReportInstruction)
                     .WithMany(p => p.AIReports)
@@ -465,13 +465,12 @@ namespace TraderView.Infrastructure.DbContexts
                 entity.Property(e => e.MarketRegime)
                     .HasMaxLength(50)
                     .IsRequired(false);
-                entity.Property(e => e.LastReportedPrice).HasColumnType("decimal(18, 6)");
-                entity.Property(e => e.Commission).HasColumnType("decimal(18, 6)");
+                entity.Property(e => e.Commission).HasColumnType("decimal(18, 6)"); 
+                entity.Property(e => e.GrossProfit).HasColumnType("decimal(18, 6)");
                 entity.Property(e => e.NetProfit).HasColumnType("decimal(18, 6)");
                 entity.Property(e => e.MaximumFavourableExcursion).HasColumnType("decimal(18, 6)");
                 entity.Property(e => e.MaximumAdverseExcursion).HasColumnType("decimal(18, 6)");
-                entity.Property(e => e.Direction)
-                    .HasMaxLength(10);
+                entity.Property(e => e.Direction).HasMaxLength(10);
                 entity.HasOne(d => d.Instrument).WithMany(p => p.Positions)
                     .HasForeignKey(d => d.InstrumentId)
                     .OnDelete(DeleteBehavior.ClientSetNull)

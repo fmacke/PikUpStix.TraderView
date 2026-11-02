@@ -140,7 +140,8 @@ namespace TraderView.Console
                         var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
                         var positionService = provider.GetRequiredService<IPositionService>();
                         var instrumentService = provider.GetRequiredService<IInstrumentService>();
-                        return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService);
+                        var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
+                        return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService, historicalDataService);
                     });
                     services.AddScoped<IMarketDataService, FinancialModellingPrepService>(provider =>
                     {

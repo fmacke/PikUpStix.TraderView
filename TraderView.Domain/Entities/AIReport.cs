@@ -5,7 +5,6 @@ namespace TraderView.Domain.Entities
         public int Id { get; set; }
         public int ReportInstructionId { get; set; }
         public string ReportDetail { get; set; } = null!;
-
         public virtual AIReportInstruction ReportInstruction { get; set; } = null!;
         public DateTime CreatedAt { get; set; }
     }

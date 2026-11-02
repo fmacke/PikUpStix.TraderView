@@ -94,11 +94,6 @@ public partial class Program
             AppDbContext db = provider.GetRequiredService<AppDbContext>();
             return new ListRepository(db);
         });
-        builder.Services.AddScoped<IAIReportRepository>(provider =>
-        {
-            AppDbContext db = provider.GetRequiredService<AppDbContext>();
-            return new AiReportRepository(db);
-        });
 
         builder.Services.AddScoped<IEquitySummaryRepository>(provider =>
         {
@@ -140,7 +135,14 @@ public partial class Program
         builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
         builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();        
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
-        builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>();
+        builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>(provider =>
+        {
+            var tradeExecutionRepo = provider.GetRequiredService<ITradeExecutionRepository>();
+            var positionService = provider.GetRequiredService<IPositionService>();
+            var instrumentService = provider.GetRequiredService<IInstrumentService>();
+            var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
+            return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService, historicalDataService);
+        });
         builder.Services.AddScoped<IInstrumentService, InstrumentService>();
         builder.Services.AddScoped<ITradingReportService, TradingReportService>(provider =>
         {
