@@ -96,7 +96,7 @@ namespace TraderView.Application.Services
                         var totalQuantity = await _repository.GetTotalQuantityForPositionAsync(trade.PositionId ?? 0);
                         if (totalQuantity == 0)
                         {
-                            var closeOutPositionReportData = await CalculatePositionMetrics(Convert.ToInt32(trade.PositionId));
+                            var closeOutPositionReportData = await ((ITradeExecutionService)this).CalculatePositionMetrics(Convert.ToInt32(trade.PositionId));
                             await _positionService.ClosePositionAsync(trade.PositionId ?? 0, trade.DateTime, closeOutPositionReportData);
                         }
                     }
@@ -148,13 +148,17 @@ namespace TraderView.Application.Services
                 }
             }
         }
-        private async Task<CloseOutPositionReportData> CalculatePositionMetrics(int positionId)
+        async Task<CloseOutPositionReportData> ITradeExecutionService.CalculatePositionMetrics(int positionId)
         {
-
+            var position = await _positionService.GetPositionByIdAsync(positionId);
+            if(position == null)
+            {
+                throw new InvalidOperationException($"Position with ID {positionId} not found.");
+            }
             var trades = await _repository.GetTradeExecutionsByPositionIdAsync(positionId);
             var grossProfit = trades.Sum(t => t.FifoPnlRealized);
             var commission = trades.Sum(t => t.IbCommission);
-            var netProfit = grossProfit - commission;
+            var netProfit = grossProfit + commission;
             var direction = trades.FirstOrDefault()?.BuySell ?? "BUY";
 
             // Calculate MFE and MAE using historical price data
@@ -273,7 +277,7 @@ namespace TraderView.Application.Services
                                 tradeConfirm.OpenCloseIndicator = "C";
                                 if (existingPosition?.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity == 0)
                                 {
-                                    var closeOutPositionReportData = await CalculatePositionMetrics(existingPosition.Id);
+                                    var closeOutPositionReportData = await ((ITradeExecutionService)this).CalculatePositionMetrics(existingPosition.Id);
                                     await _positionService.ClosePositionAsync(existingPosition.Id, tradeConfirm.DateTime, closeOutPositionReportData);
                                 }
                             }

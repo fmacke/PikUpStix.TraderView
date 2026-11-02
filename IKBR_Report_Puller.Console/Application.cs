@@ -5,16 +5,13 @@ namespace TraderView.Console
     public class Application
     {
         private readonly IReportRunnerService _reportRunnerService;
-        public Application(
-            IReportRunnerService reportRunnerService)
+        public Application(IReportRunnerService reportRunnerService)
         {
             _reportRunnerService = reportRunnerService;
         }
-
-
         public async Task RunAsync()
         {
-            await _reportRunnerService.RunReportAsync(false, false, true);           
+            await _reportRunnerService.RunReportAsync(true, true, true);           
         }
     }
 }

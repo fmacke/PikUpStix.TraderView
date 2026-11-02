@@ -1,4 +1,5 @@
 using TraderView.Application.Interfaces.Repositories;
+using TraderView.Application.Models;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Interfaces.Services
@@ -11,5 +12,6 @@ namespace TraderView.Application.Interfaces.Services
         Task<TradeSummary?> GetTradeSummaryByPositionIdAsync(int positionId);
         Task UpsertTradeExecutionsAsync(IReadOnlyList<TradeExecution> trades);
         Task UpsertTradeConfirmationsAsync(IReadOnlyList<TradeConfirm> tradeConfirms, string currentMarketRegime);
+        Task<CloseOutPositionReportData> CalculatePositionMetrics(int positionId);
     }
 }
