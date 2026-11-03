@@ -164,8 +164,6 @@ namespace TraderView.Application.Services
                 netProfit = grossProfit + commission;
                 direction = position.TradeExecutions.FirstOrDefault()?.BuySell ?? "BUY";
 
-                
-
                 if (position.TradeExecutions.Count > 0)
                 {
                     // Get earliest open date and final close date
