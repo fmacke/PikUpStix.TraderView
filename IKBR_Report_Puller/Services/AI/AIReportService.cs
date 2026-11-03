@@ -2,7 +2,7 @@ using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Domain.Entities;
 
-namespace PikUpStix.TraderView.Services
+namespace TraderView.Application.Services.AI
 {
     public class AIReportService : IAIReportService
     {

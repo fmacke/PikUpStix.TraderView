@@ -5,7 +5,7 @@ using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Domain.Entities;
 
-namespace TraderView.Application.Services
+namespace TraderView.Application.Services.AI
 {
     public class AIReportInstructionService : IAIReportInstructionService
     {
