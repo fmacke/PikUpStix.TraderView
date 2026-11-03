@@ -3,7 +3,7 @@ using System.Xml.Linq;
 using TraderView.Application.Mappers;
 using TraderView.Domain.Entities;
 
-namespace TraderView.Application.Services
+namespace TraderView.Application.Services.IKBR
 {
     public static class IKBRReportParser
     {

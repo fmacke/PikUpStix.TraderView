@@ -3,7 +3,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 
-namespace TraderView.Application.Services
+namespace TraderView.Application.Services.IKBR
 {
     public class IKBRReportServiceBase
     {

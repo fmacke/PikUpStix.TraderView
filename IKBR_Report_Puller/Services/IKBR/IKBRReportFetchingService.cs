@@ -9,7 +9,7 @@ using System.Net.Http;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
 
-namespace PikUpStix.TraderView.Services
+namespace TraderView.Application.Services.IKBR
 {   
     public class IKBRReportFetchingService : IReportFetchingService
     {

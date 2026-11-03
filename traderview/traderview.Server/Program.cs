@@ -10,6 +10,7 @@ using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Interfaces.Services.AI;
 using TraderView.Application.Services;
 using TraderView.Application.Services.AI;
+using TraderView.Application.Services.IKBR;
 using TraderView.Infrastructure.DbContexts;
 using TraderView.Infrastructure.Repositories;
 
