@@ -156,8 +156,7 @@ namespace TraderView.Application.Services
             var maxFavorableExcursion = 0m;
             var maxAdverseExcursion = 0m;
 
-            if (position.Status.ToLower() == "closed" 
-                && position.TradeExecutions.Count(x => x.TradeId == null) == 0)  // both these conditions need to be met to confirm position is fully closed with Trade Execution (not just Trade Confirmation)
+            if (position.TradeExecutions.Count(x => x.TradeId == null) == 0)  // if no TradeId, there is a TradeConfirmation placeholder in TradeExecutions
             {
                 //var trades = await _repository.GetTradeExecutionsByPositionIdAsync(positionId);
                 grossProfit = position.TradeExecutions.Sum(t => t.FifoPnlRealized);

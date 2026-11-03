@@ -239,6 +239,15 @@ export interface CurrentPerformanceResult {
     expectedReturnPerTrade: number;
     simpleRoi: number;
     compoundedRoi: number;
+    averageWin: number;
+    averageLoss: number;
+    largestWin: number;
+    largestWinPositionId: number;
+    largestLoss: number;
+    largestLossPositionId: number;
+    averageDaysHeld: number;
+    averageDaysHeldGains: number;
+    averageDaysHeldLosses: number;
 }
 export interface TradeCalculationRequest {
     tradeDate: string;

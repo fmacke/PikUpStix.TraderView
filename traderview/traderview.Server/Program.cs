@@ -133,7 +133,7 @@ public partial class Program
             var historicalDataRepo = provider.GetRequiredService<IHistoricalDataRepository>();
             return new HistoricalDataService(historicalDataRepo);
         });
-        builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryService>();
+        builder.Services.AddScoped<ITradeHistoryReportService, TradeHistoryReportService>();
         builder.Services.AddScoped<IReportFetchingService, IKBRReportFetchingService>();        
         builder.Services.AddScoped<IExcelReportService, ExcelReportService>();
         builder.Services.AddScoped<ITradeExecutionService, TradeExecutionService>(provider =>

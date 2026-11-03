@@ -4,7 +4,7 @@ using TraderView.Domain.Entities.FMP;
 
 namespace PikUpStix.TraderView.Services
 {
-    public class TradeHistoryService : ITradeHistoryReportService
+    public class TradeHistoryReportService : ITradeHistoryReportService
     {
         private decimal _winRatePercentage;
         private decimal _gainPercentage;
@@ -18,7 +18,7 @@ namespace PikUpStix.TraderView.Services
         {
             // Sort chronologically across the entire history to maintain structural FIFO consistency
             var executionGroups = rawExecutions
-                .Where(e => e.Quantity != 0)
+                .Where(e => e.Quantity != 0 && e.AssetCategory != "CASH")
                 .OrderBy(e => e.TradeDate)
                 .GroupBy(e => e.Symbol);
 

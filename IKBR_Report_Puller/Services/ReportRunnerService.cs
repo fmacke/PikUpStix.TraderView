@@ -53,6 +53,7 @@ namespace PikUpStix.TraderView.Services
         }
         public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData, bool runAIAgentReport)
         {
+            runAIAgentReport = false; // Disable AI agent report generation for now, token limit reached
             try
             {
                 IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
@@ -99,9 +100,8 @@ namespace PikUpStix.TraderView.Services
                         "QQQ",//nasdaq
                         "^VIX"
                      }, 300);
-
                 }
-                // await UpdateTradeMetrics(); ONLY REQUIRED TO RUN TO FULLY RE-RUN CALCS FOR ALL CLOSED POSITIONS.  NOT REQUIRED FOR DAILY RUNS.  
+                    ////await UpdateTradeMetrics(); ONLY REQUIRED TO RUN TO FULLY RE - RUN CALCS FOR ALL CLOSED POSITIONS.NOT REQUIRED FOR DAILY RUNS.  
             }
             catch (Exception ex)
             {

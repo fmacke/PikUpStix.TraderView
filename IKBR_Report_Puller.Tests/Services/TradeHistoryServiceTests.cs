@@ -6,12 +6,12 @@ namespace IKBR_Report_Puller.Tests.Services
     [TestClass]
     public class TradeHistoryServiceTests
     {
-        private TradeHistoryService _service = null!;
+        private TradeHistoryReportService _service = null!;
 
         [TestInitialize]
         public void Setup()
         {
-            _service = new TradeHistoryService();
+            _service = new TradeHistoryReportService();
         }
 
         [TestMethod]

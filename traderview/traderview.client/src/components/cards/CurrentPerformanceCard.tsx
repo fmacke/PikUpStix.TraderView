@@ -43,32 +43,32 @@ export const CurrentPerformanceCard: React.FC = () => {
         <div className="dashboard-card">
             <h3>Position Review Risk Matrix</h3>
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="bg-gray-50 p-2 rounded-md">
-                    <span className="block text-gray-500 text-xs">Win Rate:</span>
+            <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-2 gap-2">
+                <div>
+                    <span className="block text-xs text-gray-500">Win Rate:</span>
                     <span className="text-sm font-medium">{data.winRatePercentage}%</span>
                 </div>
-                <div className="bg-gray-50 p-2 rounded-md">
+                <div>
                     <span className="block text-gray-500 text-xs">Loss Rate:</span>
                     <span className="text-sm font-medium">{data.lossRatePercentage}%</span>
                 </div>
 
-                <div className="bg-gray-50 p-2 rounded-md">
+                <div>
                     <span className="block text-gray-500 text-xs">Gain / Loss:</span>
                     <span className="text-sm font-medium">+{data.gainPercentage}% / -{data.lossPercentage}%</span>
                 </div>
-                <div className="bg-gray-50 p-2 rounded-md">
+                <div>
                     <span className="block text-gray-500 text-xs">Reward-to-Risk:</span>
                     <span className="text-sm font-medium">{data.rewardToRiskRatio.toFixed(2)}</span>
                 </div>
 
-                <div className="bg-gray-50 p-2 rounded-md col-span-2">
+                <div>
                     <span className="block text-gray-500 text-xs">Expected Return / Trade:</span>
                     <span className={`text-sm font-medium ${data.expectedReturnPerTrade >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {data.expectedReturnPerTrade.toFixed(2)}%
                     </span>
                 </div>
-                <div className="bg-gray-50 p-2 rounded-md">
+                <div>
                     <span className="block text-gray-500 text-xs">Num Trades:</span>
                     <span className="text-sm font-medium">{data.numberOfTrades}</span>
                 </div>
@@ -85,6 +85,48 @@ export const CurrentPerformanceCard: React.FC = () => {
                     <span className="block text-xs text-gray-500">Compound ROI:</span>
                     <span className={`text-base font-bold ${data.compoundedRoi >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {data.compoundedRoi.toFixed(2)}%
+                    </span>
+                </div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-3 gap-2">
+                <div>
+                    <span className="block text-xs text-gray-500">Average Win:</span>
+                    <span className={`text-base font-bold ${data.averageWin >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {data.averageWin.toFixed(2)}
+                    </span>
+                </div>
+                <div>
+                    <span className="block text-xs text-gray-500">Largest Win:</span>
+                    <span className={`text-base font-bold text-green-600`}>
+                        {data.largestWin.toFixed(2)}</span>
+                    <span className="text-xs"> (PosId: {data.largestWinPositionId})</span>
+                </div>
+                 <div>
+                    <span className="block text-xs text-gray-500">Avg Days Win Held:</span>
+                    <span className={`text-base font-bold ${data.averageDaysHeldGains >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {data.averageDaysHeldGains.toFixed(2)}
+                    </span>
+                </div>
+                
+            </div>
+            <div className="mt-3 pt-3 border-t border-gray-100 grid grid-cols-3 gap-2">
+                <div>
+                    <span className="block text-xs text-gray-500">Average Loss:</span>
+                    <span className={`text-base font-bold text-red-600`}>
+                        {data.averageLoss.toFixed(2)}
+                    </span>
+                </div>                
+                <div>
+                    <span className="block text-xs text-gray-500">Largest Loss:</span>
+                    <span className={`text-base font-bold text-red-600`}>
+                        {data.largestLoss.toFixed(2)} 
+                    </span>
+                    <span className="text-xs"> (PosId: {data.largestLossPositionId})</span>
+                </div>
+                <div>
+                    <span className="block text-xs text-gray-500">Avg Days Loss Held:</span>
+                    <span className={`text-base font-bold ${data.averageDaysHeldLosses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {data.averageDaysHeldLosses.toFixed(2)}
                     </span>
                 </div>
             </div>

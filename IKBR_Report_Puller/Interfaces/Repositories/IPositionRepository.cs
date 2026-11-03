@@ -16,4 +16,5 @@ public interface IPositionRepository : IRepository<Position>
     Task<List<Position>> GetOpenPositionsAsync();
     Task UpdatePositionAsync(int positionId, DateTime dateTime, decimal price, string status);
     Task ClosePositionAsync(int positionId, DateTime closeDate);
+    Task<IReadOnlyList<Position>?> GetClosedPositionsAsync();
 }

@@ -140,6 +140,17 @@ namespace TraderView.Infrastructure.Repositories
                 .Where(x => x.Status == "Open" && x.Instrument.ContractUnitType != "CASH")
                 .OrderByDescending(x => x.OpenDate)
                 .ToListAsync();
-        }        
+        }
+        async Task<IReadOnlyList<Position>?> IPositionRepository.GetClosedPositionsAsync()
+        {
+            return await _context.Set<Position>()
+                .AsNoTracking()
+                .AsSplitQuery()
+                .Include(x => x.Instrument)
+                .Include(x => x.TradeExecutions)
+                .Where(x => x.Status.ToLower() == "closed" && x.Instrument.ContractUnitType != "CASH")
+                .OrderByDescending(x => x.OpenDate)
+                .ToListAsync();
+        }
     }
 }

@@ -44,6 +44,10 @@ namespace PikUpStix.TraderView.Services
         {
             return await _positionRepository.GetOpenPositionAsync(instrumentId);            
         }
+        async Task<IReadOnlyList<Position>?> IPositionService.GetClosedPositionsAsync()
+        {
+            return await _positionRepository.GetClosedPositionsAsync();
+        }
         async Task<IReadOnlyList<Position>> IPositionService.GetOpenPositionsAsync()
         {
 

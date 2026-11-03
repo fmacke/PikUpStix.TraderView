@@ -13,5 +13,6 @@ namespace TraderView.Application.Interfaces.Services
         Task<int> CreatePositionAsync(int instrumentId, DateTime openDate, decimal openPrice, string marketRegime);
         Task ClosePositionAsync(int positionId, DateTime closeDate, CloseOutPositionReportData closeOutPositionReportData);        
         Task UpsertPositionsAsync(IReadOnlyList<Position> positions, string currentMarketRegime);
+        Task<IReadOnlyList<Position>?> GetClosedPositionsAsync();
     }
 }

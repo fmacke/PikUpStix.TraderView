@@ -211,7 +211,7 @@ namespace TraderView.Console
                         return new IKBRReportFetchingService(config, httpClientFactory);
                     });                    
                     services.AddScoped<IExcelReportService, ExcelReportService>();
-                    services.AddSingleton<ITradeHistoryReportService, TradeHistoryService>();
+                    services.AddSingleton<ITradeHistoryReportService, TradeHistoryReportService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
                     services.AddScoped<ICurrentPerformanceService, CurrentPerformanceService>();

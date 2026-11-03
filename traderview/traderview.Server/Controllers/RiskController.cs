@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using traderview.Server.DTOs;
+using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
 
@@ -14,14 +15,16 @@ namespace traderview.Server.Controllers
         private readonly ICurrentPerformanceService _riskMatrixService;
         private readonly ITradeHistoryReportService _tradeHistoryService;
         private readonly ITradeExecutionService _tradeExecutionService;
+        private readonly IPositionService _positionService;
         private readonly IDesiredPerformanceForecastService _resultsBasedAssumptionForecastService;
 
         private readonly IMapper _mapper;
-        public RiskController(ILogger<RiskController> logger, ICurrentPerformanceService riskMatrixService, IMapper mapper, ITradeHistoryReportService tradeHistoryService, ITradeExecutionService tradeExecutionService, IDesiredPerformanceForecastService resultsBasedAssumptionForecastService) {
+        public RiskController(ILogger<RiskController> logger, ICurrentPerformanceService riskMatrixService, IMapper mapper, ITradeHistoryReportService tradeHistoryService, ITradeExecutionService tradeExecutionService, IPositionService positionService, IDesiredPerformanceForecastService resultsBasedAssumptionForecastService) {
             _logger = logger;
             _tradeHistoryService = tradeHistoryService;
             _tradeExecutionService = tradeExecutionService;
             _riskMatrixService = riskMatrixService;
+            _positionService = positionService;
             _resultsBasedAssumptionForecastService = resultsBasedAssumptionForecastService;
 
             _mapper = mapper;
@@ -35,7 +38,8 @@ namespace traderview.Server.Controllers
             {
                 var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
                 _tradeHistoryService.CreateTradeHistoryReport(executions);
-                var trades = await _riskMatrixService.CalculateExpectedRoi(_tradeHistoryService.RiskMatrixCalculationRequest);
+                var positions = await _positionService.GetClosedPositionsAsync();
+                var trades = await _riskMatrixService.CalculateExpectedRoi(_tradeHistoryService.RiskMatrixCalculationRequest, positions);
                 var tradesDto = _mapper.Map<CurrentPerformanceResultDto>(trades);
                 return Ok(tradesDto);
             }
