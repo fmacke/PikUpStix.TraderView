@@ -37,57 +37,10 @@ namespace traderview.Server.Controllers
         {
             try
             {
-                var positions = await _positionService.GetAllPositionsAsync(true);
+                var positions = await _positionService.GetAllPositionsAsync(false);
                 List<TradeDto> tradeDtos = new List<TradeDto>();
                 foreach (var p in positions)
                 {
-                    var averageCostBasis = 0m;
-                    var averageSalePrice = 0m;
-                    var quantitySum = 0m;
-                    var quantitySoldSum = 0m;
-                    var totalSale = 0m;
-                    var totalCost = 0m;
-                    var positionTotalSize = 0m;
-                    var postionDirection = p.TradeExecutions.OrderBy(x => x.Id).FirstOrDefault()?.BuySell ?? "BUY";
-                    var fifoPnlRealized = 0m;
-                    var executions = new List<TradeExecutionDto>();
-                    foreach (var te in p.TradeExecutions.OrderBy(x => x.Id))
-                    {
-                        _logger.LogInformation("TradeExecution ID: {TradeExecutionId}, Position ID: {PositionId}, Execution Type: {ExecutionType}, Price: {Price}, Quantity: {Quantity}, Date: {Date}",
-                            te.Id, p.Id, te.BuySell, te.ClosePrice, te.Quantity, te.DateTime);
-                        if (postionDirection == "BUY" && te.BuySell == "BUY" || postionDirection == "SELL" && te.BuySell == "SELL") 
-                        {
-                            quantitySum += Convert.ToDecimal(te.Quantity);
-                            totalCost += (Convert.ToDecimal(te.TradePrice) * Convert.ToDecimal(te.Quantity)) + Convert.ToDecimal(te.IbCommission);
-                            positionTotalSize += Convert.ToDecimal(te.Quantity);
-                        }
-                        if(postionDirection == "BUY" && te.BuySell == "SELL" || postionDirection == "SELL" && te.BuySell == "BUY") 
-                        {
-                            quantitySoldSum += Convert.ToDecimal(te.Quantity);
-                            totalSale += (Convert.ToDecimal(te.TradePrice) * Convert.ToDecimal(te.Quantity)) + Convert.ToDecimal(te.IbCommission);
-                        }
-                        fifoPnlRealized += (Convert.ToDecimal(te.FifoPnlRealized));
-                        executions.Add(new TradeExecutionDto
-                        {
-                            Id = te.Id,
-                            PositionId = Convert.ToInt32(te.PositionId),
-                            Symbol = te.Symbol,
-                            TradeId = te.TradeId,
-                            TradeDate = te.DateTime,
-                            Quantity = te.Quantity,
-                            TradePrice = te.TradePrice,
-                            BuySell = te.BuySell,
-                            FifoPnlRealized = te.FifoPnlRealized,
-                            IbCommission = te.IbCommission,
-                            IbCommissionCurrency = te.IbCommissionCurrency,
-                            ClosePrice = te.ClosePrice,
-                            Cost = te.Cost,
-                            IbExecId = te.IbExecId
-                        });
-                    }
-                    averageCostBasis = totalCost / (quantitySum != 0 ? quantitySum : 1);
-                    averageSalePrice = totalSale / (quantitySoldSum != 0 ? quantitySoldSum : 1);
-
                     var tradeDto = new TradeDto
                     {
                         PositionId = p.Id,
@@ -95,19 +48,10 @@ namespace traderview.Server.Controllers
                         Symbol = p.Instrument.DataName,
                         EntryDate = p.OpenDate,
                         ExitDate = p.CloseDate ?? DateTime.MinValue,
-                        EntryPrice = averageCostBasis,
-                        ExitPrice = averageSalePrice,
-                        Quantity = positionTotalSize,
-                        Pnl = fifoPnlRealized,
-                        BuySell = postionDirection,
-                        Executions = executions
+                        Pnl = Convert.ToDecimal(p.GrossProfit),
+                        BuySell = p.Direction
                     };
                     tradeDtos.Add(tradeDto);
-                }
-                foreach (var position in positions)
-                {
-                    _logger.LogInformation("Position ID: {PositionId}, Symbol: {Symbol}, Entry Date: {EntryDate}, Exit Date: {ExitDate}",
-                        position.Id, position.Instrument.DataName, position.OpenDate, position.CloseDate);
                 }
                 return Ok(tradeDtos);
             }
@@ -120,6 +64,7 @@ namespace traderview.Server.Controllers
                 );
             }
         }
+        
 
         /// <summary>
         /// Get candlestick data for a specific trade

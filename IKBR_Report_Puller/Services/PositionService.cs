@@ -15,7 +15,8 @@ namespace PikUpStix.TraderView.Services
         }
         async Task IPositionService.ClosePositionAsync(int positionId, DateTime closeDate, CloseOutPositionReportData closeOutPositionReportData)
         {
-            var position = await _positionRepository.GetByIdAsync(positionId);
+            // Use a fresh query without includes to avoid tracking conflicts with previously loaded untracked entities
+            var position = await _positionRepository.GetByIdForUpdateAsync(positionId);
             if (position == null)
             {
                 throw new InvalidOperationException($"Position with ID {positionId} not found.");

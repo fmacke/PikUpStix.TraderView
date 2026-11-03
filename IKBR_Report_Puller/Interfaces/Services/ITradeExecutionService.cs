@@ -10,8 +10,8 @@ namespace TraderView.Application.Interfaces.Services
         Task<List<TradeExecution>> GetTradeExecutionsByPositionIdAsync(int positionId);
         Task<List<(DateTime TradeDate, decimal Quantity, string OpenCloseIndicator)>> GetTradeExecutionsByConIdAndAccountAsync(long? conid, string accountId);
         Task<TradeSummary?> GetTradeSummaryByPositionIdAsync(int positionId);
-        Task UpsertTradeExecutionsAsync(IReadOnlyList<TradeExecution> trades);
+        Task UpsertTradeExecutionsAsync(IReadOnlyList<TradeExecution> trades, string currentMarketRegime);
         Task UpsertTradeConfirmationsAsync(IReadOnlyList<TradeConfirm> tradeConfirms, string currentMarketRegime);
-        Task<CloseOutPositionReportData> CalculatePositionMetrics(int positionId);
+        Task<CloseOutPositionReportData> CalculatePositionMetrics(Position position);
     }
 }

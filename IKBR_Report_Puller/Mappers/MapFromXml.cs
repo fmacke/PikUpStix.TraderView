@@ -18,7 +18,7 @@ namespace TraderView.Application.Mappers
                 {
                     IbExecID = tradeConfirm.Attribute("execID")?.Value,
                     Symbol = tradeConfirm.Attribute("symbol")?.Value,
-                    TradeDate = Convert.ToDateTime(TypeConverters.ConvertToNullableDate(tradeConfirm.Attribute("tradeDate")?.Value)),
+                    TradeDate = DateTime.ParseExact(tradeConfirm.Attribute("dateTime")?.Value, "yyyyMMdd;HHmmss", CultureInfo.InvariantCulture),
                     AssetCategory = tradeConfirm.Attribute("assetCategory")?.Value,
                     ListingExchange = tradeConfirm.Attribute("listingExchange").Value,
                     Quantity = (decimal)ConvertToDecimal(tradeConfirm.Attribute("quantity").Value),

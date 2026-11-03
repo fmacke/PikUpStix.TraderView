@@ -16,6 +16,24 @@ namespace TraderView.Infrastructure.Repositories
         {
             _context = db;
         }
+        async Task<Position?> IPositionRepository.GetByIdAsync(int positionId)
+        {
+            return await _context.Set<Position>()
+                .AsNoTracking()
+                .Include(p => p.Instrument)
+                .Include(p => p.TradeExecutions)
+                .FirstOrDefaultAsync(p => p.Id == positionId);
+        }
+
+        /// <summary>
+        /// Gets a position by ID for update operations, with tracking enabled and no includes 
+        /// to avoid conflicts with previously loaded untracked entities
+        /// </summary>
+        async Task<Position?> IPositionRepository.GetByIdForUpdateAsync(int positionId)
+        {
+            return await _context.Set<Position>()
+                .FirstOrDefaultAsync(p => p.Id == positionId);
+        }
 
         /// <summary>
         /// Gets an open position by symbol and instrument ID.
@@ -97,7 +115,8 @@ namespace TraderView.Infrastructure.Repositories
         {
             IQueryable<Position> query = _context.Set<Position>()
                 .AsNoTracking()
-                .Include(x => x.Instrument);
+                .Include(x => x.Instrument)
+                .Where(x => x.Instrument.ContractUnitType != "CASH");
 
             if (loadTradeExecutions)
             {

@@ -7,6 +7,7 @@ using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Services;
 using TraderView.Application.Interfaces.Services.AI;
 using TraderView.Application.Models;
+using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace PikUpStix.TraderView.Services
 {
@@ -52,22 +53,15 @@ namespace PikUpStix.TraderView.Services
         }
         public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData, bool runAIAgentReport)
         {
+            runAIAgentReport = false;
+            updateMarketData = false;
+            writeOutputtoExcel = false;
             try
             {
-                var positions = await _positionService.GetAllPositionsAsync(true);
-                foreach (var position in positions)
-                {
-
-                    if (position.Status == "Closed" && position.CloseDate.HasValue)
-                    {
-                        var closeOutPositionReportData = await _tradeExecutionService.CalculatePositionMetrics(position.Id);
-                        await _positionService.ClosePositionAsync(position.Id, position.CloseDate.Value, closeOutPositionReportData);
-                    }
-                }
                 //IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
                 //await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
-                //await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades);
                 //string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
+                //await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades, currentMarketRegime);                
                 //await UpdateOpenPositionPrices(currentMarketRegime);
                 //await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
                 //var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
@@ -76,6 +70,7 @@ namespace PikUpStix.TraderView.Services
                 ////XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
                 //await SaveTradeConfirms(todayReportXml, currentMarketRegime);
                 //await SaveEquitySummaries(todayReportXml);
+                
 
                 //if (writeOutputtoExcel || runAIAgentReport)
                 //{
@@ -107,11 +102,34 @@ namespace PikUpStix.TraderView.Services
                 //        "QQQ",//nasdaq
                 //        "^VIX"
                 //     }, 300);
+                    
                 //}
+                await UpdateTradeMetrics();
             }
             catch (Exception ex)
             {
                 System.Console.WriteLine($"\nAn error occurred: {ex.Message}");
+            }
+        }
+        private async Task UpdateTradeMetrics()
+        {
+            try
+            {
+                var positions = await _positionService.GetAllPositionsAsync(true);
+                foreach (var position in positions.Where(x => x.Status.ToLower() == "closed"))
+                {
+                     if (!position.CloseDate.HasValue)
+                     {
+                         System.Console.WriteLine($"Warning: Position {position.Id} is marked as closed but has no CloseDate. Skipping.");
+                         continue;
+                     }
+                     var closeOutPositionReportData = await _tradeExecutionService.CalculatePositionMetrics(position);
+                     await _positionService.ClosePositionAsync(position.Id, position.CloseDate.Value, closeOutPositionReportData);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Console.WriteLine($"ReportRunnerService.UpdateTradeMetrics:  Error updating trade metrics: {ex.Message}");
             }
         }
 
