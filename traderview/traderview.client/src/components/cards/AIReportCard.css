@@ -136,6 +136,90 @@
     }
 }
 
+/* Explicit theme classes for toggle modes */
+.ai-report-card.theme-dark {
+    background-color: var(--card-bg-dark, #1e1e1e);
+    border-color: var(--border-color-dark, #444);
+}
+
+.ai-report-card.theme-dark .ai-report-card-title {
+    color: var(--text-color-dark, #e0e0e0);
+}
+
+.ai-report-card.theme-dark .ai-report-recent-section {
+    background-color: var(--section-bg-dark, #2a2a2a);
+    border-color: var(--border-color-dark, #444);
+}
+
+.ai-report-card.theme-dark .ai-report-recent-title {
+    color: var(--text-color-dark, #e0e0e0);
+}
+
+.ai-report-card.theme-dark .ai-report-recent-date {
+    color: var(--text-secondary-dark, #999);
+}
+
+.ai-report-card.theme-dark .ai-report-recent-content {
+    background-color: var(--input-bg-dark, #333);
+    border-color: var(--border-color-dark, #444);
+    color: var(--text-color-dark, #b0b0b0);
+}
+
+.ai-report-card.theme-dark .ai-report-list-title {
+    color: var(--text-color-dark, #e0e0e0);
+}
+
+.ai-report-card.theme-dark .ai-report-list-hint {
+    color: var(--text-secondary-dark, #999);
+}
+
+.ai-report-card.theme-dark .ai-report-loading,
+.ai-report-card.theme-dark .ai-report-empty {
+    color: var(--text-secondary-dark, #999);
+}
+
+/* Light theme explicit class */
+.ai-report-card.theme-light {
+    background-color: var(--card-bg, #ffffff);
+    border-color: var(--border-color, #e0e0e0);
+}
+
+.ai-report-card.theme-light .ai-report-card-title {
+    color: var(--text-color, #1f2937);
+}
+
+.ai-report-card.theme-light .ai-report-recent-section {
+    background-color: var(--section-bg, #f9fafb);
+    border-color: var(--border-color, #e5e7eb);
+}
+
+.ai-report-card.theme-light .ai-report-recent-title {
+    color: var(--text-color, #1f2937);
+}
+
+.ai-report-card.theme-light .ai-report-recent-date {
+    color: var(--text-secondary, #666);
+}
+
+.ai-report-card.theme-light .ai-report-recent-content {
+    background-color: var(--input-bg, #ffffff);
+    border-color: var(--border-color, #e5e7eb);
+    color: var(--text-color, #374151);
+}
+
+.ai-report-card.theme-light .ai-report-list-title {
+    color: var(--text-color, #1f2937);
+}
+
+.ai-report-card.theme-light .ai-report-list-hint {
+    color: var(--text-secondary, #666);
+}
+
+.ai-report-card.theme-light .ai-report-loading,
+.ai-report-card.theme-light .ai-report-empty {
+    color: var(--text-secondary, #666);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .ai-report-card {

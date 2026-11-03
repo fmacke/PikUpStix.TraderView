@@ -13,8 +13,10 @@ import TradeListerCard from '../../cards/TradeListerCard';
 function TradeDetailView() {
     const [trades, setTrades] = useState<Position[]>([]);
     const [selectedTrade, setSelectedTrade] = useState<Position | null>(null);
+    const [fullTradeDetails, setFullTradeDetails] = useState<Position | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
+    const [tradeDetailsLoading, setTradeDetailsLoading] = useState<boolean>(false);
     const [useCarousel, setUseCarousel] = useState<boolean>(true);
     const [isNoteModalOpen, setIsNoteModalOpen] = useState<boolean>(false);
     const [isEditNoteModalOpen, setIsEditNoteModalOpen] = useState<boolean>(false);
@@ -31,6 +33,28 @@ function TradeDetailView() {
     const handleTradeSelect = (trade: Position) => {
         setSelectedTrade(trade);
     };
+
+    // Fetch full trade details when trade changes
+    useEffect(() => {
+        if (!selectedTrade) {
+            return;
+        }
+
+        const fetchTradeDetails = async () => {
+            try {
+                setTradeDetailsLoading(true);
+                const tradeDetailsData = await tradeService.getTradeById(selectedTrade.positionId);
+                setFullTradeDetails(tradeDetailsData);
+            } catch (err) {
+                console.error('Error fetching trade details:', err);
+                setFullTradeDetails(null);
+            } finally {
+                setTradeDetailsLoading(false);
+            }
+        };
+
+        fetchTradeDetails();
+    }, [selectedTrade?.positionId]);
 
     // Fetch notes when trade changes
     useEffect(() => {
@@ -186,12 +210,12 @@ function TradeDetailView() {
                     </div>
 
                     <div className="chart-container">
-                        <TradingViewChart trade={selectedTrade} />
+                        <TradingViewChart trade={fullTradeDetails || selectedTrade} />
                     </div>
 
                     <div className="detail-sections">
                         <div className="detail-section compact">
-                            <TradeSummaryCard trade={selectedTrade} />
+                            <TradeSummaryCard trade={fullTradeDetails || selectedTrade} loading={tradeDetailsLoading} />
                         </div>
                         <div id="notesHolder" className="detail-section compact">
                             <h3>Notes</h3>

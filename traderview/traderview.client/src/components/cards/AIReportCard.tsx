@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AIReport } from '../../types/api';
 import { aiReportService } from '../../services';
-import AIReportsList from '../common/AIReportsList';
+import { useTheme } from '../../hooks/useTheme';
 import AIReportModal from '../common/AIReportModal';
 import './AIReportCard.css';
 
@@ -10,6 +10,7 @@ function AIReportCard() {
     const [loading, setLoading] = useState<boolean>(true);
     const [selectedReport, setSelectedReport] = useState<AIReport | null>(null);
     const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+    const { theme } = useTheme();
 
     // Fetch all AI reports on component mount
     useEffect(() => {
@@ -43,7 +44,6 @@ function AIReportCard() {
     };
 
     const mostRecentReport = reports.length > 0 ? reports[0] : null;
-    const otherReports = reports.slice(1);
 
     const formatDate = (dateString: string): string => {
         try {
@@ -62,7 +62,7 @@ function AIReportCard() {
 
     if (loading && reports.length === 0) {
         return (
-            <div className="ai-report-card">
+            <div className={`ai-report-card theme-${theme}`}>
                 <h2 className="ai-report-card-title">AI Reports</h2>
                 <p className="ai-report-loading">Loading reports...</p>
             </div>
@@ -71,7 +71,7 @@ function AIReportCard() {
 
     if (reports.length === 0) {
         return (
-            <div className="ai-report-card">
+            <div className={`ai-report-card theme-${theme}`}>
                 <h2 className="ai-report-card-title">AI Reports</h2>
                 <p className="ai-report-empty">No AI reports available.</p>
             </div>
@@ -79,7 +79,7 @@ function AIReportCard() {
     }
 
     return (
-        <div className="ai-report-card">
+        <div className={`ai-report-card theme-${theme}`}>
             <h2 className="ai-report-card-title">AI Reports</h2>
 
             {/* Most Recent Report Section */}
@@ -99,19 +99,7 @@ function AIReportCard() {
                 </div>
             )}
 
-            {/* Other Reports Section */}
-            {otherReports.length > 0 && (
-                <div className="ai-report-list-section">
-                    <h3 className="ai-report-list-title">Other Reports</h3>
-                    <p className="ai-report-list-hint">Click a report to view full details</p>
-                    <AIReportsList
-                        reports={otherReports}
-                        loading={loading}
-                        onReportSelect={handleReportSelect}
-                    />
-                </div>
-            )}
-
+           
             {/* Modal for viewing selected report */}
             <AIReportModal
                 isOpen={isModalOpen}

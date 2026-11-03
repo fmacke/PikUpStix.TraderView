@@ -6,6 +6,10 @@ export const tradeService = {
         return api.get<Position[]>('/tradeviewer/trades');
     },
 
+    async getTradeById(positionId: number): Promise<Position> {
+        return api.get<Position>(`/tradeviewer/trades/${positionId}`);
+    },
+
     async getTradeCandlesticks(positionId: number, daysBefore: number = 150, daysAfter: number = 150): Promise<TradeContext> {
         console.log(`Making API call to /tradeviewer/trades/${positionId}/candlesticks`);
         return api.get<TradeContext>(`/tradeviewer/trades/${positionId}/candlesticks`, {

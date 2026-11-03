@@ -127,67 +127,32 @@ namespace TraderView.Infrastructure.Repositories
 		{
 			try
 			{
-				var trades = await _context.Set<TradeExecution>()
-					.Where(te => te.PositionId == positionId)
-					.OrderBy(te => te.TradeDate)
-					.ThenBy(te => te.DateTime)
-					.ToListAsync();
-
-				if (!trades.Any())
-					return null;
-
 				var position = await _context.Set<Position>()
 					.Include(p => p.Instrument)
-					.FirstOrDefaultAsync(p => p.Id == positionId);
+                    .Include(p => p.TradeExecutions)
+                    .FirstOrDefaultAsync(p => p.Id == positionId);
 
 				if (position == null)
 					return null;
 
-				// Calculate running quantity and identify position closure
-				decimal runningQuantity = 0;
-				var closingTrade = trades.FirstOrDefault(t =>
-				{
-					runningQuantity += (t.Quantity ?? 0);
-					return runningQuantity == 0;
-				});
-
-				var entryTrades = new List<TradeExecution>();
-				var exitTrades = new List<TradeExecution>();
-				runningQuantity = 0;
-
-				foreach (var trade in trades)
-				{
-					runningQuantity += (trade.Quantity ?? 0);
-					if ((trade.Quantity ?? 0) > 0 || ((trade.Quantity ?? 0) < 0 && runningQuantity >= 0))
-					{
-						entryTrades.Add(trade);
-					}
-					else if ((trade.Quantity ?? 0) < 0)
-					{
-						exitTrades.Add(trade);
-					}
-
-					if (closingTrade != null && trade.Id == closingTrade.Id)
-						break;
-				}
-
-				var avgEntryPrice = entryTrades.Any() ? entryTrades.Average(t => t.TradePrice ?? 0) : 0m;
-				var avgExitPrice = exitTrades.Any() ? exitTrades.Average(t => t.TradePrice ?? 0) : 0m;
-				var totalQuantity = trades.Aggregate(0m, (acc, t) => acc + Math.Abs(t.Quantity ?? 0));
-				var totalPnl = trades.Sum(t => t.FifoPnlRealized ?? 0);
+				var direction = position.TradeExecutions.OrderBy(x => x.DateTime).FirstOrDefault()?.BuySell;
+                var avgEntryPrice = position.TradeExecutions.Where(x=>x.BuySell == direction).Any() ? position.TradeExecutions.Where(x=>x.BuySell == direction).Average(t => t.TradePrice ?? 0) : 0m;
+				var avgExitPrice = position.TradeExecutions.Where(x=>x.BuySell != direction).Any() ? position.TradeExecutions.Where(x=>x.BuySell != direction).Average(t => t.TradePrice ?? 0) : 0m;
+				var totalQuantity = position.TradeExecutions.Where(x=>x.BuySell == direction).Aggregate(0m, (acc, t) => acc + Math.Abs(t.Quantity ?? 0));
+				var totalPnl = position.TradeExecutions.Sum(t => t.FifoPnlRealized ?? 0);
 
 				return new TradeSummary
 				{
 					InstrumentId = position.InstrumentId,
 					PositionId = positionId,
-					Symbol = trades.First().Symbol,
-					EntryDate = trades.First().TradeDate,
-					ExitDate = closingTrade?.TradeDate ?? trades.Last().TradeDate,
+					Symbol = position.TradeExecutions.OrderBy(x => x.DateTime).First().Symbol,
+					EntryDate = position.TradeExecutions.OrderBy(x => x.DateTime).First().TradeDate,
+					ExitDate = position.TradeExecutions.OrderBy(x => x.DateTime).Last().TradeDate,
 					EntryPrice = avgEntryPrice,
 					ExitPrice = avgExitPrice,
 					Quantity = totalQuantity,
 					Pnl = totalPnl,
-					BuySell = entryTrades.First().BuySell
+					BuySell = direction
 				};
 			}
 			catch (Exception ex)

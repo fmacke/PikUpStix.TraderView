@@ -64,7 +64,42 @@ namespace traderview.Server.Controllers
                 );
             }
         }
-        
+
+        /// <summary>
+        /// Get full trade details by position ID
+        /// </summary>
+        /// <param name="positionId">The position/trade ID</param>
+        /// <returns>Complete trade details including entry/exit prices, quantity, P&L, and direction</returns>
+        [HttpGet("trades/{positionId}")]
+        [ProducesResponseType(typeof(TradeDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<TradeDto>> GetTradeByIdAsync(int positionId)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching trade details for position {positionId}", positionId);
+
+                var tradeDetail = await _tradeViewerService.GetTradeDetailAsync(positionId);
+
+                if (tradeDetail == null)
+                {
+                    _logger.LogWarning("Position {positionId} not found", positionId);
+                    return NotFound(new { message = $"Position with ID {positionId} not found" });
+                }
+
+                _logger.LogInformation("Successfully retrieved trade details for position {positionId}", positionId);
+                return Ok(tradeDetail.Trade);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching trade details for position {positionId}", positionId);
+                return StatusCode(
+                    StatusCodes.Status500InternalServerError,
+                    new { message = "Error fetching trade details", detail = ex.Message }
+                );
+            }
+        }
 
         /// <summary>
         /// Get candlestick data for a specific trade

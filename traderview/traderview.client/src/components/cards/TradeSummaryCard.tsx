@@ -3,9 +3,19 @@ import './TradeSummaryCard.css';
 
 interface TradeSummaryCardProps {
     trade: Position;
+    loading?: boolean;
 }
 
-const TradeSummaryCard: React.FC<TradeSummaryCardProps> = ({ trade }) => {
+const TradeSummaryCard: React.FC<TradeSummaryCardProps> = ({ trade, loading = false }) => {
+    if (loading) {
+        return (
+            <div className="trade-summary-card">
+                <h3>Trade Summary & Performance</h3>
+                <p>Loading...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="trade-summary-card">
             <h3>Trade Summary & Performance</h3>
@@ -37,7 +47,7 @@ const TradeSummaryCard: React.FC<TradeSummaryCardProps> = ({ trade }) => {
                     </tr>
                     <tr>
                         <td className="label">Direction</td>
-                        <td>{trade.buySell  }</td>
+                        <td>{trade.buySell}</td>
                     </tr>
                     <tr>
                         <td className="label">P&L</td>
