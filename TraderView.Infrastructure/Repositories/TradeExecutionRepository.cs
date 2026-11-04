@@ -120,11 +120,6 @@ namespace TraderView.Infrastructure.Repositories
 		/// </summary>
 		async Task<TradeSummary?> ITradeExecutionRepository.GetTradeSummaryByPositionIdAsync(int positionId)
 		{
-			return await GetTradeSummaryByPositionIdAsync(positionId);
-		}
-
-		private async Task<TradeSummary?> GetTradeSummaryByPositionIdAsync(int positionId)
-		{
 			try
 			{
 				var position = await _context.Set<Position>()

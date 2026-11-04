@@ -12,6 +12,5 @@ namespace TraderView.Application.Interfaces.Services
         Task<TradeSummary?> GetTradeSummaryByPositionIdAsync(int positionId);
         Task UpsertTradeExecutionsAsync(IReadOnlyList<TradeExecution> trades, string currentMarketRegime);
         Task UpsertTradeConfirmationsAsync(IReadOnlyList<TradeConfirm> tradeConfirms, string currentMarketRegime);
-        Task<CloseOutPositionReportData> CalculatePositionMetrics(Position position);
     }
 }

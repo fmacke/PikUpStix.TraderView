@@ -14,9 +14,9 @@ namespace TraderView.Application.Services
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
         }
 
-        public async Task<List<Bar>> GetCandlesticksAsync(int instrumentId, DateTime startDate, DateTime endDate)
+        public async Task<List<Bar>> GetCandlesticksAsync(int instrumentId, double contractUnit, DateTime startDate, DateTime endDate)
         {
-            return await _repo.GetCandlesticksAsync(instrumentId, startDate, endDate);
+            return await _repo.GetCandlesticksAsync(instrumentId, contractUnit, startDate, endDate);
         }
 
         public async Task<int?> GetInstrumentIdBySymbolAsync(string symbol)
@@ -27,7 +27,7 @@ namespace TraderView.Application.Services
         {
             // Request enough history to compute 200-day SMA; repository returns candles for the range.
             var start = openDate.AddDays(-300);
-            var candles = await _repo.GetCandlesticksAsync(SpxInstrumentId, start, openDate);
+            var candles = await _repo.GetCandlesticksAsync(SpxInstrumentId, 1.0, start, openDate);
 
             var ordered = candles.OrderBy(c => c.Date).ToList();
             if (ordered.Count < 200) return "Unknown";

@@ -180,7 +180,7 @@ namespace TraderView.Application.Services
             var exitDate = summary.ExitDate == default ? DateTime.UtcNow : summary.ExitDate;
 
             // Pull historical bars for the instrument between entry and exit (inclusive)
-            var bars = await _historicalDataService.GetCandlesticksAsync(summary.InstrumentId, entryDate.AddDays(-1), exitDate.AddDays(1));
+            var bars = await _historicalDataService.GetCandlesticksAsync(summary.InstrumentId, pos.Instrument.ContractUnit ?? 1.0, entryDate.AddDays(-1), exitDate.AddDays(1));
 
             decimal mfe = 0m;
             decimal mae = 0m;

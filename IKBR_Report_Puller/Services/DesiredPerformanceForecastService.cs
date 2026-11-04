@@ -15,9 +15,9 @@ namespace TraderView.Application.Services
             _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
         }
-        public DesiredPerformanceInputs GetInputsFromTradingHistory(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent, List<TradeExecution> tradeExecutions)        
+        public DesiredPerformanceInputs GetInputsFromTradingHistory(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent, IReadOnlyList<Position> positions)        
         {
-            _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
+            _tradeHistoryReportService.CreateTradeHistoryReport(positions);
             var trades = _tradeHistoryReportService.TradeHistoryAggregated;
             var averageGainPercent = trades.Sum(x => x.RealizedPnL > 0 ? x.RealizedPnL : 0) / trades.Count(x => x.RealizedPnL > 0);
             var averageLossPercent = trades.Sum(x => x.RealizedPnL < 0 ? Math.Abs(x.RealizedPnL) : 0) / trades.Count(x => x.RealizedPnL < 0);

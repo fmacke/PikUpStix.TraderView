@@ -5,7 +5,7 @@ namespace TraderView.Application.Interfaces.Services
 {
     public interface IDesiredPerformanceForecastService
     {
-        DesiredPerformanceInputs GetInputsFromTradingHistory(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent, List<TradeExecution> tradeExecutions);
+        DesiredPerformanceInputs GetInputsFromTradingHistory(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent, IReadOnlyList<Position> positions);
         DesiredPerformanceResults CalculateForecast(DesiredPerformanceInputs inputs);
     }
 }

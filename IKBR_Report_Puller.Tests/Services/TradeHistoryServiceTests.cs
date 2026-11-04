@@ -41,7 +41,7 @@ namespace IKBR_Report_Puller.Tests.Services
             };
 
             // Act
-            _service.CreateTradeHistoryReport(tradeExecutions);
+            _service.CreateTradeHistoryReport(new List<Position> { new Position { Id = 1, InstrumentId = 1, Status = "closed", TradeExecutions = tradeExecutions } });
 
             // Assert
             Assert.AreEqual(1, _service.TradeHistory.Count);
@@ -88,7 +88,7 @@ namespace IKBR_Report_Puller.Tests.Services
             };
 
             // Act
-            _service.CreateTradeHistoryReport(tradeExecutions);
+            _service.CreateTradeHistoryReport(new List<Position> { new Position { Id = 1, InstrumentId = 1, Status = "closed", TradeExecutions = tradeExecutions } });
 
             // Assert
             Assert.AreEqual(1, _service.TradeHistory.Count);
@@ -140,7 +140,7 @@ namespace IKBR_Report_Puller.Tests.Services
             };
 
             // Act
-            _service.CreateTradeHistoryReport(tradeExecutions);
+            _service.CreateTradeHistoryReport(new List<Position> { new Position { Id = 1, InstrumentId = 1, Status = "closed", TradeExecutions = tradeExecutions } });
 
             // Assert
             Assert.AreEqual(2, _service.TradeHistory.Count);

@@ -1,12 +1,4 @@
-﻿using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Office2010.CustomUI;
-using System;
-using System.Collections.Generic;
-using System.Runtime.ConstrainedExecution;
-using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace TraderView.Application.Models
+﻿namespace TraderView.Application.Models
 {
     public class TradeCalculationRequest
     {

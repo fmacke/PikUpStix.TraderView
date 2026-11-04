@@ -23,6 +23,7 @@ namespace traderview.Server.DTOs
         public string DataName { get; set; } = string.Empty;
         public string Currency { get; set; } = string.Empty;
         public string? ListingExchange { get; set; }
+        public double? ContractUnit { get; set; }
     }
 
     public class TradeExecutionDto

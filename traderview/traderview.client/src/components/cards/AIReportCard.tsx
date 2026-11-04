@@ -2,14 +2,11 @@ import { useEffect, useState } from 'react';
 import type { AIReport } from '../../types/api';
 import { aiReportService } from '../../services';
 import { useTheme } from '../../hooks/useTheme';
-import AIReportModal from '../common/AIReportModal';
 import './AIReportCard.css';
 
 function AIReportCard() {
     const [reports, setReports] = useState<AIReport[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
-    const [selectedReport, setSelectedReport] = useState<AIReport | null>(null);
-    const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
     const { theme } = useTheme();
 
     // Fetch all AI reports on component mount
@@ -33,15 +30,6 @@ function AIReportCard() {
         fetchReports();
     }, []);
 
-    const handleReportSelect = (report: AIReport) => {
-        setSelectedReport(report);
-        setIsModalOpen(true);
-    };
-
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-        // Keep selectedReport state for potential future use
-    };
 
     const mostRecentReport = reports.length > 0 ? reports[0] : null;
 
@@ -100,12 +88,7 @@ function AIReportCard() {
             )}
 
            
-            {/* Modal for viewing selected report */}
-            <AIReportModal
-                isOpen={isModalOpen}
-                onClose={handleCloseModal}
-                report={selectedReport}
-            />
+            
         </div>
     );
 }

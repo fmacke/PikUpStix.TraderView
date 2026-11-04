@@ -1,4 +1,6 @@
 ﻿using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Models;
+using TraderView.Application.Services;
 using TraderView.Domain.Entities;
 using TraderView.Domain.Entities.FMP;
 
@@ -13,9 +15,13 @@ namespace PikUpStix.TraderView.Services
         public List<HistoricalTrade> TradeHistoryAggregated { get; set; } = new List<HistoricalTrade>();
         public List<HistoricalTrade> TradeHistory { get; set; } = new List<HistoricalTrade>();
         public RiskMatrixCalculationRequest RiskMatrixCalculationRequest { get; set; } = new RiskMatrixCalculationRequest();
-
-        public void CreateTradeHistoryReport(List<TradeExecution> rawExecutions)
+        public void CreateTradeHistoryReport(IReadOnlyList<Position> positions)
         {
+            var rawExecutions = new List<TradeExecution>();
+            foreach(var pos in positions.Where(p => p.Status.ToLower() == "closed"))
+            {
+                rawExecutions.AddRange(pos.TradeExecutions);
+            }
             // Sort chronologically across the entire history to maintain structural FIFO consistency
             var executionGroups = rawExecutions
                 .Where(e => e.Quantity != 0 && e.AssetCategory != "CASH")
@@ -26,8 +32,7 @@ namespace PikUpStix.TraderView.Services
             {
                 string symbol = group.Key;
                 var longInventory = new Queue<ExecutionQueueItem>();
-                var shortInventory = new Queue<ExecutionQueueItem>();
-                
+                var shortInventory = new Queue<ExecutionQueueItem>();                
 
                 foreach (var exec in group)
                 {
@@ -66,7 +71,9 @@ namespace PikUpStix.TraderView.Services
                                 IbCommission = openingCommission + closingCommission,
                                 IbCommissionCurrency = exec.IbCommissionCurrency,
                                 InstrumentId = instrumentId,
-                                ListingExchange = exec.ListingExchange
+                                ListingExchange = exec.ListingExchange,
+                                MaximumAdverseExursion = exec.Position.MaximumAdverseExcursion,
+                                MaximumFavourableExursion = exec.Position.MaximumFavourableExcursion
                             });
 
                             qtyRemaining -= matchQty;
@@ -165,13 +172,13 @@ namespace PikUpStix.TraderView.Services
                     IbCommissionCurrency = group.First().IbCommissionCurrency,
                     ListingExchange = group.First().ListingExchange,
                     FifoPnlRealized = group.Sum(trade => trade.FifoPnlRealized),
+                    MaximumAdverseExursion = group.First().MaximumAdverseExursion,
+                    MaximumFavourableExursion = group.First().MaximumFavourableExursion
                 })
                 .OrderByDescending(trade => trade.Quantity)
                 .ToList();
             RiskMatrixCalculationRequest = new RiskMatrixCalculationRequest(TradeHistoryAggregated);
         }
-        
-
     }
     class ExecutionQueueItem
     {

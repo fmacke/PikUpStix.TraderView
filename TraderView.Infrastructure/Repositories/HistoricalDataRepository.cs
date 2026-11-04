@@ -172,7 +172,7 @@ namespace TraderView.Infrastructure.Repositories
         /// <summary>
         /// Gets candlestick data for a given instrument and date range asynchronously
         /// </summary>
-        public async Task<List<Bar>> GetCandlesticksAsync(int instrumentId, DateTime startDate, DateTime endDate)
+        public async Task<List<Bar>> GetCandlesticksAsync(int instrumentId, double contractUnitMultiplier, DateTime startDate, DateTime endDate)
         {
             var specification = new CandleSticksByInstrumentAndDateRangeSpecification(instrumentId, startDate, endDate);
             var candleSticks = await GetAsync(specification);
@@ -180,10 +180,10 @@ namespace TraderView.Infrastructure.Repositories
             return candleSticks.Select(hd => new Bar
             {
                 Date = hd.Date,
-                OpenPrice = hd.OpenPrice,
-                HighPrice = hd.HighPrice,
-                LowPrice = hd.LowPrice,
-                ClosePrice = hd.ClosePrice,
+                OpenPrice = hd.OpenPrice / contractUnitMultiplier,
+                HighPrice = hd.HighPrice / contractUnitMultiplier,
+                LowPrice = hd.LowPrice / contractUnitMultiplier,
+                ClosePrice = hd.ClosePrice / contractUnitMultiplier,
                 Volume = hd.Volume,
                 Settle = hd.Settle ?? 0,
                 OpenInterest = hd.OpenInterest ?? 0,

@@ -14,6 +14,8 @@
         public DateTime TradeOpened{ get; set; }
         public DateTime TradeClosed { get; set; }
         public int InstrumentId { get; set; }
+        public decimal? MaximumFavourableExursion { get; set; }
+        public decimal? MaximumAdverseExursion { get; set; }
     }
 }
  

@@ -31,7 +31,7 @@ namespace TraderView.Application.Interfaces.Repositories
         /// <param name="startDate">Start date of the range</param>
         /// <param name="endDate">End date of the range</param>
         /// <returns>List of candlestick/bar data</returns>
-        Task<List<Bar>> GetCandlesticksAsync(int instrumentId, DateTime startDate, DateTime endDate);
+        Task<List<Bar>> GetCandlesticksAsync(int instrumentId, double contractUnitMultiplier, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// Gets instrument ID by symbol name asynchronously

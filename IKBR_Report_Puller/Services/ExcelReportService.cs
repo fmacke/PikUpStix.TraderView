@@ -24,22 +24,18 @@ namespace PikUpStix.TraderView.Services
             _tradeHistoryReportService = tradeHistoryReportService;
         }
 
-        public async Task CreateExcelFileReport(IReadOnlyList<Position> openPositions, IReadOnlyList<TradeExecution> tradeExecutions, string outputFilePath)
+        public async Task CreateExcelFileReport(IReadOnlyList<Position> positions, string outputFilePath)
         {
             try
             {
-                if (!openPositions.Any())
-                {
-                    Console.WriteLine("No open positions found in the report. Moving to historical trades.");
-                }
-
                 // Set the EPPlus license for non-commercial use
                 ExcelPackage.License.SetNonCommercialPersonal("DFM");
 
                 using (var package = new ExcelPackage())
                 {
-                    await CreateOpenPositionsWorkSheet(package, openPositions);                   
-                    _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions.ToList());
+                    await CreateOpenPositionsWorkSheet(package, positions.Where(p => p.Status.ToLower() == "open").ToList());                   
+                    _tradeHistoryReportService.CreateTradeHistoryReport(positions.Where(p => p.Status.ToLower() == "closed").ToList());
+                    CreateTradeHistoryWorksheet(package, positions, "Position History");
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "TradeExecution History");
                     CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution History Aggregated");
                     CreateVisualReport(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution Report");
@@ -58,6 +54,102 @@ namespace PikUpStix.TraderView.Services
             {
                 Console.WriteLine($"\nAn error occurred during Excel report creation: {ex.Message}");
             }
+        }
+
+        private void CreateTradeHistoryWorksheet(ExcelPackage package, IEnumerable<Position> positions, string worksheetName)
+        {
+            var worksheet = package.Workbook.Worksheets.Add(worksheetName);
+
+            // Add headers
+            worksheet.Cells[1, 1].Value = "Id";
+            worksheet.Cells[1, 2].Value = "Symbol";
+            worksheet.Cells[1, 3].Value = "OpenDate";
+            worksheet.Cells[1, 4].Value = "CloseDate";
+            worksheet.Cells[1, 5].Value = "DaysOpen";
+            worksheet.Cells[1, 6].Value = "Quantity";
+            worksheet.Cells[1, 7].Value = "AvgCostBasis";
+            worksheet.Cells[1, 8].Value = "AvgSaleBasis";
+            worksheet.Cells[1, 9].Value = "Cost";
+            worksheet.Cells[1, 10].Value = "Value";
+            worksheet.Cells[1, 11].Value = "Commission";
+            worksheet.Cells[1, 12].Value = "Currency";
+            worksheet.Cells[1, 13].Value = "GrossMargin";
+            worksheet.Cells[1, 14].Value = "NetMargin";
+            worksheet.Cells[1, 15].Value = "NetMargin%";
+            worksheet.Cells[1, 16].Value = "MFE";
+            worksheet.Cells[1, 17].Value = "MAE";
+
+            int currentRow = 2;
+            var tradeHistoryPositions = new TradeHistoryPositions(positions.Where(x=>x.Status.ToLower() == "closed").ToList());
+            foreach (var pos in tradeHistoryPositions.OrderByDescending(x => x.CloseDate))
+            {
+                try
+                {
+                    worksheet.Cells[currentRow, 1].Value = pos.Id;
+                    worksheet.Cells[currentRow, 2].Value = pos.Symbol;
+                    worksheet.Cells[currentRow, 3].Value = pos.OpenDate;
+                    worksheet.Cells[currentRow, 3].Style.Numberformat.Format = "yyyy-MM-dd";
+                    worksheet.Cells[currentRow, 4].Value = pos.CloseDate;
+                    worksheet.Cells[currentRow, 4].Style.Numberformat.Format = "yyyy-MM-dd";
+                    worksheet.Cells[currentRow, 5].Value = Math.Round(pos.DaysHeld, 0);
+                    worksheet.Cells[currentRow, 6].Value = Math.Round(pos.Quantity, 2);
+                    worksheet.Cells[currentRow, 7].Value = Math.Round(pos.AverageCostBasis, 2);
+                    worksheet.Cells[currentRow, 7].Style.Numberformat.Format = "#,##0.00";
+                    worksheet.Cells[currentRow, 8].Value = Math.Round(pos.AverageSalesValue, 2);
+                    worksheet.Cells[currentRow, 8].Style.Numberformat.Format = "#,##0.00";
+                    worksheet.Cells[currentRow, 9].Value = Math.Round(pos.TotalPurchaseCost, 2);
+                    worksheet.Cells[currentRow, 9].Style.Numberformat.Format = "#,##0.00";
+                    worksheet.Cells[currentRow, 10].Value = Math.Round(pos.TotalSalesValue, 2);
+                    worksheet.Cells[currentRow, 10].Style.Numberformat.Format = "#,##0.00";
+                    worksheet.Cells[currentRow, 11].Value = Math.Round(pos.IbCommission, 2);
+                    worksheet.Cells[currentRow, 11].Style.Numberformat.Format = "#,##0.00";
+                    worksheet.Cells[currentRow, 12].Value = pos.CommissionCurrency;
+                    worksheet.Cells[currentRow, 13].Value = Math.Round(pos.GrossMargin, 1);
+                    worksheet.Cells[currentRow, 13].Style.Numberformat.Format = "#,##0.0";
+                    worksheet.Cells[currentRow, 14].Value = Math.Round(pos.NetMargin, 2);
+                    worksheet.Cells[currentRow, 14].Style.Numberformat.Format = "#,##0.00";
+                    worksheet.Cells[currentRow, 15].Value = pos.NetMarginPercent;
+                    worksheet.Cells[currentRow, 15].Style.Numberformat.Format = "#,##0.00%";
+                    worksheet.Cells[currentRow, 16].Value = pos.MaximumFavourableExcursion;
+                    worksheet.Cells[currentRow, 16].Style.Numberformat.Format = "#,##0%";
+                    worksheet.Cells[currentRow, 17].Value = pos.MaximumAdverseExcursion;
+                    worksheet.Cells[currentRow, 17].Style.Numberformat.Format = "#,##0%";
+                    currentRow++;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error processing position {pos.Id}: {ex.Message}");
+                }
+            }
+
+            // Sanitize the table name to ensure it is valid
+            string sanitizedTableName = worksheetName.Replace(" ", "_").Replace("-", "_").Replace("/", "_");
+
+            // Format the data as a table
+            var tableRange = worksheet.Cells[1, 1, currentRow - 1, 17];
+            var table = worksheet.Tables.Add(tableRange, sanitizedTableName);
+            table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium9;
+
+            // Add totals row and sum the Margin column
+            table.ShowTotal = true;
+            table.Columns[5].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
+            worksheet.Cells[currentRow, 5].Style.Numberformat.Format = "#,##0.00"; 
+            table.Columns[10].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
+            worksheet.Cells[currentRow, 10].Style.Numberformat.Format = "#,##0.00";
+            table.Columns[12].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
+            worksheet.Cells[currentRow, 12].Style.Numberformat.Format = "#,##0.00";
+            table.Columns[13].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
+            worksheet.Cells[currentRow, 13].Style.Numberformat.Format = "#,##0.00";
+            table.Columns[14].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
+            worksheet.Cells[currentRow, 14].Style.Numberformat.Format = "#,##0.00";
+            table.Columns[15].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
+            worksheet.Cells[currentRow, 15].Style.Numberformat.Format = "#,##0.00%";
+            table.Columns[16].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
+            worksheet.Cells[currentRow, 16].Style.Numberformat.Format = "#,##0.0%";
+            table.Columns[17].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
+            worksheet.Cells[currentRow, 17].Style.Numberformat.Format = "#,##0.0%";
+            // Adjust column widths
+            worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
         }
 
         private async Task CreateOpenPositionsWorkSheet(ExcelPackage package, IReadOnlyList<Position> openPositions)
@@ -90,7 +182,7 @@ namespace PikUpStix.TraderView.Services
             worksheet.Cells[1, 8].Value = "Value";
             worksheet.Cells[1, 9].Value = "Unrealized P/L";
             worksheet.Cells[1, 10].Value = "% Change";
-            worksheet.Cells[1, 11].Value = "Current Margin";
+            worksheet.Cells[1, 11].Value = "Current Margin";            
 
             // Populate data
             int currentRow = 2;
@@ -159,6 +251,8 @@ namespace PikUpStix.TraderView.Services
             worksheet.Cells[1, 12].Value = "IB Commission Currency";
             worksheet.Cells[1, 13].Value = "Margin";
             worksheet.Cells[1, 14].Value = "MarginPercent";
+            worksheet.Cells[1, 15].Value = "MFE";
+            worksheet.Cells[1, 16].Value = "MAE";
 
             int currentRow = 2;
             foreach (var historicalTrade in trades.OrderByDescending(x => x.TradeClosed))
@@ -195,6 +289,10 @@ namespace PikUpStix.TraderView.Services
                 worksheet.Cells[currentRow, 13].Style.Numberformat.Format = "#,##0.00";
                 worksheet.Cells[currentRow, 14].Value = Math.Round(historicalTrade.RealizedPnLPercentage, 2);
                 worksheet.Cells[currentRow, 14].Style.Numberformat.Format = "#,##0.00";
+                worksheet.Cells[currentRow, 15].Value = historicalTrade.MaximumFavourableExursion;
+                worksheet.Cells[currentRow, 15].Style.Numberformat.Format = "#,##0.00";
+                worksheet.Cells[currentRow, 16].Value = historicalTrade.MaximumAdverseExursion;
+                worksheet.Cells[currentRow, 16].Style.Numberformat.Format = "#,##0.00";
                 currentRow++;
             }
 
@@ -202,7 +300,7 @@ namespace PikUpStix.TraderView.Services
             string sanitizedTableName = worksheetName.Replace(" ", "_").Replace("-", "_").Replace("/", "_");
 
             // Format the data as a table
-            var tableRange = worksheet.Cells[1, 1, currentRow - 1, 14];
+            var tableRange = worksheet.Cells[1, 1, currentRow - 1, 16];
             var table = worksheet.Tables.Add(tableRange, sanitizedTableName);
             table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium9;
 

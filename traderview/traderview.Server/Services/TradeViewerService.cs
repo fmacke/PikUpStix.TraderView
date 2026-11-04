@@ -16,15 +16,17 @@ namespace traderview.Server.Services
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly IInstrumentRepository _instrumentRepository;
         private readonly IHistoricalDataRepository _historicalDataRepository;
+        private readonly IPositionService _positionService;
 
         public TradeViewerService(
             ILogger<TradeViewerService> logger,
             ITradeExecutionRepository tradeExecutionRepository,
             ITradeHistoryReportService tradeHistoryReportService,
             IInstrumentRepository instrumentRepository,
-            IHistoricalDataRepository historicalDataRepository)
+            IHistoricalDataRepository historicalDataRepository,
+            IPositionService positionService)
         {
-            
+            _positionService = positionService;
             _tradeExecutionRepository = tradeExecutionRepository;
             _tradeHistoryReportService = tradeHistoryReportService;
             _instrumentRepository = instrumentRepository;
@@ -36,8 +38,8 @@ namespace traderview.Server.Services
             try
             {
                 // Use repository to get trade executions and create history
-                var tradeExecutions = await _tradeExecutionRepository.GetTradeExecutionsAsync();
-                _tradeHistoryReportService.CreateTradeHistoryReport(tradeExecutions);
+                var positions = await _positionService.GetClosedPositionsAsync();
+                _tradeHistoryReportService.CreateTradeHistoryReport(positions);
                 var trades = _tradeHistoryReportService.TradeHistoryAggregated;
 
                 // Map HistoricalTrade to TradeDto
@@ -83,7 +85,8 @@ namespace traderview.Server.Services
                     Provider = instrumentDomain.Provider ?? string.Empty,
                     DataName = instrumentDomain.DataName ?? string.Empty,
                     Currency = instrumentDomain.Currency ?? string.Empty,
-                    ListingExchange = instrumentDomain.ListingExchange
+                    ListingExchange = instrumentDomain.ListingExchange,
+                    ContractUnit = instrumentDomain.ContractUnit
                 };
 
 
@@ -155,9 +158,12 @@ namespace traderview.Server.Services
                         IbExecId = e.IbExecId
                     }).ToList();
 
+                var instrumentDomain = await _instrumentRepository.GetByIdAsync(trade.InstrumentId);
+                if (instrumentDomain == null) return null;
                 // Get candlestick data around the trade dates using repository
                 var candlesticksDomain = await _historicalDataRepository.GetCandlesticksAsync(
                     trade.InstrumentId,
+                    instrumentDomain.ContractUnit ?? 1.0, // Use contract unit if available, otherwise default to 1.0
                     trade.EntryDate.AddDays(-daysBefore),
                     trade.ExitDate.AddDays(daysAfter)
                 );

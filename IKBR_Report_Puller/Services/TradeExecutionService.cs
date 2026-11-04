@@ -90,8 +90,7 @@ namespace TraderView.Application.Services
                         var totalQuantity = await _repository.GetTotalQuantityForPositionAsync(trade.PositionId ?? 0);
                         if (totalQuantity == 0)
                         {
-                            var closeOutPositionReportData = await ((ITradeExecutionService)this).CalculatePositionMetrics(trade.Position);
-                            await _positionService.ClosePositionAsync(trade.PositionId ?? 0, trade.DateTime, closeOutPositionReportData);
+                            await _positionService.ClosePositionAsync(trade.Position);
                         }
                     }
                     catch (Exception ex)
@@ -142,103 +141,7 @@ namespace TraderView.Application.Services
                 }
             }
         }
-        async Task<CloseOutPositionReportData> ITradeExecutionService.CalculatePositionMetrics(Position position)
-        {
-            if(position == null)
-            {
-                throw new InvalidOperationException($"Position with ID {position.Id} not found.");
-            }
-            var grossProfit = new decimal?();
-            var commission = new decimal?();
-            var netProfit = new decimal?();
-            var direction = "";
-            // Calculate MFE and MAE using historical price data
-            var maxFavorableExcursion = 0m;
-            var maxAdverseExcursion = 0m;
-
-            if (position.TradeExecutions.Count(x => x.TradeId == null) == 0)  // if no TradeId, there is a TradeConfirmation placeholder in TradeExecutions
-            {
-                //var trades = await _repository.GetTradeExecutionsByPositionIdAsync(positionId);
-                grossProfit = position.TradeExecutions.Sum(t => t.FifoPnlRealized);
-                commission = position.TradeExecutions.Sum(t => t.IbCommission);
-                netProfit = grossProfit + commission;
-                direction = position.TradeExecutions.FirstOrDefault()?.BuySell ?? "BUY";
-
-                if (position.TradeExecutions.Count > 0)
-                {
-                    // Get earliest open date and final close date
-                    var earliestOpenDate = position.TradeExecutions.Min(t => t.TradeDate);
-                    var finalCloseDate = position.TradeExecutions.Max(t => t.DateTime);
-                    var instrumentId = position.TradeExecutions.FirstOrDefault()?.Position?.InstrumentId;
-
-                    // If we have both position and instrument info, fetch historical data for MFE/MAE calculation
-                    if (instrumentId.HasValue)
-                    {
-                        try
-                        {
-                            // Get candlestick data for the position period
-                            var historicalBars = await _historicalDataService.GetCandlesticksAsync(
-                                instrumentId.Value,
-                                earliestOpenDate,
-                                finalCloseDate);
-
-                            if (historicalBars.Count > 0)
-                            {
-                                // Get entry price (average price of opening trades)
-                                var totalQuantity = position.TradeExecutions.Where(x => x.BuySell == position.Direction).Sum(t => t.Quantity ?? 0);
-                                var entryPrice = (decimal)(position.TradeExecutions
-                                    .Where(t => t.BuySell == position.Direction)
-                                    .Sum(t => (t.TradePrice ?? 0) * (t.Quantity ?? 0)) / totalQuantity);
-
-                                // Calculate investment cost
-                                var investmentCost = entryPrice * totalQuantity;
-
-                                // Calculate highest and lowest prices from historical data
-                                var highestPrice = (decimal)historicalBars.Max(b => b.HighPrice);
-                                var lowestPrice = (decimal)historicalBars.Min(b => b.LowPrice);
-
-                                // Calculate MFE and MAE based on position direction, as percentage of investment cost
-                                if (investmentCost != 0)
-                                {
-                                    if (direction.Equals("BUY", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        // For long position: MFE is gain to highest price, MAE is loss to lowest price
-                                        var mfeAbsolute = (highestPrice - entryPrice) * totalQuantity;
-                                        var maeAbsolute = (lowestPrice - entryPrice) * totalQuantity;
-
-                                        maxFavorableExcursion = (mfeAbsolute / investmentCost) * 100;
-                                        maxAdverseExcursion = (maeAbsolute / investmentCost) * 100;
-                                    }
-                                    else // SELL
-                                    {
-                                        // For short position: MFE is gain to lowest price, MAE is loss to highest price
-                                        var mfeAbsolute = (entryPrice - lowestPrice) * totalQuantity;
-                                        var maeAbsolute = (entryPrice - highestPrice) * totalQuantity;
-
-                                        maxFavorableExcursion = (mfeAbsolute / investmentCost) * 100;
-                                        maxAdverseExcursion = (maeAbsolute / investmentCost) * 100;
-                                    }
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            // Log error but don't fail - fall back to trade-level MFE/MAE if available
-                            Console.WriteLine($"Error calculating MFE/MAE from historical data: {ex.Message}");
-                        }
-                    }
-                }
-            }
-            return new CloseOutPositionReportData
-            {
-                GrossProfit = grossProfit,
-                Commission = commission,
-                NetProfit = netProfit,
-                MaximumFavourableExcursion = maxFavorableExcursion,
-                MaximumAdverseExcursion = maxAdverseExcursion,
-                Direction = direction
-            };
-        }
+        
         async Task ITradeExecutionService.UpsertTradeConfirmationsAsync(IReadOnlyList<TradeConfirm> tradeConfirms, string currentMarketRegime)
         {
             if (tradeConfirms == null || !tradeConfirms.Any())
@@ -274,10 +177,9 @@ namespace TraderView.Application.Services
                             if (tradeConfirm.BuySell != openDirection)
                             {
                                 tradeConfirm.OpenCloseIndicator = "C";
-                                if (existingPosition?.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity == 0)
+                                if (existingPosition.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity == 0)
                                 {
-                                    var closeOutPositionReportData = await ((ITradeExecutionService)this).CalculatePositionMetrics(existingPosition);
-                                    await _positionService.ClosePositionAsync(existingPosition.Id, tradeConfirm.DateTime, closeOutPositionReportData);
+                                    await _positionService.ClosePositionAsync(existingPosition);
                                 }
                             }
                         }

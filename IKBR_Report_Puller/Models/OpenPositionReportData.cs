@@ -23,5 +23,7 @@ namespace TraderView.Application.Models
         public decimal? UnrealizedPnL { get; set; }
         public decimal? PercentChange { get; set; }
         public decimal? CurrentMargin { get; set; }
+        public decimal? MaximumFavourableExcursion { get; set; }
+        public decimal? MaximumAdverseExcursion { get; set; }
     }
 }

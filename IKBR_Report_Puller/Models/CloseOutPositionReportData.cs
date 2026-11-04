@@ -5,7 +5,8 @@ using System.Text;
 namespace TraderView.Application.Models
 {
     public class CloseOutPositionReportData
-    {        public decimal? GrossProfit { get; set; }
+    {        
+        public decimal? GrossProfit { get; set; }
         public decimal? Commission { get; set; }
         public decimal? NetProfit { get; set; }
         public decimal? MaximumFavourableExcursion { get; set; }
