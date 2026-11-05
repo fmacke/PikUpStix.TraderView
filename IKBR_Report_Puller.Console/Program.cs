@@ -80,11 +80,6 @@ namespace TraderView.Console
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         return new InstrumentService(instrumentRepo);
                     });
-                    services.AddScoped<IPositionService, PositionService>(provider =>
-                    {
-                        var positionRepo = provider.GetRequiredService<IPositionRepository>();
-                        return new PositionService(positionRepo);
-                    });
                     services.AddScoped<ITradeExecutionRepository>(provider =>
                     {
                         var db = provider.GetRequiredService<AppDbContext>();
@@ -134,7 +129,8 @@ namespace TraderView.Console
                     services.AddScoped<IPositionService, PositionService>(provider =>
                     {
                         var positionRepo = provider.GetRequiredService<IPositionRepository>();
-                        return new PositionService(positionRepo);
+                        var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
+                        return new PositionService(positionRepo, historicalDataService);
                     });
                     services.AddScoped<ITradeExecutionService, TradeExecutionService>(provider =>
                     {

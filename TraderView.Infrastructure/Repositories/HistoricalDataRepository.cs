@@ -168,7 +168,11 @@ namespace TraderView.Infrastructure.Repositories
         {
             return GetMissingDateRangesAsync(instrumentId, startDate, endDate).GetAwaiter().GetResult();
         }
-
+        public async Task<IReadOnlyList<HistoricalDatum>> GetByInstrumentIdAsync(int instrumentId)
+        {
+            var specification = new HistoricalDataByInstrumentSpecification(instrumentId);
+            return await GetAsync(specification);
+        }
         /// <summary>
         /// Gets candlestick data for a given instrument and date range asynchronously
         /// </summary>

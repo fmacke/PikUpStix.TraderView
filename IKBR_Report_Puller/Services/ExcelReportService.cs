@@ -110,9 +110,9 @@ namespace PikUpStix.TraderView.Services
                     worksheet.Cells[currentRow, 14].Style.Numberformat.Format = "#,##0.00";
                     worksheet.Cells[currentRow, 15].Value = pos.NetMarginPercent;
                     worksheet.Cells[currentRow, 15].Style.Numberformat.Format = "#,##0.00%";
-                    worksheet.Cells[currentRow, 16].Value = pos.MaximumFavourableExcursion;
+                    worksheet.Cells[currentRow, 16].Value = pos.MaximumFavourableExcursion / 100;
                     worksheet.Cells[currentRow, 16].Style.Numberformat.Format = "#,##0%";
-                    worksheet.Cells[currentRow, 17].Value = pos.MaximumAdverseExcursion;
+                    worksheet.Cells[currentRow, 17].Value = pos.MaximumAdverseExcursion / 100;
                     worksheet.Cells[currentRow, 17].Style.Numberformat.Format = "#,##0%";
                     currentRow++;
                 }
@@ -146,8 +146,8 @@ namespace PikUpStix.TraderView.Services
             worksheet.Cells[currentRow, 15].Style.Numberformat.Format = "#,##0.00%";
             table.Columns[16].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
             worksheet.Cells[currentRow, 16].Style.Numberformat.Format = "#,##0.0%";
-            table.Columns[17].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
-            worksheet.Cells[currentRow, 17].Style.Numberformat.Format = "#,##0.0%";
+            //table.Columns[17].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
+            //worksheet.Cells[currentRow, 17].Style.Numberformat.Format = "#,##0.0%";
             // Adjust column widths
             worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
         }

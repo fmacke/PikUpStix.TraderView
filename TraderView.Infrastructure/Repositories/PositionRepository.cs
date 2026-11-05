@@ -32,6 +32,8 @@ namespace TraderView.Infrastructure.Repositories
         async Task<Position?> IPositionRepository.GetByIdForUpdateAsync(int positionId)
         {
             return await _context.Set<Position>()
+                .Include(p => p.TradeExecutions)
+                .Include(p => p.Instrument)
                 .FirstOrDefaultAsync(p => p.Id == positionId);
         }
 

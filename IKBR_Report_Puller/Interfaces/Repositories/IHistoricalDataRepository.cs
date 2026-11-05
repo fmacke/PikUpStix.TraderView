@@ -8,6 +8,7 @@ namespace TraderView.Application.Interfaces.Repositories
     /// </summary>
     public interface IHistoricalDataRepository : IRepository<HistoricalDatum>
     {
+        Task<IReadOnlyList<HistoricalDatum>> GetByInstrumentIdAsync(int instrumentId);
         /// <summary>
         /// Inserts chart data bars for a given instrument, skipping duplicates
         /// </summary>

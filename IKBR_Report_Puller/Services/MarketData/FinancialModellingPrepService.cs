@@ -148,7 +148,7 @@ namespace PikUpStix.TraderView.Services.MarketData
                         throw new Exception($"No instrument in database for symbol {symbol}.  Skipping for now.");
                     }
                     var instrument = await _instrumentRepository.GetByIdAsync(instrumentId.Value);
-                    var barData = await FetchChartDataFromApiAsync(instrument.DataName, fromDate, toDate);
+                    var barData = await FetchChartDataFromApiAsync(instrument.DataSource, fromDate, toDate);
 
                     if (barData == null || barData.Count == 0)
                     {

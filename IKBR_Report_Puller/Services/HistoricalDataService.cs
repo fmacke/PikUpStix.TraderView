@@ -13,7 +13,10 @@ namespace TraderView.Application.Services
         {
             _repo = repo ?? throw new ArgumentNullException(nameof(repo));
         }
-
+        public async Task<IReadOnlyList<HistoricalDatum>> GetByInstrumentIdAsync(int instrumentId)
+        {
+            return await Task.Run(() => _repo.GetByInstrumentIdAsync(instrumentId));
+        }
         public async Task<List<Bar>> GetCandlesticksAsync(int instrumentId, double contractUnit, DateTime startDate, DateTime endDate)
         {
             return await _repo.GetCandlesticksAsync(instrumentId, contractUnit, startDate, endDate);

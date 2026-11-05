@@ -56,55 +56,57 @@ namespace PikUpStix.TraderView.Services
         public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData, bool runAIAgentReport)
         {
             runAIAgentReport = false; // Disable AI agent report generation for now, token limit reached
-            updateMarketData = false;
+  
             try
             {
-                IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
-                await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
-                string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
-                await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades, currentMarketRegime);
-                await UpdateOpenPositionPrices(currentMarketRegime);
-                await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
-                var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
+                //IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
+                //await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
+                //string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
+                //await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades, currentMarketRegime);
+                //await UpdateOpenPositionPrices(currentMarketRegime);
+                //await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
+                //var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
 
-                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                await SaveTradeConfirms(todayReportXml, currentMarketRegime);
-                await SaveEquitySummaries(todayReportXml);
+                //XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+                ////XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
+                //await SaveTradeConfirms(todayReportXml, currentMarketRegime);
+                //await SaveEquitySummaries(todayReportXml);
 
                 var allPositions = await _positionService.GetAllPositionsAsync(true);
-                if (writeOutputtoExcel || runAIAgentReport)
+                //if (runAIAgentReport)
+                //{
+                //    var openPositions = allPositions.Where(p => p.Status.ToLower() == "open").ToList();
+                //    if (runAIAgentReport)
+                //    {
+                //        var morningReport = await _googleAiStudioService.GenerateReportAsync(2, openPositions);
+                //        Console.WriteLine($"\nMORNING REPORT FROM GOOGLE AI\n: {morningReport}");
+                //    }
+                    
+                //}
+                //if (updateMarketData)
+                //{
+                //    _tradeHistoryReportService.CreateTradeHistoryReport(allPositions.Where(p => p.Status.ToLower() == "closed").ToList());
+                //    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
+                //    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30), writeOutputtoExcel);
+                //    await _marketDataService.FetchAndSaveChartData(new List<string>()
+                //    {
+                //        "^GSPC",//spx
+                //        "^RUT",//iwm
+                //        //"CLUSD",//wti crude oil
+                //        "BTCUSD",//bitcoin
+                //        "GCUSD",//gold
+                //        "XAGUSD",//silver
+                //        "QQQ",//nasdaq
+                //        "^VIX"
+                //     }, 300);
+                //}
+                if (writeOutputtoExcel)
                 {
-                    var openPositions = allPositions.Where(p => p.Status.ToLower() == "open").ToList();
-                    if (runAIAgentReport)
-                    {
-                        var morningReport = await _googleAiStudioService.GenerateReportAsync(2, openPositions);
-                        Console.WriteLine($"\nMORNING REPORT FROM GOOGLE AI\n: {morningReport}");
-                    }
-                    if (writeOutputtoExcel)
-                    {
-                        //await UpdateTradeMetrics(); //ONLY REQUIRED TO RUN TO FULLY RE - RUN CALCS FOR ALL CLOSED POSITIONS.NOT REQUIRED FOR DAILY RUNS.  
-                        await _excelReportService.CreateExcelFileReport(allPositions, outputFilePath);
-                        //await WriteTodayReportToExcel(todayReportXml);
-                    }
+                    //await UpdateTradeMetrics(); //ONLY REQUIRED TO RUN TO FULLY RE - RUN CALCS FOR ALL CLOSED POSITIONS.NOT REQUIRED FOR DAILY RUNS.  
+                    await _excelReportService.CreateExcelFileReport(allPositions, outputFilePath);
+                    //await WriteTodayReportToExcel(todayReportXml);
                 }
-                if (updateMarketData)
-                {
-                    _tradeHistoryReportService.CreateTradeHistoryReport(allPositions.Where(p => p.Status.ToLower() == "closed").ToList());
-                    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30), writeOutputtoExcel);
-                    await _marketDataService.FetchAndSaveChartData(new List<string>()
-                    {
-                        "^GSPC",//spx
-                        "^RUT",//iwm
-                        //"CLUSD",//wti crude oil
-                        "BTCUSD",//bitcoin
-                        "GCUSD",//gold
-                        "XAGUSD",//silver
-                        "QQQ",//nasdaq
-                        "^VIX"
-                     }, 300);
-                }
+                
                     
             }
             catch (Exception ex)
@@ -120,21 +122,7 @@ namespace PikUpStix.TraderView.Services
               
                 foreach (var position in positions.Where(x => x.Status.ToLower() == "closed"))
                 {
-                    var bars = await _historicalDataService.GetCandlesticksAsync(position.InstrumentId, Convert.ToDouble(position.Instrument.ContractUnit), position.OpenDate, Convert.ToDateTime(position.CloseDate));
-                    foreach (var bar in bars)
-                    {
-                        position.Instrument.HistoricalData.Add(new HistoricalDatum
-                        {
-                            InstrumentId = position.InstrumentId,
-                            Date = bar.Date,
-                            OpenPrice = bar.OpenPrice,
-                            HighPrice = bar.HighPrice,
-                            LowPrice = bar.LowPrice,
-                            ClosePrice = bar.ClosePrice,
-                            Volume = bar.Volume
-                        });
-                    }
-                    await _positionService.ClosePositionAsync(position);
+                    await _positionService.ClosePositionAsync(position.Id);
                 }
             }
             catch (Exception ex)

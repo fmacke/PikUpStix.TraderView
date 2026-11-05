@@ -156,7 +156,8 @@ public partial class Program
         builder.Services.AddScoped<IPositionService, PositionService>(provider =>
         {
             var positionRepo = provider.GetRequiredService<IPositionRepository>();
-            return new PositionService(positionRepo);
+            var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
+            return new PositionService(positionRepo, historicalDataService);
         });
         builder.Services.AddScoped<IPositionCalculatorService, PositionCalculatorService>(provider =>
         {

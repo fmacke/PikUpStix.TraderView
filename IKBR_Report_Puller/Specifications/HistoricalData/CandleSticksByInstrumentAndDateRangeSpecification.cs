@@ -18,4 +18,12 @@ namespace TraderView.Application.Specifications.HistoricalData
             ApplyOrdering(hd => hd.Date, isDescending: false);
         }
     }
+    public class HistoricalDataByInstrumentSpecification : BaseSpecification<HistoricalDatum>
+    {
+        public HistoricalDataByInstrumentSpecification(int instrumentId)
+        {
+            Criteria = hd => hd.InstrumentId == instrumentId;
+            ApplyOrdering(hd => hd.Date, isDescending: false);
+        }
+    }
 }

@@ -387,6 +387,7 @@ namespace TraderView.Infrastructure.DbContexts
                 entity.Property(e => e.ListingExchange).HasMaxLength(50);
                 entity.Property(e => e.PriceQuotation).HasMaxLength(100);
                 entity.Property(e => e.Provider).HasMaxLength(100);
+                entity.Property(e => e.ContractUnit);
             });
 
             modelBuilder.Entity<ListItem>(entity =>

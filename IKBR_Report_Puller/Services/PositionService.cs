@@ -10,15 +10,28 @@ namespace PikUpStix.TraderView.Services
     public class PositionService : IPositionService
     {
         private readonly IPositionRepository _positionRepository;
+        private readonly IHistoricalDataService _historicalDataService;
 
-        public PositionService(IPositionRepository positionRepository)
+        public PositionService(IPositionRepository positionRepository, IHistoricalDataService historicalDataService)
         {
             _positionRepository = positionRepository ?? throw new ArgumentNullException(nameof(positionRepository));
+            _historicalDataService = historicalDataService ?? throw new ArgumentNullException(nameof(historicalDataService));
         }
-        async Task IPositionService.ClosePositionAsync(Position position)
+        async Task IPositionService.ClosePositionAsync(int positionId)
         {
+            // Reload the position with tracking enabled to ensure we work with a
+            // single tracked instance in the repository's DbContext, avoiding
+            // duplicate tracking conflicts from passed-in untracked entities.
+            var position = await _positionRepository.GetByIdForUpdateAsync(positionId);
+            var historicalData = await _historicalDataService.GetByInstrumentIdAsync(position.InstrumentId);
+            position.Instrument.HistoricalData = historicalData.ToList();
+            if (position == null)
+            {
+                throw new InvalidOperationException($"Position with ID {positionId} not found.");
+            }
+            var closeDate = position.TradeExecutions.Max(te => te.DateTime);
             var closeOutPositionReportData = CalculatePositionMetrics(position);
-            position.CloseDate = position.CloseDate;
+            position.CloseDate = closeDate;
             position.Status = "Closed";
             position.GrossProfit = closeOutPositionReportData.GrossProfit;
             position.Commission = closeOutPositionReportData.Commission;
@@ -37,12 +50,11 @@ namespace PikUpStix.TraderView.Services
             var grossProfit = new decimal?();
             var commission = new decimal?();
             var netProfit = new decimal?();
-            var direction = "";
-            // Calculate MFE and MAE using historical price data
+            var direction = position.TradeExecutions.MinBy(x => x.DateTime)?.BuySell;
             var maxFavorableExcursion = 0m;
             var maxAdverseExcursion = 0m;
 
-            if (position.TradeExecutions.Count(x => x.TradeId == null) == 0)  // if no TradeId, there is a TradeConfirmation placeholder in TradeExecutions
+            if (position.TradeExecutions.Count(x => x.TradeId == null) == 0)  // if no TradeId, there is a TradeConfirmation placeholder in TradeExecutions so we cannot calculate MFE/MAE yet
             {
                 //var trades = await _repository.GetTradeExecutionsByPositionIdAsync(positionId);
                 grossProfit = position.TradeExecutions.Sum(t => t.FifoPnlRealized);
@@ -62,23 +74,26 @@ namespace PikUpStix.TraderView.Services
                         {
                             if (position.Instrument.HistoricalData.Count > 0)
                             {
+                                var histoDataInRange = position.Instrument.HistoricalData
+                                    .Where(h => h.Date >= earliestOpenDate && h.Date <= finalCloseDate)
+                                    .ToList();
                                 var contractUnitMultiplier = 1.0;
                                 if(position.Instrument.ContractUnit.HasValue)
                                 {
                                     contractUnitMultiplier = Convert.ToDouble(position.Instrument.ContractUnit);
                                 }
                                 // Get entry price (average price of opening trades)
-                                var totalQuantity = position.TradeExecutions.Where(x => x.BuySell == position.Direction).Sum(t => t.Quantity ?? 0);
+                                var totalQuantity = position.TradeExecutions.Where(x => x.BuySell == direction).Sum(t => t.Quantity ?? 0);
                                 var entryPrice = (decimal)(position.TradeExecutions
-                                    .Where(t => t.BuySell == position.Direction)
+                                    .Where(t => t.BuySell == direction)
                                     .Sum(t => (t.TradePrice ?? 0) * (t.Quantity ?? 0)) / totalQuantity);
 
                                 // Calculate investment cost
                                 var investmentCost = entryPrice * totalQuantity;
 
                                 // Calculate highest and lowest prices from historical data
-                                var highestPrice = (decimal)(position.Instrument.HistoricalData.Max(b => b.HighPrice) / contractUnitMultiplier);
-                                var lowestPrice = (decimal)(position.Instrument.HistoricalData.Min(b => b.LowPrice) / contractUnitMultiplier);
+                                var highestPrice = (decimal)(histoDataInRange.Max(b => b.HighPrice) / contractUnitMultiplier);
+                                var lowestPrice = (decimal)(histoDataInRange.Min(b => b.LowPrice) / contractUnitMultiplier);
 
                                 // Calculate MFE and MAE based on position direction, as percentage of investment cost
                                 if (investmentCost != 0)

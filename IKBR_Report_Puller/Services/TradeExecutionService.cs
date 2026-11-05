@@ -79,7 +79,8 @@ namespace TraderView.Application.Services
                                 Status = "Open",
                                 LastReportedPrice = trade.Position?.LastReportedPrice,
                                 LastReportedPriceUpdated = trade.Position?.LastReportedPriceUpdated,
-                                MarketRegime = currentMarketRegime
+                                MarketRegime = currentMarketRegime,
+                                Direction = trade.BuySell,
                             };
 
                             trade.Position = newPosition;
@@ -90,7 +91,7 @@ namespace TraderView.Application.Services
                         var totalQuantity = await _repository.GetTotalQuantityForPositionAsync(trade.PositionId ?? 0);
                         if (totalQuantity == 0)
                         {
-                            await _positionService.ClosePositionAsync(trade.Position);
+                            await _positionService.ClosePositionAsync(trade.PositionId ?? 0);
                         }
                     }
                     catch (Exception ex)
@@ -179,7 +180,7 @@ namespace TraderView.Application.Services
                                 tradeConfirm.OpenCloseIndicator = "C";
                                 if (existingPosition.TradeExecutions.Sum(x => x.Quantity) + tradeConfirm.Quantity == 0)
                                 {
-                                    await _positionService.ClosePositionAsync(existingPosition);
+                                    await _positionService.ClosePositionAsync(existingPosition.Id);
                                 }
                             }
                         }
