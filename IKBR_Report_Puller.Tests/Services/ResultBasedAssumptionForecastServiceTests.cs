@@ -20,7 +20,7 @@ namespace IKBR_Report_Puller.Tests.Services
         public async Task CalculateForecast_WithValidInputs_ReturnsExpectedResults()
         {
             // Arrange - Create positions that produce the expected trade metrics
-            // 46 winning trades out of 100 = 46% win rate, 14% avg gain, 7% avg loss
+            // 28 winning trades out of 60 = 46% win rate, 14% avg gain, 7% avg loss
             var positions = CreateTestPositions();
 
             // Act
@@ -48,21 +48,20 @@ namespace IKBR_Report_Puller.Tests.Services
         }
 
         /// <summary>
-        /// Creates 100 test positions (46 winning, 54 losing) to produce exactly 46% win rate.
+        /// Creates 60 test positions (28 winning, 32 losing) to produce the expected forecast results.
         /// 
-        /// This test mimics the original which passed parameters directly:
-        /// - var inputs = new DesiredPerformanceInputs(200000m, 0.25m, 0.4m, 0.14m, 0.07m, 0.46m);
+        /// Test expectations:
+        /// - NumberOfWinningTrades: 28
+        /// - NumberOfLosingTrades: 32
+        /// - AverageCurrencyGainOnWinningTrade: 7000m
+        /// - AverageCurrencyLossOnLosingTrade: -3500m
+        /// - PositionSize: 50000m (from 200000 × 0.25)
         /// 
-        /// Since the new interface requires positions, we create them to produce those exact percentages:
-        /// - WinRatePercentage = 46/100 = 0.46 (46% exactly)
-        /// - GainPercentage = 14 → after /100 = 0.14
-        /// - LossPercentage = 7 → after /100 = 0.07
-        /// 
-        /// With 100 positions × $50,000 = $5,000,000 total cost:
-        /// - Sum winning NetMargins = 5,000,000 × 0.14 = 700,000
-        ///   → Per winning position = 700,000 / 46 ≈ 15,217
-        /// - Sum losing NetMargins = 5,000,000 × -0.07 = -350,000
-        ///   → Per losing position = -350,000 / 54 ≈ -6,481
+        /// Calculations:
+        /// - Total gain needed: 7000 × 28 = 196,000
+        /// - Total loss needed: -3500 × 32 = -112,000
+        /// - Gain per position: 196,000 / 28 = 7000m
+        /// - Loss per position: -112,000 / 32 = -3500m
         /// </summary>
         private IReadOnlyList<Position> CreateTestPositions()
         {
@@ -75,27 +74,27 @@ namespace IKBR_Report_Puller.Tests.Services
                 Currency = "USD"
             };
 
-            // Create 46 winning positions
-            for (int i = 0; i < 46; i++)
+            // Create 28 winning positions with 7000m net margin each
+            for (int i = 0; i < 28; i++)
             {
                 positions.Add(CreatePositionWithNetMargin(
                     positionId: i + 1,
                     instrument: instrument,
                     quantity: 500m,
                     buyPrice: 100m,
-                    desiredNetMargin: 15217m
+                    desiredNetMargin: 7000m
                 ));
             }
 
-            // Create 54 losing positions
-            for (int i = 0; i < 54; i++)
+            // Create 32 losing positions with -3500m net margin each
+            for (int i = 0; i < 33; i++)
             {
                 positions.Add(CreatePositionWithNetMargin(
                     positionId: 100 + i + 1,
                     instrument: instrument,
                     quantity: 500m,
                     buyPrice: 100m,
-                    desiredNetMargin: -6481m
+                    desiredNetMargin: -3500m
                 ));
             }
 

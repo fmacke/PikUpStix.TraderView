@@ -17,6 +17,7 @@
 
         public DesiredPerformanceResults(decimal portfolioSizeCurrency, decimal positionSizePercent, decimal desiredReturnPercent, decimal averageGainPercent, decimal averageLossPercent, decimal winningTradePercent)
         {
+            winningTradePercent = Math.Round(winningTradePercent, 2);
             // Position size: Portfolio * PositionSize%
             // e.g. 200,000 * 0.25 = 50,000
             decimal positionSize = portfolioSizeCurrency * positionSizePercent;

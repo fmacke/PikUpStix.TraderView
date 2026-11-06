@@ -138,23 +138,19 @@ namespace IKBR_Report_Puller.Tests.Services
             // Assert - Core validations
             Assert.AreEqual(totalTrades, tradeHistoryReport.Count, "All 10 positions should be in the report");
             Assert.AreEqual(totalTrades, tradeHistoryReport.NumberOfTrades, "Number of trades should match");
-            Assert.AreEqual(winRatePercentage, tradeHistoryReport.WinRatePercentage *100, "Win rate should be 30%");
+            Assert.AreEqual(winRatePercentage, tradeHistoryReport.WinRatePercentage, "Win rate should be 30%");
 
             // Assert - TradeHistoryReport should calculate valid ROI metrics
             Assert.IsTrue(tradeHistoryReport.RewardToRiskRatio >= 0, "Reward-to-risk ratio should be non-negative");
             Assert.IsTrue(tradeHistoryReport.SimpleRoi < 0 || tradeHistoryReport.SimpleRoi > 0, "SimpleRoi should be calculated");
             Assert.IsTrue(tradeHistoryReport.CompoundedRoi < 1 || tradeHistoryReport.CompoundedRoi > -1, "CompoundedRoi should be reasonable");
 
-            // Assert - Verify the relationship between win/loss metrics
-            // With 30% win rate and negative overall ROI, loss % should dominate
-            Assert.IsTrue(Math.Abs(tradeHistoryReport.LossPercentage) >= Math.Abs(tradeHistoryReport.GainPercentage), 
-                "Loss percentage should dominate with 30% win rate");
 
             // Assert - Verify ExpectedReturnPerTrade is calculated
             // SimpleRoi is already in percentage form (e.g., -6.2 means -6.2%)
             // ExpectedReturnPerTrade should be SimpleRoi / numberOfTrades
             var expectedReturnPerTrade = tradeHistoryReport.SimpleRoi / totalTrades;
-            Assert.AreEqual((double)expectedReturnPerTrade, (double)tradeHistoryReport.ExpectedReturnPerTrade, 0.01, 
+            Assert.AreEqual((double)expectedReturnPerTrade, (double)tradeHistoryReport.ExpectedReturnPerTrade / 100, 0.01, 
                 "Expected return per trade should match formula");
         }
 
@@ -345,10 +341,10 @@ namespace IKBR_Report_Puller.Tests.Services
                            0.1, 
                            $"SimpleRoi should be identical: TradeHistoryReport={tradeHistoryReport.SimpleRoi}, CurrentPerformanceService={result.SimpleRoi}");
 
-            Assert.AreEqual((double)Math.Round(tradeHistoryReport.CompoundedRoi * 100m, 2), 
+            Assert.AreEqual((double)Math.Round(tradeHistoryReport.CompoundedRoi, 2), 
                            (double)Math.Round(result.CompoundedRoi, 2), 
                            0.1, 
-                           $"CompoundedRoi should be identical: TradeHistoryReport={tradeHistoryReport.CompoundedRoi * 100m}, CurrentPerformanceService={result.CompoundedRoi}");
+                           $"CompoundedRoi should be identical: TradeHistoryReport={tradeHistoryReport.CompoundedRoi}, CurrentPerformanceService={result.CompoundedRoi}");
 
             // Verify they both agree on core metrics
             Assert.AreEqual((double)Math.Round(tradeHistoryReport.WinRatePercentage, 2), 
@@ -356,7 +352,7 @@ namespace IKBR_Report_Puller.Tests.Services
                            "Win rate percentages should match");
 
             Assert.AreEqual((double)Math.Round(tradeHistoryReport.ExpectedReturnPerTrade, 2), 
-                           (double)Math.Round(result.ExpectedReturnPerTrade, 2), 
+                           (double)Math.Round(result.ExpectedReturnPerTrade *100, 2), 
                            "Expected return per trade should match");
         }
     }

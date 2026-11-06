@@ -1,32 +1,112 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Diagrams;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Models
 {
     public class TradeHistoryReport : List<TradeHistoryPosition>
     {
-        public decimal WinRatePercentage { get { return this.Count > 0 ? this.Count(x => x.NetMargin > 0) / Convert.ToDecimal(this.Count) : 0; } }
-        public decimal LossRatePercentage { get { return 1m - WinRatePercentage; } }
-        public decimal GainPercentage { get { return this.Count > 0 ? (this.Where(x => x.NetMargin > 0).Sum(x => x.NetMargin)  / this.Sum(x => x.TotalPurchaseCost)) : 0; } }
-        public decimal LossPercentage { get { return this.Count > 0 ? (this.Where(x => x.NetMargin < 0).Sum(x => x.NetMargin) / this.Sum(x => x.TotalPurchaseCost)) : 0; } }
-        public decimal RewardToRiskRatio { get { return LossPercentage == 0 ? 0 : GainPercentage / Math.Abs(LossPercentage); } }
-        public int NumberOfTrades { get { return this.Count; } }
-        public decimal SimpleRoi { get { decimal winRate = WinRatePercentage / 100m; decimal lossRate = 1m - winRate; return (NumberOfTrades * ((winRate) * (GainPercentage / 100m) - (lossRate) * (Math.Abs(LossPercentage) / 100m))) * 100m; } }
-        public decimal CompoundedRoi { get { decimal winRate = WinRatePercentage / 100m; decimal lossRate = 1m - winRate; return ((decimal)Math.Pow((double)(1.0m + (GainPercentage / 100m)), (double)(NumberOfTrades * winRate)) * (decimal)Math.Pow((double)(1.0m - (Math.Abs(LossPercentage) / 100m)), (double)(NumberOfTrades * lossRate)) - 1.0m); } }
-        public decimal ExpectedReturnPerTrade { get { return NumberOfTrades > 0 ? SimpleRoi / NumberOfTrades : 0; } }
-        public decimal AverageDaysHeld { get { return this.Count > 0 ? this.Average(x => (decimal)x.DaysHeld) : 0; } }
-        public decimal AverageDaysHeldGains { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).Average(x => (decimal)x.DaysHeld) : 0; } }
-        public decimal AverageDaysHeldLosses { get { return this.Count > 0 ? this.Where(x => x.NetMargin < 0).Average(x => (decimal)x.DaysHeld) : 0; } }
-        public decimal AverageWin { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).Average(x => x.NetMargin) : 0; } }
-        public decimal AverageLoss { get { return this.Count > 0 ? this.Where(x => x.NetMargin < 0).Average(x => x.NetMargin) : 0; } }
-        public decimal LargestWin { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).Max(x => x.NetMargin) : 0; } }
-        public int LargestWinPositionId { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).OrderByDescending(x => x.NetMargin).First().Id : 0; } }
-        public decimal LargestLoss { get { return this.Count > 0 ? this.Where(x => x.NetMargin < 0).Min(x => x.NetMargin) : 0; } }
-        public int LargestLossPositionId { get { return this.Count > 0 ? this.Where(x => x.NetMargin < 0).OrderBy(x => x.NetMargin).First().Id : 0; } }
+        // 0 to 100 percentage scale (e.g. 37.67m)
+        public decimal WinRatePercentage =>
+            this.Count > 0 ? (this.Count(x => x.NetMargin > 0) / (decimal)this.Count) * 100m : 0m;
+
+        public decimal LossRatePercentage => 100m - WinRatePercentage;
+
+        // True mean trade percentage gains/losses (+7.17% / -4.27%)
+        public decimal GainPercentage =>
+            this.Any(x => x.NetMargin > 0)
+                ? this.Where(x => x.NetMargin > 0).Average(x => x.NetMarginPercent) * 100m
+                : 0m;
+
+        public decimal LossPercentage =>
+            this.Any(x => x.NetMargin < 0)
+                ? this.Where(x => x.NetMargin < 0).Average(x => x.NetMarginPercent) * 100m
+                : 0m;
+
+        // Payoff Ratio: Avg Dollar Win / Abs(Avg Dollar Loss) -> 1.77 (or Avg Gain % / Abs(Avg Loss %))
+        public decimal RewardToRiskRatio =>
+            AverageLoss != 0m ? AverageWin / Math.Abs(AverageLoss) : 0m;
+
+        public int NumberOfTrades => this.Count;
+
+        // Total Cumulative Net Margin ($) across all trades
+        public decimal TotalNetMargin => this.Sum(x => x.NetMargin);
+
+        // Expectancy per trade in Dollars (e.g. +$13.49 per trade)
+        public decimal ExpectedReturnPerTrade =>
+            NumberOfTrades > 0 ? TotalNetMargin / NumberOfTrades : 0m;
+
+        // Expectancy per trade in Percentage (e.g. +0.04% per trade)
+        public decimal ExpectedReturnPerTradePercent =>
+            NumberOfTrades > 0
+                ? ((WinRatePercentage / 100m) * (GainPercentage / 100m)) +
+                  ((LossRatePercentage / 100m) * (LossPercentage / 100m))
+                : 0m;
+
+        // Simple Cumulative Return (%): Sum of all individual NetMarginPercent returns
+        public decimal SimpleRoi => this.Sum(x => x.NetMarginPercent) * 100m;
+
+        public decimal CompoundedRoi
+        {
+            get
+            {
+                if (this.Count == 0) return 0m;
+
+                // Start with a normalized base equity of 1.0 (or initial capital)
+                decimal runningEquity = 1.0m;
+
+                // Order chronologically by CloseDate to ensure correct chronological sequence compounding
+                var chronologicalTrades = this.OrderBy(x => x.CloseDate).ThenBy(x => x.OpenDate);
+
+                foreach (var pos in chronologicalTrades)
+                {
+                    // Compound each trade's fractional return sequentially
+                    // Ensure NetMarginPercent is represented as a decimal fraction (e.g. 0.05 for +5%)
+                    decimal tradeReturnFraction = pos.NetMarginPercent;
+
+                    runningEquity *= (1.0m + tradeReturnFraction);
+                }
+
+                return (runningEquity - 1.0m) * 100m;
+            }
+        }
+
+        public decimal AverageDaysHeld =>
+            this.Count > 0 ? (decimal)this.Average(x => x.DaysHeld) : 0m;
+
+        public decimal AverageDaysHeldGains =>
+            this.Any(x => x.NetMargin > 0)
+                ? (decimal)this.Where(x => x.NetMargin > 0).Average(x => x.DaysHeld)
+                : 0m;
+
+        public decimal AverageDaysHeldLosses =>
+            this.Any(x => x.NetMargin < 0)
+                ? (decimal)this.Where(x => x.NetMargin < 0).Average(x => x.DaysHeld)
+                : 0m;
+
+        public decimal AverageWin =>
+            this.Any(x => x.NetMargin > 0) ? this.Where(x => x.NetMargin > 0).Average(x => x.NetMargin) : 0m;
+
+        public decimal AverageLoss =>
+            this.Any(x => x.NetMargin < 0) ? this.Where(x => x.NetMargin < 0).Average(x => x.NetMargin) : 0m;
+
+        public decimal LargestWin =>
+            this.Any(x => x.NetMargin > 0) ? this.Where(x => x.NetMargin > 0).Max(x => x.NetMargin) : 0m;
+
+        public int LargestWinPositionId =>
+            this.Any(x => x.NetMargin > 0) ? this.Where(x => x.NetMargin > 0).OrderByDescending(x => x.NetMargin).First().Id : 0;
+
+        public decimal LargestLoss =>
+            this.Any(x => x.NetMargin < 0) ? this.Where(x => x.NetMargin < 0).Min(x => x.NetMargin) : 0m;
+
+        public int LargestLossPositionId =>
+            this.Any(x => x.NetMargin < 0) ? this.Where(x => x.NetMargin < 0).OrderBy(x => x.NetMargin).First().Id : 0;
 
         public TradeHistoryReport(IReadOnlyList<Position> positions)
         {
-            foreach (var pos in positions.Where(x => x.Status.ToLower() == "closed"))
+            foreach (var pos in positions.Where(x => x.Status.Equals("closed", StringComparison.OrdinalIgnoreCase)))
             {
                 var tradeHistoryPosition = new TradeHistoryPosition
                 {
@@ -36,45 +116,50 @@ namespace TraderView.Application.Models
                     CloseDate = Convert.ToDateTime(pos.CloseDate),
                     AverageCostBasis = CalculateCostBasis(pos.Direction, pos.TradeExecutions),
                     AverageSalesValue = CalculateSalesValue(pos.Direction, pos.TradeExecutions),
-                    Quantity = CalculateTotalQuantity(pos.Direction, pos.TradeExecutions),                    
-                    IbCommission = Convert.ToDecimal(pos.TradeExecutions.Sum(x => x.IbCommission)),            
+                    Quantity = CalculateTotalQuantity(pos.Direction, pos.TradeExecutions),
+                    IbCommission = Convert.ToDecimal(pos.TradeExecutions.Sum(x => x.IbCommission)),
                     MaximumFavourableExcursion = Convert.ToDecimal(pos.MaximumFavourableExcursion),
                     MaximumAdverseExcursion = Convert.ToDecimal(pos.MaximumAdverseExcursion),
                     Direction = pos.Direction,
                     Currency = pos.Instrument.Currency,
-                    CommissionCurrency = pos.TradeExecutions.FirstOrDefault().IbCommissionCurrency,
+                    CommissionCurrency = pos.TradeExecutions.FirstOrDefault()?.IbCommissionCurrency ?? "USD",
                     InstrumentId = pos.InstrumentId,
                     MarketRegime = pos.MarketRegime
                 };
                 this.Add(tradeHistoryPosition);
             }
         }
+
         private decimal CalculateCostBasis(string direction, ICollection<TradeExecution> tradeExecutions)
         {
             try
             {
                 var quantity = CalculateTotalQuantity(direction, tradeExecutions);
+                if (quantity == 0m) return 0m;
                 return Convert.ToDecimal(tradeExecutions.Where(x => x.BuySell == direction).Sum(x => x.TradePrice * x.Quantity) / quantity);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error calculating cost basis for direction {direction} on trade executions for {string.Join(", ", tradeExecutions.Select(te => te.Id))}: {ex.Message}");
-                return 0; // or throw, depending on how you want to handle this
+                Console.WriteLine($"Error calculating cost basis for direction {direction}: {ex.Message}");
+                return 0m;
             }
         }
+
         private decimal CalculateSalesValue(string direction, ICollection<TradeExecution> tradeExecutions)
         {
             try
             {
-                var quantity = CalculateTotalQuantity(direction, tradeExecutions) * -1;
+                var quantity = CalculateTotalQuantity(direction, tradeExecutions) * -1m;
+                if (quantity == 0m) return 0m;
                 return Convert.ToDecimal(tradeExecutions.Where(x => x.BuySell != direction).Sum(x => x.TradePrice * x.Quantity) / quantity);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error calculating sales value for direction {direction} on trade executions for {string.Join(", ", tradeExecutions.Select(te => te.Id))}: {ex.Message}");
-                return 0; // or throw, depending on how you want to handle this
+                Console.WriteLine($"Error calculating sales value for direction {direction}: {ex.Message}");
+                return 0m;
             }
         }
+
         private decimal CalculateTotalQuantity(string direction, ICollection<TradeExecution> tradeExecutions)
         {
             try
@@ -83,11 +168,12 @@ namespace TraderView.Application.Models
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error calculating total quantity for direction {direction} on trade executions for {string.Join(", ", tradeExecutions.Select(te => te.Id))}: {ex.Message}");
-                return 0; // or throw, depending on how you want to handle this
+                Console.WriteLine($"Error calculating total quantity for direction {direction}: {ex.Message}");
+                return 0m;
             }
         }
     }
+
     public class TradeHistoryPosition
     {
         public int Id { get; set; }
@@ -96,24 +182,29 @@ namespace TraderView.Application.Models
         public string CommissionCurrency { get; set; }
         public DateTime OpenDate { get; set; }
         public DateTime CloseDate { get; set; }
-        public double DaysHeld { get { return (CloseDate - OpenDate).TotalDays; } }
+        public double DaysHeld => (CloseDate - OpenDate).TotalDays;
         public decimal AverageCostBasis { get; set; }
         public int InstrumentId { get; set; }
         public decimal AverageSalesValue { get; set; }
         public string MarketRegime { get; set; }
         public decimal Quantity { get; set; }
-        public decimal TotalPurchaseCost { get { return AverageCostBasis * Quantity; } }
-        public decimal TotalSalesValue { get { return AverageSalesValue * Quantity; } }
+        public decimal TotalPurchaseCost => AverageCostBasis * Quantity;
+        public decimal TotalSalesValue => AverageSalesValue * Quantity;
         public decimal IbCommission { get; set; }
-        public decimal GrossMargin { get { return TotalSalesValue - TotalPurchaseCost; } }
-        public decimal NetMargin { get { return GrossMargin + IbCommission; } }
+        public decimal GrossMargin => TotalSalesValue - TotalPurchaseCost;
+        public decimal NetMargin => GrossMargin + IbCommission;
         public decimal MaximumFavourableExcursion { get; set; }
         public decimal MaximumAdverseExcursion { get; set; }
         public string Direction { get; set; }
-        public decimal NetMarginPercent { get {
-                if (Direction == "SELL")
-                    return TotalPurchaseCost != 0 ? NetMargin / TotalPurchaseCost * -1 : 0;
-                return TotalPurchaseCost != 0 ? NetMargin / TotalPurchaseCost : 0;
-            } }
+
+        public decimal NetMarginPercent
+        {
+            get
+            {
+                if (TotalPurchaseCost == 0m) return 0m;
+                var pct = NetMargin / Math.Abs(TotalPurchaseCost);
+                return Direction.Equals("SELL", StringComparison.OrdinalIgnoreCase) ? pct * -1m : pct;
+            }
+        }
     }
 }

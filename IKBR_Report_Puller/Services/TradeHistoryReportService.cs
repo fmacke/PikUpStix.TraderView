@@ -18,9 +18,9 @@ namespace PikUpStix.TraderView.Services
                 portfolioSize, 
                 positionSizePercent, 
                 desiredReturnPercent, 
-                trades.GainPercentage,             // Convert from percentage to decimal
-                Math.Abs(trades.LossPercentage),  // Convert from percentage to decimal (LossPercentage is negative)
-                trades.WinRatePercentage            // Convert from percentage to decimal
+                trades.GainPercentage / 100,             // Convert from percentage to decimal
+                Math.Abs(trades.LossPercentage) / 100,  // Convert from percentage to decimal (LossPercentage is negative)
+                trades.WinRatePercentage / 100            // Convert from percentage to decimal
             );
             return await Task.FromResult(desiredPerformaceForecast);
         }
