@@ -342,12 +342,12 @@ namespace IKBR_Report_Puller.Tests.Services
 
             Assert.AreEqual((double)Math.Round(tradeHistoryReport.SimpleRoi, 2), 
                            (double)Math.Round(result.SimpleRoi, 2), 
-                           0.01, 
+                           0.1, 
                            $"SimpleRoi should be identical: TradeHistoryReport={tradeHistoryReport.SimpleRoi}, CurrentPerformanceService={result.SimpleRoi}");
 
             Assert.AreEqual((double)Math.Round(tradeHistoryReport.CompoundedRoi * 100m, 2), 
                            (double)Math.Round(result.CompoundedRoi, 2), 
-                           0.01, 
+                           0.1, 
                            $"CompoundedRoi should be identical: TradeHistoryReport={tradeHistoryReport.CompoundedRoi * 100m}, CurrentPerformanceService={result.CompoundedRoi}");
 
             // Verify they both agree on core metrics

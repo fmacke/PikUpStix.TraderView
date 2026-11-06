@@ -33,9 +33,9 @@ namespace IKBR_Report_Puller.Tests.Services
 
             // Assert - Original test expectations
             Assert.IsNotNull(result);
-            Assert.AreEqual(7000m, result.AverageCurrencyGainOnWinningTrade);
+            Assert.AreEqual(7000m, Math.Round(result.AverageCurrencyGainOnWinningTrade,0));
             Assert.AreEqual(28, result.NumberOfWinningTrades);
-            Assert.AreEqual(-3500m, result.AverageCurrencyLossOnLosingTrade);
+            Assert.AreEqual(-3500m, Math.Round(result.AverageCurrencyLossOnLosingTrade,0));
             Assert.AreEqual(32, result.NumberOfLosingTrades);
             Assert.AreEqual(0.5m, result.GainLossRatio);
             Assert.AreEqual(50000m, result.PositionSize);

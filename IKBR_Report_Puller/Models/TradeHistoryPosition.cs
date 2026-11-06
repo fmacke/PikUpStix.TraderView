@@ -5,14 +5,14 @@ namespace TraderView.Application.Models
 {
     public class TradeHistoryReport : List<TradeHistoryPosition>
     {
-        public decimal WinRatePercentage { get { return this.Count > 0 ? Math.Round(this.Count(x => x.NetMargin > 0) / Convert.ToDecimal(this.Count),2) : 0; } }
-        public decimal LossRatePercentage { get { return Math.Round(100m - WinRatePercentage,2); } }
-        public decimal GainPercentage { get { return this.Count > 0 ? Math.Round((this.Where(x => x.NetMargin > 0).Sum(x => x.NetMargin)  / this.Sum(x => x.TotalPurchaseCost)),2) : 0; } }
-        public decimal LossPercentage { get { return this.Count > 0 ? Math.Round((this.Where(x => x.NetMargin < 0).Sum(x => x.NetMargin) / this.Sum(x => x.TotalPurchaseCost)), 2) : 0; } }
+        public decimal WinRatePercentage { get { return this.Count > 0 ? this.Count(x => x.NetMargin > 0) / Convert.ToDecimal(this.Count) : 0; } }
+        public decimal LossRatePercentage { get { return 1m - WinRatePercentage; } }
+        public decimal GainPercentage { get { return this.Count > 0 ? (this.Where(x => x.NetMargin > 0).Sum(x => x.NetMargin)  / this.Sum(x => x.TotalPurchaseCost)) : 0; } }
+        public decimal LossPercentage { get { return this.Count > 0 ? (this.Where(x => x.NetMargin < 0).Sum(x => x.NetMargin) / this.Sum(x => x.TotalPurchaseCost)) : 0; } }
         public decimal RewardToRiskRatio { get { return LossPercentage == 0 ? 0 : GainPercentage / Math.Abs(LossPercentage); } }
         public int NumberOfTrades { get { return this.Count; } }
-        public decimal SimpleRoi { get { return NumberOfTrades * ((WinRatePercentage / 100m) * (GainPercentage / 100m) - (LossRatePercentage / 100m) * (Math.Abs(LossPercentage) / 100m)) * 100m; } }
-        public decimal CompoundedRoi { get { return ((decimal)Math.Pow((double)(1.0m + (GainPercentage / 100m)), (double)(NumberOfTrades * (WinRatePercentage / 100m))) * (decimal)Math.Pow((double)(1.0m - (Math.Abs(LossPercentage) / 100m)), (double)(NumberOfTrades * (LossRatePercentage / 100m))) - 1.0m); } }
+        public decimal SimpleRoi { get { decimal winRate = WinRatePercentage / 100m; decimal lossRate = 1m - winRate; return (NumberOfTrades * ((winRate) * (GainPercentage / 100m) - (lossRate) * (Math.Abs(LossPercentage) / 100m))) * 100m; } }
+        public decimal CompoundedRoi { get { decimal winRate = WinRatePercentage / 100m; decimal lossRate = 1m - winRate; return ((decimal)Math.Pow((double)(1.0m + (GainPercentage / 100m)), (double)(NumberOfTrades * winRate)) * (decimal)Math.Pow((double)(1.0m - (Math.Abs(LossPercentage) / 100m)), (double)(NumberOfTrades * lossRate)) - 1.0m); } }
         public decimal ExpectedReturnPerTrade { get { return NumberOfTrades > 0 ? SimpleRoi / NumberOfTrades : 0; } }
         public decimal AverageDaysHeld { get { return this.Count > 0 ? this.Average(x => (decimal)x.DaysHeld) : 0; } }
         public decimal AverageDaysHeldGains { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).Average(x => (decimal)x.DaysHeld) : 0; } }
