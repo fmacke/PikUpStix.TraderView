@@ -1,13 +1,9 @@
-using DocumentFormat.OpenXml.Office2013.Drawing.ChartStyle;
-using DocumentFormat.OpenXml.Spreadsheet;
-using Humanizer;
 using Microsoft.Extensions.Configuration;
 using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Interfaces.Services.AI;
-using TraderView.Application.Models;
 using TraderView.Application.Services.IKBR;
 using TraderView.Domain.Entities;
 
@@ -55,59 +51,55 @@ namespace PikUpStix.TraderView.Services
         }
         public async Task RunReportAsync(bool writeOutputtoExcel, bool updateMarketData, bool runAIAgentReport)
         {
-            runAIAgentReport = false; // Disable AI agent report generation for now, token limit reached
-  
             try
             {
-                //IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
-                //await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
-                //string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
-                //await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades, currentMarketRegime);
-                //await UpdateOpenPositionPrices(currentMarketRegime);
-                //await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
-                //var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
+                IKBRReport mainReport = await GetReportDataFromInteractiveBrokers(writeOutputtoExcel);
+                await _instrumentService.UpsertInstrumentsAsync(mainReport.Trades, _marketDataService.SourceName);
+                string currentMarketRegime = await _historicalDataService.DetermineRegimeAsync(DateTime.Now, new CancellationToken());
+                await _tradeExecutionService.UpsertTradeExecutionsAsync(mainReport.Trades, currentMarketRegime);
+                await UpdateOpenPositionPrices(currentMarketRegime);
+                await _equitySummaryService.UpsertEquitySummariesAsync(mainReport.EquitySummaries);
+                var executions = await _tradeExecutionService.GetTradeExecutionsAsync();
 
-                //XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
-                ////XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
-                //await SaveTradeConfirms(todayReportXml, currentMarketRegime);
-                //await SaveEquitySummaries(todayReportXml);
+                XDocument todayReportXml = await _reportFetchingService.FetchTodayReportAsync(maxRetries, delayInSeconds);
+                //XDocument todayReportXml = XDocument.Load("C:\\Users\\Finn\\OneDrive\\Documents\\Wealth\\Business\\trading\\Trade Diaries\\20260901_TraderSyncAccess_today.xml");
+                await SaveTradeConfirms(todayReportXml, currentMarketRegime);
+                await SaveEquitySummaries(todayReportXml);
 
-                var allPositions = await _positionService.GetAllPositionsAsync(true);
-                //if (runAIAgentReport)
-                //{
-                //    var openPositions = allPositions.Where(p => p.Status.ToLower() == "open").ToList();
-                //    if (runAIAgentReport)
-                //    {
-                //        var morningReport = await _googleAiStudioService.GenerateReportAsync(2, openPositions);
-                //        Console.WriteLine($"\nMORNING REPORT FROM GOOGLE AI\n: {morningReport}");
-                //    }
-                    
-                //}
-                //if (updateMarketData)
-                //{
-                //    _tradeHistoryReportService.CreateTradeHistoryReport(allPositions.Where(p => p.Status.ToLower() == "closed").ToList());
-                //    await _marketDataService.FetchAndSaveChartData(_tradeHistoryReportService.TradeHistoryAggregated);
-                //    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30), writeOutputtoExcel);
-                //    await _marketDataService.FetchAndSaveChartData(new List<string>()
-                //    {
-                //        "^GSPC",//spx
-                //        "^RUT",//iwm
-                //        //"CLUSD",//wti crude oil
-                //        "BTCUSD",//bitcoin
-                //        "GCUSD",//gold
-                //        "XAGUSD",//silver
-                //        "QQQ",//nasdaq
-                //        "^VIX"
-                //     }, 300);
-                //}
+                var allPositions = await _positionService.GetAllPositionsAsync(true);                
+                if (updateMarketData)
+                {
+                    var tradeHistoryReport = await _tradeHistoryReportService.CreateTradeHistoryReport(allPositions.Where(p => p.Status.ToLower() == "closed").ToList());
+                    await _marketDataService.FetchAndSaveChartData(tradeHistoryReport);
+                    await _marketDataService.FetchAndSaveEconomicCalendarAsync(DateTime.Now.AddDays(-30), DateTime.Now.AddDays(30), writeOutputtoExcel);
+                    await _marketDataService.FetchAndSaveChartData(new List<string>()
+                    {
+                        "^GSPC",//spx
+                        "^RUT",//iwm
+                        //"CLUSD",//wti crude oil
+                        "BTCUSD",//bitcoin
+                        "GCUSD",//gold
+                        "XAGUSD",//silver
+                        "QQQ",//nasdaq
+                        "^VIX"
+                     }, 300);
+                }
                 if (writeOutputtoExcel)
                 {
                     //await UpdateTradeMetrics(); //ONLY REQUIRED TO RUN TO FULLY RE - RUN CALCS FOR ALL CLOSED POSITIONS.NOT REQUIRED FOR DAILY RUNS.  
                     await _excelReportService.CreateExcelFileReport(allPositions, outputFilePath);
-                    //await WriteTodayReportToExcel(todayReportXml);
+                    await WriteTodayReportToExcel(todayReportXml);
                 }
-                
-                    
+                if (runAIAgentReport)
+                {
+                    var openPositions = allPositions.Where(p => p.Status.ToLower() == "open").ToList();
+                    if (runAIAgentReport)
+                    {
+                        var morningReport = await _googleAiStudioService.GenerateReportAsync(2, openPositions);
+                        Console.WriteLine($"\nMORNING REPORT FROM GOOGLE AI\n: {morningReport}");
+                    }
+
+                }
             }
             catch (Exception ex)
             {

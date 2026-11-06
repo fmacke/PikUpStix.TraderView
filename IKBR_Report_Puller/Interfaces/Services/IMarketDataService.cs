@@ -1,3 +1,4 @@
+using TraderView.Application.Models;
 using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Interfaces.Services
@@ -11,7 +12,7 @@ namespace TraderView.Application.Interfaces.Services
 
         Task<decimal> GetExchangeRateAsync(string baseCurrency, string quoteCurrency);
         Task<List<EconomicCalendar>> FetchAndSaveEconomicCalendarAsync(DateTime fromDate, DateTime toDate, bool outputDataToFile);
-        Task FetchAndSaveChartData(IReadOnlyList<HistoricalTrade> trades);
+        Task FetchAndSaveChartData(TradeHistoryReport trades);
         Task FetchAndSaveChartData(IReadOnlyList<string> symbols, int lookBackDays);
         Task FetchLatestPrices(IReadOnlyList<Position> positions);
         Task<string> GetMarketQuotesAsync(string tickers);

@@ -1,192 +1,29 @@
 ﻿using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Models;
-using TraderView.Application.Services;
+using TraderView.Application.Models.ResultBasedForecasting;
 using TraderView.Domain.Entities;
-using TraderView.Domain.Entities.FMP;
 
 namespace PikUpStix.TraderView.Services
 {
     public class TradeHistoryReportService : ITradeHistoryReportService
     {
-        private decimal _winRatePercentage;
-        private decimal _gainPercentage;
-        private decimal _lossPercentage;
-        private int _numberOfTrades;
-        public List<HistoricalTrade> TradeHistoryAggregated { get; set; } = new List<HistoricalTrade>();
-        public List<HistoricalTrade> TradeHistory { get; set; } = new List<HistoricalTrade>();
-        public RiskMatrixCalculationRequest RiskMatrixCalculationRequest { get; set; } = new RiskMatrixCalculationRequest();
-        public void CreateTradeHistoryReport(IReadOnlyList<Position> positions)
+        async Task<TradeHistoryReport> ITradeHistoryReportService.CreateTradeHistoryReport(IReadOnlyList<Position> positions)
         {
-            var rawExecutions = new List<TradeExecution>();
-            foreach(var pos in positions.Where(p => p.Status.ToLower() == "closed"))
-            {
-                rawExecutions.AddRange(pos.TradeExecutions);
-            }
-            // Sort chronologically across the entire history to maintain structural FIFO consistency
-            var executionGroups = rawExecutions
-                .Where(e => e.Quantity != 0 && e.AssetCategory != "CASH")
-                .OrderBy(e => e.TradeDate)
-                .GroupBy(e => e.Symbol);
-
-            foreach (var group in executionGroups)
-            {
-                string symbol = group.Key;
-                var longInventory = new Queue<ExecutionQueueItem>();
-                var shortInventory = new Queue<ExecutionQueueItem>();                
-
-                foreach (var exec in group)
-                {
-                    decimal? qtyRemaining = exec.Quantity;
-                    decimal execPrice = Convert.ToDecimal(exec.TradePrice);
-                    DateTime execTime = exec.TradeDate;
-                    long ibOrderId = (long)(exec.IbOrderId ?? 0);
-                    int instrumentId = exec.Position.InstrumentId;
-
-
-                    // Case A: Buy Transaction (Opens Long / Closes Short)
-                    if (qtyRemaining > 0)
-                    {
-                        while (shortInventory.Count > 0 && qtyRemaining > 0)
-                        {
-                            var shortMatch = shortInventory.Peek();
-                            decimal matchQty = Math.Min(shortMatch.Quantity, qtyRemaining ?? 0);
-
-                            // Calculate prorated commission for this closing execution
-                            decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(exec.Quantity ?? 0));
-                            // Calculate prorated commission from the opening execution
-                            decimal openingCommission = shortMatch.Commission * (matchQty / shortMatch.Quantity);
-
-                            TradeHistory.Add(new HistoricalTrade    
-                            {
-                                PositionId = exec.PositionId,
-                                IbExecId = exec.IbExecId,
-                                Symbol = symbol,
-                                Quantity = -matchQty, // Kept negative to reflect original Short position orientation
-                                TradePrice = shortMatch.Price, // Short entry price
-                                ClosePrice = execPrice,          // Cost to buy back and cover
-                                //OpenIbOrderID = shortMatch.IbOrderId,
-                                //CloseIbOrderID = shortMatch.IbOrderId,
-                                TradeOpened = shortMatch.Timestamp,
-                                TradeClosed = execTime,
-                                IbCommission = openingCommission + closingCommission,
-                                IbCommissionCurrency = exec.IbCommissionCurrency,
-                                InstrumentId = instrumentId,
-                                ListingExchange = exec.ListingExchange,
-                                MaximumAdverseExursion = exec.Position.MaximumAdverseExcursion,
-                                MaximumFavourableExursion = exec.Position.MaximumFavourableExcursion
-                            });
-
-                            qtyRemaining -= matchQty;
-                            shortMatch.Quantity -= matchQty;
-                            shortMatch.Commission -= openingCommission;
-
-                            if (shortMatch.Quantity == 0)
-                                shortInventory.Dequeue();
-                        }
-
-                        if (qtyRemaining > 0)
-                        {
-                            longInventory.Enqueue(new ExecutionQueueItem
-                            {
-                                Timestamp = execTime,
-                                Quantity = Convert.ToDecimal(qtyRemaining),
-                                Price = execPrice,
-                                IbOrderID = ibOrderId,
-                                Commission = (exec.IbCommission ?? 0) * (Convert.ToDecimal(qtyRemaining) / Math.Abs(Convert.ToDecimal(exec.Quantity)))
-                            });
-                        }
-                    }
-                    // Case B: Sell Transaction (Closes Long / Opens Short)
-                    else
-                    {
-                        decimal sellQtyAbs = Math.Abs(Convert.ToDecimal(qtyRemaining));
-
-                        while (longInventory.Count > 0 && sellQtyAbs > 0)
-                        {
-                            var longMatch = longInventory.Peek();
-                            decimal matchQty = Math.Min(longMatch.Quantity, sellQtyAbs);
-                            
-                            // Calculate prorated commission for this closing execution
-                            decimal closingCommission = (exec.IbCommission ?? 0) * (decimal)(matchQty / Math.Abs(Convert.ToDecimal(exec.Quantity)));
-                            // Calculate prorated commission from the opening execution
-                            decimal openingCommission = longMatch.Commission * (matchQty / longMatch.Quantity);
-
-                            TradeHistory.Add(new HistoricalTrade
-                            {
-                                PositionId = exec.PositionId,
-                                IbExecId = exec.IbExecId,
-                                Symbol = symbol,
-                                Quantity = matchQty, // Positive for Long positions
-                                TradePrice = longMatch.Price, // Entry buy price
-                                ClosePrice = execPrice,         // Exit liquidation price
-                                OpenIbOrderID = longMatch.IbOrderID,
-                                CloseIbOrderID = ibOrderId,
-                                TradeOpened = longMatch.Timestamp,
-                                TradeClosed = execTime,
-                                IbCommission = openingCommission + closingCommission,
-                                IbCommissionCurrency = exec.IbCommissionCurrency,
-                                InstrumentId = instrumentId,
-                                ListingExchange = exec.ListingExchange
-                            });
-
-                            sellQtyAbs -= matchQty;
-                            longMatch.Quantity -= matchQty;
-                            longMatch.Commission -= openingCommission;
-
-                            if (longMatch.Quantity == 0)
-                                longInventory.Dequeue();
-                        }
-
-                        if (sellQtyAbs > 0)
-                        {
-                            shortInventory.Enqueue(new ExecutionQueueItem
-                            {
-                                Timestamp = execTime,
-                                Quantity = sellQtyAbs,
-                                Price = execPrice,
-                                IbOrderID = ibOrderId,
-                                Commission = (exec.IbCommission ?? 0) * (sellQtyAbs / Math.Abs(Convert.ToDecimal(exec.Quantity)))
-                            });
-                        }
-                    }
-                }
-            }
-            // Aggregate TradeHistory by IbOrderID
-            TradeHistoryAggregated = TradeHistory
-                .GroupBy(trade => trade.CloseIbOrderID)
-                .Select(group => new HistoricalTrade
-                {
-                    Symbol = group.First().Symbol,
-                    TradePrice = group.Average(trade => trade.TradePrice), // Taking the average of trade prices
-                    ClosePrice = group.Average(trade => trade.ClosePrice), // Taking the average of close prices
-                    OpenIbOrderID = group.First().OpenIbOrderID,
-                    CloseIbOrderID = group.Key,
-                    TradeOpened = group.First().TradeOpened,
-                    TradeClosed = group.First().TradeClosed,
-                    Currency = group.First().Currency,  
-                    InstrumentId = group.First().InstrumentId,
-                    PositionId = group.First().PositionId,
-                    Quantity = group.Sum(trade => trade.Quantity),
-                    //SecurityId = group.First().sSecurityId,
-                    IbCommission = group.Sum(trade => trade.IbCommission),
-                    IbCommissionCurrency = group.First().IbCommissionCurrency,
-                    ListingExchange = group.First().ListingExchange,
-                    FifoPnlRealized = group.Sum(trade => trade.FifoPnlRealized),
-                    MaximumAdverseExursion = group.First().MaximumAdverseExursion,
-                    MaximumFavourableExursion = group.First().MaximumFavourableExursion
-                })
-                .OrderByDescending(trade => trade.Quantity)
-                .ToList();
-            RiskMatrixCalculationRequest = new RiskMatrixCalculationRequest(TradeHistoryAggregated);
+            return await Task.FromResult(new TradeHistoryReport(positions));
         }
-    }
-    class ExecutionQueueItem
-    {
-        public DateTime Timestamp { get; set; }
-        public decimal Quantity { get; set; }
-        public decimal Price { get; set; }
-        public long IbOrderID { get; set; }
-        public decimal Commission { get; set; }
+        async Task<DesiredPerformanceResults> ITradeHistoryReportService.CreateDesiredOutcomeForecast(decimal portfolioSize, decimal positionSizePercent, decimal desiredReturnPercent, IReadOnlyList<Position> positions)
+        {
+            var trades = await Task.FromResult(new TradeHistoryReport(positions));
+            var desiredPerformaceForecast = new DesiredPerformanceResults(
+                portfolioSize, 
+                positionSizePercent, 
+                desiredReturnPercent, 
+                trades.GainPercentage,             // Convert from percentage to decimal
+                Math.Abs(trades.LossPercentage),  // Convert from percentage to decimal (LossPercentage is negative)
+                trades.WinRatePercentage            // Convert from percentage to decimal
+            );
+            return await Task.FromResult(desiredPerformaceForecast);
+        }
     }
 }
 

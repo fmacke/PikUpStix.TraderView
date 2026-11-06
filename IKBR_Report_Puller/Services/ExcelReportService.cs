@@ -13,11 +13,11 @@ namespace PikUpStix.TraderView.Services
     /// </summary>
     public class ExcelReportService : IExcelReportService
     {
-        private readonly ITradingReportService _tradingReportService;
+        private readonly IOpenPositionReportService _tradingReportService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
         public ExcelReportService(
-            ITradingReportService tradingReportService,
+            IOpenPositionReportService tradingReportService,
             ITradeHistoryReportService tradeHistoryReportService)
         {
             _tradingReportService = tradingReportService;
@@ -34,11 +34,10 @@ namespace PikUpStix.TraderView.Services
                 using (var package = new ExcelPackage())
                 {
                     await CreateOpenPositionsWorkSheet(package, positions.Where(p => p.Status.ToLower() == "open").ToList());                   
-                    _tradeHistoryReportService.CreateTradeHistoryReport(positions.Where(p => p.Status.ToLower() == "closed").ToList());
-                    CreateTradeHistoryWorksheet(package, positions, "Position History");
-                    CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistory, "TradeExecution History");
-                    CreateTradeHistoryWorksheet(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution History Aggregated");
-                    CreateVisualReport(package, _tradeHistoryReportService.TradeHistoryAggregated, "TradeExecution Report");
+                    //_tradeHistoryReportService.CreateTradeHistoryReport(positions.Where(p => p.Status.ToLower() == "closed").ToList());
+                    var tradeHistoryPositions = new TradeHistoryReport(positions);
+                    CreateTradeHistoryWorksheet(package, tradeHistoryPositions, "Position History");
+                    CreateVisualReport(package, tradeHistoryPositions, "VisualReport");
 
                     // Save the workbook
                     string whenGeneratedStr = DateTime.Now.ToString("yyyyMMddHHmmss");
@@ -56,7 +55,7 @@ namespace PikUpStix.TraderView.Services
             }
         }
 
-        private void CreateTradeHistoryWorksheet(ExcelPackage package, IEnumerable<Position> positions, string worksheetName)
+        private void CreateTradeHistoryWorksheet(ExcelPackage package, IReadOnlyList<TradeHistoryPosition> positions, string worksheetName)
         {
             var worksheet = package.Workbook.Worksheets.Add(worksheetName);
 
@@ -80,8 +79,8 @@ namespace PikUpStix.TraderView.Services
             worksheet.Cells[1, 17].Value = "MAE";
 
             int currentRow = 2;
-            var tradeHistoryPositions = new TradeHistoryPositions(positions.Where(x=>x.Status.ToLower() == "closed").ToList());
-            foreach (var pos in tradeHistoryPositions.OrderByDescending(x => x.CloseDate))
+            
+            foreach (var pos in positions.OrderByDescending(x => x.CloseDate))
             {
                 try
                 {
@@ -132,8 +131,8 @@ namespace PikUpStix.TraderView.Services
 
             // Add totals row and sum the Margin column
             table.ShowTotal = true;
-            table.Columns[5].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
-            worksheet.Cells[currentRow, 5].Style.Numberformat.Format = "#,##0.00"; 
+            table.Columns[4].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Average;
+            worksheet.Cells[currentRow, 4].Style.Numberformat.Format = "#,##0.00"; 
             table.Columns[10].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
             worksheet.Cells[currentRow, 10].Style.Numberformat.Format = "#,##0.00";
             table.Columns[12].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
@@ -155,7 +154,7 @@ namespace PikUpStix.TraderView.Services
         private async Task CreateOpenPositionsWorkSheet(ExcelPackage package, IReadOnlyList<Position> openPositions)
         {
             // Prepare the report data
-            var reportData = await _tradingReportService.PrepareOpenPositionReportData(openPositions);
+            var reportData = await _tradingReportService.CreateOpenPositionReport(openPositions);
 
             // Write data to worksheet
             WriteOpenPositionsToWorksheet(package, reportData);
@@ -230,111 +229,30 @@ namespace PikUpStix.TraderView.Services
             {
                 worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
             }
-        }
+        }      
 
-        private void CreateTradeHistoryWorksheet(ExcelPackage package, List<HistoricalTrade> trades, string worksheetName)
-        {
-            var worksheet = package.Workbook.Worksheets.Add(worksheetName);
-
-            // Add headers
-            worksheet.Cells[1, 1].Value = "ibExecId";
-            worksheet.Cells[1, 2].Value = "Symbol";
-            worksheet.Cells[1, 3].Value = "Date Opened";
-            worksheet.Cells[1, 4].Value = "Date Closed";
-            worksheet.Cells[1, 5].Value = "Days Open";
-            worksheet.Cells[1, 6].Value = "Quantity";
-            worksheet.Cells[1, 7].Value = "Cost Price";
-            worksheet.Cells[1, 8].Value = "Value Price";
-            worksheet.Cells[1, 9].Value = "Cost";
-            worksheet.Cells[1, 10].Value = "Value";
-            worksheet.Cells[1, 11].Value = "IB Commission";
-            worksheet.Cells[1, 12].Value = "IB Commission Currency";
-            worksheet.Cells[1, 13].Value = "Margin";
-            worksheet.Cells[1, 14].Value = "MarginPercent";
-            worksheet.Cells[1, 15].Value = "MFE";
-            worksheet.Cells[1, 16].Value = "MAE";
-
-            int currentRow = 2;
-            foreach (var historicalTrade in trades.OrderByDescending(x => x.TradeClosed))
-            {
-                var quant = 0m;
-                if (historicalTrade != null)
-                {
-                    if(historicalTrade.Quantity == null)
-                    {
-                        quant = 0;
-                    }
-                    else
-                    {
-                        quant = Math.Round(Convert.ToDecimal(historicalTrade.Quantity.Value), 2);
-                    }
-                }
-                
-                worksheet.Cells[currentRow, 1].Value = historicalTrade.IbExecId;
-                worksheet.Cells[currentRow, 2].Value = historicalTrade.Symbol;
-                worksheet.Cells[currentRow, 3].Value = historicalTrade.TradeOpened;
-                worksheet.Cells[currentRow, 3].Style.Numberformat.Format = "yyyy-MM-dd";
-                worksheet.Cells[currentRow, 4].Value = historicalTrade.TradeClosed;
-                worksheet.Cells[currentRow, 4].Style.Numberformat.Format = "yyyy-MM-dd";
-                worksheet.Cells[currentRow, 5].Value = (historicalTrade.TradeClosed - historicalTrade.TradeOpened).TotalDays;
-                worksheet.Cells[currentRow, 6].Value = quant;
-                worksheet.Cells[currentRow, 7].Value = Math.Round(Convert.ToDecimal(historicalTrade.TradePrice), 2);
-                worksheet.Cells[currentRow, 8].Value = Math.Round(Convert.ToDecimal(historicalTrade.ClosePrice), 2);
-                worksheet.Cells[currentRow, 9].Value = Math.Round(Convert.ToDecimal(historicalTrade.TotalCost), 2);
-                worksheet.Cells[currentRow, 10].Value = Math.Round(Convert.ToDecimal(historicalTrade.MarketValue), 2);
-                worksheet.Cells[currentRow, 11].Value = Math.Round(Convert.ToDecimal(historicalTrade.IbCommission), 2);
-                worksheet.Cells[currentRow, 11].Style.Numberformat.Format = "#,##0.00";
-                worksheet.Cells[currentRow, 12].Value = historicalTrade.IbCommissionCurrency;
-                worksheet.Cells[currentRow, 13].Value = Math.Round(historicalTrade.RealizedPnL, 2);
-                worksheet.Cells[currentRow, 13].Style.Numberformat.Format = "#,##0.00";
-                worksheet.Cells[currentRow, 14].Value = Math.Round(historicalTrade.RealizedPnLPercentage, 2);
-                worksheet.Cells[currentRow, 14].Style.Numberformat.Format = "#,##0.00";
-                worksheet.Cells[currentRow, 15].Value = historicalTrade.MaximumFavourableExursion;
-                worksheet.Cells[currentRow, 15].Style.Numberformat.Format = "#,##0.00";
-                worksheet.Cells[currentRow, 16].Value = historicalTrade.MaximumAdverseExursion;
-                worksheet.Cells[currentRow, 16].Style.Numberformat.Format = "#,##0.00";
-                currentRow++;
-            }
-
-            // Sanitize the table name to ensure it is valid
-            string sanitizedTableName = worksheetName.Replace(" ", "_").Replace("-", "_").Replace("/", "_");
-
-            // Format the data as a table
-            var tableRange = worksheet.Cells[1, 1, currentRow - 1, 16];
-            var table = worksheet.Tables.Add(tableRange, sanitizedTableName);
-            table.TableStyle = OfficeOpenXml.Table.TableStyles.Medium9;
-
-            // Add totals row and sum the Margin column
-            table.ShowTotal = true;
-            table.Columns[10].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
-            worksheet.Cells[currentRow, 10].Style.Numberformat.Format = "#,##0.00";
-            table.Columns[12].TotalsRowFunction = OfficeOpenXml.Table.RowFunctions.Sum;
-            worksheet.Cells[currentRow, 12].Style.Numberformat.Format = "#,##0.00";
-
-            // Adjust column widths
-            worksheet.Cells[worksheet.Dimension.Address].AutoFitColumns();
-        }
-
-        private void CreateVisualReport(ExcelPackage package, List<HistoricalTrade> historicalData, string worksheetName)
+        private void CreateVisualReport(ExcelPackage package, List<TradeHistoryPosition> historicalData, string worksheetName)
         {
             var worksheet = package.Workbook.Worksheets.Add(worksheetName);
 
             // Add data for graphs
-            worksheet.Cells[1, 1].Value = "TradeExecution Date";
-            worksheet.Cells[1, 2].Value = "Cumulative P/L";
-            worksheet.Cells[1, 3].Value = "Profit/Loss";
-            worksheet.Cells[1, 4].Value = "Win/Loss";
+            worksheet.Cells[1, 1].Value = "Symbol"; 
+            worksheet.Cells[1, 2].Value = "CloseDate";
+            worksheet.Cells[1, 3].Value = "Cumulative P/L";
+            worksheet.Cells[1, 4].Value = "Profit/Loss";
+            worksheet.Cells[1, 5].Value = "Win/Loss";
 
             decimal cumulativePnL = 0;
             int currentRow = 2;
-            foreach (var trade in historicalData.OrderBy(t => t.TradeClosed))
+            foreach (var trade in historicalData.OrderBy(t => t.CloseDate))
             {
-                cumulativePnL += trade.RealizedPnL;
-                worksheet.Cells[currentRow, 1].Value = trade.TradeClosed;
-                worksheet.Cells[currentRow, 1].Style.Numberformat.Format = "yyyy-mm-dd";
-                worksheet.Cells[currentRow, 2].Value = Math.Round(cumulativePnL, 2);
-                worksheet.Cells[currentRow, 3].Value = Math.Round(trade.RealizedPnL, 2);
-                worksheet.Cells[currentRow, 4].Value = Math.Round(trade.RealizedPnL, 2) >= 0 ? "Win" : "Loss";
+                cumulativePnL += trade.NetMargin;
+                worksheet.Cells[currentRow, 1].Value = trade.Symbol;
+                worksheet.Cells[currentRow, 2].Value = trade.CloseDate;
+                worksheet.Cells[currentRow, 2].Style.Numberformat.Format = "yyyy-mm-dd";
+                worksheet.Cells[currentRow, 3].Value = Math.Round(cumulativePnL, 2);
+                worksheet.Cells[currentRow, 4].Value = Math.Round(trade.NetMargin, 2);
+                worksheet.Cells[currentRow, 5].Value = Math.Round(trade.NetMargin, 2) >= 0 ? "Win" : "Loss";
                 currentRow++;
             }
 
@@ -342,30 +260,30 @@ namespace PikUpStix.TraderView.Services
             var equityCurveChart = worksheet.Drawings.AddChart("EquityCurve", eChartType.Line);
             equityCurveChart.Title.Text = "Equity Curve";
             equityCurveChart.SetPosition(0, 0, 5, 0);
-            equityCurveChart.SetSize(800, 400);
-            var equitySeries = equityCurveChart.Series.Add(worksheet.Cells[2, 2, currentRow - 1, 2], worksheet.Cells[2, 1, currentRow - 1, 1]);
+            equityCurveChart.SetSize(1200, 400);
+            var equitySeries = equityCurveChart.Series.Add(worksheet.Cells[2, 3, currentRow - 1, 3], worksheet.Cells[2, 1, currentRow - 1, 1]);
             equitySeries.Header = "Cumulative P/L";
 
             // Create Profit/Loss Distribution (Column Chart)
             var profitLossChart = worksheet.Drawings.AddChart("ProfitLossDistribution", eChartType.ColumnClustered);
             profitLossChart.Title.Text = "Profit/Loss Distribution";
             profitLossChart.SetPosition(20, 0, 5, 0);
-            profitLossChart.SetSize(800, 400);
-            var profitLossSeries = profitLossChart.Series.Add(worksheet.Cells[2, 3, currentRow - 1, 3], worksheet.Cells[2, 1, currentRow - 1, 1]);
+            profitLossChart.SetSize(1200, 400);
+            var profitLossSeries = profitLossChart.Series.Add(worksheet.Cells[2, 4, currentRow - 1, 4], worksheet.Cells[2, 1, currentRow - 1, 1]);
             profitLossSeries.Header = "Profit/Loss";
 
             // Create Win/Loss Ratio (Pie Chart)
             worksheet.Cells[1, 6].Value = "Result";
             worksheet.Cells[1, 7].Value = "Count";
             worksheet.Cells[2, 6].Value = "Win";
-            worksheet.Cells[2, 7].Formula = $"COUNTIF(D2:D{currentRow - 1}, \"Win\")";
+            worksheet.Cells[2, 7].Formula = $"COUNTIF(E2:E{currentRow - 1}, \"Win\")";
             worksheet.Cells[3, 6].Value = "Loss";
-            worksheet.Cells[3, 7].Formula = $"COUNTIF(D2:D{currentRow - 1}, \"Loss\")";
+            worksheet.Cells[3, 7].Formula = $"COUNTIF(E2:E{currentRow - 1}, \"Loss\")";
 
             var winLossChart = worksheet.Drawings.AddChart("WinLossRatio", eChartType.Pie);
             winLossChart.Title.Text = "Win/Loss Ratio";
             winLossChart.SetPosition(40, 0, 5, 0);
-            winLossChart.SetSize(800, 400);
+            winLossChart.SetSize(1200, 400);
             var winLossSeries = winLossChart.Series.Add(worksheet.Cells[2, 7, 3, 7], worksheet.Cells[2, 6, 3, 6]);
             winLossSeries.Header = "Win/Loss";
 

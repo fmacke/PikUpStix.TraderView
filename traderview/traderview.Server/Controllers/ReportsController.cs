@@ -9,13 +9,15 @@ namespace traderview.Server.Controllers
     public class ReportsController : ControllerBase
     {
         private readonly ILogger<ReportsController> _logger;
-        private readonly ITradingReportService _tradingReportService;
+        private readonly IOpenPositionReportService _openPositionReportService;
         private readonly IPositionService _positionService;
+        private readonly ITradeHistoryReportService _tradeHistoryReportService;
 
-        public ReportsController(ILogger<ReportsController> logger, ITradingReportService tradingReportService, IPositionService positionService)
+        public ReportsController(ILogger<ReportsController> logger, IOpenPositionReportService openPositionsReportService, IPositionService positionService, ITradeHistoryReportService tradeHistoryReportService)
         {
             _logger = logger;
-            _tradingReportService = tradingReportService;
+            _openPositionReportService = openPositionsReportService;
+            _tradeHistoryReportService = tradeHistoryReportService;
             _positionService = positionService;
         }
 
@@ -27,7 +29,8 @@ namespace traderview.Server.Controllers
             try
             {
                 _logger.LogInformation("GetPositionOutcomes called");
-                var outcomes = await _tradingReportService.CalculatePositionOutcomesAsync();
+                var positions = await _positionService.GetClosedPositionsAsync();
+                var outcomes = await _tradeHistoryReportService.CreateTradeHistoryReport(positions);
                 _logger.LogInformation("CalculatePositionOutcomesAsync returned {Count} items", outcomes?.Count ?? 0);
 
                 var dtos = outcomes.Select(o => new PositionOutcomeDto
@@ -35,15 +38,15 @@ namespace traderview.Server.Controllers
                     Id = o.Id,
                     OpenDate = o.OpenDate,
                     CloseDate = o.CloseDate,
-                    Status = o.Status,
+                    Status = null,
                     InstrumentId = o.InstrumentId,
-                    SymbolName = o.SymbolName,
-                    LastReportedPrice = o.LastReportedPrice,
-                    LastReportedPriceUpdated = o.LastReportedPriceUpdated,
-                    MarketRegime = o.MarketRegime,
+                    SymbolName = o.Symbol,
+                    LastReportedPrice = null,
+                    LastReportedPriceUpdated = null,
                     MaximumFavourableExcursion = o.MaximumFavourableExcursion,
                     MaximumAdverseExcursion = o.MaximumAdverseExcursion,
-                    Margin = o.Margin
+                    Margin = o.NetMargin,
+                    MarketRegime = o.MarketRegime
                 }).ToList();
 
                 return Ok(dtos);
@@ -67,7 +70,7 @@ namespace traderview.Server.Controllers
                 {
                     return NotFound();
                 }
-                var outcome = await _tradingReportService.GetPositionReport(position);
+                var outcome = await _openPositionReportService.GetPositionReport(position);
                 if (outcome == null)
                 {
                     return NotFound();

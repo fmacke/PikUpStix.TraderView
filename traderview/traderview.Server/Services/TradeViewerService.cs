@@ -39,22 +39,21 @@ namespace traderview.Server.Services
             {
                 // Use repository to get trade executions and create history
                 var positions = await _positionService.GetClosedPositionsAsync();
-                _tradeHistoryReportService.CreateTradeHistoryReport(positions);
-                var trades = _tradeHistoryReportService.TradeHistoryAggregated;
+                var trades = await _tradeHistoryReportService.CreateTradeHistoryReport(positions);
 
                 // Map HistoricalTrade to TradeDto
                 return await Task.FromResult(trades.Select(trade => new TradeDto
                 {
-                    PositionId = Convert.ToInt32(trade.PositionId),
+                    PositionId = trade.Id,
                     InstrumentId = trade.InstrumentId,
                     Symbol = trade.Symbol,
-                    EntryDate = trade.TradeOpened,
-                    ExitDate = trade.TradeClosed,
-                    EntryPrice = Convert.ToDecimal(trade.TradePrice),
-                    ExitPrice = Convert.ToDecimal(trade.ClosePrice),
-                    Quantity = Math.Abs(Convert.ToDecimal(trade.Quantity)),
-                    Pnl = Convert.ToDecimal(trade.RealizedPnL),
-                    BuySell = trade.Quantity > 0 ? "BUY" : "SELL"
+                    EntryDate = trade.OpenDate,
+                    ExitDate = trade.CloseDate,
+                    EntryPrice = trade.AverageCostBasis,
+                    ExitPrice = trade.AverageSalesValue,
+                    Quantity = Math.Abs(trade.Quantity),
+                    Pnl = trade.NetMargin,
+                    BuySell = trade.Direction
                 }).ToList());
             }
             catch (Exception ex)

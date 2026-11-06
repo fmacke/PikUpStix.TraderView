@@ -68,7 +68,7 @@ namespace TraderView.Console
                         AppDbContext db = provider.GetRequiredService<AppDbContext>();
                         return new InstrumentRepository(db);
                     });
-                    services.AddScoped<ITradingReportService, TradingReportService>();
+                    services.AddScoped<IOpenPositionReportService, OpenPositionService>();
                     services.AddScoped<IPositionRepository>(provider =>
                     {
                         AppDbContext db = provider.GetRequiredService<AppDbContext>();
@@ -159,13 +159,13 @@ namespace TraderView.Console
                         var config = provider.GetRequiredService<IConfiguration>();
                         return new GoogleAIStudioService(aiReportService, aiReportInstructionService, marketDataService, config["GoogleAIStudio:ApiKey"], config["GoogleAIStudio:Model"]);
                     });
-                    services.AddScoped<ITradingReportService, TradingReportService>(provider =>
+                    services.AddScoped<IOpenPositionReportService, OpenPositionService>(provider =>
                     {
                         var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
                         var positionService = provider.GetRequiredService<IPositionService>();
                         var tradeExecutionService = provider.GetRequiredService<ITradeExecutionService>();
-                        var logger = provider.GetRequiredService<ILogger<TradingReportService>>();
-                        return new TradingReportService(historicalDataService, positionService, tradeExecutionService, logger);
+                        var logger = provider.GetRequiredService<ILogger<OpenPositionService>>();
+                        return new OpenPositionService(historicalDataService, positionService, tradeExecutionService, logger);
                     });
                     services.AddScoped<FinancialModellingPrepService>(provider =>
                     {
@@ -210,7 +210,6 @@ namespace TraderView.Console
                     services.AddSingleton<ITradeHistoryReportService, TradeHistoryReportService>();
                     services.AddSingleton<IChartDataService, ChartDataService>();
                     services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
-                    services.AddScoped<ICurrentPerformanceService, CurrentPerformanceService>();
                     services.AddScoped<IEquitySummaryService, EquitySummaryService>();
                     services.AddScoped<IReportRunnerService, ReportRunnerService>();
                     services.AddScoped<Application>();

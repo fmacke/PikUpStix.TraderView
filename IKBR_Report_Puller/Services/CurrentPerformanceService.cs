@@ -30,7 +30,8 @@ namespace TraderView.Application.Services
             if (numberOfTrades <= 0)
                 throw new ArgumentException("Number of trades must be greater than zero.", nameof(numberOfTrades));
 
-            // Normalize values to decimals (e.g. 30% -> 0.30, 4% -> 0.04)
+            // Normalize values to decimals (e.g. 30% 
+
             decimal winRate = winRatePercentage / 100m;
             decimal lossRate = 1.0m - winRate;
             decimal gainFraction = gainPercentage / 100m;
@@ -88,8 +89,8 @@ namespace TraderView.Application.Services
         /// <summary>
         /// Calculates position-based metrics from actual closed positions
         /// </summary>
-        private (decimal AverageWin, decimal AverageLoss, decimal LargestWin, int LargestWinPositionId, 
-                  decimal LargestLoss, int LargestLossPositionId, double AverageDaysHeld, 
+        private (decimal AverageWin, decimal AverageLoss, decimal LargestWin, int LargestWinPositionId,
+                  decimal LargestLoss, int LargestLossPositionId, double AverageDaysHeld,
                   double AverageDaysHeldGains, double AverageDaysHeldLosses) CalculatePositionMetrics(IReadOnlyList<Position> positions)
         {
             // Filter to only closed positions with valid CloseDate and NetProfit
@@ -106,11 +107,11 @@ namespace TraderView.Application.Services
             var losingPositions = closedPositions.Where(p => p.NetProfit < 0).ToList();
 
             // Calculate average win and loss
-            decimal averageWin = winningPositions.Count > 0 
+            decimal averageWin = winningPositions.Count > 0
                 ? Math.Round(winningPositions.Average(p => p.NetProfit ?? 0), 2)
                 : 0;
 
-            decimal averageLoss = losingPositions.Count > 0 
+            decimal averageLoss = losingPositions.Count > 0
                 ? Math.Round(losingPositions.Average(p => Math.Abs(p.NetProfit ?? 0)), 2)
                 : 0;
 
@@ -126,11 +127,11 @@ namespace TraderView.Application.Services
             // Calculate average days held
             double averageDaysHeld = closedPositions.Average(p => (p.CloseDate!.Value - p.OpenDate).TotalDays);
 
-            double averageDaysHeldGains = winningPositions.Count > 0 
+            double averageDaysHeldGains = winningPositions.Count > 0
                 ? winningPositions.Average(p => (p.CloseDate!.Value - p.OpenDate).TotalDays)
                 : 0;
 
-            double averageDaysHeldLosses = losingPositions.Count > 0 
+            double averageDaysHeldLosses = losingPositions.Count > 0
                 ? losingPositions.Average(p => (p.CloseDate!.Value - p.OpenDate).TotalDays)
                 : 0;
 

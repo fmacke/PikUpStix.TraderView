@@ -13,5 +13,6 @@ namespace TraderView.Console
         {
             await _reportRunnerService.RunReportAsync(true, true, true);           
         }
+
     }
 }

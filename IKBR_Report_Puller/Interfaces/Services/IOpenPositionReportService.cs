@@ -8,10 +8,10 @@ using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Interfaces.Services
 {
-    public interface ITradingReportService
+    public interface IOpenPositionReportService
     {
         Task<List<PositionOutcome>> CalculatePositionOutcomesAsync(CancellationToken cancellationToken = default);
         Task<PositionOutcome> GetPositionReport(Position pos);
-        Task<List<OpenPositionReportData>> PrepareOpenPositionReportData(IReadOnlyList<Position> openPositions);
+        Task<List<OpenPositionReportData>> CreateOpenPositionReport(IReadOnlyList<Position> openPositions);
     }
 }

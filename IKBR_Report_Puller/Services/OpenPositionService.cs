@@ -1,8 +1,4 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Models;
 using TraderView.Application.Utils;
@@ -11,20 +7,15 @@ using System.Diagnostics;
 
 namespace TraderView.Application.Services
 {
-    /// <summary>
-    /// Service responsible for trading related reports. This implementation follows the application's
-    /// repository/specification pattern by depending on repositories (no direct DbContext usage).
-    /// It currently implements market regime detection used elsewhere in the application.
-    /// </summary>
-    public class TradingReportService : ITradingReportService
+    public class OpenPositionService : IOpenPositionReportService
     {
         private readonly IHistoricalDataService _historicalDataService;
         private readonly IPositionService _positionService;
         private readonly ITradeExecutionService _tradeExecutionService;
-        private readonly ILogger<TradingReportService> _logger;
+        private readonly ILogger<OpenPositionService> _logger;
         
 
-        public TradingReportService(IHistoricalDataService historicalDataService, IPositionService positionService, ITradeExecutionService tradeExecutionService, ILogger<TradingReportService> logger)
+        public OpenPositionService(IHistoricalDataService historicalDataService, IPositionService positionService, ITradeExecutionService tradeExecutionService, ILogger<OpenPositionService> logger)
         {
             _historicalDataService = historicalDataService ?? throw new ArgumentNullException(nameof(historicalDataService));
             _positionService = positionService ?? throw new ArgumentNullException(nameof(positionService));
@@ -32,13 +23,6 @@ namespace TraderView.Application.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-
-        
-
-        /// <summary>
-        /// Calculate position outcomes (MFE / MAE) for all positions.
-        /// This aggregates position/trade data and pulls historical bars to compute excursions.
-        /// </summary>
         public async Task<List<PositionOutcome>> CalculatePositionOutcomesAsync(CancellationToken cancellationToken = default)
         {
             var results = new List<PositionOutcome>();
@@ -66,7 +50,7 @@ namespace TraderView.Application.Services
                         _logger.LogInformation("Processing position {Index}/{Total} (Id={PositionId})", idx, positions.Count, pos.Id);
                     }
 
-                    var outcome = await ((ITradingReportService)this).GetPositionReport(pos);
+                    var outcome = await ((IOpenPositionReportService)this).GetPositionReport(pos);
                     if (outcome == null)
                     {
                         continue;
@@ -86,7 +70,7 @@ namespace TraderView.Application.Services
             return results;
         }
 
-        public async Task<List<OpenPositionReportData>> PrepareOpenPositionReportData(IReadOnlyList<Position> openPositions)
+        public async Task<List<OpenPositionReportData>> CreateOpenPositionReport(IReadOnlyList<Position> openPositions)
         {
             var reportDataList = new List<OpenPositionReportData>();
 
@@ -169,7 +153,7 @@ namespace TraderView.Application.Services
             return totalQuantity != 0 ? totalCost / totalQuantity : 0;
         }
 
-        async Task<PositionOutcome?> ITradingReportService.GetPositionReport(Position pos)
+        async Task<PositionOutcome?> IOpenPositionReportService.GetPositionReport(Position pos)
         {
             // Get aggregated trade summary for the position (entry/exit dates/prices)
             var summary = await _tradeExecutionService.GetTradeSummaryByPositionIdAsync(pos.Id);

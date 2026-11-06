@@ -12,20 +12,20 @@ namespace traderview.Server.Controllers
     public class RiskController : ControllerBase
     {
         private readonly ILogger<RiskController> _logger;
-        private readonly ICurrentPerformanceService _riskMatrixService;
+        //private readonly ICurrentPerformanceService _riskMatrixService;
         private readonly ITradeHistoryReportService _tradeHistoryService;
         private readonly ITradeExecutionService _tradeExecutionService;
         private readonly IPositionService _positionService;
-        private readonly IDesiredPerformanceForecastService _resultsBasedAssumptionForecastService;
+        //private readonly IDesiredPerformanceForecastService _resultsBasedAssumptionForecastService;
 
         private readonly IMapper _mapper;
-        public RiskController(ILogger<RiskController> logger, ICurrentPerformanceService riskMatrixService, IMapper mapper, ITradeHistoryReportService tradeHistoryService, ITradeExecutionService tradeExecutionService, IPositionService positionService, IDesiredPerformanceForecastService resultsBasedAssumptionForecastService) {
+        public RiskController(ILogger<RiskController> logger, IMapper mapper, ITradeHistoryReportService tradeHistoryService, ITradeExecutionService tradeExecutionService, IPositionService positionService) {
             _logger = logger;
             _tradeHistoryService = tradeHistoryService;
             _tradeExecutionService = tradeExecutionService;
-            _riskMatrixService = riskMatrixService;
+           // _riskMatrixService = riskMatrixService;
             _positionService = positionService;
-            _resultsBasedAssumptionForecastService = resultsBasedAssumptionForecastService;
+           // _resultsBasedAssumptionForecastService = resultsBasedAssumptionForecastService;
 
             _mapper = mapper;
         }
@@ -37,10 +37,8 @@ namespace traderview.Server.Controllers
             try
             {
                 var executions = await _positionService.GetClosedPositionsAsync();
-                _tradeHistoryService.CreateTradeHistoryReport(executions);
-                var positions = await _positionService.GetClosedPositionsAsync();
-                var trades = await _riskMatrixService.CalculateExpectedRoi(_tradeHistoryService.RiskMatrixCalculationRequest, positions);
-                var tradesDto = _mapper.Map<CurrentPerformanceResultDto>(trades);
+                var tradeHistoryReport =  await _tradeHistoryService.CreateTradeHistoryReport(executions);
+                var tradesDto = _mapper.Map<CurrentPerformanceResultDto>(tradeHistoryReport);
                 return Ok(tradesDto);
             }
             catch (Exception ex)
@@ -59,9 +57,9 @@ namespace traderview.Server.Controllers
         {
             try
             {
-                var executions = await _positionService.GetClosedPositionsAsync();
-                var inputs = _resultsBasedAssumptionForecastService.GetInputsFromTradingHistory(portfolioSize, positionSizePercent, desiredReturnPercent, executions);
-                var outputsDto = _mapper.Map<DesiredPerformanceResultsDto>(_resultsBasedAssumptionForecastService.CalculateForecast(inputs)  );
+                var positions = await _positionService.GetClosedPositionsAsync();
+                var output = await _tradeHistoryService.CreateDesiredOutcomeForecast(portfolioSize, positionSizePercent, desiredReturnPercent, positions);
+                var outputsDto = _mapper.Map<DesiredPerformanceResultsDto>(output );
                 return Ok(outputsDto);
             }
             catch (Exception ex)

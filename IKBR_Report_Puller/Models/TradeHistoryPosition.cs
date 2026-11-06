@@ -3,11 +3,30 @@ using TraderView.Domain.Entities;
 
 namespace TraderView.Application.Models
 {
-    public class TradeHistoryPositions : List<TradeHistoryPosition>
+    public class TradeHistoryReport : List<TradeHistoryPosition>
     {
-        public TradeHistoryPositions(IReadOnlyList<Position> positions)
+        public decimal WinRatePercentage { get { return this.Count > 0 ? Math.Round(this.Count(x => x.NetMargin > 0) / Convert.ToDecimal(this.Count),2) : 0; } }
+        public decimal LossRatePercentage { get { return Math.Round(100m - WinRatePercentage,2); } }
+        public decimal GainPercentage { get { return this.Count > 0 ? Math.Round((this.Where(x => x.NetMargin > 0).Sum(x => x.NetMargin)  / this.Sum(x => x.TotalPurchaseCost)),2) : 0; } }
+        public decimal LossPercentage { get { return this.Count > 0 ? Math.Round((this.Where(x => x.NetMargin < 0).Sum(x => x.NetMargin) / this.Sum(x => x.TotalPurchaseCost)), 2) : 0; } }
+        public decimal RewardToRiskRatio { get { return LossPercentage == 0 ? 0 : GainPercentage / Math.Abs(LossPercentage); } }
+        public int NumberOfTrades { get { return this.Count; } }
+        public decimal SimpleRoi { get { return NumberOfTrades * ((WinRatePercentage / 100m) * (GainPercentage / 100m) - (LossRatePercentage / 100m) * (Math.Abs(LossPercentage) / 100m)) * 100m; } }
+        public decimal CompoundedRoi { get { return ((decimal)Math.Pow((double)(1.0m + (GainPercentage / 100m)), (double)(NumberOfTrades * (WinRatePercentage / 100m))) * (decimal)Math.Pow((double)(1.0m - (Math.Abs(LossPercentage) / 100m)), (double)(NumberOfTrades * (LossRatePercentage / 100m))) - 1.0m); } }
+        public decimal ExpectedReturnPerTrade { get { return NumberOfTrades > 0 ? SimpleRoi / NumberOfTrades : 0; } }
+        public decimal AverageDaysHeld { get { return this.Count > 0 ? this.Average(x => (decimal)x.DaysHeld) : 0; } }
+        public decimal AverageDaysHeldGains { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).Average(x => (decimal)x.DaysHeld) : 0; } }
+        public decimal AverageDaysHeldLosses { get { return this.Count > 0 ? this.Where(x => x.NetMargin < 0).Average(x => (decimal)x.DaysHeld) : 0; } }
+        public decimal AverageWin { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).Average(x => x.NetMargin) : 0; } }
+        public decimal AverageLoss { get { return this.Count > 0 ? this.Where(x => x.NetMargin < 0).Average(x => x.NetMargin) : 0; } }
+        public decimal LargestWin { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).Max(x => x.NetMargin) : 0; } }
+        public int LargestWinPositionId { get { return this.Count > 0 ? this.Where(x => x.NetMargin > 0).OrderByDescending(x => x.NetMargin).First().Id : 0; } }
+        public decimal LargestLoss { get { return this.Count > 0 ? this.Where(x => x.NetMargin < 0).Min(x => x.NetMargin) : 0; } }
+        public int LargestLossPositionId { get { return this.Count > 0 ? this.Where(x => x.NetMargin < 0).OrderBy(x => x.NetMargin).First().Id : 0; } }
+
+        public TradeHistoryReport(IReadOnlyList<Position> positions)
         {
-            foreach (var pos in positions)
+            foreach (var pos in positions.Where(x => x.Status.ToLower() == "closed"))
             {
                 var tradeHistoryPosition = new TradeHistoryPosition
                 {
@@ -24,11 +43,12 @@ namespace TraderView.Application.Models
                     Direction = pos.Direction,
                     Currency = pos.Instrument.Currency,
                     CommissionCurrency = pos.TradeExecutions.FirstOrDefault().IbCommissionCurrency,
+                    InstrumentId = pos.InstrumentId,
+                    MarketRegime = pos.MarketRegime
                 };
                 this.Add(tradeHistoryPosition);
             }
         }
-
         private decimal CalculateCostBasis(string direction, ICollection<TradeExecution> tradeExecutions)
         {
             try
@@ -78,7 +98,9 @@ namespace TraderView.Application.Models
         public DateTime CloseDate { get; set; }
         public double DaysHeld { get { return (CloseDate - OpenDate).TotalDays; } }
         public decimal AverageCostBasis { get; set; }
+        public int InstrumentId { get; set; }
         public decimal AverageSalesValue { get; set; }
+        public string MarketRegime { get; set; }
         public decimal Quantity { get; set; }
         public decimal TotalPurchaseCost { get { return AverageCostBasis * Quantity; } }
         public decimal TotalSalesValue { get { return AverageSalesValue * Quantity; } }

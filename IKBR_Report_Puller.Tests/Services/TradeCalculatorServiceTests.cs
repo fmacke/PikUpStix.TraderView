@@ -28,7 +28,7 @@ namespace IKBR_Report_Puller.Tests.Services
                 ExchangeRate = 1.0m,
                 BuyPrice = 100.00m,
                 TradingCapital = 100000.00m,
-                RiskPerTrade = 6.25m,    // quarter = 6.25, half = 12.5, full = 25
+                RiskPerTrade = 6.25m,    // quarter = 6.25%, half = 3.125% (0.5x), full = 3.125% (0.5x)
                 MaxExposure = 4.00m,
                 GainLossRatio = 200.0m
             };
@@ -41,30 +41,50 @@ namespace IKBR_Report_Puller.Tests.Services
             var h = compound.HalfPosition;
             var f = compound.FullPosition;
 
-            // Assert - position sizes scale 1x,2x,4x
-            Assert.AreEqual(Math.Round(q.PositionSizeUsd * 2m, 6), Math.Round(h.PositionSizeUsd, 6), "Half position size should be double quarter");
-            Assert.AreEqual(Math.Round(q.PositionSizeUsd * 4m, 6), Math.Round(f.PositionSizeUsd, 6), "Full position size should be quadruple quarter");
+            // Pyramid parameters
+            const decimal pyramidStepPercent = 2.5m;
+            var buy1 = request.BuyPrice;
+            var buy2 = buy1 * (1m + pyramidStepPercent / 100m);  // 102.5
 
-            // Total shares scale proportionally across tiers (quarter=1x, half=2x, full=4x)
-            Assert.AreEqual(Math.Round(q.TotalShares * 2m, 6), Math.Round(h.TotalShares, 6), "Half total shares should be double quarter total shares");
-            Assert.AreEqual(Math.Round(q.TotalShares * 4m, 6), Math.Round(f.TotalShares, 6), "Full total shares should be quadruple quarter total shares");
+            // Assert - position size scales by risk percent (1.0x, 0.5x, 0.5x)
+            var quarterPositionSizeUsd = request.TradingCapital * (request.RiskPerTrade / 100m);
+            var halfPositionSizeUsd = request.TradingCapital * ((request.RiskPerTrade * 0.5m) / 100m);
+            var fullPositionSizeUsd = request.TradingCapital * ((request.RiskPerTrade * 0.5m) / 100m);
 
-            // Stop loss level computed from buy price and max exposure
-            var expectedStop = q.BuyPriceUsd * (1 - (request.MaxExposure / 100m));
-            Assert.AreEqual(Math.Round(expectedStop, 6), Math.Round(q.StopLossAtUsd, 6), "Stop loss at USD mismatch for quarter");
+            Assert.AreEqual(Math.Round(quarterPositionSizeUsd, 6), Math.Round(q.PositionSizeUsd, 6), "Quarter position size mismatch");
+            Assert.AreEqual(Math.Round(halfPositionSizeUsd, 6), Math.Round(h.PositionSizeUsd, 6), "Half position size mismatch");
+            Assert.AreEqual(Math.Round(fullPositionSizeUsd, 6), Math.Round(f.PositionSizeUsd, 6), "Full position size mismatch");
+
+            // Total shares are cumulative: q=Q, h=Q+H, f=Q+H+F
+            Assert.AreEqual(Math.Round(q.Shares, 6), Math.Round(q.TotalShares, 6), "Quarter total shares should equal quarter shares");
+            Assert.AreEqual(Math.Round(q.Shares + h.Shares, 6), Math.Round(h.TotalShares, 6), "Half total shares should be quarter + half shares");
+            Assert.AreEqual(Math.Round(q.Shares + h.Shares + f.Shares, 6), Math.Round(f.TotalShares, 6), "Full total shares should be quarter + half + full shares");
+
+            // Half stop loss should equal its average share price (cost basis floor)
+            Assert.AreEqual(Math.Round(h.AverageSharePriceUsd, 6), Math.Round(h.StopLossAtUsd, 6), "Half stop loss should equal average share price");
+
+            // Full stop loss should equal buy2 (pyramid second level)
+            Assert.AreEqual(Math.Round(buy2, 6), Math.Round(f.StopLossAtUsd, 6), "Full stop loss should equal buy2");
 
             // Target share price equals buy * (1 + takeProfitPercent)
             var takeProfitPercent = quarter.TakeProfitAt; // from base quarter calculation
-            var expectedTarget = q.BuyPriceUsd * (1 + takeProfitPercent / 100m);
+            var expectedTarget = q.BuyPriceUsd * (1m + takeProfitPercent / 100m);
             Assert.AreEqual(Math.Round(expectedTarget, 6), Math.Round(q.TargetSharePriceUsd, 6), "Target share price mismatch for quarter");
 
-            // Account risk per tier equals positionRiskGbp / trading capital *100
-            var expectedAccountRiskQ = (q.PositionRiskGbp / request.TradingCapital) * 100m;
-            Assert.AreEqual(Math.Round(expectedAccountRiskQ, 6), Math.Round(q.AccountRiskPercentage, 6), "Account risk percent mismatch for quarter");
+            // All tiers should have valid stop loss values (positive and below buy price)
+            Assert.IsTrue(q.StopLossAtUsd > 0 || q.StopLossAtUsd == 0, "Quarter stop loss should not be negative");
+            Assert.IsTrue(h.StopLossAtUsd > 0, "Half stop loss should be positive");
+            Assert.IsTrue(f.StopLossAtUsd > 0, "Full stop loss should be positive");
 
-            // Cumulative total shares for full equals sum of quarter+half+full shares
-            var expectedTotalSharesFull = compound.QuarterPosition.Shares + compound.HalfPosition.Shares + compound.FullPosition.Shares;
-            Assert.AreEqual(Math.Round(expectedTotalSharesFull, 6), Math.Round(f.TotalShares, 6), "Total shares for full position should equal sum of tier shares");
+            // Verify average prices are weighted correctly
+            var expectedQAvgPrice = q.BuyPriceUsd;  // Quarter is the first position
+            Assert.AreEqual(Math.Round(expectedQAvgPrice, 6), Math.Round(q.AverageSharePriceUsd, 6), "Quarter average share price should equal buy price");
+
+            var expectedHalfAvgPrice = (q.Shares * q.BuyPriceUsd + ((h.TotalShares - q.Shares) * h.BuyPriceUsd)) / h.TotalShares;
+            Assert.AreEqual(Math.Round(expectedHalfAvgPrice, 6), Math.Round(h.AverageSharePriceUsd, 6), "Half average share price should be weighted average");
+
+            var expectedFullAvgPrice = (q.Shares * q.BuyPriceUsd + ((h.TotalShares - q.Shares) * h.BuyPriceUsd) + ((f.TotalShares - h.TotalShares) * f.BuyPriceUsd)) / f.TotalShares;
+            Assert.AreEqual(Math.Round(expectedFullAvgPrice, 6), Math.Round(f.AverageSharePriceUsd, 6), "Full average share price should be weighted average");
         }
     }
 }

@@ -10,13 +10,13 @@ namespace traderview.Server.Controllers
     {
         private readonly ILogger<OpenPositionController> _logger;
         private readonly IPositionService _openPositionService;
-        private readonly ITradingReportService _tradingReportService;
+        private readonly IOpenPositionReportService _tradingReportService;
         private readonly IReportRunnerService _reportRunnerService;
 
         public OpenPositionController(
             ILogger<OpenPositionController> logger,
             IPositionService openPositionsService,
-            ITradingReportService tradingReportService,
+            IOpenPositionReportService tradingReportService,
             IReportRunnerService reportRunnerService,
             IMarketDataService marketDataService)
         {
@@ -41,7 +41,7 @@ namespace traderview.Server.Controllers
                 var openPositions = await _openPositionService.GetOpenPositionsAsync();
                 _logger.LogInformation("Found {Count} open positions", openPositions.Count);
 
-                var reportData = await _tradingReportService.PrepareOpenPositionReportData(openPositions);
+                var reportData = await _tradingReportService.CreateOpenPositionReport(openPositions);
 
                 // Convert to DTOs
                 var openPositionDtos = reportData.Select(data => new OpenPositionDto

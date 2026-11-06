@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Application.Models;
 using TraderView.Domain.Entities;
 
 namespace PikUpStix.TraderView.Services.MarketData
@@ -101,15 +102,15 @@ namespace PikUpStix.TraderView.Services.MarketData
             }
         }
 
-        async Task IMarketDataService.FetchAndSaveChartData(IReadOnlyList<HistoricalTrade> trades)
+        async Task IMarketDataService.FetchAndSaveChartData(TradeHistoryReport trades)
         {
             foreach (var trade in trades)
             {
                 var instrument = await _instrumentRepository.GetByIdAsync(trade.InstrumentId);
                 await ExecuteWithErrorHandlingAsync(async () =>
                 {
-                    var fromDate = trade.TradeOpened.AddDays(-364);
-                    var toDate = trade.TradeClosed.AddDays(364);
+                    var fromDate = trade.OpenDate.AddDays(-364);
+                    var toDate = trade.CloseDate.AddDays(364);
                     if (toDate > DateTime.UtcNow)
                     {
                         toDate = DateTime.UtcNow.AddDays(-1); // don't pull today's data as it's not complete
@@ -417,17 +418,33 @@ namespace PikUpStix.TraderView.Services.MarketData
 
             Console.WriteLine($"Fetching time series data from {fromDateStr} to {toDateStr}...");
 
-            var response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            var content = await response.Content.ReadAsStringAsync();
-
-            var barData = JsonSerializer.Deserialize<List<Bar>>(content, new JsonSerializerOptions
+            var barData = new List<Bar>();
+            try
             {
-                PropertyNameCaseInsensitive = true
-            });
+                var response = await _httpClient.GetAsync(url);
+                response.EnsureSuccessStatusCode();
 
-            return barData ?? new List<Bar>();
+                var content = await response.Content.ReadAsStringAsync();
+
+                barData = JsonSerializer.Deserialize<List<Bar>>(content, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+            }
+            catch (HttpRequestException ex)
+            {
+                Console.WriteLine($"HTTP error fetching chart data for {symbol}: {ex.Message}");
+            }
+            catch (JsonException ex)
+            {
+                Console.WriteLine($"JSON deserialization error for chart data of {symbol}: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error fetching chart data for {symbol}: {ex.Message}");
+            }
+
+            return barData;
         }
 
         private async Task SaveToFileAsync(List<EconomicCalendar> events, string fromDate, string toDate)

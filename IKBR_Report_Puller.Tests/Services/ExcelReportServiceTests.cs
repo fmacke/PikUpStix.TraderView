@@ -8,7 +8,7 @@ namespace IKBR_Report_Puller.Tests.Services
     [TestClass]
     public class ExcelReportServiceTests
     {
-        private Mock<ITradingReportService> _mockTradingReportService;
+        private Mock<IOpenPositionReportService> _mockTradingReportService;
         private Mock<ITradeHistoryReportService> _mockTradeHistoryReportService;
         private Mock<IConfiguration> _mockConfiguration;
         private ExcelReportService _service;
@@ -16,7 +16,7 @@ namespace IKBR_Report_Puller.Tests.Services
         [TestInitialize]
         public void Setup()
         {
-            _mockTradingReportService = new Mock<ITradingReportService>();
+            _mockTradingReportService = new Mock<IOpenPositionReportService>();
             _mockTradeHistoryReportService = new Mock<ITradeHistoryReportService>();
             _mockConfiguration = new Mock<IConfiguration>();
 

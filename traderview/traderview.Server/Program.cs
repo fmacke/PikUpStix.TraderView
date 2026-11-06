@@ -1,10 +1,8 @@
-using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using Microsoft.EntityFrameworkCore;
 using PikUpStix.TraderView.Services;
 using PikUpStix.TraderView.Services.MarketData;
 using traderview.Server.DTOs.Mappers;
 using traderview.Server.Services;
-using TraderView.Application.Interfaces.Persistence;
 using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Interfaces.Services.AI;
@@ -145,13 +143,13 @@ public partial class Program
             return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService, historicalDataService);
         });
         builder.Services.AddScoped<IInstrumentService, InstrumentService>();
-        builder.Services.AddScoped<ITradingReportService, TradingReportService>(provider =>
+        builder.Services.AddScoped<IOpenPositionReportService, OpenPositionService>(provider =>
         {
             var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
             var positionService = provider.GetRequiredService<IPositionService>();
             var tradeExecutionService = provider.GetRequiredService<ITradeExecutionService>();
-            var logger = provider.GetRequiredService<ILogger<TradingReportService>>();
-            return new TradingReportService(historicalDataService, positionService, tradeExecutionService, logger);
+            var logger = provider.GetRequiredService<ILogger<OpenPositionService>>();
+            return new OpenPositionService(historicalDataService, positionService, tradeExecutionService, logger);
         });
         builder.Services.AddScoped<IPositionService, PositionService>(provider =>
         {
@@ -198,9 +196,7 @@ public partial class Program
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();
         builder.Services.AddScoped<ICanSlimScreenerService, CanSlimScreenerService>();
-        builder.Services.AddScoped<ICurrentPerformanceService, CurrentPerformanceService>();
         builder.Services.AddScoped<ITradeViewerService, TradeViewerService>();
-        builder.Services.AddScoped<IDesiredPerformanceForecastService, DesiredPerformanceForecastService>();
         builder.Services.AddScoped<ITradeCalculatorService, TradeCalculatorService>();
         builder.Services.AddScoped<IEquitySummaryService, EquitySummaryService>();
         builder.Services.AddScoped<IStrategyService, StrategyService>();

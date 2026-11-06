@@ -55,7 +55,7 @@ export const CurrentPerformanceCard: React.FC = () => {
 
                 <div>
                     <span className="block text-gray-500 text-xs">Gain / Loss:</span>
-                    <span className="text-sm font-medium">+{data.gainPercentage}% / -{data.lossPercentage}%</span>
+                    <span className={`text-sm font-medium ${data.gainPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>{data.gainPercentage}%</span> / <span className={`text-sm font-medium ${data.lossPercentage >= 0 ? 'text-green-600' : 'text-red-600'}`}>{data.lossPercentage}%</span>
                 </div>
                 <div>
                     <span className="block text-gray-500 text-xs">Reward-to-Risk:</span>
@@ -125,7 +125,7 @@ export const CurrentPerformanceCard: React.FC = () => {
                 </div>
                 <div>
                     <span className="block text-xs text-gray-500">Avg Days Loss Held:</span>
-                    <span className={`text-base font-bold ${data.averageDaysHeldLosses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    <span className={`text-base font-bold text-red-600`}>
                         {data.averageDaysHeldLosses.toFixed(2)}
                     </span>
                 </div>

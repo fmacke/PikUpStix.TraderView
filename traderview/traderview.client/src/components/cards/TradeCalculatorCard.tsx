@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+;;import { useState, useEffect, useRef } from 'react';
 import { riskService, positionsService, listsService } from '../../services';
 import type { TradeCalculationRequest, TradeCalculationResponse, PositionCalculatorCreateDto, PositionCalculatorDto } from '../../types/api';
 import CompoundedPositionsCalculator from './CompoundedPositionsCalculator';
@@ -437,68 +437,7 @@ export const TradeCalculatorCard: React.FC = () => {
                 <>
                     {/* Compounded positions component - updates whenever main result updates */}
                     <CompoundedPositionsCalculator request={request} trigger={result} />
-                    <div className="trade-calculator-results" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', padding: '1rem', border: '1px solid var(--border)', borderRadius: '0.5rem', backgroundColor: 'var(--code-bg)' }}>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <p>STOP LOSS DETAILS</p>
-                    </div>
-                    <div className="trade-calculator-result-item">
-                        <label className="trade-calculator-result-label">Lot Size (£) / ($)</label>
-                        <div className="trade-calculator-result-value">
-                            £{result.lotGbp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} / ${result.lotUsd.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </div>
-                    </div>
-                    <div className="trade-calculator-result-item">
-                        <label className="trade-calculator-result-label">Lot Size (%)</label>
-                        <div className="trade-calculator-result-value">
-                            {(result.lotPercent * 100).toFixed(1)}%
-                        </div>
-                    </div>
-                    <div className="trade-calculator-result-item">
-                        <label className="trade-calculator-result-label">Shares</label>
-                        <div className="trade-calculator-result-value">
-                            {result.shares.toFixed(2)}
-                        </div>
-                    </div>
-                    <div className="trade-calculator-result-item">
-                        <label className="trade-calculator-result-label">Stop Loss At</label>
-                        <div className="trade-calculator-result-value">
-                            {result.stopLossAt.toFixed(2)}
-                        </div>
-                    </div>
-                    <div className="trade-calculator-result-item">
-                        <label className="trade-calculator-result-label">Loss (£ / USD)</label>
-                        <div className="trade-calculator-result-value">
-                            £{result.lossGbp.toFixed(2)} / ${result.lossUsd.toFixed(2)}
-                        </div>
-                    </div>
-                    <div className="trade-calculator-result-item">
-                        <label className="trade-calculator-result-label">Loss %</label>
-                        <div className="trade-calculator-result-value">
-                            {(result.lossPercentage * 100).toFixed(3)}%
-                        </div>
-                    </div>
-                    <div style={{ gridColumn: '1 / -1' }}>
-                        <p>TAKE PROFIT DETAILS</p>
-                    </div>
-                    <div className="trade-calculator-result-item">
-                        <label className="trade-calculator-result-label">Price Target</label>
-                        <div className="trade-calculator-result-value">
-                            ${result.priceTarget.toFixed(2)}
-                        </div>
-                    </div>
-                    <div className="trade-calculator-result-item">
-                        <label className="trade-calculator-result-label">Take Profit At</label>
-                        <div className="trade-calculator-result-value">
-                            {result.takeProfitAt.toFixed(1)}%
-                        </div>
-                    </div>
-                    <div className="trade-calculator-result-item" style={{ gridColumn: '1 / -1' }}>
-                        <label className="trade-calculator-result-label">Overall Profit (£ / USD)</label>
-                        <div className="trade-calculator-result-value">
-                            £{result.overallProfitGbp.toFixed(2)} / ${result.overallProfitUsd.toFixed(2)}
-                        </div>
-                    </div>
-                    </div>
+                    
                     
                 </>
             )}
