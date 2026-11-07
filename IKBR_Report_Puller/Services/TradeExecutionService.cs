@@ -131,8 +131,12 @@ namespace TraderView.Application.Services
                                 var val = prop.GetValue(trade);
                                 prop.SetValue(tradeExecInDb, val);
                             }
-
                             await _repository.UpdateAsync(tradeExecInDb);
+                            var totalQuantity = await _repository.GetTotalQuantityForPositionAsync(tradeExecInDb.PositionId ?? 0);
+                            if (totalQuantity == 0)
+                            {
+                                await _positionService.ClosePositionAsync(trade.PositionId ?? 0);
+                            }
                         }
                         catch (Exception ex)
                         {
