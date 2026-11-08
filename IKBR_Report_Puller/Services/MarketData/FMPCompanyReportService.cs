@@ -1,13 +1,6 @@
 ﻿using TraderView.Application.Models.Reports;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.Json;
-using System.Threading.Tasks;
 using TraderView.Application.Interfaces.Services;
-using TraderView.Application.Models.Reports;
 using TraderView.Domain.Entities.FMP;
 
 namespace TraderView.Services.MarketData
