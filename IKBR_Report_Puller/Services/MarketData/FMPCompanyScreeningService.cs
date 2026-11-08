@@ -9,14 +9,14 @@ namespace PikUpStix.TraderView.Services.MarketData
     /// <summary>
     /// Service for running company screening and retrieving company financial data for analysis
     /// </summary>
-    public class FinancialModellingPrepCompanyScreeningService : ICompanyScreeningService
+    public class FMPCompanyScreeningService : ICompanyScreeningService
     {
         private readonly HttpClient _httpClient;
         private readonly ICanSlimScreenerService _canSlimScreenerService;
         private readonly string _apiKey;
         private readonly string _baseUrl;
 
-        public FinancialModellingPrepCompanyScreeningService(
+        public FMPCompanyScreeningService(
             HttpClient httpClient,
             ICanSlimScreenerService canSlimScreenerService,
             string apiKey,

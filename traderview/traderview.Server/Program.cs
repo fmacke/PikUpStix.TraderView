@@ -162,7 +162,7 @@ public partial class Program
             var repo = provider.GetRequiredService<IPositionCalculatorRepository>();
             return new PositionCalculatorService(repo);
         });
-        builder.Services.AddScoped<FinancialModellingPrepService>(provider =>
+        builder.Services.AddScoped<FMPService>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
             var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
@@ -173,9 +173,9 @@ public partial class Program
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
             var outputFilePath = config["FinancialModelingPrep:OutputFilePath"];
-            return new FinancialModellingPrepService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
+            return new FMPService(httpClient, economicRepo, historicalRepo, instrumentRepo, apiKey, baseUrl, outputFilePath);
         });
-        builder.Services.AddScoped<FinancialModellingPrepCompanyScreeningService>(provider =>
+        builder.Services.AddScoped<FMPCompanyScreeningService>(provider =>
         {
             var config = provider.GetRequiredService<IConfiguration>();
             var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
@@ -183,15 +183,15 @@ public partial class Program
             var canSlimCandidateService = provider.GetRequiredService<ICanSlimScreenerService>();
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
-            return new FinancialModellingPrepCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
+            return new FMPCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
         });
         builder.Services.AddScoped<IMarketDataService>(provider =>
         {
-            return provider.GetRequiredService<FinancialModellingPrepService>();
+            return provider.GetRequiredService<FMPService>();
         });
         builder.Services.AddScoped<ICompanyScreeningService>(provider =>
         {
-            return provider.GetRequiredService<FinancialModellingPrepCompanyScreeningService>();
+            return provider.GetRequiredService<FMPCompanyScreeningService>();
         });
         builder.Services.AddScoped<IListService, ListService>();
         builder.Services.AddScoped<INoteService, NoteService>();

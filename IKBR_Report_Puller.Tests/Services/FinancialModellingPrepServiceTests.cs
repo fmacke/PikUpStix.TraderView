@@ -32,7 +32,7 @@ namespace IKBR_Report_Puller.Tests.Services
 
             var httpClient = new HttpClient(); // not used in this test path
 
-            var service = new FinancialModellingPrepCompanyScreeningService(
+            var service = new FMPCompanyScreeningService(
                 httpClient,
                 mockCanSlimService.Object,
                 apiKey: "testkey",

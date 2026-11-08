@@ -11,7 +11,7 @@ namespace PikUpStix.TraderView.Services.MarketData
     /// Service for retrieving general market data from Financial Modeling Prep API
     /// including economic calendars, chart data, price data, and currency exchange rates
     /// </summary>
-    public class FinancialModellingPrepService : IMarketDataService
+    public class FMPService : IMarketDataService
     {
         private readonly HttpClient _httpClient;
         private readonly IEconomicCalendarRepository _repository;
@@ -23,7 +23,7 @@ namespace PikUpStix.TraderView.Services.MarketData
 
         public string SourceName => "FinancialModellingPrep";
 
-        public FinancialModellingPrepService(
+        public FMPService(
             HttpClient httpClient,
             IEconomicCalendarRepository repository,
             IHistoricalDataRepository historicalDataRepository,

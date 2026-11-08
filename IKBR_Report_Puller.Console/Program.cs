@@ -140,14 +140,14 @@ namespace TraderView.Console
                         var historicalDataService = provider.GetRequiredService<IHistoricalDataService>();
                         return new TradeExecutionService(tradeExecutionRepo, positionService, instrumentService, historicalDataService);
                     });
-                    services.AddScoped<IMarketDataService, FinancialModellingPrepService>(provider =>
+                    services.AddScoped<IMarketDataService, FMPService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<HttpClient>();
                         var economicCalendarRepo = provider.GetRequiredService<IEconomicCalendarRepository>();
                         var historicalDataRepo = provider.GetRequiredService<IHistoricalDataRepository>();
                         var instrumentRepo = provider.GetRequiredService<IInstrumentRepository>();
                         var config = provider.GetRequiredService<IConfiguration>();
-                        return new FinancialModellingPrepService(httpClient, economicCalendarRepo, historicalDataRepo, instrumentRepo, config["FMP:ApiKey"], config["FMP:BaseUrl"], config["Output:FilePath"]);
+                        return new FMPService(httpClient, economicCalendarRepo, historicalDataRepo, instrumentRepo, config["FMP:ApiKey"], config["FMP:BaseUrl"], config["Output:FilePath"]);
                     });
                     services.AddScoped<IAIReportService, AIReportService>();
                     services.AddScoped<IAIReportInstructionService, AIReportInstructionService>();
@@ -167,7 +167,7 @@ namespace TraderView.Console
                         var logger = provider.GetRequiredService<ILogger<OpenPositionService>>();
                         return new OpenPositionService(historicalDataService, positionService, tradeExecutionService, logger);
                     });
-                    services.AddScoped<FinancialModellingPrepService>(provider =>
+                    services.AddScoped<FMPService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
                         var repository = provider.GetRequiredService<IEconomicCalendarRepository>();
@@ -178,24 +178,24 @@ namespace TraderView.Console
                         var baseUrl = config["FinancialModelingPrep:BaseUrl"];
                         var outputPath = config["FinancialModelingPrep:OutputFilePath"];
 
-                        return new FinancialModellingPrepService(httpClient, repository, historicalDataRepository, instrumentRepository, apiKey, baseUrl, outputPath);
+                        return new FMPService(httpClient, repository, historicalDataRepository, instrumentRepository, apiKey, baseUrl, outputPath);
                     });
-                    services.AddScoped<FinancialModellingPrepCompanyScreeningService>(provider =>
+                    services.AddScoped<FMPCompanyScreeningService>(provider =>
                     {
                         var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("IKBR");
                         var canSlimCandidateService = provider.GetRequiredService<ICanSlimScreenerService>();
                         var config = provider.GetRequiredService<IConfiguration>();
                         var apiKey = config["FinancialModelingPrep:ApiKey"];
                         var baseUrl = config["FinancialModelingPrep:BaseUrl"];
-                        return new FinancialModellingPrepCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
+                        return new FMPCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
                     });
                     services.AddScoped<IMarketDataService>(provider =>
                     {
-                        return provider.GetRequiredService<FinancialModellingPrepService>();
+                        return provider.GetRequiredService<FMPService>();
                     });
                     services.AddScoped<ICompanyScreeningService>(provider =>
                     {
-                        return provider.GetRequiredService<FinancialModellingPrepCompanyScreeningService>();
+                        return provider.GetRequiredService<FMPCompanyScreeningService>();
                     });
                     services.AddSingleton<IReportFetchingService>(provider =>
                     {
