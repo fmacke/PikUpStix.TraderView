@@ -9,13 +9,6 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.ai-report-card-title {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: var(--text-color, #1f2937);
-}
-
 /* Most Recent Report Section */
 .ai-report-recent-section {
     display: flex;

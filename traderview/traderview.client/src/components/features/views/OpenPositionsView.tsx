@@ -258,6 +258,7 @@ function OpenPositionsView() {
             <div className="open-positions-container">
                 <div className="empty-container">
                     <h2>Open Positions</h2>
+                    <MarketRegime />
                     <p><em>No open positions found.</em></p>
                 </div>
             </div>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { AIReport } from '../../types/api';
 import { aiReportService } from '../../services';
 import { useTheme } from '../../hooks/useTheme';
+import './cards-common.css';
 import './AIReportCard.css';
 
 function AIReportCard() {
@@ -51,7 +52,7 @@ function AIReportCard() {
     if (loading && reports.length === 0) {
         return (
             <div className={`ai-report-card theme-${theme}`}>
-                <h2 className="ai-report-card-title">AI Reports</h2>
+                <h2 className="card-heading">AI Reports</h2>
                 <p className="ai-report-loading">Loading reports...</p>
             </div>
         );
@@ -60,7 +61,7 @@ function AIReportCard() {
     if (reports.length === 0) {
         return (
             <div className={`ai-report-card theme-${theme}`}>
-                <h2 className="ai-report-card-title">AI Reports</h2>
+                <h2 className="card-heading">AI Reports</h2>
                 <p className="ai-report-empty">No AI reports available.</p>
             </div>
         );
@@ -68,7 +69,7 @@ function AIReportCard() {
 
     return (
         <div className={`ai-report-card theme-${theme}`}>
-            <h2 className="ai-report-card-title">AI Reports</h2>
+            <h2 className="card-heading">AI Reports</h2>
 
             {/* Most Recent Report Section */}
             {mostRecentReport && (

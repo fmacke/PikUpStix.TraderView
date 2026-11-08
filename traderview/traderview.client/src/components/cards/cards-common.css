@@ -1,0 +1,11 @@
+/* Common card heading styles */
+.card-heading {
+    margin: 0 0 1rem 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-h, #08060d);
+}
+
+.theme-dark .card-heading {
+    color: #f3f4f6;
+}

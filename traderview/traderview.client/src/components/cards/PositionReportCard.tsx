@@ -3,7 +3,10 @@ import { positionsService } from '../../services';
 import type { PositionOutcome } from '../../types/api';
 import { SortableTableHeader } from '../common/SortableTableHeader';
 import { PaginationControl } from '../common/PaginationControl';
+import { useTheme } from '../../hooks/useTheme';
 import type { SortConfig } from '../common/SortableTableHeader';
+import './cards-common.css';
+import './PositionReportCard.css';
 
 
 const PAGE_SIZE = 50;
@@ -14,6 +17,7 @@ export default function PositionReportCard() {
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [sortConfig, setSortConfig] = useState<SortConfig<PositionOutcome>>({ key: 'id' as keyof PositionOutcome, direction: 'asc' });
+    const { theme } = useTheme();
 
     useEffect(() => {
         const load = async () => {
@@ -60,12 +64,12 @@ export default function PositionReportCard() {
         setSortConfig(prev => ({ key, direction: prev.key === key && prev.direction === 'asc' ? 'desc' : 'asc' }));
     };
 
-    if (loading) return <div className="position-report-card"><em>Loading reports...</em></div>;
-    if (error) return <div className="position-report-card error">Error: {error}</div>;
+    if (loading) return <div className={`position-report-card theme-${theme}`}><em>Loading reports...</em></div>;
+    if (error) return <div className={`position-report-card error theme-${theme}`}>Error: {error}</div>;
 
     return (
-        <div className="position-report-card">
-            <h2>Position Outcomes (MFE / MAE)</h2>
+        <div className={`position-report-card theme-${theme}`}>
+            <h2 className="card-heading">Position Outcomes (MFE / MAE)</h2>
             <table className="positions-report-table">
                 <thead>
                     <tr>

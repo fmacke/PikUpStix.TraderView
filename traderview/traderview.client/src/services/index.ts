@@ -7,3 +7,4 @@ export { default as positionsService } from './positionsService';
 export { default as marketDataService } from './marketDataService';
 export { default as listsService } from './listsService';
 export { default as aiReportService } from './aiReportService';
+export { default as companyReportService } from './companyReportService';
