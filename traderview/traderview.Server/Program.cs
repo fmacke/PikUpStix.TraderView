@@ -11,6 +11,7 @@ using TraderView.Application.Services.AI;
 using TraderView.Application.Services.IKBR;
 using TraderView.Infrastructure.DbContexts;
 using TraderView.Infrastructure.Repositories;
+using TraderView.Services.MarketData;
 
 public partial class Program
 {
@@ -185,6 +186,15 @@ public partial class Program
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
             return new FMPCompanyScreeningService(httpClient, canSlimCandidateService, apiKey, baseUrl);
         });
+        builder.Services.AddScoped<ICompanyReportService>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
+            var httpClient = httpClientFactory.CreateClient();
+            var apiKey = config["FinancialModelingPrep:ApiKey"];
+            var baseUrl = config["FinancialModelingPrep:BaseUrl"];
+            return new FinancialModellingPrepCompanyReportService(httpClient, apiKey, baseUrl);
+        });
         builder.Services.AddScoped<IMarketDataService>(provider =>
         {
             return provider.GetRequiredService<FMPService>();
@@ -227,6 +237,7 @@ public partial class Program
             cfg.AddProfile<CanSlimCandidateProfile>();
             cfg.AddProfile<StrategyProfile>();
             cfg.AddProfile<PositionCalculatorProfile>();
+            cfg.AddProfile<CompanyChecklistReportProfile>();
         });
 
         var app = builder.Build();

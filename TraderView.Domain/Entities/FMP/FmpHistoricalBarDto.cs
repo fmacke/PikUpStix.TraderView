@@ -4,6 +4,9 @@ namespace TraderView.Domain.Entities.FMP
 {
     public class FmpHistoricalBarDto
     {
+        [JsonPropertyName("symbol")]
+        public string? Symbol { get; set; }
+
         [JsonPropertyName("date")]
         public string Date { get; set; } = string.Empty;
 

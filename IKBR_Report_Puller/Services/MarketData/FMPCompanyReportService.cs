@@ -42,11 +42,11 @@ namespace TraderView.Services.MarketData
                 var aIncomeTask = GetFromJsonAsync<List<FmpAnnualIncomeStatementDto>>($"{_baseUrl}/income-statement?symbol={cleanSymbol}&period=annual&limit=5&apikey={_apiKey}");
                 var metricsTask = GetFromJsonAsync<List<FmpKeyMetricsDto>>($"{_baseUrl}/key-metrics-ttm?symbol={cleanSymbol}&limit=1&apikey={_apiKey}");
                 var ratiosTask = GetFromJsonAsync<List<FmpRatiosDto>>($"{_baseUrl}/ratios-ttm?symbol={cleanSymbol}&limit=1&apikey={_apiKey}");
-                var eodTask = GetFromJsonAsync<FmpHistoricalPriceFull>($"{_baseUrl}/historical-price-full/{cleanSymbol}?timeseries=365&apikey={_apiKey}");
-                var calendarTask = GetFromJsonAsync<List<FmpEarningsCalendarDto>>($"{_baseUrl}/historical/earning_calendar/{cleanSymbol}?limit=4&apikey={_apiKey}");
+                var eodTask = GetFromJsonAsync<List<FmpHistoricalBarDto>>($"{_baseUrl}/historical-price-eod/full?symbol={cleanSymbol}&timeseries=365&apikey={_apiKey}");
+                var calendarTask = GetFromJsonAsync<List<FmpEarningsCalendarDto>>($"{_baseUrl}/earnings?symbol={cleanSymbol}&limit=4&apikey={_apiKey}");
                 var estimatesTask = GetFromJsonAsync<List<FmpAnalystEstimatesDto>>($"{_baseUrl}/analyst-estimates?symbol={cleanSymbol}&period=quarter&limit=4&apikey={_apiKey}");
-                var surprisesTask = GetFromJsonAsync<List<FmpEarningsSurpriseDto>>($"{_baseUrl}/earnings-surprises/{cleanSymbol}?limit=4&apikey={_apiKey}");
-                var fundHoldersTask = GetFromJsonAsync<List<FmpInstitutionalHolderDto>>($"{_baseUrl}/institutional-holder/{cleanSymbol}?apikey={_apiKey}");
+                var surprisesTask = GetFromJsonAsync<List<FmpEarningsSurpriseDto>>($"{_baseUrl}/earnings-surprises?symbol={cleanSymbol}&limit=4&apikey={_apiKey}");
+                var fundHoldersTask = GetFromJsonAsync<List<FmpInstitutionalHolderDto>>($"{_baseUrl}/institutional-holder?symbol={cleanSymbol}&apikey={_apiKey}");
 
                 await Task.WhenAll(
                     profileTask, qIncomeTask, aIncomeTask, metricsTask, ratiosTask,
@@ -57,7 +57,7 @@ namespace TraderView.Services.MarketData
                 var aIncome = aIncomeTask.Result?.OrderByDescending(x => x.CalendarYear).ToList() ?? new List<FmpAnnualIncomeStatementDto>();
                 var metrics = metricsTask.Result?.FirstOrDefault();
                 var ratios = ratiosTask.Result?.FirstOrDefault();
-                var eodData = eodTask.Result?.Historical ?? new List<FmpHistoricalBarDto>();
+                var eodData = eodTask.Result ?? new List<FmpHistoricalBarDto>();
                 var earningsCalendar = calendarTask.Result;
                 var estimates = estimatesTask.Result;
                 var surprises = surprisesTask.Result;

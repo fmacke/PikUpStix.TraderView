@@ -1,3 +1,4 @@
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using traderview.Server.DTOs;
 using TraderView.Application.Interfaces.Services;
@@ -12,13 +13,17 @@ namespace traderview.Server.Controllers
         private readonly IOpenPositionReportService _openPositionReportService;
         private readonly IPositionService _positionService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
+        private readonly ICompanyReportService _companyReportService;
+        private readonly IMapper _mapper;
 
-        public ReportsController(ILogger<ReportsController> logger, IOpenPositionReportService openPositionsReportService, IPositionService positionService, ITradeHistoryReportService tradeHistoryReportService)
+        public ReportsController(ILogger<ReportsController> logger, IOpenPositionReportService openPositionsReportService, IPositionService positionService, ITradeHistoryReportService tradeHistoryReportService, ICompanyReportService companyReportService, IMapper mapper)
         {
             _logger = logger;
             _openPositionReportService = openPositionsReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
             _positionService = positionService;
+            _companyReportService = companyReportService;
+            _mapper = mapper;
         }
 
         [HttpGet("position-outcomes")]
@@ -98,6 +103,33 @@ namespace traderview.Server.Controllers
             {
                 _logger.LogError(ex, "Error fetching position outcomes report");
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error generating report", detail = ex.Message });
+            }
+        }
+
+        [HttpGet("company-checklist/{symbol}")]
+        [ProducesResponseType(typeof(CompanyChecklistReportDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<CompanyChecklistReportDto>> GetCompanyChecklistReport(string symbol)
+        {
+            try
+            {
+                _logger.LogInformation("GetCompanyChecklistReport called for symbol={Symbol}", symbol);
+                var report = await _companyReportService.GenerateChecklistReportAsync(symbol);
+
+                if (report == null)
+                {
+                    return NotFound(new { message = $"No checklist report found for symbol {symbol}" });
+                }
+
+                var dto = _mapper.Map<CompanyChecklistReportDto>(report);
+                _logger.LogInformation("Successfully generated company checklist report for {Symbol}", symbol);
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating company checklist report for symbol={Symbol}", symbol);
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error generating company checklist report", detail = ex.Message });
             }
         }
     }
