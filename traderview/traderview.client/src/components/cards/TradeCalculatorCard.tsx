@@ -122,6 +122,10 @@ export const TradeCalculatorCard: React.FC = () => {
         }
     };
 
+    // Track which field was directly edited by user to prevent infinite loops
+    // in bidirectional sync effects
+    const lastUserEditedFieldRef = useRef<string | null>(null);
+
     // Debounced calculation effect. Skip while component is initializing to
     // avoid firing calculations from initial state setup.
     const calcTimeoutRef = useRef<number | null>(null);
@@ -154,6 +158,99 @@ export const TradeCalculatorCard: React.FC = () => {
             }
         };
     }, [request]);
+
+    // Update maxExposure when stopLossAtInputOverride changes (only if directly edited by user)
+    useEffect(() => {
+        if (isInitializing.current) return;
+
+        // Only run if the user directly edited stopLossAtInputOverride (not if it was auto-updated)
+        if (lastUserEditedFieldRef.current === 'stopLossAtInputOverride') {
+            // Only update if stopLossAtInputOverride has a non-zero value
+            if (request.stopLossAtInputOverride && request.stopLossAtInputOverride !== 0 && request.buyPrice > 0) {
+                // Reverse calculation: MaxExposure% = (BuyPrice - StopLossAt) / BuyPrice * 100
+                const maxExposurePercent = ((request.buyPrice - request.stopLossAtInputOverride) / request.buyPrice) * 100;
+
+                // Only update if the calculated value is different from current maxExposure
+                if (Math.abs(maxExposurePercent - request.maxExposure) > 0.01) {
+                    setRequest(prev => ({
+                        ...prev,
+                        maxExposure: parseFloat(maxExposurePercent.toFixed(2))
+                    }));
+                    // Clear the flag so we don't keep triggering
+                    lastUserEditedFieldRef.current = null;
+                }
+            }
+        }
+    }, [request.stopLossAtInputOverride, request.buyPrice]);
+
+    // Update gainLossRatio when takeProfitAtInputOverride changes (only if directly edited by user)
+    useEffect(() => {
+        if (isInitializing.current) return;
+
+        // Only run if the user directly edited takeProfitAtInputOverride (not if it was auto-updated)
+        if (lastUserEditedFieldRef.current === 'takeProfitAtInputOverride') {
+            // Only update if takeProfitAtInputOverride has a non-zero value
+            if (request.takeProfitAtInputOverride && request.takeProfitAtInputOverride !== 0 && request.buyPrice > 0 && request.maxExposure > 0) {
+                // Reverse calculation: GainLossRatio = (PriceTarget - BuyPrice) / BuyPrice / MaxExposure * 100
+                const maxExposureDecimal = request.maxExposure / 100; // Convert percentage to decimal
+                const priceGainPercent = (request.takeProfitAtInputOverride - request.buyPrice) / request.buyPrice;
+                const gainLossRatioDecimal = priceGainPercent / maxExposureDecimal;
+                const gainLossRatioPercent = gainLossRatioDecimal * 100;
+
+                // Only update if the calculated value is different from current gainLossRatio
+                if (Math.abs(gainLossRatioPercent - request.gainLossRatio) > 0.5) {
+                    setRequest(prev => ({
+                        ...prev,
+                        gainLossRatio: parseFloat(gainLossRatioPercent.toFixed(1))
+                    }));
+                    // Clear the flag so we don't keep triggering
+                    lastUserEditedFieldRef.current = null;
+                }
+            }
+        }
+    }, [request.takeProfitAtInputOverride, request.buyPrice, request.maxExposure]);
+
+    // Update stopLossAtInputOverride when maxExposure changes
+    useEffect(() => {
+        if (isInitializing.current) return;
+
+        if (request.buyPrice > 0) {
+            // Forward calculation: StopLossAt = BuyPrice - (BuyPrice * MaxExposure%)
+            const maxExposureDecimal = request.maxExposure / 100;
+            const newStopLossAt = request.buyPrice - (request.buyPrice * maxExposureDecimal);
+
+            // Only update if the calculated value is different from current stopLossAtInputOverride
+            if (Math.abs(newStopLossAt - request.stopLossAtInputOverride) > 0.01) {
+                setRequest(prev => ({
+                    ...prev,
+                    stopLossAtInputOverride: parseFloat(newStopLossAt.toFixed(2))
+                }));
+            }
+        }
+    }, [request.maxExposure, request.buyPrice]);
+
+    // Update takeProfitAtInputOverride when gainLossRatio or maxExposure changes
+    useEffect(() => {
+        if (isInitializing.current) return;
+
+        if (request.buyPrice > 0 && request.maxExposure > 0) {
+            // Forward calculation: TakeProfitAt% = (GainLossRatio * MaxExposure%) * 100
+            const maxExposureDecimal = request.maxExposure / 100;
+            const gainLossRatioDecimal = request.gainLossRatio / 100;
+            const takeProfitAtPercent = gainLossRatioDecimal * maxExposureDecimal * 100;
+
+            // Calculate the price target: PriceTarget = BuyPrice + (BuyPrice * TakeProfitAt% / 100)
+            const newPriceTarget = request.buyPrice + (request.buyPrice * (takeProfitAtPercent / 100));
+
+            // Only update if the calculated value is different from current takeProfitAtInputOverride
+            if (Math.abs(newPriceTarget - request.takeProfitAtInputOverride) > 0.01) {
+                setRequest(prev => ({
+                    ...prev,
+                    takeProfitAtInputOverride: parseFloat(newPriceTarget.toFixed(2))
+                }));
+            }
+        }
+    }, [request.gainLossRatio, request.maxExposure, request.buyPrice]);
 
     // Update exchange rate when currency pair changes
     // Track initialization to avoid firing calculateTrade while we're setting initial values
@@ -216,6 +313,9 @@ export const TradeCalculatorCard: React.FC = () => {
         // Support checkboxes (use checked) and numeric/text inputs (use value)
         const target = e.target as HTMLInputElement;
         const { name, value, type, checked } = target;
+
+        // Track which field was directly edited by the user
+        lastUserEditedFieldRef.current = name;
 
         setRequest(prev => {
             const newValue: string | number | boolean = type === 'checkbox'
@@ -367,7 +467,7 @@ export const TradeCalculatorCard: React.FC = () => {
                     />
                 </div>
                 <div className="trade-calculator-input-group">
-                    <label className="trade-calculator-label">Max Exposure On Position</label>
+                    <label className="trade-calculator-label">Max Exposure On Position (%)</label>
                     <input
                         type="number"
                         step="0.5"
@@ -375,7 +475,7 @@ export const TradeCalculatorCard: React.FC = () => {
                         value={request.maxExposure}
                         onChange={handleChange}
                         className="trade-calculator-input"
-                    /> || 
+                    />% &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| |
                     <label className="trade-calculator-label">OR Stop Loss At</label>
                     <input
                         type="number"
@@ -395,7 +495,7 @@ export const TradeCalculatorCard: React.FC = () => {
                         value={request.gainLossRatio}
                         onChange={handleChange}
                         className="trade-calculator-input"
-                    /> ||
+                    />% &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| |
                     <label className="trade-calculator-label">OR Take Profit At</label>
                     <input
                         type="number"
