@@ -1,15 +1,19 @@
 import { useState } from 'react';
-import type { CompanyChecklistReportDto, RatingIndicator } from '../../types/companyReport';
+import type { CompanyChecklistReportDto } from '../../types/companyReport';
 import { companyReportService } from '../../services';
 import { useTheme } from '../../hooks/useTheme';
 import './cards-common.css';
 import './CompanyReportCard.css';
 
-interface MetricDisplay {
-    label: string;
-    value: string | number;
-    rating?: 'green' | 'red' | 'yellow' | 'neutral';
+// 1. Moved RatingBadge outside of CompanyReportCard component scope
+interface RatingBadgeProps {
+    rating: string | 'green' | 'red' | 'yellow' | 'neutral' | undefined | null;
 }
+
+const RatingBadge = ({ rating }: RatingBadgeProps) => {
+    if (!rating || rating === 'neutral') return null;
+    return <span className={`company-report-rating-indicator ${rating}`}></span>;
+};
 
 function CompanyReportCard() {
     const [symbol, setSymbol] = useState<string>('');
@@ -47,7 +51,7 @@ function CompanyReportCard() {
         }
     };
 
-    const getRating = (value: string | number | undefined, type: string): 'green' | 'red' | 'yellow' | 'neutral' => {
+    const getRating = (value: string | number | undefined | null, type: string): 'green' | 'red' | 'yellow' | 'neutral' => {
         if (value === undefined || value === null) return 'neutral';
 
         // Numeric ratings (1-99 scale, higher is better)
@@ -113,11 +117,6 @@ function CompanyReportCard() {
         } catch {
             return dateString;
         }
-    };
-
-    const RatingBadge = ({ rating }: { rating: string | 'green' | 'red' | 'yellow' | 'neutral' | undefined }) => {
-        if (!rating || rating === 'neutral') return null;
-        return <span className={`company-report-rating-indicator ${rating}`}></span>;
     };
 
     return (
