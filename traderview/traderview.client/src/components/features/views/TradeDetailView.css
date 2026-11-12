@@ -4,6 +4,8 @@
     padding: 2rem;
     background-color: var(--bg);
     color: var(--text);
+    display: flex;
+    flex-direction: column;
 }
 
 .no-selection {
@@ -23,11 +25,45 @@
     margin-bottom: 2rem;
     padding-bottom: 1rem;
     border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+}
+
+/* Two-column layout container */
+.trade-content-container {
+    display: flex;
+    gap: 2rem;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Left pane - Company Report */
+.left-pane {
+    flex: 0 0 20%;
+    overflow-y: auto;
+    background-color: var(--code-bg);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border);
+    padding: 1rem;
+    min-width: 300px;
+}
+
+/* Right pane - Chart, Summary, Notes, Executions */
+.right-pane {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    min-width: 0;
 }
 
 .chart-container {
-    margin-bottom: 3rem;
+    margin-bottom: 0;
     clear: both;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .trade-executions-section {
@@ -74,7 +110,7 @@
 
 .detail-sections {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     gap: 2rem;
     position: relative;
     z-index: 2;
@@ -225,7 +261,22 @@
     color: var(--text);
 }
 
-/* Responsive: Stack detail sections on smaller screens */
+/* Responsive: Stack layout on smaller screens */
+@media (max-width: 1200px) {
+    .trade-content-container {
+        flex-direction: column;
+    }
+
+    .left-pane {
+        flex: none;
+        max-height: 400px;
+    }
+
+    .right-pane {
+        flex: 1;
+    }
+}
+
 @media (max-width: 1024px) {
     .detail-sections {
         flex-direction: column;

@@ -9,6 +9,7 @@ import NotesList from '../../common/NotesList';
 import TradeExecutionsList from '../../common/TradeExecutionsList';
 import TradeSummaryCard from '../../cards/TradeSummaryCard';
 import TradeListerCard from '../../cards/TradeListerCard';
+import { CompanyReportOutput } from '../../cards/CompanyReportOutput';
 
 function TradeDetailView() {
     const [trades, setTrades] = useState<Position[]>([]);
@@ -209,22 +210,32 @@ function TradeDetailView() {
                         </button>
                     </div>
 
-                    <div className="chart-container">
-                        <TradingViewChart trade={fullTradeDetails || selectedTrade} />
-                    </div>
-
-                    <div className="detail-sections">
-                        <div className="detail-section compact">
-                            <TradeSummaryCard trade={fullTradeDetails || selectedTrade} loading={tradeDetailsLoading} />
+                    <div className="trade-content-container">
+                        {/* Left Pane - Company Report */}
+                        <div className="left-pane">
+                            <CompanyReportOutput instrumentCode={selectedTrade.symbol} />
                         </div>
-                        <div id="notesHolder" className="detail-section compact">
-                            <h3>Notes</h3>
-                            <NotesList notes={notes} loading={notesLoading} variant="detailed" onEditNote={handleEditNoteClick} />
-                        </div>
-                    </div>
 
-                    <div className="trade-executions-section">
-                        <TradeExecutionsList tradeExecutions={tradeExecutions} loading={tradeExecutionsLoading} />
+                        {/* Right Pane - Chart, Summary, Notes, Executions */}
+                        <div className="right-pane">
+                            <div className="chart-container">
+                                <TradingViewChart trade={fullTradeDetails || selectedTrade} />
+                            </div>
+
+                            <div className="detail-sections">
+                                <div className="detail-section compact">
+                                    <TradeSummaryCard trade={fullTradeDetails || selectedTrade} loading={tradeDetailsLoading} />
+                                </div>
+                                <div id="notesHolder" className="detail-section compact">
+                                    <h3>Notes</h3>
+                                    <NotesList notes={notes} loading={notesLoading} variant="detailed" onEditNote={handleEditNoteClick} />
+                                </div>
+                            </div>
+
+                            <div className="trade-executions-section">
+                                <TradeExecutionsList tradeExecutions={tradeExecutions} loading={tradeExecutionsLoading} />
+                            </div>
+                        </div>
                     </div>
 
                     {/* Add Note Modal */}

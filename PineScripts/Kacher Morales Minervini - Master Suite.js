@@ -212,7 +212,7 @@ plot(show_10 and show_smas ? sma10 : na, "SMA 10", color = color.new(#3de224, 0)
 plot(show_21 and show_smas ? sma21 : na, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
 plot(show_50 and show_smas ? sma50 : na, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
 plot(show_150 and show_smas ? sma150 : na, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
-plot(show_200 and show_smas ? sma200 : na, "SMA 200", color = color.new(#3f0202, 0), linewidth = 2)
+plot(show_200 and show_smas ? sma200 : na, "SMA 200", color = color.new(#3f0202, 0), linewidth = 4)
 
 plotshape(show_vcp_render and show_dots and not na(ph), "Swing High", style = shape.triangledown, location = location.abovebar, color = color.red, size = size.tiny, offset = -sw_right)
 plotshape(show_vcp_render and show_dots and not na(pl), "Swing Low", style = shape.triangleup, location = location.belowbar, color = color.green, size = size.tiny, offset = -sw_right)
