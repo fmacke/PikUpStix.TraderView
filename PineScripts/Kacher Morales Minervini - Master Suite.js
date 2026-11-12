@@ -1,6 +1,6 @@
 //@version=6
-indicator("Minervini & Kacher-Morales Master Suite", overlay = true, max_lines_count = 100, max_labels_count = 100, max_boxes_count = 100)
-
+indicator("SMA / VCP", overlay = true, max_lines_count = 100, max_labels_count = 100, max_boxes_count = 100)
+// DESCRIPTION:  "Minervini & Kacher-Morales Master Suite"
 // -------------------------------------------------------------------------
 // 0. TIME-FRAME & COMMON INPUTS
 // -------------------------------------------------------------------------
@@ -17,11 +17,11 @@ bool is_valid_tf       = allow_intraday or timeframe.isdaily or timeframe.isweek
 
 grp_trend = "1. Trend & Stage 2 Filter"
 bool use_tt            = input.bool(true, "Enforce Stage 2 Structural Uptrend", group = grp_trend)
-int len_10             = input.int(10, "SMA 10", group = grp_trend)
-int len_21             = input.int(21, "SMA 21", group = grp_trend)
-int len_50             = input.int(50, "SMA 50", group = grp_trend)
-int len_150            = input.int(150, "SMA 150", group = grp_trend)
-int len_200            = input.int(200, "SMA 200", group = grp_trend)
+int len_10             = 10// input.int(10, "SMA 10", group = grp_trend)
+int len_21             = 21//input.int(21, "SMA 21", group = grp_trend)
+int len_50             = 50//input.int(50, "SMA 50", group = grp_trend)
+int len_150            = 150//input.int(150, "SMA 150", group = grp_trend)
+int len_200            = 200//input.int(200, "SMA 200", group = grp_trend)
 
 grp_vcp = "2. Volatility Contraction Pattern (VCP)"
 bool show_vcp_render   = input.bool(true, "Enable VCP Rendering & Signals", group = grp_vcp)
