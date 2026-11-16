@@ -90,8 +90,8 @@ const CompoundedPositionsCalculator: React.FC<Props> = ({ request, trigger }) =>
 
     return (
         <div className="compounded-positions-container">
-            <ColumnBox title="TRADE 1 - 1/4 Position" pos={compound.quarterPosition} />
-            <ColumnBox title="TRADE 2 - 1/2 Position" pos={compound.halfPosition} />
+            <ColumnBox title="TRADE 1 - 1/2 Position" pos={compound.quarterPosition} />
+            <ColumnBox title="TRADE 2 - 3/4 Position" pos={compound.halfPosition} />
             <ColumnBox title="TRADE 3 - FULL Position" pos={compound.fullPosition} />
         </div>
     );
