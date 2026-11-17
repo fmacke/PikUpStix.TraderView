@@ -1,6 +1,6 @@
 //@version=6
-indicator("SMA / VCP", overlay = true, max_lines_count = 100, max_labels_count = 100, max_boxes_count = 100)
-// DESCRIPTION:  "Minervini & Kacher-Morales Master Suite"
+indicator("SMA / VCP + Qullamaggie Breakout", overlay = true, max_lines_count = 100, max_labels_count = 100, max_boxes_count = 100)
+// DESCRIPTION:  "Minervini & Kacher-Morales Master Suite + Qullamaggie Breakout"
 // -------------------------------------------------------------------------
 // 0. TIME-FRAME & COMMON INPUTS
 // -------------------------------------------------------------------------
@@ -17,11 +17,11 @@ bool is_valid_tf       = allow_intraday or timeframe.isdaily or timeframe.isweek
 
 grp_trend = "1. Trend & Stage 2 Filter"
 bool use_tt            = input.bool(true, "Enforce Stage 2 Structural Uptrend", group = grp_trend)
-int len_10             = 10// input.int(10, "SMA 10", group = grp_trend)
-int len_21             = 21//input.int(21, "SMA 21", group = grp_trend)
-int len_50             = 50//input.int(50, "SMA 50", group = grp_trend)
-int len_150            = 150//input.int(150, "SMA 150", group = grp_trend)
-int len_200            = 200//input.int(200, "SMA 200", group = grp_trend)
+int len_10             = 10
+int len_21             = 21
+int len_50             = 50
+int len_150            = 150
+int len_200            = 200
 
 grp_vcp = "2. Volatility Contraction Pattern (VCP)"
 bool show_vcp_render   = input.bool(true, "Enable VCP Rendering & Signals", group = grp_vcp)
@@ -45,14 +45,21 @@ bool show_bgu_render   = input.bool(true, "Enable BGU Rendering & Signals", grou
 float bgu_min_gap      = input.float(3.0, "Min Gap-Up % from Prior High", minval = 1.0, maxval = 10.0, step = 0.5, group = grp_bgu)
 float bgu_vol_mult     = input.float(1.5, "Min Volume Multiplier over 50 SMA Vol", minval = 1.0, maxval = 4.0, step = 0.1, group = grp_bgu)
 
-grp_vis = "6. Moving Average Display Options & Timeframe"
+grp_q = "6. Qullamaggie Breakout Parameters"
+bool show_q_render     = input.bool(true, "Enable Qullamaggie Breakout Rendering & Signals", group = grp_q)
+int q_surge_len        = input.int(63, "Prior Surge Lookback (Bars)", group = grp_q)
+float q_min_surge      = input.float(30.0, "Min Prior Surge %", group = grp_q) / 100.0
+int q_consec_bars      = input.int(10, "Consolidation Lookback / High Period", minval = 5, group = grp_q)
+float q_rvol_mult      = input.float(1.2, "Minimum RVOL Multiplier for Breakout", group = grp_q)
+
+grp_vis = "7. Moving Average Display Options & Timeframe"
 bool show_smas         = input.bool(true, "Show Moving Average Ribbons", group = grp_vis)
 bool use_chart_tf      = input.bool(false, "Use Chart Timeframe Instead of Daily", group = grp_vis, tooltip = "If false, SMAs are calculated strictly on daily bars regardless of chart timeframe.")
 bool show_10           = input.bool(true, "Show SMA10", group = grp_vis)
 bool show_21           = input.bool(true, "Show SMA21", group = grp_vis)
 bool show_50           = input.bool(true, "Show SMA50", group = grp_vis)
 bool show_150          = input.bool(true, "Show SMA150", group = grp_vis)
-bool show_200           = input.bool(true, "Show SMA200", group = grp_vis)
+bool show_200          = input.bool(true, "Show SMA200", group = grp_vis)
 
 // -------------------------------------------------------------------------
 // 1. SHARED CALCULATIONS & TIME-FRAME MULTI-RES MAs
@@ -181,14 +188,25 @@ bool is_bgu_raw     = (open >= high[1] * (1.0 + (bgu_min_gap / 100.0))) and (clo
 bool trigger_bgu    = show_bgu_render and is_bgu_raw
 
 // -------------------------------------------------------------------------
-// 6. BREAKOUT TRIGGERS & COMBINED RENDERING LOGIC
+// 6. QULLAMAGGIE BREAKOUT ENGINE
+// -------------------------------------------------------------------------
+float q_surge_pct   = (close - ta.lowest(low, q_surge_len)) / ta.lowest(low, q_surge_len)
+bool q_is_surged    = q_surge_pct >= q_min_surge
+float q_resistance  = ta.highest(high[1], q_consec_bars)
+float q_rvol        = volume / vol_ma50
+bool q_is_rvol_ok   = q_rvol >= q_rvol_mult
+bool q_breakout_raw = show_q_render and ta.crossover(close, q_resistance) and q_is_surged and q_is_rvol_ok and trend_passed
+
+// -------------------------------------------------------------------------
+// 7. BREAKOUT TRIGGERS & COMBINED RENDERING LOGIC
 // -------------------------------------------------------------------------
 bool vol_breakout   = volume > (vol_ma50 * vol_spike)
 bool trigger_c3     = is_valid_tf and show_cheat_render and is_classic_3c and ta.crossover(close, shelf_high) and vol_breakout
 bool trigger_low    = is_valid_tf and show_cheat_render and is_low_cheat and ta.crossover(close, shelf_high) and vol_breakout
 bool vcp_breakout   = show_vcp_render and not na(last_ph) and ta.crossover(close, last_ph) and (volume > vol_ma50 * 1.40) and trend_passed
+bool trigger_qb     = q_breakout_raw
 
-bool any_major_trigger = vcp_breakout or trigger_bgu or trigger_c3 or trigger_low or pp10_signal or pp50_signal
+bool any_major_trigger = vcp_breakout or trigger_bgu or trigger_c3 or trigger_low or pp10_signal or pp50_signal or trigger_qb
 
 string combined_text = ""
 if any_major_trigger
@@ -204,9 +222,11 @@ if any_major_trigger
         combined_text := combined_text + (combined_text != "" ? " / " : "") + "PP10"
     if pp50_signal
         combined_text := combined_text + (combined_text != "" ? " / " : "") + "PP50"
+    if trigger_qb
+        combined_text := combined_text + (combined_text != "" ? " / " : "") + "QB"
 
 // -------------------------------------------------------------------------
-// 7. VISUALIZATION & CONFLICT-FREE RENDERING HIERARCHY
+// 8. VISUALIZATION & CONFLICT-FREE RENDERING HIERARCHY
 // -------------------------------------------------------------------------
 plot(show_10 and show_smas ? sma10 : na, "SMA 10", color = color.new(#3de224, 0), linewidth = 1)
 plot(show_21 and show_smas ? sma21 : na, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
@@ -222,7 +242,7 @@ bgcolor(bg_color, title = "Master Setup Zone")
 
 barcolor(is_pocket_pivot ? color.lime : na, title = "Pocket Pivot Bar Color")
 
-// Render Combined Breakout & Pocket Pivot Labels dynamically via label.new
+// Render Combined Breakout & Setup Labels dynamically via label.new
 if any_major_trigger
     label.new(bar_index, low - (ta.atr(14) * 0.8), text = combined_text, color = color.green, textcolor = color.white, style = label.style_label_up, size = size.small)
 
@@ -239,11 +259,21 @@ if show_vcp_render and not na(last_ph) and vcp_setup
     line.delete(vcp_line)
     vcp_line := line.new(last_ph_bar, last_ph, bar_index + 5, last_ph, color = color.yellow, width = 2, style = line.style_dashed)
 
+var line q_line = na
+if show_q_render and q_breakout_raw
+    line.delete(q_line)
+    q_line := line.new(bar_index - q_consec_bars, q_resistance, bar_index + 5, q_resistance, color = color.teal, width = 2, style = line.style_solid)
+
 // -------------------------------------------------------------------------
-// 8. TRADINGVIEW ALERTS
+// 9. TRADINGVIEW ALERTS
 // -------------------------------------------------------------------------
+// Individual Alerts
 alertcondition(trigger_c3, title = "3-C Breakout Alert", message = "3-C Breakout triggered on {{ticker}}!")
 alertcondition(trigger_low, title = "Low Cheat Breakout Alert", message = "Low Cheat Breakout triggered on {{ticker}}!")
 alertcondition(vcp_breakout, title = "VCP Breakout Alert", message = "VCP Pivot Breakout triggered on {{ticker}}!")
 alertcondition(trigger_bgu, title = "Buyable Gap-Up Alert", message = "Buyable Gap-Up triggered on {{ticker}}!")
 alertcondition(is_pocket_pivot, title = "Pocket Pivot Alert", message = "Pocket Pivot detected on {{ticker}}!")
+alertcondition(trigger_qb, title = "Qullamaggie Breakout Alert", message = "Qullamaggie Breakout triggered on {{ticker}}!")
+
+// Universal Master Alert for ANY of the 6 conditions
+alertcondition(any_major_trigger, title = "Any Major Setup / Breakout Alert", message = "A major setup or breakout condition triggered on {{ticker}}!")
