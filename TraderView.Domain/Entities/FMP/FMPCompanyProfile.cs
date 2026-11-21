@@ -18,19 +18,19 @@ namespace TraderView.Domain.Entities.FMP
         [JsonPropertyName("beta")]
         public decimal? Beta { get; set; }
 
-        [JsonPropertyName("volAvg")]
+        [JsonPropertyName("averageVolume")]
         public long VolAvg { get; set; }
 
-        [JsonPropertyName("mktCap")]
+        [JsonPropertyName("marketCap")]
         public long MarketCap { get; set; }
 
-        [JsonPropertyName("lastDiv")]
+        [JsonPropertyName("lastDividend")]
         public decimal? LastDiv { get; set; }
 
         [JsonPropertyName("range")]
         public string Range { get; set; } = string.Empty;
 
-        [JsonPropertyName("changes")]
+        [JsonPropertyName("change")]
         public decimal? Changes { get; set; }
 
         [JsonPropertyName("companyName")]

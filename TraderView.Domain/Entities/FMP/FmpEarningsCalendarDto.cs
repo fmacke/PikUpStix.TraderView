@@ -13,7 +13,7 @@ namespace TraderView.Domain.Entities.FMP
         [JsonPropertyName("symbol")]
         public string Symbol { get; set; } = string.Empty;
 
-        [JsonPropertyName("eps")]
+        [JsonPropertyName("epsActual")]
         public decimal? Eps { get; set; }
 
         [JsonPropertyName("epsEstimated")]
@@ -22,7 +22,7 @@ namespace TraderView.Domain.Entities.FMP
         [JsonPropertyName("time")]
         public string Time { get; set; } = string.Empty; // e.g. "bmo" (Before market open) or "amc"
 
-        [JsonPropertyName("revenue")]
+        [JsonPropertyName("revenueActual")]
         public long? Revenue { get; set; }
 
         [JsonPropertyName("revenueEstimated")]
@@ -31,7 +31,7 @@ namespace TraderView.Domain.Entities.FMP
         [JsonPropertyName("fiscalDateEnding")]
         public string FiscalDateEnding { get; set; } = string.Empty;
 
-        [JsonPropertyName("updatedFromDate")]
+        [JsonPropertyName("lastUpdated")]
         public string UpdatedFromDate { get; set; } = string.Empty;
     }
 }
