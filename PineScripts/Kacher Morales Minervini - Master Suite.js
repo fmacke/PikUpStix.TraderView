@@ -72,20 +72,26 @@ float sma50  = request.security(syminfo.tickerid, target_tf, ta.sma(close, len_5
 float sma150 = request.security(syminfo.tickerid, target_tf, ta.sma(close, len_150), barmerge.gaps_off, barmerge.lookahead_off)
 float sma200 = request.security(syminfo.tickerid, target_tf, ta.sma(close, len_200), barmerge.gaps_off, barmerge.lookahead_off)
 
+float vol_ma20 = ta.sma(volume, 20)
 float vol_ma50 = ta.sma(volume, 50)
-float high52   = ta.highest(high, 252)
-float low52    = ta.lowest(low, 252)
-bool sma200_rising = (sma200 >= sma200[20])
+
+// Safe historical lookbacks bound and strictly clamped to a minimum of 1
+int safe_lookback_52w = math.max(1, math.min(bar_index, 252))
+float high52   = ta.highest(high, safe_lookback_52w)
+float low52    = ta.lowest(low, safe_lookback_52w)
+bool sma200_rising = (sma200 >= nz(sma200[20], sma200))
 
 // Stage 2 Trend Template Validation
-bool tt_condition = (close > sma150 and close > sma200) and (sma150 > sma200) and sma200_rising and (sma50 > sma150 and sma50 > sma200) and (close > sma50) and (close >= low52 * 1.25) and (close >= high52 * 0.75)
+bool tt_condition = bar_index > 200 and (close > sma150 and close > sma200) and (sma150 > sma200) and sma200_rising and (sma50 > sma150 and sma50 > sma200) and (close > sma50) and (close >= low52 * 1.25) and (close >= high52 * 0.75)
 bool trend_passed = use_tt ? tt_condition : true
+
+bool sufficient_history = bar_index >= 120
 
 // -------------------------------------------------------------------------
 // 2. VCP & WAVE GEOMETRY ENGINE
 // -------------------------------------------------------------------------
-float ph = ta.pivothigh(high, sw_left, sw_right)
-float pl = ta.pivotlow(low, sw_left, sw_right)
+float ph = sufficient_history ? ta.pivothigh(high, sw_left, sw_right) : na
+float pl = sufficient_history ? ta.pivotlow(low, sw_left, sw_right) : na
 
 type PivotPoint
     int   bar
@@ -108,20 +114,21 @@ f_prune_objects() =>
     if array.size(wave_labels) > 14
         label.delete(array.shift(wave_labels))
 
-if show_vcp_render and not na(ph)
+if show_vcp_render and not na(ph) and sufficient_history
     int ph_bar = bar_index - sw_right
-    last_ph := ph
-    last_ph_bar := ph_bar
-    array.push(pivot_history, PivotPoint.new(ph_bar, ph, true))
-    if array.size(pivot_history) >= 2
-        PivotPoint prev = array.get(pivot_history, array.size(pivot_history) - 2)
-        if not prev.is_high and show_waves
-            array.push(wave_lines, line.new(prev.bar, prev.price, ph_bar, ph, color = color.new(color.gray, 50), width = 1, style = line.style_dotted))
-    f_prune_objects()
+    if ph_bar >= 0
+        last_ph := ph
+        last_ph_bar := ph_bar
+        array.push(pivot_history, PivotPoint.new(ph_bar, ph, true))
+        if array.size(pivot_history) >= 2
+            PivotPoint prev = array.get(pivot_history, array.size(pivot_history) - 2)
+            if not prev.is_high and show_waves and prev.bar >= 0
+                array.push(wave_lines, line.new(prev.bar, prev.price, ph_bar, ph, color = color.new(color.gray, 50), width = 1, style = line.style_dotted))
+        f_prune_objects()
 
-if show_vcp_render and not na(pl)
+if show_vcp_render and not na(pl) and sufficient_history
     int pl_bar = bar_index - sw_right
-    if not na(last_ph)
+    if pl_bar >= 0 and not na(last_ph) and last_ph_bar >= 0
         float depth = ((last_ph - pl) / last_ph) * 100.0
         c3_depth := c2_depth
         c2_depth := c1_depth
@@ -143,18 +150,20 @@ bool vcp_setup = show_vcp_render and trend_passed and is_contracting and (atr10 
 // -------------------------------------------------------------------------
 // 3. 3-C & LOW CHEAT ENGINE
 // -------------------------------------------------------------------------
-float base_high   = ta.highest(high, cup_lookback)
-float base_low    = ta.lowest(low, cup_lookback)
-float base_depth  = ((base_high - base_low) / base_high) * 100.0
+int safe_cup_lookback = math.max(1, math.min(bar_index, cup_lookback))
+float base_high   = ta.highest(high, safe_cup_lookback)
+float base_low    = ta.lowest(low, safe_cup_lookback)
+float base_depth  = base_high > 0 ? ((base_high - base_low) / base_high) * 100.0 : 0.0
 
-float shelf_high  = ta.highest(high[1], shelf_len)
-float shelf_low   = ta.lowest(low[1], shelf_len)
-float shelf_spread= ((shelf_high - shelf_low) / shelf_high) * 100.0
+int safe_shelf_len = math.max(1, math.min(bar_index, shelf_len))
+float shelf_high  = ta.highest(high[1], safe_shelf_len)
+float shelf_low   = ta.lowest(low[1], safe_shelf_len)
+float shelf_spread= shelf_high > 0 ? ((shelf_high - shelf_low) / shelf_high) * 100.0 : 0.0
 
 float recovery_ratio = (base_high > base_low) ? ((close[1] - base_low) / (base_high - base_low)) : 0.0
-bool vdu_in_shelf    = (ta.lowest(volume[1], shelf_len) < (vol_ma50 * 0.65))
+bool vdu_in_shelf    = (ta.lowest(volume[1], safe_shelf_len) < (vol_ma50 * 0.65))
 
-bool base_valid      = is_valid_tf and trend_passed and (base_depth >= min_depth and base_depth <= 45.0) and (shelf_spread <= max_spread) and vdu_in_shelf
+bool base_valid      = sufficient_history and is_valid_tf and trend_passed and (base_depth >= min_depth and base_depth <= 45.0) and (shelf_spread <= max_spread) and vdu_in_shelf
 
 bool is_low_cheat    = base_valid and (recovery_ratio >= 0.12 and recovery_ratio < 0.35)
 bool is_classic_3c   = base_valid and (recovery_ratio >= 0.35 and recovery_ratio <= 0.85)
@@ -163,15 +172,16 @@ bool is_classic_3c   = base_valid and (recovery_ratio >= 0.35 and recovery_ratio
 // 4. POCKET PIVOT ENGINE
 // -------------------------------------------------------------------------
 float down_volume   = (close < close[1]) ? volume : 0.0
-float max_down_vol  = ta.highest(down_volume, pp_lookback)[1]
+int safe_pp_lookback = math.max(1, math.min(bar_index, pp_lookback))
+float max_down_vol  = ta.highest(down_volume, safe_pp_lookback)[1]
 float day_range     = high - low
 float close_pos     = (day_range > 0.0) ? ((close - low) / day_range) * 100.0 : 50.0
 
-float dist_10       = math.abs((close - sma10) / sma10) * 100.0
-float dist_50       = math.abs((close - sma50) / sma50) * 100.0
+float dist_10       = not na(sma10) and sma10 > 0 ? math.abs((close - sma10) / sma10) * 100.0 : 999.0
+float dist_50       = not na(sma50) and sma50 > 0 ? math.abs((close - sma50) / sma50) * 100.0 : 999.0
 
-bool touched_10     = (low <= sma10 and high >= sma10) or (low <= sma10 * 1.015)
-bool touched_50     = (low <= sma50 and high >= sma50) or (low <= sma50 * 1.015)
+bool touched_10     = not na(sma10) and ((low <= sma10 and high >= sma10) or (low <= sma10 * 1.015))
+bool touched_50     = not na(sma50) and ((low <= sma50 and high >= sma50) or (low <= sma50 * 1.015))
 
 bool is_up_day      = close > close[1]
 bool pp_vol_valid   = volume > max_down_vol
@@ -184,27 +194,32 @@ bool is_pocket_pivot= pp10_signal or pp50_signal
 // -------------------------------------------------------------------------
 // 5. BUYABLE GAP-UP (BGU) ENGINE
 // -------------------------------------------------------------------------
-bool is_bgu_raw     = (open >= high[1] * (1.0 + (bgu_min_gap / 100.0))) and (close > open) and (volume > vol_ma50 * bgu_vol_mult) and trend_passed
+bool is_bgu_raw     = sufficient_history and (open >= high[1] * (1.0 + (bgu_min_gap / 100.0))) and (close > open) and (volume > vol_ma50 * bgu_vol_mult) and trend_passed
 bool trigger_bgu    = show_bgu_render and is_bgu_raw
 
 // -------------------------------------------------------------------------
 // 6. QULLAMAGGIE BREAKOUT ENGINE
 // -------------------------------------------------------------------------
-float q_surge_pct   = (close - ta.lowest(low, q_surge_len)) / ta.lowest(low, q_surge_len)
+int safe_q_surge = math.max(1, math.min(bar_index, q_surge_len))
+float lowest_q_low = ta.lowest(low, safe_q_surge)
+float q_surge_pct   = lowest_q_low > 0 ? (close - lowest_q_low) / lowest_q_low : 0.0
 bool q_is_surged    = q_surge_pct >= q_min_surge
-float q_resistance  = ta.highest(high[1], q_consec_bars)
-float q_rvol        = volume / vol_ma50
+
+int safe_q_consec = math.max(1, math.min(bar_index, q_consec_bars))
+float q_resistance  = ta.highest(high[1], safe_q_consec)
+float q_rvol        = vol_ma50 > 0 ? volume / vol_ma50 : 0.0
 bool q_is_rvol_ok   = q_rvol >= q_rvol_mult
-bool q_breakout_raw = show_q_render and ta.crossover(close, q_resistance) and q_is_surged and q_is_rvol_ok and trend_passed
+bool q_breakout_raw = sufficient_history and show_q_render and ta.crossover(close, q_resistance) and q_is_surged and q_is_rvol_ok and trend_passed
 
 // -------------------------------------------------------------------------
 // 7. BREAKOUT TRIGGERS & COMBINED RENDERING LOGIC
 // -------------------------------------------------------------------------
-bool vol_breakout   = volume > (vol_ma50 * vol_spike)
-bool trigger_c3     = is_valid_tf and show_cheat_render and is_classic_3c and ta.crossover(close, shelf_high) and vol_breakout
-bool trigger_low    = is_valid_tf and show_cheat_render and is_low_cheat and ta.crossover(close, shelf_high) and vol_breakout
-bool vcp_breakout   = show_vcp_render and not na(last_ph) and ta.crossover(close, last_ph) and (volume > vol_ma50 * 1.40) and trend_passed
+bool vol_breakout   = vol_ma50 > 0 and volume > (vol_ma50 * vol_spike)
+bool trigger_c3     = sufficient_history and is_valid_tf and show_cheat_render and is_classic_3c and ta.crossover(close, shelf_high) and vol_breakout
+bool trigger_low    = sufficient_history and is_valid_tf and show_cheat_render and is_low_cheat and ta.crossover(close, shelf_high) and vol_breakout
+bool vcp_breakout   = sufficient_history and show_vcp_render and not na(last_ph) and ta.crossover(close, last_ph) and (vol_ma50 > 0 and volume > vol_ma50 * 1.40) and trend_passed
 bool trigger_qb     = q_breakout_raw
+bool vol_above_ma20 = not na(vol_ma20) and volume > vol_ma20
 
 bool any_major_trigger = vcp_breakout or trigger_bgu or trigger_c3 or trigger_low or pp10_signal or pp50_signal or trigger_qb
 
@@ -225,55 +240,61 @@ if any_major_trigger
     if trigger_qb
         combined_text := combined_text + (combined_text != "" ? " / " : "") + "QB"
 
+string alert_details_text = combined_text
+if vol_above_ma20
+    alert_details_text := alert_details_text + (alert_details_text != "" ? " / " : "") + "VOL20"
+
 // -------------------------------------------------------------------------
 // 8. VISUALIZATION & CONFLICT-FREE RENDERING HIERARCHY
 // -------------------------------------------------------------------------
-plot(show_10 and show_smas ? sma10 : na, "SMA 10", color = color.new(#3de224, 0), linewidth = 1)
-plot(show_21 and show_smas ? sma21 : na, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
-plot(show_50 and show_smas ? sma50 : na, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
-plot(show_150 and show_smas ? sma150 : na, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
-plot(show_200 and show_smas ? sma200 : na, "SMA 200", color = color.new(#3f0202, 0), linewidth = 4)
+plot(show_10 and show_smas and not na(sma10) and sma10 > 0 ? sma10 : na, "SMA 10", color = color.new(#3de224, 0), linewidth = 1)
+plot(show_21 and show_smas and not na(sma21) and sma21 > 0 ? sma21 : na, "SMA 21", color = color.new(#f39c21, 0), linewidth = 1)
+plot(show_50 and show_smas and not na(sma50) and sma50 > 0 ? sma50 : na, "SMA 50", color = color.new(#f31ac8, 0), linewidth = 1)
+plot(show_150 and show_smas and not na(sma150) and sma150 > 0 ? sma150 : na, "SMA 150", color = color.new(#ad0439, 0), linewidth = 1)
+plot(show_200 and show_smas and not na(sma200) and sma200 > 0 ? sma200 : na, "SMA 200", color = color.new(#3f0202, 0), linewidth = 4)
 
-plotshape(show_vcp_render and show_dots and not na(ph), "Swing High", style = shape.triangledown, location = location.abovebar, color = color.red, size = size.tiny, offset = -sw_right)
-plotshape(show_vcp_render and show_dots and not na(pl), "Swing Low", style = shape.triangleup, location = location.belowbar, color = color.green, size = size.tiny, offset = -sw_right)
+plotshape(show_vcp_render and show_dots and not na(ph) and sufficient_history, "Swing High", style = shape.triangledown, location = location.abovebar, color = color.red, size = size.tiny, offset = -sw_right)
+plotshape(show_vcp_render and show_dots and not na(pl) and sufficient_history, "Swing Low", style = shape.triangleup, location = location.belowbar, color = color.green, size = size.tiny, offset = -sw_right)
 
 color bg_color = (show_cheat_render and is_classic_3c) ? color.new(color.blue, 75) : (show_cheat_render and is_low_cheat) ? color.new(color.purple, 75) : vcp_setup ? color.new(#47ef47, 75) : is_pocket_pivot ? color.new(color.green, 75) : na
 bgcolor(bg_color, title = "Master Setup Zone")
 
 barcolor(is_pocket_pivot ? color.lime : na, title = "Pocket Pivot Bar Color")
 
-// Render Combined Breakout & Setup Labels dynamically via label.new
-if any_major_trigger
+if any_major_trigger and sufficient_history and bar_index >= 0
     label.new(bar_index, low - (ta.atr(14) * 0.8), text = combined_text, color = color.green, textcolor = color.white, style = label.style_label_up, size = size.small)
 
-// Secondary Volume Dry Up Marker
-plotshape(show_vcp_render and is_vdu and trend_passed, title = "Volume Dry Up", style = shape.circle, location = location.belowbar, color = color.rgb(116, 154, 249), size = size.tiny)
+plotshape(show_vcp_render and is_vdu and trend_passed and sufficient_history, title = "Volume Dry Up", style = shape.circle, location = location.belowbar, color = color.rgb(116, 154, 249), size = size.tiny)
 
 var line cheat_line = na
-if show_cheat_render and (is_classic_3c or is_low_cheat)
+if show_cheat_render and (is_classic_3c or is_low_cheat) and sufficient_history
     line.delete(cheat_line)
-    cheat_line := line.new(bar_index - shelf_len, shelf_high, bar_index + 2, shelf_high, color = is_classic_3c ? color.yellow : color.fuchsia, width = 2, style = line.style_solid)
+    if bar_index >= shelf_len
+        cheat_line := line.new(bar_index - shelf_len, shelf_high, bar_index + 2, shelf_high, color = is_classic_3c ? color.yellow : color.fuchsia, width = 2, style = line.style_solid)
 
 var line vcp_line = na
-if show_vcp_render and not na(last_ph) and vcp_setup
+if show_vcp_render and not na(last_ph) and vcp_setup and sufficient_history
     line.delete(vcp_line)
-    vcp_line := line.new(last_ph_bar, last_ph, bar_index + 5, last_ph, color = color.yellow, width = 2, style = line.style_dashed)
+    if not na(last_ph_bar) and last_ph_bar >= 0
+        vcp_line := line.new(last_ph_bar, last_ph, bar_index + 5, last_ph, color = color.yellow, width = 2, style = line.style_dashed)
 
 var line q_line = na
-if show_q_render and q_breakout_raw
+if show_q_render and q_breakout_raw and sufficient_history
     line.delete(q_line)
-    q_line := line.new(bar_index - q_consec_bars, q_resistance, bar_index + 5, q_resistance, color = color.teal, width = 2, style = line.style_solid)
+    if bar_index >= q_consec_bars
+        q_line := line.new(bar_index - q_consec_bars, q_resistance, bar_index + 5, q_resistance, color = color.teal, width = 2, style = line.style_solid)
 
 // -------------------------------------------------------------------------
 // 9. TRADINGVIEW ALERTS
 // -------------------------------------------------------------------------
-// Individual Alerts
 alertcondition(trigger_c3, title = "3-C Breakout Alert", message = "3-C Breakout triggered on {{ticker}}!")
 alertcondition(trigger_low, title = "Low Cheat Breakout Alert", message = "Low Cheat Breakout triggered on {{ticker}}!")
 alertcondition(vcp_breakout, title = "VCP Breakout Alert", message = "VCP Pivot Breakout triggered on {{ticker}}!")
 alertcondition(trigger_bgu, title = "Buyable Gap-Up Alert", message = "Buyable Gap-Up triggered on {{ticker}}!")
 alertcondition(is_pocket_pivot, title = "Pocket Pivot Alert", message = "Pocket Pivot detected on {{ticker}}!")
 alertcondition(trigger_qb, title = "Qullamaggie Breakout Alert", message = "Qullamaggie Breakout triggered on {{ticker}}!")
+alertcondition(vol_above_ma20, title = "Volume Above 20 SMA Alert", message = "Trading volume is above the 20-period volume SMA on {{ticker}}!")
 
-// Universal Master Alert for ANY of the 6 conditions
-alertcondition(any_major_trigger, title = "Any Major Setup / Breakout Alert", message = "A major setup or breakout condition triggered on {{ticker}}!")
+bool master_alert_condition = any_major_trigger or vol_above_ma20
+if master_alert_condition and barstate.isconfirmed
+    alert("Major Setup/Breakout on " + syminfo.tickerid + " -> [" + alert_details_text + "]", alert.freq_once_per_bar)
