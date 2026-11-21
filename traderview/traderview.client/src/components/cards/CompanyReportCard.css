@@ -145,7 +145,7 @@
     border-bottom: 1px solid var(--border);
     gap: 1rem;
     text-align: left;
-    height: 0.6em;
+    height: 0.8em;
 }
 
 .company-report-metric-row:last-child {

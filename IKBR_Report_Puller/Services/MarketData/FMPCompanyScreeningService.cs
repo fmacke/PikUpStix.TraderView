@@ -173,7 +173,7 @@ namespace PikUpStix.TraderView.Services.MarketData
             return new CanSlimCurrentQuarterMetric
             {
                 Symbol = symbol.ToUpperInvariant(),
-                LatestQuarterDate = currentQ.Date,
+                LatestQuarterDate = currentQ.Date.ToLongDateString(),
                 LatestQuarterEps = currentQ.EpsDiluted,
                 PriorYearQuarterEps = priorYearQ.EpsDiluted,
                 EpsGrowthYoYPercent = Math.Round(epsGrowthYoY, 2),
@@ -257,9 +257,9 @@ namespace PikUpStix.TraderView.Services.MarketData
             if (metrics != null && metrics.Count > 0)
             {
                 var primaryMetric = metrics[0];
-                returnOnEquity = Math.Round(primaryMetric.Roe * 100m, 2);
-                operatingMargin = Math.Round(primaryMetric.NetProfitMargin * 100m, 2);
-                returnOnAssets = Math.Round(primaryMetric.Roa * 100m, 2);
+                returnOnEquity = Math.Round(primaryMetric.ReturnOnEquityTTM * 100m, 2);
+                operatingMargin = Math.Round(primaryMetric.EarningsYieldTTM * 100m, 2);
+                returnOnAssets = Math.Round(primaryMetric.ReturnOnAssetsTTM * 100m, 2);
             }
 
             // 6. Build Historical Annual Earnings Progression Points (for charting / audit breakdown)

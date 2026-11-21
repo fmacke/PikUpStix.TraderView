@@ -152,14 +152,14 @@ export function CompanyReportOutput({
                             </span>
                         </div>
                         <div className="company-report-metric-row">
-                            <span className="company-report-metric-label">Last 3 Qtrs Avg EPS Growth</span>
-                            <span className="company-report-metric-value">
+                            <span className="company-report-metric-label">3 Qtrs AvgEpsGrwth</span>
+                            <span className="company-report-metric-value"> 
                                 {formatValue(report.last3QtrsAvgEpsGrowth)}%
                                 <RatingBadge rating={getRating(report.last3QtrsAvgEpsGrowth, 'percentage-high')} />
                             </span>
                         </div>
                         <div className="company-report-metric-row">
-                            <span className="company-report-metric-label">Estimate Revisions Trend</span>
+                            <span className="company-report-metric-label">EstimateRevisionsTrend</span>
                             <span className="company-report-metric-value">
                                 {report.estimateRevisionsTrend}
                                 <RatingBadge rating={
@@ -169,7 +169,7 @@ export function CompanyReportOutput({
                             </span>
                         </div>
                         <div className="company-report-metric-row">
-                            <span className="company-report-metric-label">Last Quarter % Earnings Surprise</span>
+                            <span className="company-report-metric-label">Last 1/4 % Earnings Srprse</span>
                             <span className="company-report-metric-value">
                                 {formatValue(report.lastQtrEarningsSurprisePercent)}%
                                 <RatingBadge rating={getRating(report.lastQtrEarningsSurprisePercent, 'percentage-high')} />
@@ -181,21 +181,21 @@ export function CompanyReportOutput({
                     <h3 className="company-report-section-subtitle">Annual Earnings</h3>
                     <div className="company-report-metrics">
                         <div className="company-report-metric-row">
-                            <span className="company-report-metric-label">3 Yr EPS Growth Rate</span>
+                            <span className="company-report-metric-label">3 Yr EPS GrwthRte</span>
                             <span className="company-report-metric-value">
                                 {formatValue(report.eps3YrCagr)}%
                                 <RatingBadge rating={getRating(report.eps3YrCagr, 'percentage-high')} />
                             </span>
                         </div>
                         <div className="company-report-metric-row">
-                            <span className="company-report-metric-label">Consecutive Yrs of Annual EPS Growth</span>
+                            <span className="company-report-metric-label">ConsYrsAnnual EPS Grwth</span>
                             <span className="company-report-metric-value">
                                 {report.consecutiveYrsAnnualEpsGrowth}
                                 <RatingBadge rating={getRating(report.consecutiveYrsAnnualEpsGrowth, 'numeric-high')} />
                             </span>
                         </div>
                         <div className="company-report-metric-row">
-                            <span className="company-report-metric-label">EPS Est % Chg for Current Year</span>
+                            <span className="company-report-metric-label">EPS Est% Chg Current Yr</span>
                             <span className="company-report-metric-value">
                                 {formatValue(report.currentYearEpsEstChg)}%
                                 <RatingBadge rating={getRating(report.currentYearEpsEstChg, 'percentage-high')} />
@@ -244,7 +244,7 @@ export function CompanyReportOutput({
                         <div className="company-report-metric-row">
                             <span className="company-report-metric-label">Debt/Equity Ratio</span>
                             <span className="company-report-metric-value">
-                                {formatValue(report.debtToEquityRatio)}%
+                                {formatValue(report.debtToEquityRatio)}
                                 <RatingBadge rating={getRating(report.debtToEquityRatio, 'numeric-low')} />
                             </span>
                         </div>
@@ -274,7 +274,7 @@ export function CompanyReportOutput({
                         <div className="company-report-metric-row">
                             <span className="company-report-metric-label">% Off 52 Week High</span>
                             <span className="company-report-metric-value">
-                                {formatValue(report.percentOff52WeekHigh)}%
+                                {formatValue(report.percentOff52WeekHigh)}
                                 <RatingBadge rating={getRating(report.percentOff52WeekHigh, 'percentage-high')} />
                             </span>
                         </div>

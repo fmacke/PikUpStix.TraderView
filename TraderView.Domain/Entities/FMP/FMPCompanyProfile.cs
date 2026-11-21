@@ -15,14 +15,11 @@ namespace TraderView.Domain.Entities.FMP
         [JsonPropertyName("price")]
         public decimal Price { get; set; }
 
-        [JsonPropertyName("beta")]
-        public decimal? Beta { get; set; }
-
-        [JsonPropertyName("averageVolume")]
-        public long VolAvg { get; set; }
-
         [JsonPropertyName("marketCap")]
         public long MarketCap { get; set; }
+
+        [JsonPropertyName("beta")]
+        public decimal? Beta { get; set; }
 
         [JsonPropertyName("lastDividend")]
         public decimal? LastDiv { get; set; }
@@ -32,6 +29,15 @@ namespace TraderView.Domain.Entities.FMP
 
         [JsonPropertyName("change")]
         public decimal? Changes { get; set; }
+
+        [JsonPropertyName("changePercentage")]
+        public decimal? ChangePercentage { get; set; }
+
+        [JsonPropertyName("volume")]
+        public long Volume { get; set; }
+
+        [JsonPropertyName("averageVolume")]
+        public long VolAvg { get; set; }
 
         [JsonPropertyName("companyName")]
         public string CompanyName { get; set; } = string.Empty;
@@ -48,11 +54,11 @@ namespace TraderView.Domain.Entities.FMP
         [JsonPropertyName("cusip")]
         public string Cusip { get; set; } = string.Empty;
 
+        [JsonPropertyName("exchangeFullName")]
+        public string ExchangeFullName { get; set; } = string.Empty;
+
         [JsonPropertyName("exchange")]
         public string Exchange { get; set; } = string.Empty;
-
-        [JsonPropertyName("exchangeShortName")]
-        public string ExchangeShortName { get; set; } = string.Empty;
 
         [JsonPropertyName("industry")]
         public string Industry { get; set; } = string.Empty;
@@ -96,10 +102,19 @@ namespace TraderView.Domain.Entities.FMP
         [JsonPropertyName("ipoDate")]
         public string IpoDate { get; set; } = string.Empty;
 
+        [JsonPropertyName("defaultImage")]
+        public bool DefaultImage { get; set; }
+
         [JsonPropertyName("isEtf")]
         public bool IsEtf { get; set; }
 
         [JsonPropertyName("isActivelyTrading")]
         public bool IsActivelyTrading { get; set; }
+
+        [JsonPropertyName("isAdr")]
+        public bool IsAdr { get; set; }
+
+        [JsonPropertyName("isFund")]
+        public bool IsFund { get; set; }
     }
 }

@@ -14,7 +14,7 @@ namespace TraderView.Domain.Entities.FMP
         public string Symbol { get; set; } = string.Empty;
 
         [JsonPropertyName("epsActual")]
-        public decimal? Eps { get; set; }
+        public decimal? EpsActual { get; set; }
 
         [JsonPropertyName("epsEstimated")]
         public decimal? EpsEstimated { get; set; }
