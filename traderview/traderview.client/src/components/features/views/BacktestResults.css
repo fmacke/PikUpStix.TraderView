@@ -1,0 +1,356 @@
+.backtest-results {
+    width: 100%;
+}
+
+.results-header {
+    margin-bottom: 2rem;
+}
+
+.results-header h2 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+:root[data-theme='dark'] .results-header h2 {
+    color: #f3f4f6;
+}
+
+.date-range {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+:root[data-theme='dark'] .date-range {
+    color: #9ca3af;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+@media (max-width: 1024px) {
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .metrics-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.metric-card {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+:root[data-theme='dark'] .metric-card {
+    background-color: #1f2028;
+    border-color: #2e303a;
+}
+
+.metric-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    color: #6b7280;
+}
+
+:root[data-theme='dark'] .metric-label {
+    color: #9ca3af;
+}
+
+.metric-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+:root[data-theme='dark'] .metric-value {
+    color: #f3f4f6;
+}
+
+.metric-value.positive {
+    color: #059669;
+}
+
+:root[data-theme='dark'] .metric-value.positive {
+    color: #6ee7b7;
+}
+
+.metric-value.negative {
+    color: #dc2626;
+}
+
+:root[data-theme='dark'] .metric-value.negative {
+    color: #fca5a5;
+}
+
+.metric-subtext {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+:root[data-theme='dark'] .metric-subtext {
+    color: #9ca3af;
+}
+
+/* Chart Section */
+.chart-section {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+:root[data-theme='dark'] .chart-section {
+    background-color: #1f2028;
+    border-color: #2e303a;
+}
+
+.chart-section h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+:root[data-theme='dark'] .chart-section h3 {
+    color: #f3f4f6;
+}
+
+.mini-chart {
+    width: 100%;
+    height: 200px;
+    color: #3b82f6;
+}
+
+:root[data-theme='dark'] .mini-chart {
+    color: #60a5fa;
+}
+
+.mini-chart svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Trades Section */
+.trades-section {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+:root[data-theme='dark'] .trades-section {
+    background-color: #1f2028;
+    border-color: #2e303a;
+}
+
+.trades-section h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+:root[data-theme='dark'] .trades-section h3 {
+    color: #f3f4f6;
+}
+
+.trades-table-container {
+    overflow-x: auto;
+}
+
+.trades-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.trades-table thead {
+    background-color: #f3f4f6;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+:root[data-theme='dark'] .trades-table thead {
+    background-color: #111827;
+    border-bottom-color: #2e303a;
+}
+
+.trades-table th {
+    padding: 0.75rem;
+    text-align: right;
+    font-weight: 600;
+    color: #374151;
+}
+
+:root[data-theme='dark'] .trades-table th {
+    color: #d1d5db;
+}
+
+.trades-table th:first-child {
+    text-align: left;
+}
+
+.trades-table td {
+    padding: 0.75rem;
+    text-align: right;
+    border-bottom: 1px solid #e5e7eb;
+    color: #111827;
+}
+
+:root[data-theme='dark'] .trades-table td {
+    border-bottom-color: #2e303a;
+    color: #f3f4f6;
+}
+
+.trades-table td:first-child {
+    text-align: left;
+}
+
+.trades-table tr:hover {
+    background-color: #f9fafb;
+}
+
+:root[data-theme='dark'] .trades-table tr:hover {
+    background-color: #252d3a;
+}
+
+.trades-table tr.positive {
+    background-color: #f0fdf4;
+}
+
+:root[data-theme='dark'] .trades-table tr.positive {
+    background-color: #1b3a1b;
+}
+
+.trades-table tr.negative {
+    background-color: #fef2f2;
+}
+
+:root[data-theme='dark'] .trades-table tr.negative {
+    background-color: #3a1b1b;
+}
+
+.trades-table td.positive {
+    color: #059669;
+    font-weight: 600;
+}
+
+:root[data-theme='dark'] .trades-table td.positive {
+    color: #6ee7b7;
+}
+
+.trades-table td.negative {
+    color: #dc2626;
+    font-weight: 600;
+}
+
+:root[data-theme='dark'] .trades-table td.negative {
+    color: #fca5a5;
+}
+
+/* Summary Section */
+.summary-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .summary-section {
+        grid-template-columns: 1fr;
+    }
+}
+
+.summary-box {
+    background-color: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+}
+
+:root[data-theme='dark'] .summary-box {
+    background-color: #1f2028;
+    border-color: #2e303a;
+}
+
+.summary-box h4 {
+    margin: 0 0 1rem 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #111827;
+}
+
+:root[data-theme='dark'] .summary-box h4 {
+    color: #f3f4f6;
+}
+
+.summary-box ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.summary-box li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8125rem;
+    color: #111827;
+}
+
+:root[data-theme='dark'] .summary-box li {
+    color: #f3f4f6;
+}
+
+.summary-box li span {
+    color: #6b7280;
+}
+
+:root[data-theme='dark'] .summary-box li span {
+    color: #9ca3af;
+}
+
+.summary-box li span:last-child {
+    color: #111827;
+    font-weight: 600;
+}
+
+:root[data-theme='dark'] .summary-box li span:last-child {
+    color: #f3f4f6;
+}
+
+.summary-box li span.positive {
+    color: #059669;
+}
+
+:root[data-theme='dark'] .summary-box li span.positive {
+    color: #6ee7b7;
+}
+
+.summary-box li span.negative {
+    color: #dc2626;
+}
+
+:root[data-theme='dark'] .summary-box li span.negative {
+    color: #fca5a5;
+}

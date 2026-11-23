@@ -7,11 +7,12 @@ import RiskCalculatorView from './components/features/views/RiskCalculatorView';
 import StockScreenerView from './components/features/views/StockScreenerView';
 import JournalView from './components/features/views/JournalView';
 import ReportsView from './components/features/views/ReportsView';
+import BacktestView from './components/features/views/BacktestView';
 import SyncButton from './components/common/SyncButton';
 import ThemeToggle from './components/common/ThemeToggle';
 import { useTheme } from './hooks/useTheme';
 
-type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener' | 'journal' | 'reports';
+type ViewMode = 'trades' | 'positions' | 'riskcalculator' | 'stockscreener' | 'journal' | 'reports' | 'backtest';
 
 function App() {    
     const [viewMode, setViewMode] = useState<ViewMode>('trades');    
@@ -60,6 +61,12 @@ function App() {
                     >
                         Reports
                     </button>
+                    <button
+                        onClick={() => setViewMode('backtest')}
+                        className={`nav-button ${viewMode === 'backtest' ? 'active' : ''}`}
+                    >
+                        Backtester
+                    </button>
                 </div>
 
                 <div className="nav-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -92,6 +99,7 @@ function App() {
             {viewMode === 'stockscreener' && <StockScreenerView />}
             {viewMode === 'journal' && <JournalView />}
             {viewMode === 'reports' && <ReportsView />}
+            {viewMode === 'backtest' && <BacktestView />}
         </div>
         
     );
