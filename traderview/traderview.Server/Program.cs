@@ -221,6 +221,7 @@ public partial class Program
         builder.Services.AddScoped<IAIReportService, AIReportService>();
         builder.Services.AddScoped<IAIReportInstructionService, AIReportInstructionService>();
         builder.Services.AddScoped<ICompanyChecklistReportQueryService, CompanyChecklistReportQueryService>();
+        builder.Services.AddScoped<ICompanyChecklistReportExcelService, CompanyChecklistReportExcelService>();
         builder.Services.AddScoped<IGoogleAIStudioService, GoogleAIStudioService>(provider =>
         {
             var aiReportService = provider.GetRequiredService<IAIReportService>();

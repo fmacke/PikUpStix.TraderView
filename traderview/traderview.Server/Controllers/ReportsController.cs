@@ -16,6 +16,7 @@ namespace traderview.Server.Controllers
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly ICompanyReportService _companyReportService;
         private readonly ICompanyChecklistReportQueryService _companyChecklistReportQueryService;
+        private readonly ICompanyChecklistReportExcelService _companyChecklistReportExcelService;
         private readonly IMapper _mapper;
 
         public ReportsController(
@@ -25,6 +26,7 @@ namespace traderview.Server.Controllers
             ITradeHistoryReportService tradeHistoryReportService,
             ICompanyReportService companyReportService,
             ICompanyChecklistReportQueryService companyChecklistReportQueryService,
+            ICompanyChecklistReportExcelService companyChecklistReportExcelService,
             IMapper mapper)
         {
             _logger = logger;
@@ -33,6 +35,7 @@ namespace traderview.Server.Controllers
             _positionService = positionService;
             _companyReportService = companyReportService;
             _companyChecklistReportQueryService = companyChecklistReportQueryService;
+            _companyChecklistReportExcelService = companyChecklistReportExcelService;
             _mapper = mapper;
         }
 
@@ -185,5 +188,135 @@ namespace traderview.Server.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error generating company checklist report", detail = ex.Message });
             }
         }
+
+        [HttpPost("company-checklists-export")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        [Produces("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+        public async Task<IActionResult> ExportChecklistReportsToExcel([FromBody] ExportChecklistReportsRequest request)
+        {
+            try
+            {
+                if (request?.Symbols == null || request.Symbols.Count == 0)
+                {
+                    return BadRequest(new { message = "Symbols list cannot be null or empty." });
+                }
+
+                _logger.LogInformation("ExportChecklistReportsToExcel called with {SymbolCount} symbols", request.Symbols.Count);
+
+                // Generate fresh reports from FMP and save to database
+                var reports = new List<CompanyChecklistReport>();
+                var successCount = 0;
+                var failureCount = 0;
+
+                foreach (var symbol in request.Symbols)
+                {
+                    if (string.IsNullOrWhiteSpace(symbol))
+                    {
+                        _logger.LogWarning("Skipping empty symbol in export request");
+                        failureCount++;
+                        continue;
+                    }
+
+                    try
+                    {
+                        // Generate fresh report from FMP
+                        _logger.LogInformation("Generating fresh checklist report from FMP for symbol={Symbol}", symbol);
+                        var freshReport = await _companyReportService.GenerateChecklistReportAsync(symbol);
+
+                        if (freshReport == null)
+                        {
+                            _logger.LogWarning("No checklist report generated for symbol {Symbol} from FMP", symbol);
+                            failureCount++;
+                            continue;
+                        }
+
+                        // Map from Application model to Domain entity and save to database
+                        var entity = new CompanyChecklistReport
+                        {
+                            Symbol = freshReport.Symbol,
+                            CompanyName = freshReport.CompanyName,
+                            CreatedAtUtc = DateTime.UtcNow,
+                            CompositeRating = freshReport.CompositeRating,
+                            MarketExposureStatus = freshReport.MarketExposureStatus,
+                            IndustryGroup = freshReport.IndustryGroup,
+                            IndustryGroupRank = freshReport.IndustryGroupRank,
+                            GroupRsRating = freshReport.GroupRsRating,
+                            EpsDueDate = freshReport.EpsDueDate,
+                            EpsRating = freshReport.EpsRating,
+                            LastQtrEpsGrowthYoY = freshReport.LastQtrEpsGrowthYoY,
+                            Last3QtrsAvgEpsGrowth = freshReport.Last3QtrsAvgEpsGrowth,
+                            QtrsEpsAccelerationCount = freshReport.QtrsEpsAccelerationCount,
+                            CurrentQtrEpsEstChg = freshReport.CurrentQtrEpsEstChg,
+                            EstimateRevisionsTrend = freshReport.EstimateRevisionsTrend,
+                            LastQtrEarningsSurprisePercent = freshReport.LastQtrEarningsSurprisePercent,
+                            Eps3YrCagr = freshReport.Eps3YrCagr,
+                            ConsecutiveYrsAnnualEpsGrowth = freshReport.ConsecutiveYrsAnnualEpsGrowth,
+                            CurrentYearEpsEstChg = freshReport.CurrentYearEpsEstChg,
+                            SmrRating = freshReport.SmrRating,
+                            LastQtrSalesGrowthYoY = freshReport.LastQtrSalesGrowthYoY,
+                            Sales3YrCagr = freshReport.Sales3YrCagr,
+                            AnnualPreTaxMarginPercent = freshReport.AnnualPreTaxMarginPercent,
+                            AnnualRoePercent = freshReport.AnnualRoePercent,
+                            DebtToEquityRatio = freshReport.DebtToEquityRatio,
+                            Price = freshReport.Price,
+                            RelativeStrengthRating = freshReport.RelativeStrengthRating,
+                            PercentOff52WeekHigh = freshReport.PercentOff52WeekHigh,
+                            PriceVs50DaySmaPercent = freshReport.PriceVs50DaySmaPercent,
+                            Volume50DayAverage = freshReport.Volume50DayAverage,
+                            MarketCapBillions = freshReport.MarketCapBillions,
+                            AccumulationDistributionRating = freshReport.AccumulationDistributionRating,
+                            UpDownVolumeRatio = freshReport.UpDownVolumeRatio,
+                            FundOwnershipChangePercent = freshReport.FundOwnershipChangePercent
+                        };
+
+                        // Save the report to database
+                        var reportId = await _companyReportService.SaveChecklistReportAsync(entity);
+                        _logger.LogInformation("Successfully saved company checklist report with ID={ReportId} for symbol={Symbol}", reportId, symbol);
+
+                        // Add domain entity to reports list for Excel export
+                        reports.Add(entity);
+                        successCount++;
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error generating or saving checklist report for symbol={Symbol}", symbol);
+                        failureCount++;
+                        // Continue processing other symbols even if one fails
+                    }
+                }
+
+                if (reports.Count == 0)
+                {
+                    return BadRequest(new { message = "No checklist reports could be generated for any of the provided symbols.", successCount, failureCount });
+                }
+
+                _logger.LogInformation("Generated and saved {SuccessCount} reports (failures: {FailureCount}) for bulk export", successCount, failureCount);
+
+                // Sort reports by symbol for consistent output
+                var sortedReports = reports.OrderBy(r => r.Symbol).ToList();
+
+                // Generate Excel file
+                var excelContent = await _companyChecklistReportExcelService.GenerateChecklistReportsExcelAsync(sortedReports);
+
+                // Return file for download
+                var fileName = $"CompanyChecklists_{DateTime.UtcNow:yyyyMMdd_HHmmss}.xlsx";
+                _logger.LogInformation("Successfully generated Excel export with {ReportCount} reports: {FileName}", sortedReports.Count, fileName);
+
+                return File(excelContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogError(ex, "Invalid argument for checklist export");
+                return BadRequest(new { message = "Invalid request parameters", detail = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error exporting checklist reports to Excel");
+                return StatusCode(StatusCodes.Status500InternalServerError, new { message = "Error generating Excel export", detail = ex.Message });
+            }
+        }
     }
 }
+
