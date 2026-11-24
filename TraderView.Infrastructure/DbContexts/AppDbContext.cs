@@ -23,6 +23,8 @@ namespace TraderView.Infrastructure.DbContexts
 
         public virtual DbSet<AIReportInstruction> AIReportInstructions { get; set; }
 
+        public virtual DbSet<CompanyChecklistReport> CompanyChecklistReports { get; set; }
+
         //public virtual DbSet<CanSlimCandidateAnnualHistory> CanSlimCandidateAnnualHistories { get; set; }
 
         public virtual DbSet<CanSlimScreenerSnapshot> CanSlimScreenerSnapshots { get; set; }
@@ -205,6 +207,124 @@ namespace TraderView.Infrastructure.DbContexts
                 entity.Property(e => e.Instruction)
                     .IsRequired()
                     .HasColumnType("varchar(max)");
+            });
+
+            modelBuilder.Entity<CompanyChecklistReport>(entity =>
+            {
+                entity.ToTable("CompanyChecklistReports", "dbo");
+
+                entity.HasKey(e => e.Id).HasName("PK_CompanyChecklistReports");
+
+                entity.Property(e => e.Id)
+                    .ValueGeneratedOnAdd()
+                    .UseIdentityColumn();
+
+                entity.Property(e => e.Symbol)
+                    .IsRequired()
+                    .HasMaxLength(16)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CompanyName)
+                    .HasMaxLength(200)
+                    .IsUnicode(false);
+
+                entity.Property(e => e.CreatedAtUtc)
+                    .HasColumnType("datetime")
+                    .HasDefaultValueSql("getutcdate()")
+                    .IsRequired();
+
+                entity.Property(e => e.CompositeRating)
+                    .HasMaxLength(10)
+                    .IsUnicode(false)
+                    .HasDefaultValue("N/A");
+
+                entity.Property(e => e.MarketExposureStatus)
+                    .HasMaxLength(50)
+                    .IsUnicode(false)
+                    .HasDefaultValue("N/A");
+
+                entity.Property(e => e.IndustryGroup)
+                    .HasMaxLength(100)
+                    .IsUnicode(false)
+                    .HasDefaultValue("N/A");
+
+                entity.Property(e => e.GroupRsRating)
+                    .HasMaxLength(10)
+                    .IsUnicode(false)
+                    .HasDefaultValue("N/A");
+
+                entity.Property(e => e.EpsRating);
+
+                entity.Property(e => e.LastQtrEpsGrowthYoY)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.Last3QtrsAvgEpsGrowth)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.CurrentQtrEpsEstChg)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.EstimateRevisionsTrend)
+                    .HasMaxLength(20)
+                    .IsUnicode(false)
+                    .HasDefaultValue("Flat");
+
+                entity.Property(e => e.LastQtrEarningsSurprisePercent)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.Eps3YrCagr)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.CurrentYearEpsEstChg)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.SmrRating)
+                    .HasMaxLength(5)
+                    .IsUnicode(false)
+                    .HasDefaultValue("N/A");
+
+                entity.Property(e => e.LastQtrSalesGrowthYoY)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.Sales3YrCagr)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.AnnualPreTaxMarginPercent)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.AnnualRoePercent)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.DebtToEquityRatio)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.Price)
+                    .HasColumnType("decimal(18, 4)");
+
+                entity.Property(e => e.PercentOff52WeekHigh)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.PriceVs50DaySmaPercent)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.MarketCapBillions)
+                    .HasColumnType("decimal(19, 2)");
+
+                entity.Property(e => e.AccumulationDistributionRating)
+                    .HasMaxLength(5)
+                    .IsUnicode(false)
+                    .HasDefaultValue("C");
+
+                entity.Property(e => e.UpDownVolumeRatio)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.Property(e => e.FundOwnershipChangePercent)
+                    .HasColumnType("decimal(9, 4)");
+
+                entity.HasIndex(e => new { e.Symbol, e.CreatedAtUtc }, "IX_CompanyChecklistReport_Symbol_CreatedAt")
+                    .IsDescending(false, true);
+
+                entity.HasIndex(e => e.Symbol, "IX_CompanyChecklistReport_Symbol");
             });
 
             modelBuilder.Entity<Note>(entity =>

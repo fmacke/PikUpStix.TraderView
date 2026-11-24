@@ -126,7 +126,13 @@ public partial class Program
             return new AIReportInstructionRepository(db);
         });
 
-        // Register custom services        
+        builder.Services.AddScoped<ICompanyChecklistReportRepository>(provider =>
+        {
+            var db = provider.GetRequiredService<AppDbContext>();
+            return new CompanyChecklistReportRepository(db);
+        });
+
+        // Register custom services
         builder.Services.AddScoped<IHistoricalDataService, HistoricalDataService>(provider =>
         {
             var historicalDataRepo = provider.GetRequiredService<IHistoricalDataRepository>();
@@ -191,9 +197,10 @@ public partial class Program
             var config = provider.GetRequiredService<IConfiguration>();
             var httpClientFactory = provider.GetRequiredService<IHttpClientFactory>();
             var httpClient = httpClientFactory.CreateClient();
+            var repository = provider.GetRequiredService<ICompanyChecklistReportRepository>();
             var apiKey = config["FinancialModelingPrep:ApiKey"];
             var baseUrl = config["FinancialModelingPrep:BaseUrl"];
-            return new FinancialModellingPrepCompanyReportService(httpClient, apiKey, baseUrl);
+            return new FinancialModellingPrepCompanyReportService(httpClient, apiKey, baseUrl, repository);
         });
         builder.Services.AddScoped<IMarketDataService>(provider =>
         {
@@ -213,6 +220,7 @@ public partial class Program
         builder.Services.AddScoped<IReportRunnerService, ReportRunnerService>();
         builder.Services.AddScoped<IAIReportService, AIReportService>();
         builder.Services.AddScoped<IAIReportInstructionService, AIReportInstructionService>();
+        builder.Services.AddScoped<ICompanyChecklistReportQueryService, CompanyChecklistReportQueryService>();
         builder.Services.AddScoped<IGoogleAIStudioService, GoogleAIStudioService>(provider =>
         {
             var aiReportService = provider.GetRequiredService<IAIReportService>();

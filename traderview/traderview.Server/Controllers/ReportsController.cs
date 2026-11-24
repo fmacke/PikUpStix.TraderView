@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using traderview.Server.DTOs;
 using TraderView.Application.Interfaces.Services;
+using TraderView.Domain.Entities;
 
 namespace traderview.Server.Controllers
 {
@@ -14,15 +15,24 @@ namespace traderview.Server.Controllers
         private readonly IPositionService _positionService;
         private readonly ITradeHistoryReportService _tradeHistoryReportService;
         private readonly ICompanyReportService _companyReportService;
+        private readonly ICompanyChecklistReportQueryService _companyChecklistReportQueryService;
         private readonly IMapper _mapper;
 
-        public ReportsController(ILogger<ReportsController> logger, IOpenPositionReportService openPositionsReportService, IPositionService positionService, ITradeHistoryReportService tradeHistoryReportService, ICompanyReportService companyReportService, IMapper mapper)
+        public ReportsController(
+            ILogger<ReportsController> logger,
+            IOpenPositionReportService openPositionsReportService,
+            IPositionService positionService,
+            ITradeHistoryReportService tradeHistoryReportService,
+            ICompanyReportService companyReportService,
+            ICompanyChecklistReportQueryService companyChecklistReportQueryService,
+            IMapper mapper)
         {
             _logger = logger;
             _openPositionReportService = openPositionsReportService;
             _tradeHistoryReportService = tradeHistoryReportService;
             _positionService = positionService;
             _companyReportService = companyReportService;
+            _companyChecklistReportQueryService = companyChecklistReportQueryService;
             _mapper = mapper;
         }
 
@@ -121,6 +131,49 @@ namespace traderview.Server.Controllers
                 {
                     return NotFound(new { message = $"No checklist report found for symbol {symbol}" });
                 }
+
+                // Map from Application model to Domain entity and save to database
+                var entity = new CompanyChecklistReport
+                {
+                    Symbol = report.Symbol,
+                    CompanyName = report.CompanyName,
+                    CreatedAtUtc = DateTime.UtcNow,
+                    CompositeRating = report.CompositeRating,
+                    MarketExposureStatus = report.MarketExposureStatus,
+                    IndustryGroup = report.IndustryGroup,
+                    IndustryGroupRank = report.IndustryGroupRank,
+                    GroupRsRating = report.GroupRsRating,
+                    EpsDueDate = report.EpsDueDate,
+                    EpsRating = report.EpsRating,
+                    LastQtrEpsGrowthYoY = report.LastQtrEpsGrowthYoY,
+                    Last3QtrsAvgEpsGrowth = report.Last3QtrsAvgEpsGrowth,
+                    QtrsEpsAccelerationCount = report.QtrsEpsAccelerationCount,
+                    CurrentQtrEpsEstChg = report.CurrentQtrEpsEstChg,
+                    EstimateRevisionsTrend = report.EstimateRevisionsTrend,
+                    LastQtrEarningsSurprisePercent = report.LastQtrEarningsSurprisePercent,
+                    Eps3YrCagr = report.Eps3YrCagr,
+                    ConsecutiveYrsAnnualEpsGrowth = report.ConsecutiveYrsAnnualEpsGrowth,
+                    CurrentYearEpsEstChg = report.CurrentYearEpsEstChg,
+                    SmrRating = report.SmrRating,
+                    LastQtrSalesGrowthYoY = report.LastQtrSalesGrowthYoY,
+                    Sales3YrCagr = report.Sales3YrCagr,
+                    AnnualPreTaxMarginPercent = report.AnnualPreTaxMarginPercent,
+                    AnnualRoePercent = report.AnnualRoePercent,
+                    DebtToEquityRatio = report.DebtToEquityRatio,
+                    Price = report.Price,
+                    RelativeStrengthRating = report.RelativeStrengthRating,
+                    PercentOff52WeekHigh = report.PercentOff52WeekHigh,
+                    PriceVs50DaySmaPercent = report.PriceVs50DaySmaPercent,
+                    Volume50DayAverage = report.Volume50DayAverage,
+                    MarketCapBillions = report.MarketCapBillions,
+                    AccumulationDistributionRating = report.AccumulationDistributionRating,
+                    UpDownVolumeRatio = report.UpDownVolumeRatio,
+                    FundOwnershipChangePercent = report.FundOwnershipChangePercent
+                };
+
+                // Save the report to database
+                var reportId = await _companyReportService.SaveChecklistReportAsync(entity);
+                _logger.LogInformation("Successfully saved company checklist report with ID={ReportId} for symbol={Symbol}", reportId, symbol);
 
                 var dto = _mapper.Map<CompanyChecklistReportDto>(report);
                 _logger.LogInformation("Successfully generated company checklist report for {Symbol}", symbol);

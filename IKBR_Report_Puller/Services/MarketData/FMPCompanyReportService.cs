@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Json;
+using TraderView.Application.Interfaces.Repositories;
 using TraderView.Application.Interfaces.Services;
 using TraderView.Application.Models.Reports;
 using TraderView.Domain.Entities.FMP;
@@ -14,6 +15,7 @@ namespace TraderView.Services.MarketData
         private readonly HttpClient _httpClient;
         private readonly string _apiKey;
         private readonly string _baseUrl;
+        private readonly ICompanyChecklistReportRepository _repository;
 
         private const decimal MinGrowthBaseThreshold = 0.01m;
         private const decimal MaxQuarterlyGrowthCap = 250m;
@@ -21,11 +23,13 @@ namespace TraderView.Services.MarketData
         public FinancialModellingPrepCompanyReportService(
             HttpClient httpClient,
             string apiKey,
-            string baseUrl)
+            string baseUrl,
+            ICompanyChecklistReportRepository repository)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
             _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
             _baseUrl = baseUrl ?? throw new ArgumentNullException(nameof(baseUrl));
+            _repository = repository ?? throw new ArgumentNullException(nameof(repository));
         }
 
         public async Task<CompanyChecklistReport?> GenerateChecklistReportAsync(string symbol)
@@ -447,6 +451,14 @@ namespace TraderView.Services.MarketData
 
             int composite = (int)((epsRating * 0.30m) + (rsRating * 0.30m) + (smrNumeric * 0.20m) + (adNumeric * 0.20m));
             return Math.Clamp(composite, 1, 99).ToString();
+        }
+
+        public async Task<int> SaveChecklistReportAsync(TraderView.Domain.Entities.CompanyChecklistReport report)
+        {
+            if (report == null)
+                throw new ArgumentNullException(nameof(report));
+
+            return await _repository.CreateAsync(report.Symbol, report.CompanyName, report);
         }
 
         #endregion
